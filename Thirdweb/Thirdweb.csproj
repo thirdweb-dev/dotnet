@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>$(DefaultTargetFrameworks)</TargetFrameworks>
+    <TargetFrameworks>net7.0</TargetFrameworks>
     <PackageVersion>$(DefaultVersion)</PackageVersion>
     <AssemblyVersion>$(DefaultVersion)</AssemblyVersion>
     <FileVersion>$(DefaultVersion)</FileVersion>
