@@ -5,10 +5,10 @@
     <PackageVersion>$(DefaultVersion)</PackageVersion>
     <AssemblyVersion>$(DefaultVersion)</AssemblyVersion>
     <FileVersion>$(DefaultVersion)</FileVersion>
-    <PackageId>Thirdweb</PackageId>
-    <Title>Thirdweb</Title>
+    <PackageId>Thirdweb.Pay</PackageId>
+    <Title>Thirdweb Pay</Title>
     <Authors>0xfirekeeper</Authors>
-    <Description>Best in class Web3 .NET SDK, powered by thirdweb.</Description>
+    <Description>Best in class Web3 .NET Swap/OnRamp SDK, powered by thirdweb.</Description>
     <Copyright>Copyright (c) thirdweb 2024</Copyright>
     <PackageProjectUrl>https://thirdweb.com/</PackageProjectUrl>
     <PackageIcon>icon.png</PackageIcon>
@@ -27,17 +27,11 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" />
-    <PackageReference Include="Nethereum.ABI" />
-    <PackageReference Include="Nethereum.Hex" />
-    <PackageReference Include="Nethereum.Contracts" />
+    <PackageReference Include="System.ComponentModel.Annotations" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Thirdweb.Pay\Thirdweb.Pay.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="..\resources\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 

@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Thirdweb\Thirdweb.csproj" />
+    <ProjectReference Include="..\Thirdweb.Pay\Thirdweb.Pay.csproj" />
   </ItemGroup>
 
   <ItemGroup>
