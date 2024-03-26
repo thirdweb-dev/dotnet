@@ -20,9 +20,11 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore
+        working-directory: ./
 
       - name: Build Release
         run: dotnet build -c Release --no-restore
+        working-directory: ./
 
       - name: Push to NuGet
         run: dotnet nuget push "./Thirdweb/bin/Release/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
