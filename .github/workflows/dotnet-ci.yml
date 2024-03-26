@@ -20,7 +20,7 @@ jobs:
             7.0.x
 
       - name: Restore dependencies
-        run: dotnet restore --verbosity detailed
+        run: dotnet restore
         working-directory: ./
 
       - name: Build
