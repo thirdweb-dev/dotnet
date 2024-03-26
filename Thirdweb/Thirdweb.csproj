@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(DefaultTargetFrameworks)</TargetFrameworks>
+    <PackageVersion>$(DefaultVersion)</PackageVersion>
+    <AssemblyVersion>$(DefaultVersion)</AssemblyVersion>
+    <FileVersion>$(DefaultVersion)</FileVersion>
+    <PackageId>Thirdweb</PackageId>
+    <Title>Thirdweb</Title>
+    <Authors>0xfirekeeper</Authors>
+    <Description>Best in class Web3 .NET SDK, powered by thirdweb.</Description>
+    <Copyright>Copyright (c) thirdweb 2024</Copyright>
+    <PackageProjectUrl>https://thirdweb.com/</PackageProjectUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/thirdweb-dev/thirdweb-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>thirdweb wallet contracts client web3 ethereum blockchain game unity godot</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Nethereum.ABI" />
+    <PackageReference Include="Nethereum.Hex" />
+    <PackageReference Include="Nethereum.Contracts" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\resources\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
