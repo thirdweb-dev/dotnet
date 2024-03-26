@@ -28,4 +28,7 @@ jobs:
         working-directory: ./
 
       - name: Test
-        run: dotnet test --verbosity normal
+        run: dotnet test --verbosity minimal
+        shell: bash
+        env:
+          THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
