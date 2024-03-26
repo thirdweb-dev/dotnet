@@ -17,7 +17,13 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            8.0.x
+            6.0.x
+
+      - name: List directory contents
+        run: ls -la ./Thirdweb/bin/Release/
+
+      - name: Display Directory.Build.props
+        run: cat Directory.Build.props
 
       - name: Restore dependencies
         run: dotnet restore
