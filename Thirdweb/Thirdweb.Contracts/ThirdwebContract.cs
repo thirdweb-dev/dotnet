@@ -1,4 +1,6 @@
 ﻿using System.Numerics;
+using Nethereum.Hex.HexTypes;
+using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb
 {
@@ -39,6 +41,40 @@ namespace Thirdweb
 
             var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data = data, }, "latest");
             return function.DecodeTypeOutput<T>(resultData);
+        }
+
+        public static async Task<string> WriteContract(ThirdwebAccount account, ThirdwebContract contract, string method, params object[] parameters)
+        {
+            var rpc = ThirdwebRPC.GetRpcInstance(contract.Client, contract.Chain);
+
+            var service = new Nethereum.Contracts.Contract(null, contract.Abi, contract.Address);
+            var function = service.GetFunction(method);
+            var data = function.GetData(parameters);
+
+            var transaction = new TransactionInput
+            {
+                From = account.GetAddress(),
+                To = contract.Address,
+                Data = data,
+            };
+
+            // TODO: Implement 1559
+            transaction.Gas = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_estimateGas", transaction));
+            transaction.GasPrice = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice"));
+            transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", account.GetAddress(), "latest"));
+
+            string hash;
+            if (account.Options.Type == WalletType.PrivateKey)
+            {
+                var signedTx = account.SignTransaction(transaction, contract.Chain);
+                Console.WriteLine($"Signed transaction: {signedTx}");
+                hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
+            }
+            else
+            {
+                hash = await rpc.SendRequestAsync<string>("eth_sendTransaction", transaction);
+            }
+            return hash;
         }
     }
 }

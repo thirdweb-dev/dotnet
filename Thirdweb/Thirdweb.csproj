@@ -30,6 +30,9 @@
     <PackageReference Include="Nethereum.ABI" />
     <PackageReference Include="Nethereum.Hex" />
     <PackageReference Include="Nethereum.Contracts" />
+    <PackageReference Include="Nethereum.Signer" />
+    <PackageReference Include="Portable.BouncyCastle" />
+    <PackageReference Include="Nethereum.Signer.EIP712" />
   </ItemGroup>
 
   <ItemGroup>

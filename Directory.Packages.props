@@ -13,5 +13,8 @@
         <PackageVersion Include="Nethereum.ABI" Version="4.19.0" />
         <PackageVersion Include="Nethereum.Hex" Version="4.19.0" />
         <PackageVersion Include="Nethereum.Contracts" Version="4.19.0" />
+        <PackageVersion Include="Nethereum.Signer" Version="4.19.0" />
+        <PackageVersion Include="Nethereum.Signer.EIP712" Version="4.19.0" />
+        <PackageVersion Include="Portable.BouncyCastle" Version="1.9.0" />
     </ItemGroup>
 </Project>
