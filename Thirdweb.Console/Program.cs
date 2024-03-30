@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using dotenv.net;
-using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 using Thirdweb;
 
@@ -27,8 +26,36 @@ var contract = new ThirdwebContract(contractOptions);
 var readResult = await ThirdwebContract.ReadContract<string>(contract, "name");
 Console.WriteLine($"Contract read result: {readResult}");
 
-var accountOptions = new ThirdwebAccountOptions(client: client, type: WalletType.PrivateKey, privateKey: privateKey);
+var accountOptions = new ThirdwebAccountOptions(client: client, type: WalletType.Embedded, email: "firekeeper@thirdweb.com");
 var account = new ThirdwebAccount(accountOptions);
+await account.Initialize();
+var isConnected = account.IsConnected();
+await account.Disconnect(); // Force email
+
+if (!account.IsConnected())
+{
+    if (account.Wallet is not Embedded embedded)
+    {
+        throw new Exception("Account is not connected and is not an embedded wallet.");
+    }
+    await embedded.SendOTP();
+    var otp = Console.ReadLine();
+    (var address, var canRetry) = await embedded.SubmitOTP(otp);
+    if (canRetry)
+    {
+        Console.WriteLine("OTP failed. Please try again.");
+        var otp2 = Console.ReadLine();
+        (address, _) = await embedded.SubmitOTP(otp2);
+    }
+    if (string.IsNullOrEmpty(address))
+    {
+        throw new Exception("Unknown Error, Null Address");
+    }
+    else
+    {
+        Console.WriteLine($"Successfully Logged In! Address: {address}");
+    }
+}
 Console.WriteLine($"Wallet address: {account.GetAddress()}");
 
 var message = "Hello, Thirdweb!";

@@ -10,11 +10,11 @@ using Nethereum.Signer;
 using Nethereum.Signer.EIP712;
 using Thirdweb;
 
-internal class PrivateKeyWallet : IWallet
+public class PrivateKey : IWallet
 {
-    private readonly EthECKey _ecKey;
+    private EthECKey _ecKey;
 
-    internal PrivateKeyWallet(string privateKeyHex)
+    internal PrivateKey(string privateKeyHex)
     {
         if (string.IsNullOrEmpty(privateKeyHex))
         {
@@ -22,6 +22,12 @@ internal class PrivateKeyWallet : IWallet
         }
 
         _ecKey = new EthECKey(privateKeyHex);
+    }
+
+    public Task Initialize()
+    {
+        // No initialization required for private key wallets
+        return Task.CompletedTask;
     }
 
     public string GetAddress()
@@ -127,5 +133,16 @@ internal class PrivateKeyWallet : IWallet
         }
 
         return "0x" + signedTransaction;
+    }
+
+    public bool IsConnected()
+    {
+        return _ecKey != null;
+    }
+
+    public Task Disconnect()
+    {
+        _ecKey = null;
+        return Task.CompletedTask;
     }
 }

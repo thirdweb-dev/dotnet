@@ -64,7 +64,7 @@ namespace Thirdweb
             transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", account.GetAddress(), "latest"));
 
             string hash;
-            if (account.Options.Type == WalletType.PrivateKey)
+            if (account.Options.Type == WalletType.PrivateKey || account.Options.Type == WalletType.Embedded)
             {
                 var signedTx = account.SignTransaction(transaction, contract.Chain);
                 Console.WriteLine($"Signed transaction: {signedTx}");
