@@ -50,7 +50,7 @@ internal class Program
             {
                 Console.WriteLine("Please submit the OTP again.");
                 otp = Console.ReadLine();
-                _ = await embeddedAccount.SubmitOTP(otp);
+                (embeddedAccountAddress, _) = await embeddedAccount.SubmitOTP(otp);
             }
             if (embeddedAccountAddress == null)
             {
