@@ -2,6 +2,6 @@
 {
     public interface ITimeoutOptions
     {
-        int GetTimeout(TimeoutType type, int fallback = Constants.DefaultFetchTimeout);
+        int GetTimeout(TimeoutType type, int fallback = Constants.DEFAULT_FETCH_TIMEOUT);
     }
 }

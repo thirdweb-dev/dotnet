@@ -1,5 +1,10 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Numerics;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace Thirdweb
@@ -75,7 +80,7 @@ namespace Thirdweb
             _httpClient.DefaultRequestHeaders.Add("x-sdk-name", "Thirdweb.NET");
             _httpClient.DefaultRequestHeaders.Add("x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription);
             _httpClient.DefaultRequestHeaders.Add("x-sdk-platform", "dotnet");
-            _httpClient.DefaultRequestHeaders.Add("x-sdk-version", Constants.Version);
+            _httpClient.DefaultRequestHeaders.Add("x-sdk-version", Constants.VERSION);
         }
 
         private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
@@ -112,7 +117,7 @@ namespace Thirdweb
         private async Task SendBatchAsync(List<RpcRequest> batch)
         {
             var batchJson = JsonConvert.SerializeObject(batch);
-            Console.WriteLine($"Sending batch: {batchJson}");
+
             var requestMessage = new HttpRequestMessage(HttpMethod.Post, _rpcUrl) { Content = new StringContent(batchJson, Encoding.UTF8, "application/json") };
             if (!string.IsNullOrEmpty(_clientId))
                 requestMessage.Headers.Add("x-client-id", _clientId);
