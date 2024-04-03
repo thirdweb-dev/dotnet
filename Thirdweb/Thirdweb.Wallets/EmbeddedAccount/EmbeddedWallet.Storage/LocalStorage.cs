@@ -34,7 +34,7 @@ namespace Thirdweb.EWS
                 directory = Application.persistentDataPath;
 #else
             directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            Console.WriteLine($"Embedded Wallet Storage: Using '{directory}'");
+            // Console.WriteLine($"Embedded Wallet Storage: Using '{directory}'");
 #endif
             directory = Path.Combine(directory, "EWS");
             Directory.CreateDirectory(directory);

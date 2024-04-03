@@ -13,7 +13,7 @@
             Other = other;
         }
 
-        public int GetTimeout(TimeoutType type, int fallback = Constants.DefaultFetchTimeout)
+        public int GetTimeout(TimeoutType type, int fallback = Constants.DEFAULT_FETCH_TIMEOUT)
         {
             return type switch
             {

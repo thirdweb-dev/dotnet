@@ -18,7 +18,7 @@ namespace Thirdweb.EWS
         public EmbeddedWallet(ThirdwebClient client)
         {
             localStorage = new LocalStorage(client.ClientId);
-            server = new Server(client.ClientId, client.BundleId, "dotnet", Constants.Version, client.SecretKey);
+            server = new Server(client.ClientId, client.BundleId, "dotnet", Constants.VERSION, client.SecretKey);
             ivGenerator = new IvGenerator();
         }
     }

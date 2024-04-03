@@ -80,7 +80,7 @@ namespace Thirdweb
             _httpClient.DefaultRequestHeaders.Add("x-sdk-name", "Thirdweb.NET");
             _httpClient.DefaultRequestHeaders.Add("x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription);
             _httpClient.DefaultRequestHeaders.Add("x-sdk-platform", "dotnet");
-            _httpClient.DefaultRequestHeaders.Add("x-sdk-version", Constants.Version);
+            _httpClient.DefaultRequestHeaders.Add("x-sdk-version", Constants.VERSION);
         }
 
         private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
