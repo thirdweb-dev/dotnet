@@ -28,8 +28,8 @@ using Thirdweb;
 var client = new ThirdwebClient(secretKey: secretKey);
 
 // Interact with a contract
-var contract = new ThirdwebContract(contractOptions);
-var readResult = await ThirdwebContract.ReadContract<string>(client: client, address: "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", chain: 1, abi: "function name() view returns (string)");
+var contract = new ThirdwebContract(client: client, address: "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", chain: 1, abi: "function name() view returns (string)");
+var readResult = await ThirdwebContract.ReadContract<string>(contract, "name");
 Console.WriteLine($"Contract read result: {readResult}");
 
 // Or directly interact with the RPC
