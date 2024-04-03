@@ -17,6 +17,7 @@ namespace Thirdweb
 
         private ThirdwebClient _client;
         private EthECKey _ecKey;
+        private string _privateKeyHex;
 
         public PrivateKeyAccount(ThirdwebClient client, string privateKeyHex)
         {
@@ -26,12 +27,13 @@ namespace Thirdweb
             }
 
             _client = client;
-            _ecKey = new EthECKey(privateKeyHex);
+            _privateKeyHex = privateKeyHex;
         }
 
         public Task Connect()
         {
-            // No initialization required for private key wallets
+            _ecKey = new EthECKey(_privateKeyHex);
+            _privateKeyHex = null;
             return Task.CompletedTask;
         }
 
