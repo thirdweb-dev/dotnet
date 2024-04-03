@@ -91,6 +91,7 @@ namespace Thirdweb
         }
 
         public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
+            where TDomain : IDomain
         {
             if (data == null)
             {

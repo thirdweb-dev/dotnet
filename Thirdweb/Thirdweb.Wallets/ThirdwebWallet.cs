@@ -68,7 +68,8 @@ namespace Thirdweb
             return await ActiveAccount.SignTypedDataV4(json);
         }
 
-        public async Task<string> SignTypedDataV4<T>(T data, TypedData<T> typedData)
+        public async Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
+            where TDomain : IDomain
         {
             return await ActiveAccount.SignTypedDataV4(data, typedData);
         }

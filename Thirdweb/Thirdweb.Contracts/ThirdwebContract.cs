@@ -88,6 +88,7 @@ namespace Thirdweb
             {
                 throw new NotImplementedException("Account type not supported");
             }
+            Console.WriteLine($"Transaction hash: {hash}");
             return hash;
         }
     }
