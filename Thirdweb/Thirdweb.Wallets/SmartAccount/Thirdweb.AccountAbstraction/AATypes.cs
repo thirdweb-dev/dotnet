@@ -114,4 +114,81 @@ namespace Thirdweb.AccountAbstraction
         public string maxFeePerGas { get; set; }
         public string maxPriorityFeePerGas { get; set; }
     }
+
+    [Event("UserOperationEvent")]
+    public class UserOperationEventEventDTO : IEventDTO
+    {
+        [Parameter("bytes32", "userOpHash", 1, true)]
+        public virtual byte[] UserOpHash { get; set; }
+
+        [Parameter("address", "sender", 2, true)]
+        public virtual string Sender { get; set; }
+
+        [Parameter("address", "paymaster", 3, true)]
+        public virtual string Paymaster { get; set; }
+
+        [Parameter("uint256", "nonce", 4, false)]
+        public virtual BigInteger Nonce { get; set; }
+
+        [Parameter("bool", "success", 5, false)]
+        public virtual bool Success { get; set; }
+
+        [Parameter("uint256", "actualGasCost", 6, false)]
+        public virtual BigInteger ActualGasCost { get; set; }
+
+        [Parameter("uint256", "actualGasUsed", 7, false)]
+        public virtual BigInteger ActualGasUsed { get; set; }
+    }
+
+    [Event("UserOperationRevertReason")]
+    public class UserOperationRevertReasonEventDTO : IEventDTO
+    {
+        [Parameter("bytes32", "userOpHash", 1, true)]
+        public virtual byte[] UserOpHash { get; set; }
+
+        [Parameter("address", "sender", 2, true)]
+        public virtual string Sender { get; set; }
+
+        [Parameter("uint256", "nonce", 3, false)]
+        public virtual BigInteger Nonce { get; set; }
+
+        [Parameter("bytes", "revertReason", 4, false)]
+        public virtual byte[] RevertReason { get; set; }
+    }
+
+    public class SignerPermissionRequest
+    {
+        [Parameter("address", "signer", 1)]
+        public virtual string Signer { get; set; }
+
+        [Parameter("uint8", "isAdmin", 2)]
+        public virtual byte IsAdmin { get; set; }
+
+        [Parameter("address[]", "approvedTargets", 3)]
+        public virtual List<string> ApprovedTargets { get; set; }
+
+        [Parameter("uint256", "nativeTokenLimitPerTransaction", 4)]
+        public virtual BigInteger NativeTokenLimitPerTransaction { get; set; }
+
+        [Parameter("uint128", "permissionStartTimestamp", 5)]
+        public virtual BigInteger PermissionStartTimestamp { get; set; }
+
+        [Parameter("uint128", "permissionEndTimestamp", 6)]
+        public virtual BigInteger PermissionEndTimestamp { get; set; }
+
+        [Parameter("uint128", "reqValidityStartTimestamp", 7)]
+        public virtual BigInteger ReqValidityStartTimestamp { get; set; }
+
+        [Parameter("uint128", "reqValidityEndTimestamp", 8)]
+        public virtual BigInteger ReqValidityEndTimestamp { get; set; }
+
+        [Parameter("bytes32", "uid", 9)]
+        public virtual byte[] Uid { get; set; }
+    }
+
+    public class AccountMessage
+    {
+        [Nethereum.ABI.FunctionEncoding.Attributes.Parameter("bytes", "message", 1)]
+        public virtual byte[] Message { get; set; }
+    }
 }

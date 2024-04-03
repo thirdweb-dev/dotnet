@@ -71,8 +71,22 @@ namespace Thirdweb
                 }
             }
 
-            object result = await tcs.Task;
-            return (TResponse)result;
+            var result = await tcs.Task;
+            if (result is TResponse response)
+            {
+                return response;
+            }
+            else
+            {
+                try
+                {
+                    return JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(result));
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("Failed to deserialize RPC response.", ex);
+                }
+            }
         }
 
         static ThirdwebRPC()
