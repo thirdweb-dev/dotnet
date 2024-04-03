@@ -4,33 +4,31 @@ namespace Thirdweb
 {
     public class ThirdwebClient
     {
-        private string _secretKey;
+        internal string SecretKey { get; }
+        internal string ClientId { get; }
+        internal string BundleId { get; }
+        internal ITimeoutOptions FetchTimeoutOptions { get; }
 
-        internal string SecretKey => _secretKey;
-        internal string ClientId { get; private set; }
-        internal string BundleId { get; private set; }
-        internal ITimeoutOptions FetchTimeoutOptions { get; private set; }
-
-        public ThirdwebClient(ThirdwebClientOptions options)
+        public ThirdwebClient(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null)
         {
-            if (string.IsNullOrEmpty(options.ClientId) && string.IsNullOrEmpty(options.SecretKey))
+            if (string.IsNullOrEmpty(clientId) && string.IsNullOrEmpty(secretKey))
             {
-                throw new ArgumentNullException(nameof(options), "ClientId or SecretKey must be provided");
+                throw new InvalidOperationException("ClientId or SecretKey must be provided");
             }
 
-            if (!string.IsNullOrEmpty(options.SecretKey))
+            if (!string.IsNullOrEmpty(secretKey))
             {
-                ClientId = Utils.ComputeClientIdFromSecretKey(options.SecretKey);
-                _secretKey = options.SecretKey;
+                ClientId = Utils.ComputeClientIdFromSecretKey(secretKey);
+                SecretKey = secretKey;
             }
             else
             {
-                ClientId = options.ClientId;
+                ClientId = clientId;
             }
 
-            BundleId = options.BundleId;
+            BundleId = bundleId;
 
-            FetchTimeoutOptions = options.FetchTimeoutOptions ?? new TimeoutOptions();
+            FetchTimeoutOptions = fetchTimeoutOptions ?? new TimeoutOptions();
         }
     }
 }

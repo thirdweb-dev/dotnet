@@ -12,9 +12,7 @@ internal class Program
         var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
         var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
-        var clientOptions = new ThirdwebClientOptions(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 60000));
-        var client = new ThirdwebClient(clientOptions);
-        Console.WriteLine($"Initialized ThirdwebClient: {JsonConvert.SerializeObject(clientOptions, Formatting.Indented)}");
+        var client = new ThirdwebClient(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 60000));
 
         // var rpc = ThirdwebRPC.GetRpcInstance(client, 421614);
         // var blockNumber = await rpc.SendRequestAsync<string>("eth_blockNumber");
