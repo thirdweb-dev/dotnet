@@ -28,9 +28,9 @@ internal class Program
         Console.WriteLine($"Contract read result: {readResult}");
 
         // Create accounts
-        var privateKeyAccount = new PrivateKeyAccount(client, privateKey);
-        var embeddedAccount = new EmbeddedAccount(client, "firekeeper+7121271d@thirdweb.com");
-        var smartAccount = new SmartAccount(client, embeddedAccount, "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", true, 421614);
+        var privateKeyAccount = new PrivateKeyAccount(client: client, privateKeyHex: privateKey);
+        var embeddedAccount = new EmbeddedAccount(client: client, email: "firekeeper+7121271d@thirdweb.com");
+        var smartAccount = new SmartAccount(client: client, personalAccount: embeddedAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
 
         // Attempt to connect pk accounts
         await privateKeyAccount.Connect();
@@ -73,7 +73,14 @@ internal class Program
         );
 
         // Reconnect to same smart account with pk account as signer
-        smartAccount = new SmartAccount(client, privateKeyAccount, "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", true, 421614, await smartAccount.GetAddress());
+        smartAccount = new SmartAccount(
+            client: client,
+            personalAccount: privateKeyAccount,
+            factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
+            gasless: true,
+            chainId: 421614,
+            accountAddressOverride: await smartAccount.GetAddress()
+        );
         await smartAccount.Connect();
 
         // Log addresses
