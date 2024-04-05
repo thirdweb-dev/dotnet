@@ -32,3 +32,5 @@ jobs:
         shell: bash
         env:
           THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
+          THIRDWEB_CLIENT_ID_BUNDLE_ID_ONLY: ${{ secrets.THIRDWEB_CLIENT_ID_BUNDLE_ID_ONLY }}
+          THIRDWEB_BUNDLE_ID_BUNDLE_ID_ONLY: ${{ secrets.THIRDWEB_BUNDLE_ID_BUNDLE_ID_ONLY }}
