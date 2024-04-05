@@ -21,16 +21,18 @@ namespace Thirdweb
         private User _user;
         private EthECKey _ecKey;
         private string _email;
+        private string _phoneNumber;
 
-        public EmbeddedAccount(ThirdwebClient client, string email)
+        public EmbeddedAccount(ThirdwebClient client, string email = null, string phoneNumber = null)
         {
-            if (string.IsNullOrEmpty(email))
+            if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber))
             {
-                throw new ArgumentException("Email must be provided to use Embedded Wallets.");
+                throw new ArgumentException("Email or Phone Number must be provided to login.");
             }
 
             _embeddedWallet = new EmbeddedWallet(client);
             _email = email;
+            _phoneNumber = phoneNumber;
             _client = client;
         }
 
@@ -38,7 +40,7 @@ namespace Thirdweb
         {
             try
             {
-                _user = await _embeddedWallet.GetUserAsync(_email, "EmailOTP");
+                _user = await _embeddedWallet.GetUserAsync(_email, _email == null ? "PhoneOTP" : "EmailOTP");
                 _ecKey = new EthECKey(_user.Account.PrivateKey);
             }
             catch
@@ -49,19 +51,31 @@ namespace Thirdweb
             }
         }
 
-        #region Email OTP Flow
+        #region OTP Flow
 
         public async Task SendOTP()
         {
-            if (string.IsNullOrEmpty(_email))
+            if (string.IsNullOrEmpty(_email) && string.IsNullOrEmpty(_phoneNumber))
             {
-                throw new Exception("Email is required for OTP login");
+                throw new Exception("Email or Phone Number is required for OTP login");
             }
 
             try
             {
-                (bool isNewUser, bool isNewDevice, bool needsRecoveryCode) = await _embeddedWallet.SendOtpEmailAsync(_email);
-                Console.WriteLine("OTP sent to email. Please call EmbeddedAccount.SubmitOTP to login.");
+                if (_email != null)
+                {
+                    (var isNewUser, var isNewDevice, var needsRecoveryCode) = await _embeddedWallet.SendOtpEmailAsync(_email);
+                }
+                else if (_phoneNumber != null)
+                {
+                    (var isNewUser, var isNewDevice, var needsRecoveryCode) = await _embeddedWallet.SendOtpPhoneAsync(_phoneNumber);
+                }
+                else
+                {
+                    throw new Exception("Email or Phone Number must be provided to login.");
+                }
+
+                Console.WriteLine("OTP sent to user. Please call EmbeddedAccount.SubmitOTP to login.");
             }
             catch (Exception e)
             {
@@ -71,7 +85,17 @@ namespace Thirdweb
 
         public async Task<(string, bool)> SubmitOTP(string otp)
         {
-            var res = await _embeddedWallet.VerifyOtpAsync(_email, otp, null);
+            if (string.IsNullOrEmpty(otp))
+            {
+                throw new ArgumentNullException(nameof(otp), "OTP cannot be null or empty.");
+            }
+
+            if (string.IsNullOrEmpty(_email) && string.IsNullOrEmpty(_phoneNumber))
+            {
+                throw new Exception("Email or Phone Number is required for OTP login");
+            }
+
+            var res = _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp, null) : await _embeddedWallet.VerifyOtpAsync(_email, otp, null);
             if (res.User == null)
             {
                 var canRetry = res.CanRetry;
@@ -91,6 +115,16 @@ namespace Thirdweb
                 _ecKey = new EthECKey(_user.Account.PrivateKey);
                 return (await GetAddress(), false);
             }
+        }
+
+        public Task<string> GetEmail()
+        {
+            return Task.FromResult(_email);
+        }
+
+        public Task<string> GetPhoneNumber()
+        {
+            return Task.FromResult(_phoneNumber);
         }
 
         #endregion
