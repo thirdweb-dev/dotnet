@@ -36,6 +36,10 @@ internal class Program
         await privateKeyAccount.Connect();
         await embeddedAccount.Connect();
 
+        // Reset embedded account
+        if (await embeddedAccount.IsConnected())
+            await embeddedAccount.Disconnect();
+
         // Relog if embedded account not logged in
         if (!await embeddedAccount.IsConnected())
         {

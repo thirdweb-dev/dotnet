@@ -1,4 +1,5 @@
 ﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Tests")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Console")]
 
 namespace Thirdweb
 {
