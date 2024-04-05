@@ -9,11 +9,15 @@ internal class Program
     {
         DotEnv.Load();
 
+        // Do not use secret keys client side, use client id/bundle id instead
         var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
+        // Do not use private keys client side, use embedded/smart accounts instead
         var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
+        // Fetch timeout options are optional, default is 60000ms
         var client = new ThirdwebClient(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 60000));
 
+        // Access RPC directly if needed, generally not recommended
         // var rpc = ThirdwebRPC.GetRpcInstance(client, 421614);
         // var blockNumber = await rpc.SendRequestAsync<string>("eth_blockNumber");
         // Console.WriteLine($"Block number: {blockNumber}");
@@ -27,18 +31,20 @@ internal class Program
         var readResult = await ThirdwebContract.ReadContract<string>(contract, "name");
         Console.WriteLine($"Contract read result: {readResult}");
 
-        // Create accounts
+        // Create accounts (this is an advanced use case, typically one account is plenty)
         var privateKeyAccount = new PrivateKeyAccount(client: client, privateKeyHex: privateKey);
-        var embeddedAccount = new EmbeddedAccount(client: client, email: "firekeeper+7121271d@thirdweb.com");
+        var embeddedAccount = new EmbeddedAccount(client: client, email: "firekeeper+7121271d@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
         var smartAccount = new SmartAccount(client: client, personalAccount: embeddedAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
 
         // Attempt to connect pk accounts
         await privateKeyAccount.Connect();
         await embeddedAccount.Connect();
 
-        // Reset embedded account
+        // Reset embedded account (optional step for testing login flow)
         if (await embeddedAccount.IsConnected())
+        {
             await embeddedAccount.Disconnect();
+        }
 
         // Relog if embedded account not logged in
         if (!await embeddedAccount.IsConnected())
@@ -60,7 +66,7 @@ internal class Program
             }
         }
 
-        // Connect the smart account with embedded signer and grant a session key to pk account
+        // Connect the smart account with embedded signer and grant a session key to pk account (advanced use case)
         await smartAccount.Connect();
         _ = await smartAccount.CreateSessionKey(
             signerAddress: await privateKeyAccount.GetAddress(),
@@ -72,7 +78,7 @@ internal class Program
             reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
         );
 
-        // Reconnect to same smart account with pk account as signer
+        // Reconnect to same smart account with pk account as signer (specifying account address override)
         smartAccount = new SmartAccount(
             client: client,
             personalAccount: privateKeyAccount,
@@ -88,13 +94,13 @@ internal class Program
         Console.WriteLine($"Embedded Account: {await embeddedAccount.GetAddress()}");
         Console.WriteLine($"Smart Account: {await smartAccount.GetAddress()}");
 
-        // Initialize wallet
+        // Initialize wallet (a wallet can hold multiple accounts, but only one can be active at a time)
         var thirdwebWallet = new ThirdwebWallet();
         await thirdwebWallet.Initialize(new List<IThirdwebAccount> { privateKeyAccount, embeddedAccount, smartAccount });
         thirdwebWallet.SetActive(await smartAccount.GetAddress());
         Console.WriteLine($"Active account: {await thirdwebWallet.GetAddress()}");
 
-        // Sign, triggering deploy as needed and 1271 verification
+        // Sign, triggering deploy as needed and 1271 verification if it's a smart wallet
         var message = "Hello, Thirdweb!";
         var signature = await thirdwebWallet.PersonalSign(message);
         Console.WriteLine($"Signed message: {signature}");
@@ -107,5 +113,15 @@ internal class Program
 
         var balanceAfter = await ThirdwebContract.ReadContract<BigInteger>(contract, "balanceOf", await thirdwebWallet.GetAddress());
         Console.WriteLine($"Balance after mint: {balanceAfter}");
+
+        // Storage actions
+
+        // // Will download from IPFS or normal urls
+        // var downloadResult = await ThirdwebStorage.Download<string>(client: client, uri: "AnyUrlIncludingIpfs");
+        // Console.WriteLine($"Download result: {downloadResult}");
+
+        // // Will upload to IPFS
+        // var uploadResult = await ThirdwebStorage.Upload(client: client, path: "AnyPath");
+        // Console.WriteLine($"Upload result preview: {uploadResult.PreviewUrl}");
     }
 }
