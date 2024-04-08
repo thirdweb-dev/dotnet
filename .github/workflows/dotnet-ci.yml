@@ -30,7 +30,7 @@ jobs:
       - name: Test
         run: |
           dotnet tool install --global coverlet.console
-          dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=./coverage.info
+          dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=./coverage.info /p:ExcludeByFile="**/Thirdweb/Thirdweb.Wallets/EmbeddedAccount/*"
         shell: bash
         env:
           THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
