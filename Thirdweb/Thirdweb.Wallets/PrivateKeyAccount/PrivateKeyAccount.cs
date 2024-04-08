@@ -68,7 +68,7 @@ namespace Thirdweb
 
         public Task<string> PersonalSign(string message)
         {
-            if (message == null)
+            if (string.IsNullOrEmpty(message))
             {
                 throw new ArgumentNullException(nameof(message), "Message to sign cannot be null.");
             }
@@ -80,7 +80,7 @@ namespace Thirdweb
 
         public Task<string> SignTypedDataV4(string json)
         {
-            if (json == null)
+            if (string.IsNullOrEmpty(json))
             {
                 throw new ArgumentNullException(nameof(json), "Json to sign cannot be null.");
             }
@@ -127,6 +127,10 @@ namespace Thirdweb
             string signedTransaction;
             if (transaction.Type != null && transaction.Type.Value == TransactionType.EIP1559.AsByte())
             {
+                if (transaction.MaxPriorityFeePerGas == null || transaction.MaxFeePerGas == null)
+                {
+                    throw new InvalidOperationException("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions");
+                }
                 var maxPriorityFeePerGas = transaction.MaxPriorityFeePerGas.Value;
                 var maxFeePerGas = transaction.MaxFeePerGas.Value;
                 var transaction1559 = new Transaction1559(
@@ -147,6 +151,10 @@ namespace Thirdweb
             }
             else
             {
+                if (transaction.GasPrice == null)
+                {
+                    throw new InvalidOperationException("Transaction gas price must be set for legacy transactions");
+                }
                 var gasPrice = transaction.GasPrice;
                 var legacySigner = new LegacyTransactionSigner();
                 signedTransaction = legacySigner.SignTransaction(_ecKey.GetPrivateKey(), chainId, transaction.To, value.Value, nonce, gasPrice.Value, gasLimit.Value, transaction.Data);
