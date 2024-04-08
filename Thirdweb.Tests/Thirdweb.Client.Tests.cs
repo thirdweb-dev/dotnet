@@ -97,4 +97,12 @@ public class ClientTests : BaseTests
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage));
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
     }
+
+    [Fact]
+    public void OtherTimeoutOptions()
+    {
+        var client = new ThirdwebClient(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(other: 30000));
+        Assert.NotNull(client.FetchTimeoutOptions);
+        Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+    }
 }
