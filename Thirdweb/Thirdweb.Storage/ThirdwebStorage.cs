@@ -11,7 +11,7 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(uri));
             }
 
-            uri = uri.ReplaceIPFS(string.IsNullOrEmpty(client.ClientId) ? Constants.FALLBACK_IPFS_GATEWAY : $"https://{client.ClientId}.ipfscdn.io/ipfs/");
+            uri = uri.ReplaceIPFS($"https://{client.ClientId}.ipfscdn.io/ipfs/");
 
             using var httpClient = new HttpClient();
 
@@ -41,11 +41,6 @@ namespace Thirdweb
 
         public static async Task<IPFSUploadResult> Upload(ThirdwebClient client, string path)
         {
-            if (string.IsNullOrEmpty(client.ClientId))
-            {
-                throw new UnauthorizedAccessException("You cannot use Upload features without setting a Client ID.");
-            }
-
             if (string.IsNullOrEmpty(path))
             {
                 throw new ArgumentNullException(nameof(path));
