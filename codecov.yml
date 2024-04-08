@@ -1,0 +1,2 @@
+ignore:
+	- "Thirdweb/Thirdweb.Wallets/EmbeddedAccount"
