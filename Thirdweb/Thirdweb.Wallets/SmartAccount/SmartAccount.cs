@@ -342,7 +342,7 @@ namespace Thirdweb
         public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
             where TDomain : IDomain
         {
-            throw new NotImplementedException();
+            return _personalAccount.SignTypedDataV4(data, typedData);
         }
 
         public Task<string> SignTransaction(TransactionInput transaction, BigInteger chainId)
@@ -357,7 +357,8 @@ namespace Thirdweb
 
         public Task Disconnect()
         {
-            return _personalAccount.Disconnect();
+            _accountContract = null;
+            return Task.CompletedTask;
         }
     }
 }
