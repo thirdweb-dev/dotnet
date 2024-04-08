@@ -6,7 +6,6 @@ using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Signer;
-using Newtonsoft.Json;
 
 namespace Thirdweb
 {
@@ -84,6 +83,27 @@ namespace Thirdweb
         {
             var signer = new EthereumMessageSigner();
             return signer.HashPrefixedMessage(Encoding.UTF8.GetBytes(message)).ToHex(true);
+        }
+
+        public static string BytesToHex(byte[] bytes)
+        {
+            return bytes.ToHex(true);
+        }
+
+        public static byte[] HexToBytes(string hex)
+        {
+            return hex.HexToByteArray();
+        }
+
+        public static string StringToHex(string str)
+        {
+            return "0x" + Encoding.UTF8.GetBytes(str).ToHex();
+        }
+
+        public static string HexToString(string hex)
+        {
+            var array = HexToBytes(hex);
+            return Encoding.UTF8.GetString(array, 0, array.Length);
         }
 
         public static long GetUnixTimeStampNow()
