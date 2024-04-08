@@ -87,6 +87,12 @@ public class UtilsTests : BaseTests
         var infiniteReceipt = await Assert.ThrowsAsync<TaskCanceledException>(async () => await Utils.GetTransactionReceipt(client, chainId, infiniteTxHash, cts.Token));
         Assert.Equal("A task was canceled.", infiniteReceipt.Message);
 
+        cts = new CancellationTokenSource();
+        var infiniteReceipt2 = Assert.ThrowsAsync<TaskCanceledException>(() => Utils.GetTransactionReceipt(client, chainId, infiniteTxHash, cts.Token));
+        await Task.Delay(2000);
+        cts.Cancel();
+        Assert.Equal("A task was canceled.", (await infiniteReceipt2).Message);
+
         var aaReceipt2 = await Utils.GetTransactionReceipt(client, chainId, aaTxHash, CancellationToken.None);
         Assert.NotNull(aaReceipt2);
     }
