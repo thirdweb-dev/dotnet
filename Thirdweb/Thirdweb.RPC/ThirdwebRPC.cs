@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace Thirdweb
@@ -29,8 +24,20 @@ namespace Thirdweb
         private readonly string _secretKey;
         private readonly string _bundleId;
 
+        private bool _disposed = false;
+
         public static ThirdwebRPC GetRpcInstance(ThirdwebClient client, BigInteger chainId)
         {
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
+            if (chainId == 0)
+            {
+                throw new ArgumentException("Invalid Chain ID");
+            }
+
             var key = $"{client.ClientId}_{chainId}_{client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc)}";
 
             if (!_rpcs.ContainsKey(key))
@@ -99,11 +106,6 @@ namespace Thirdweb
 
         private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
         {
-            if (client == null)
-                throw new ArgumentNullException(nameof(client));
-            if (chainId == 0)
-                throw new ArgumentException("Chain ID must be provided");
-
             _clientId = client.ClientId;
             _secretKey = client.SecretKey;
             _bundleId = client.BundleId;
@@ -116,7 +118,9 @@ namespace Thirdweb
         private void SendBatchNow()
         {
             if (_pendingBatch.Count == 0)
+            {
                 return;
+            }
 
             List<RpcRequest> batchToSend;
             lock (_pendingBatch)
@@ -134,11 +138,19 @@ namespace Thirdweb
 
             var requestMessage = new HttpRequestMessage(HttpMethod.Post, _rpcUrl) { Content = new StringContent(batchJson, Encoding.UTF8, "application/json") };
             if (!string.IsNullOrEmpty(_clientId))
+            {
                 requestMessage.Headers.Add("x-client-id", _clientId);
+            }
+
             if (!string.IsNullOrEmpty(_secretKey))
+            {
                 requestMessage.Headers.Add("x-secret-key", _secretKey);
+            }
+
             if (!string.IsNullOrEmpty(_bundleId))
+            {
                 requestMessage.Headers.Add("x-bundle-id", _bundleId);
+            }
 
             try
             {
@@ -196,11 +208,6 @@ namespace Thirdweb
                     kvp.Value.TrySetException(ex);
                 }
             }
-        }
-
-        public void Dispose()
-        {
-            _batchSendTimer.Dispose();
         }
     }
 }
