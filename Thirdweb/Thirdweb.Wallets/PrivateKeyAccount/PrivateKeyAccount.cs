@@ -13,7 +13,7 @@ namespace Thirdweb
 {
     public class PrivateKeyAccount : IThirdwebAccount
     {
-        public ThirdwebAccountType AccountType => ThirdwebAccountType.SmartAccount;
+        public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
 
         private ThirdwebClient _client;
         private EthECKey _ecKey;
