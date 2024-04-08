@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  build-test-cov:
     runs-on: ubuntu-latest
 
     steps:
@@ -43,3 +43,4 @@ jobs:
           directory: ./
           flags: unittests, integrationtests
           verbose: true
+          slug: thirdweb-dev/thirdweb-dotnet
