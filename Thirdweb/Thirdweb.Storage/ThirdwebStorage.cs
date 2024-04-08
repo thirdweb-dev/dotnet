@@ -41,11 +41,6 @@ namespace Thirdweb
 
         public static async Task<IPFSUploadResult> Upload(ThirdwebClient client, string path)
         {
-            if (string.IsNullOrEmpty(client.ClientId))
-            {
-                throw new UnauthorizedAccessException("You cannot use Upload features without setting a Client ID.");
-            }
-
             if (string.IsNullOrEmpty(path))
             {
                 throw new ArgumentNullException(nameof(path));
