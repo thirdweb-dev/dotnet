@@ -173,7 +173,7 @@ public class PrivateKeyAccountTests : BaseTests
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
-            Value = new HexBigInteger(0),
+            // Value = new HexBigInteger(0),
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
