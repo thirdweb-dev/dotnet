@@ -42,6 +42,5 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: ./
-          flags: unittests, integrationtests
           verbose: true
           slug: thirdweb-dev/thirdweb-dotnet
