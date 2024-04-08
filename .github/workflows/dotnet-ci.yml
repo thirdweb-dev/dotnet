@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    types: [opened, synchronize]
 
 jobs:
   build-test-cov:
@@ -42,6 +42,5 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: ./
-          flags: unittests, integrationtests
           verbose: true
           slug: thirdweb-dev/thirdweb-dotnet
