@@ -42,6 +42,56 @@ public class UtilsTests : BaseTests
     }
 
     [Fact]
+    public async Task GetTransactionReceipt_AAReasonString()
+    {
+        var client = new ThirdwebClient(secretKey: _secretKey);
+        var chainId = 84532;
+        var aaSilentRevertTxHashWithReason = "0x5374743bbb749df47a279ac21e6ed472c30cd471923a7bc78db6a40e1b6924de";
+        var aaFailedReceiptWithReason = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetTransactionReceipt(client, chainId, aaSilentRevertTxHashWithReason));
+        Assert.StartsWith($"Transaction {aaSilentRevertTxHashWithReason} execution silently reverted:", aaFailedReceiptWithReason.Message);
+    }
+
+    [Fact]
+    public async Task GetTransactionReceipt_CancellationToken()
+    {
+        var client = new ThirdwebClient(secretKey: _secretKey);
+        var chainId = 421614;
+        var normalTxHash = "0x5a0b6cdb01ecfb25b368d3de1ac844414980ee3c330ec8c1435117b75027b5d7";
+        var failedTxHash = "0xd2840219ffe172377c8a455c13d95e4dca204d5c0dd72232093e092eef412488";
+        var aaTxHash = "0xbf76bd85e1759cf5cf9f4c7c52e76a74d32687f0b516017ff28192d04df50782";
+        var aaSilentRevertTxHash = "0x8ada86c63846da7a3f91b8c8332de03f134e7619886425df858ee5400a9d9958";
+
+        var cts = new CancellationTokenSource();
+        cts.CancelAfter(10000);
+        var normalReceipt = await Utils.GetTransactionReceipt(client, chainId, normalTxHash, cts.Token);
+        Assert.NotNull(normalReceipt);
+
+        cts = new CancellationTokenSource();
+        cts.CancelAfter(10000);
+        var failedReceipt = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetTransactionReceipt(client, chainId, failedTxHash, cts.Token));
+        Assert.Equal($"Transaction {failedTxHash} execution reverted.", failedReceipt.Message);
+
+        cts = new CancellationTokenSource();
+        cts.CancelAfter(10000);
+        var aaReceipt = await Utils.GetTransactionReceipt(client, chainId, aaTxHash, cts.Token);
+        Assert.NotNull(aaReceipt);
+
+        cts = new CancellationTokenSource();
+        cts.CancelAfter(10000);
+        var aaFailedReceipt = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetTransactionReceipt(client, chainId, aaSilentRevertTxHash, cts.Token));
+        Assert.StartsWith($"Transaction {aaSilentRevertTxHash} execution silently reverted", aaFailedReceipt.Message);
+
+        var infiniteTxHash = "0x55181384a4b908ddf6311cf0eb55ea0aa2b1ef4d9e0cc047eab9051fec284958";
+        cts = new CancellationTokenSource();
+        cts.CancelAfter(1);
+        var infiniteReceipt = await Assert.ThrowsAsync<TaskCanceledException>(async () => await Utils.GetTransactionReceipt(client, chainId, infiniteTxHash, cts.Token));
+        Assert.Equal("A task was canceled.", infiniteReceipt.Message);
+
+        var aaReceipt2 = await Utils.GetTransactionReceipt(client, chainId, aaTxHash, CancellationToken.None);
+        Assert.NotNull(aaReceipt2);
+    }
+
+    [Fact]
     public void HashPrefixedMessage()
     {
         var messageStr = "Hello, World!";
