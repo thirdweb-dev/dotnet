@@ -24,8 +24,6 @@ namespace Thirdweb
         private readonly string _secretKey;
         private readonly string _bundleId;
 
-        private bool _disposed = false;
-
         public static ThirdwebRPC GetRpcInstance(ThirdwebClient client, BigInteger chainId)
         {
             if (client == null)
