@@ -1,6 +1,8 @@
 ﻿using System.Numerics;
 using Nethereum.Hex.HexTypes;
+using Nethereum.Model;
 using Nethereum.RPC.Eth.DTOs;
+using Org.BouncyCastle.Utilities.Encoders;
 
 namespace Thirdweb
 {
@@ -69,13 +71,14 @@ namespace Thirdweb
             // TODO: Implement 1559
             transaction.Gas = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_estimateGas", transaction));
             transaction.GasPrice = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice"));
+            transaction.GasPrice = new HexBigInteger(transaction.GasPrice.Value * 10 / 9);
             transaction.Value = new HexBigInteger(weiValue);
 
             string hash;
             if (wallet.ActiveAccount.AccountType is ThirdwebAccountType.PrivateKeyAccount)
             {
-                transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", wallet.GetAddress(), "latest"));
-                var signedTx = wallet.SignTransaction(transaction, contract.Chain);
+                transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await wallet.GetAddress(), "latest"));
+                var signedTx = await wallet.SignTransaction(transaction, contract.Chain);
                 Console.WriteLine($"Signed transaction: {signedTx}");
                 hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
             }
