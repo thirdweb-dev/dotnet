@@ -9,6 +9,34 @@ public class ContractsTests : BaseTests
         : base(output) { }
 
     [Fact]
+    public void InitTest_NullClient()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => new ThirdwebContract(null, "0x123", 1, "[]"));
+        Assert.Contains("Client must be provided", exception.Message);
+    }
+
+    [Fact]
+    public void InitTest_NullAddress()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => new ThirdwebContract(new ThirdwebClient(secretKey: _secretKey), null, 1, "[]"));
+        Assert.Contains("Address must be provided", exception.Message);
+    }
+
+    [Fact]
+    public void InitTest_ZeroChain()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => new ThirdwebContract(new ThirdwebClient(secretKey: _secretKey), "0x123", 0, "[]"));
+        Assert.Contains("Chain must be provided", exception.Message);
+    }
+
+    [Fact]
+    public void InitTest_NullAbi()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => new ThirdwebContract(new ThirdwebClient(secretKey: _secretKey), "0x123", 1, null));
+        Assert.Contains("Abi must be provided", exception.Message);
+    }
+
+    [Fact]
     public async Task ReadTest_String()
     {
         var contract = GetContract();

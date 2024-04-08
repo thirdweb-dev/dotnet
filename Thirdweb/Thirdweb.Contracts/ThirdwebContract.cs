@@ -75,21 +75,19 @@ namespace Thirdweb
             transaction.Value = new HexBigInteger(weiValue);
 
             string hash;
-            if (wallet.ActiveAccount.AccountType is ThirdwebAccountType.PrivateKeyAccount)
+            switch (wallet.ActiveAccount.AccountType)
             {
-                transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await wallet.GetAddress(), "latest"));
-                var signedTx = await wallet.SignTransaction(transaction, contract.Chain);
-                Console.WriteLine($"Signed transaction: {signedTx}");
-                hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
-            }
-            else if (wallet.ActiveAccount.AccountType is ThirdwebAccountType.SmartAccount)
-            {
-                var smartAccount = wallet.ActiveAccount as SmartAccount;
-                hash = await smartAccount.SendTransaction(transaction);
-            }
-            else
-            {
-                throw new NotImplementedException("Account type not supported");
+                case ThirdwebAccountType.PrivateKeyAccount:
+                    transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await wallet.GetAddress(), "latest"));
+                    var signedTx = await wallet.SignTransaction(transaction, contract.Chain);
+                    hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
+                    break;
+                case ThirdwebAccountType.SmartAccount:
+                    var smartAccount = wallet.ActiveAccount as SmartAccount;
+                    hash = await smartAccount.SendTransaction(transaction);
+                    break;
+                default:
+                    throw new NotImplementedException("Account type not supported");
             }
             Console.WriteLine($"Transaction hash: {hash}");
             return hash;
