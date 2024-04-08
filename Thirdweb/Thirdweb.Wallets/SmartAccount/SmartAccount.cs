@@ -47,7 +47,7 @@ namespace Thirdweb
             _gasless = gasless;
             _chainId = chainId;
             _accountAddressOverride = accountAddressOverride;
-            _entryPoint ??= $"0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"; // v0.6.0
+            _entryPoint ??= Constants.DEFAULT_ENTRYPOINT_ADDRESS;
             _bundlerUrl ??= $"https://{chainId}.bundler.thirdweb.com";
             _paymasterUrl ??= $"https://{chainId}.bundler.thirdweb.com";
         }
