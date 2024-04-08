@@ -22,6 +22,15 @@ public class StorageTests : BaseTests
     }
 
     [Fact]
+    public async Task DownloadTest_Deserialization()
+    {
+        var client = new ThirdwebClient(secretKey: _secretKey);
+        var res = await ThirdwebStorage.Download<List<string>>(client, "https://1.rpc.thirdweb.com/providers");
+        Assert.NotNull(res);
+        Assert.NotEmpty(res);
+    }
+
+    [Fact]
     public async Task DownloadTest_NullUri()
     {
         var client = new ThirdwebClient(secretKey: _secretKey);
