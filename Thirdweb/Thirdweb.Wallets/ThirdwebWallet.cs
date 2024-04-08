@@ -84,14 +84,12 @@ namespace Thirdweb
             return await ActiveAccount.IsConnected();
         }
 
-        public async Task Disconnect()
+        public async Task DisconnectAll()
         {
             foreach (var account in Accounts.Values)
             {
                 await account.Disconnect();
             }
-
-            ActiveAccount = null;
         }
     }
 }

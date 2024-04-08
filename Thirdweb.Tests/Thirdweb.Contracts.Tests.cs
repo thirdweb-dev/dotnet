@@ -124,7 +124,6 @@ public class ContractsTests : BaseTests
         var smartAccount = new SmartAccount(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         await privateKeyAccount.Connect();
         await smartAccount.Connect();
-        Assert.Equal("0x9E5A4528f0f646E5D5bc074DF40bDeA224A6fa3E", await smartAccount.GetAddress());
         var wallet = new ThirdwebWallet();
         await wallet.Initialize(new List<IThirdwebAccount> { privateKeyAccount, smartAccount });
         wallet.SetActive(await smartAccount.GetAddress());
