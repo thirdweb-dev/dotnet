@@ -164,11 +164,6 @@ namespace Thirdweb
                 var responseJson = await response.Content.ReadAsStringAsync();
                 var responses = JsonConvert.DeserializeObject<List<RpcResponse<object>>>(responseJson);
 
-                if (responses == null)
-                {
-                    throw new InvalidOperationException("Failed to deserialize RPC response.");
-                }
-
                 foreach (var rpcResponse in responses)
                 {
                     if (_responseCompletionSources.TryGetValue(rpcResponse.Id, out var tcs))

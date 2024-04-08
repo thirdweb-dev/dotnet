@@ -88,6 +88,7 @@ public class ClientTests : BaseTests
         Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage));
         Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
         Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+        Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other + 1));
     }
 
     [Fact]
@@ -98,5 +99,6 @@ public class ClientTests : BaseTests
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage));
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+        Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other + 1));
     }
 }
