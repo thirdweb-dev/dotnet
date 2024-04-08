@@ -83,10 +83,11 @@ public class ClientTests : BaseTests
     [Fact]
     public void TimeoutOptions()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 30000));
+        var client = new ThirdwebClient(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 30000, other: 30000));
         Assert.NotNull(client.FetchTimeoutOptions);
         Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage));
         Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
+        Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
     }
 
     [Fact]
@@ -96,13 +97,6 @@ public class ClientTests : BaseTests
         Assert.NotNull(client.FetchTimeoutOptions);
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage));
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
-    }
-
-    [Fact]
-    public void OtherTimeoutOptions()
-    {
-        var client = new ThirdwebClient(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(other: 30000));
-        Assert.NotNull(client.FetchTimeoutOptions);
-        Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+        Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
     }
 }
