@@ -7,19 +7,19 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  build-test-cov:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
             8.0.x
 
-      - name: Restore dependencies
+      - name: Restore
         run: dotnet restore
         working-directory: ./
 
@@ -28,9 +28,20 @@ jobs:
         working-directory: ./
 
       - name: Test
-        run: dotnet test --verbosity minimal
+        run: |
+          dotnet tool install --global coverlet.console
+          dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=./coverage.info
         shell: bash
         env:
           THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
           THIRDWEB_CLIENT_ID_BUNDLE_ID_ONLY: ${{ secrets.THIRDWEB_CLIENT_ID_BUNDLE_ID_ONLY }}
           THIRDWEB_BUNDLE_ID_BUNDLE_ID_ONLY: ${{ secrets.THIRDWEB_BUNDLE_ID_BUNDLE_ID_ONLY }}
+
+      - name: Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./
+          flags: unittests, integrationtests
+          verbose: true
+          slug: thirdweb-dev/thirdweb-dotnet
