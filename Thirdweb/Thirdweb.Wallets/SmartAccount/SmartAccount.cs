@@ -56,7 +56,7 @@ namespace Thirdweb
         {
             if (!await _personalAccount.IsConnected())
             {
-                throw new Exception("SmartAccount.Connect: Personal account must be connected.");
+                throw new InvalidOperationException("SmartAccount.Connect: Personal account must be connected.");
             }
 
             _entryPointContract = new ThirdwebContract(
@@ -88,6 +88,10 @@ namespace Thirdweb
 
         public async Task<string> SendTransaction(TransactionInput transaction)
         {
+            if (transaction == null)
+            {
+                throw new InvalidOperationException("SmartAccount.SendTransaction: Transaction input is required.");
+            }
             var signedOp = await SignUserOp(transaction);
             return await SendUserOp(signedOp);
         }
@@ -318,6 +322,62 @@ namespace Thirdweb
                 PermissionEndTimestamp = BigInteger.Parse(permissionEndTimestamp),
                 ReqValidityStartTimestamp = BigInteger.Parse(reqValidityStartTimestamp),
                 ReqValidityEndTimestamp = BigInteger.Parse(reqValidityEndTimestamp),
+                Uid = Guid.NewGuid().ToByteArray()
+            };
+
+            var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
+            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
+            var txInput = new TransactionInput()
+            {
+                From = await GetAddress(),
+                To = _accountContract.Address,
+                Value = new HexBigInteger(0),
+                Data = data
+            };
+            var txHash = await SendTransaction(txInput);
+            return await Utils.GetTransactionReceipt(_client, _chainId, txHash);
+        }
+
+        public async Task<TransactionReceipt> AddAdmin(string admin)
+        {
+            var request = new SignerPermissionRequest()
+            {
+                Signer = admin,
+                IsAdmin = 1,
+                ApprovedTargets = new List<string>(),
+                NativeTokenLimitPerTransaction = 0,
+                PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+                PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+                ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+                ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+                Uid = Guid.NewGuid().ToByteArray()
+            };
+
+            var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
+            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
+            var txInput = new TransactionInput()
+            {
+                From = await GetAddress(),
+                To = _accountContract.Address,
+                Value = new HexBigInteger(0),
+                Data = data
+            };
+            var txHash = await SendTransaction(txInput);
+            return await Utils.GetTransactionReceipt(_client, _chainId, txHash);
+        }
+
+        public async Task<TransactionReceipt> RemoveAdmin(string admin)
+        {
+            var request = new SignerPermissionRequest()
+            {
+                Signer = admin,
+                IsAdmin = 2,
+                ApprovedTargets = new List<string>(),
+                NativeTokenLimitPerTransaction = 0,
+                PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+                PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+                ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+                ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
                 Uid = Guid.NewGuid().ToByteArray()
             };
 
