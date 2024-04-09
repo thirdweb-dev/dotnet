@@ -1,5 +1,7 @@
 # Thirdweb .NET SDK
 
+[![codecov](https://codecov.io/gh/thirdweb-dev/thirdweb-dotnet/graph/badge.svg?token=AFF179W07C)](https://codecov.io/gh/thirdweb-dev/thirdweb-dotnet)
+
 ## Overview
 
 The Thirdweb .NET SDK is a powerful library that allows developers to interact with the blockchain using the .NET framework.
@@ -20,6 +22,58 @@ dotnet add package Thirdweb
 ```
 
 ## Usage
+
+**Simple Example**
+
+```csharp
+// Generate a thirdweb client
+var client = new ThirdwebClient(clientId: "myClientId", bundleId: "com.my.bundleid");
+
+// Define a contract
+var contract = new ThirdwebContract(client: client, address: "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", chain: 1, abi: "MyC#EscapedContractABI");
+
+// Read from any contract
+var readResult = await ThirdwebContract.ReadContract<string>(contract, "name");
+Console.WriteLine($"Contract read result: {readResult}");
+
+// Generate a persistent cross platform EOA to act as a signer
+var embeddedAccount = new EmbeddedAccount(client: client, email: "email@email.com"); // or email: null, phoneNumber: "+1234567890"
+await embeddedAccount.Connect();
+// If no previous session exists
+if (!await embeddedAccount.IsConnected())
+{
+    await embeddedAccount.SendOTP();
+    Console.WriteLine("Please submit the OTP.");
+    var otp = Console.ReadLine();
+    (var embeddedAccountAddress, var canRetry) = await embeddedAccount.SubmitOTP(otp);
+    if (embeddedAccountAddress == null && canRetry)
+    {
+        Console.WriteLine("Please submit the OTP again.");
+        otp = Console.ReadLine();
+        (embeddedAccountAddress, _) = await embeddedAccount.SubmitOTP(otp);
+    }
+    if (embeddedAccountAddress == null)
+    {
+        Console.WriteLine("OTP login failed. Please try again.");
+        return;
+    }
+}
+
+// Finally, upgrade that signer to a Smart Account to unlock onchain features such as gasless txs and session keys out of the box
+var smartAccount = new SmartAccount(client: client, personalAccount: embeddedAccount, factoryAddress: "mySmartAccountFactory", gasless: true, chainId: 421614);
+await smartAccount.Connect();
+
+// Generate a top level wallet for users (wallets may contain multiple accounts, but don't have to)
+var thirdwebWallet = new ThirdwebWallet();
+await thirdwebWallet.Initialize(new List<IThirdwebAccount> { smartAccount });
+
+// Write to any contract!
+var writeResult = await ThirdwebContract.WriteContract(thirdwebWallet, contract, "mintTo", 0, await thirdwebWallet.GetAddress(), 100);
+Console.WriteLine($"Contract write result: {writeResult}");
+
+```
+
+**Advanced Example**
 
 ```csharp
 using Thirdweb;
