@@ -69,29 +69,11 @@ namespace Thirdweb.AccountAbstraction
         public virtual byte[] Calldata { get; set; }
     }
 
-    [Function("createAccount", "address")]
-    public class CreateAccountFunction : FunctionMessage
-    {
-        [Parameter("address", "_admin", 1)]
-        public virtual string Admin { get; set; }
-
-        [Parameter("bytes", "_data", 2)]
-        public virtual byte[] Data { get; set; }
-    }
-
     public class EthEstimateUserOperationGasResponse
     {
         public string PreVerificationGas { get; set; }
         public string VerificationGas { get; set; }
         public string CallGasLimit { get; set; }
-    }
-
-    public class EthGetUserOperationByHashResponse
-    {
-        public string entryPoint { get; set; }
-        public string transactionHash { get; set; }
-        public string blockHash { get; set; }
-        public string blockNumber { get; set; }
     }
 
     public class EthGetUserOperationReceiptResponse
