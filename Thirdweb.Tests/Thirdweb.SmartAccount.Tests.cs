@@ -77,6 +77,25 @@ public class SmartAccountTests : BaseTests
     }
 
     [Fact]
+    public async Task SendTransaction_ClientBundleId_Success()
+    {
+        var client = new ThirdwebClient(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
+        var privateKeyAccount = new PrivateKeyAccount(client, _testPrivateKey);
+        await privateKeyAccount.Connect();
+        var smartAccount = new SmartAccount(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        await smartAccount.Connect();
+        var tx = await smartAccount.SendTransaction(
+            new TransactionInput()
+            {
+                From = await smartAccount.GetAddress(),
+                To = await smartAccount.GetAddress(),
+                Value = new HexBigInteger(BigInteger.Parse("0")),
+            }
+        );
+        Assert.NotNull(tx);
+    }
+
+    [Fact]
     public async Task SendTransaction_Fail()
     {
         var account = await GetSmartAccount();
