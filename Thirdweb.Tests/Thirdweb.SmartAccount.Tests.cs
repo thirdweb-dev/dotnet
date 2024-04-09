@@ -93,6 +93,15 @@ public class SmartAccountTests : BaseTests
     }
 
     [Fact]
+    public async Task GetPersonalAccount()
+    {
+        var account = await GetSmartAccount();
+        var personalAccount = await account.GetPersonalAccount();
+        Assert.NotNull(personalAccount);
+        _ = Assert.IsType<PrivateKeyAccount>(personalAccount);
+    }
+
+    [Fact]
     public async Task GetAddress_WithOverride()
     {
         var client = new ThirdwebClient(secretKey: _secretKey);

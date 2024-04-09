@@ -239,6 +239,11 @@ namespace Thirdweb
             _ = await Utils.GetTransactionReceipt(_client, _chainId, txHash);
         }
 
+        public Task<IThirdwebAccount> GetPersonalAccount()
+        {
+            return Task.FromResult(_personalAccount);
+        }
+
         public Task<string> GetAddress()
         {
             return Task.FromResult(_accountContract.Address);

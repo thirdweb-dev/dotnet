@@ -105,9 +105,39 @@ public class WalletTests : BaseTests
     {
         var wallet = await GetWallet();
         var typedData = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 421614, await wallet.GetAddress());
-        var accountMessage = new AccountAbstraction.AccountMessage { Message = System.Text.Encoding.UTF8.GetBytes("Hello, world!") };
+        var accountMessage = new AccountAbstraction.AccountMessage { Message = System.Text.Encoding.UTF8.GetBytes("Hello, world!").HashPrefixedMessage() };
         var signature = await wallet.SignTypedDataV4(accountMessage, typedData);
         Assert.NotNull(signature);
+
+        var signerAcc = await ((SmartAccount)wallet.ActiveAccount).GetPersonalAccount();
+        var gen1 = await EIP712.GenerateSignature_SmartAccount_AccountMessage(
+            "Account",
+            "1",
+            421614,
+            await wallet.GetAddress(),
+            System.Text.Encoding.UTF8.GetBytes("Hello, world!").HashPrefixedMessage(),
+            signerAcc
+        );
+        Assert.Equal(gen1, signature);
+
+        var req = new AccountAbstraction.SignerPermissionRequest()
+        {
+            Signer = await wallet.GetAddress(),
+            IsAdmin = 0,
+            ApprovedTargets = new List<string>() { Constants.ADDRESS_ZERO },
+            NativeTokenLimitPerTransaction = 0,
+            PermissionStartTimestamp = 0,
+            ReqValidityStartTimestamp = 0,
+            PermissionEndTimestamp = 0,
+            Uid = new byte[32]
+        };
+
+        var typedData2 = EIP712.GetTypedDefinition_SmartAccount("Account", "1", 421614, await wallet.GetAddress());
+        var signature2 = await wallet.SignTypedDataV4(req, typedData2);
+        Assert.NotNull(signature2);
+
+        var gen2 = await EIP712.GenerateSignature_SmartAccount("Account", "1", 421614, await wallet.GetAddress(), req, signerAcc);
+        Assert.Equal(gen2, signature2);
     }
 
     [Fact]
