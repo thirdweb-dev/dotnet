@@ -9,6 +9,14 @@ public class ContractsTests : BaseTests
         : base(output) { }
 
     [Fact]
+    public async Task FetchAbi()
+    {
+        var abi = await ThirdwebContract.FetchAbi(address: "0x1320Cafa93fb53Ed9068E3272cb270adbBEf149C", chainId: 84532);
+        Assert.NotNull(abi);
+        Assert.NotEmpty(abi);
+    }
+
+    [Fact]
     public void InitTest_NullClient()
     {
         var exception = Assert.Throws<ArgumentException>(() => new ThirdwebContract(null, "0x123", 1, "[]"));

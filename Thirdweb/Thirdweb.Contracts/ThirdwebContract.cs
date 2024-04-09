@@ -41,6 +41,17 @@ namespace Thirdweb
             Abi = abi;
         }
 
+        public static async Task<string> FetchAbi(string address, BigInteger chainId)
+        {
+            var url = $"https://contract.thirdweb.com/abi/{chainId}/{address}";
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync(url);
+                _ = response.EnsureSuccessStatusCode();
+                return await response.Content.ReadAsStringAsync();
+            }
+        }
+
         public static async Task<T> ReadContract<T>(ThirdwebContract contract, string method, params object[] parameters)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(contract.Client, contract.Chain);

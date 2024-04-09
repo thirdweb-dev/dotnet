@@ -30,7 +30,8 @@ dotnet add package Thirdweb
 var client = new ThirdwebClient(clientId: "myClientId", bundleId: "com.my.bundleid");
 
 // Define a contract
-var contract = new ThirdwebContract(client: client, address: "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", chain: 1, abi: "MyC#EscapedContractABI");
+var abi = await ThirdwebContract.FetchAbi("0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", 1); // helper in case you don't have abi on hand
+var contract = new ThirdwebContract(client: client, address: "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", chain: 1, abi: abi);
 
 // Read from any contract
 var readResult = await ThirdwebContract.ReadContract<string>(contract, "name");
