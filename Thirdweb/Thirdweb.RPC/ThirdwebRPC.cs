@@ -175,11 +175,12 @@ namespace Thirdweb
                             {
                                 try
                                 {
-                                    revertMsg = new Nethereum.ABI.FunctionEncoding.FunctionCallDecoder().DecodeFunctionErrorMessage(Utils.StringToHex(rpcResponse.Error.Data.ToString()));
+                                    revertMsg = new Nethereum.ABI.FunctionEncoding.FunctionCallDecoder().DecodeFunctionErrorMessage(rpcResponse.Error.Data);
+                                    revertMsg = string.IsNullOrWhiteSpace(revertMsg) ? rpcResponse.Error.Data : revertMsg;
                                 }
                                 catch
                                 {
-                                    revertMsg = rpcResponse.Error.Data.ToString();
+                                    revertMsg = rpcResponse.Error.Data;
                                 }
                             }
                             tcs.SetException(new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message} {revertMsg}"));
