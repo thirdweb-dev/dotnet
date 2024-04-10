@@ -48,6 +48,11 @@ namespace Thirdweb
             return new EmbeddedAccount(client, email, phoneNumber, embeddedWallet, ecKey);
         }
 
+        public async Task ClearSession()
+        {
+            await _embeddedWallet.SignOutAsync();
+        }
+
         #region OTP Flow
 
         public async Task SendOTP()
