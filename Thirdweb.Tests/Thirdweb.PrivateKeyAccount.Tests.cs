@@ -9,10 +9,10 @@ public class PrivateKeyAccountTests : BaseTests
     public PrivateKeyAccountTests(ITestOutputHelper output)
         : base(output) { }
 
-    private async Task<PrivateKeyAccount> GetAccount()
+    private async Task<PrivateKeyWallet> GetAccount()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyAccount.Create(client: client, privateKeyHex: _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Create(client: client, privateKeyHex: _testPrivateKey);
         return privateKeyAccount;
     }
 
@@ -27,7 +27,7 @@ public class PrivateKeyAccountTests : BaseTests
     public async void Initialization_NullPrivateKey()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () => await PrivateKeyAccount.Create(client, null));
+        var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () => await PrivateKeyWallet.Create(client, null));
         Assert.Equal("Private key cannot be null or empty. (Parameter 'privateKeyHex')", ex.Message);
     }
 

@@ -34,42 +34,42 @@ var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23
 var readResult = await ThirdwebContract.Read<string>(contract, "name");
 Console.WriteLine($"Contract read result: {readResult}");
 
-// Create embedded account as signer to unlock web2 auth
-var embeddedAccount = await EmbeddedAccount.Create(client: client, email: "email@email.com"); // or email: null, phoneNumber: "+1234567890"
+// Create InAppWallet wallet as signer to unlock web2 auth
+var inAppWallet = await InAppWallet.Create(client: client, email: "email@email.com"); // or email: null, phoneNumber: "+1234567890"
 
-// Relog if embedded account not logged in
-if (!await embeddedAccount.IsConnected())
+// Relog if InAppWallet wallet not logged in
+if (!await inAppWallet.IsConnected())
 {
-    await embeddedAccount.SendOTP();
+    await inAppWallet.SendOTP();
     Console.WriteLine("Please submit the OTP.");
     var otp = Console.ReadLine();
-    (var embeddedAccountAddress, var canRetry) = await embeddedAccount.SubmitOTP(otp);
-    if (embeddedAccountAddress == null && canRetry)
+    (var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
+    if (inAppWalletAddress == null && canRetry)
     {
         Console.WriteLine("Please submit the OTP again.");
         otp = Console.ReadLine();
-        (embeddedAccountAddress, _) = await embeddedAccount.SubmitOTP(otp);
+        (inAppWalletAddress, _) = await inAppWallet.SubmitOTP(otp);
     }
-    if (embeddedAccountAddress == null)
+    if (inAppWalletAddress == null)
     {
         Console.WriteLine("OTP login failed. Please try again.");
         return;
     }
 }
 
-// Create a smart account to unlock gasless features, with embedded account as a signer
-var smartAccount = await SmartAccount.Create(client: client, personalAccount: embeddedAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+// Create a smart wallet to unlock gasless features, with InAppWallet as a signer
+var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
 
 // Log addresses
-Console.WriteLine($"Embedded Account: {await embeddedAccount.GetAddress()}");
-Console.WriteLine($"Smart Account: {await smartAccount.GetAddress()}");
+Console.WriteLine($"InAppWallet: {await inAppWallet.GetAddress()}");
+Console.WriteLine($"Smart Wallet: {await smartWallet.GetAddress()}");
 
 // Sign, triggering deploy as needed and 1271 verification if it's a smart wallet
 var message = "Hello, Thirdweb!";
-var signature = await smartAccount.PersonalSign(message);
+var signature = await smartWallet.PersonalSign(message);
 Console.WriteLine($"Signed message: {signature}");
 
-var writeResult = await ThirdwebContract.Write(smartAccount, contract, "mintTo", 0, await smartAccount.GetAddress(), 100);
+var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
 Console.WriteLine($"Contract write result: {writeResult}");
 ```
 
@@ -80,7 +80,7 @@ using Thirdweb;
 
 // Do not use secret keys client side, use client id/bundle id instead
 var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
-// Do not use private keys client side, use embedded/smart accounts instead
+// Do not use private keys client side, use InAppWallet/SmartWallet instead
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
 // Fetch timeout options are optional, default is 60000ms
@@ -90,40 +90,42 @@ var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23
 var readResult = await ThirdwebContract.Read<string>(contract, "name");
 Console.WriteLine($"Contract read result: {readResult}");
 
-// Create accounts (this is an advanced use case, typically one account is plenty)
-var privateKeyAccount = await PrivateKeyAccount.Create(client: client, privateKeyHex: privateKey);
-var embeddedAccount = await EmbeddedAccount.Create(client: client, email: "email@email.com"); // or email: null, phoneNumber: "+1234567890"
-var smartAccount = await SmartAccount.Create(client: client, personalAccount: embeddedAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+// Create wallets (this is an advanced use case, typically one wallet is plenty)
+var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
+var inAppWallet = await InAppWallet.Create(client: client, email: "email@email.com"); // or email: null, phoneNumber: "+1234567890"
 
-// // Reset embedded account (optional step for testing login flow)
-// if (await embeddedAccount.IsConnected())
+// // Reset InAppWallet (optional step for testing login flow)
+// if (await inAppWallet.IsConnected())
 // {
-//     await embeddedAccount.Disconnect();
+//     await inAppWallet.Disconnect();
 // }
 
-// Relog if embedded account not logged in
-if (!await embeddedAccount.IsConnected())
+// Relog if InAppWallet not logged in
+if (!await inAppWallet.IsConnected())
 {
-    await embeddedAccount.SendOTP();
+    await inAppWallet.SendOTP();
     Console.WriteLine("Please submit the OTP.");
     var otp = Console.ReadLine();
-    (var embeddedAccountAddress, var canRetry) = await embeddedAccount.SubmitOTP(otp);
-    if (embeddedAccountAddress == null && canRetry)
+    (var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
+    if (inAppWalletAddress == null && canRetry)
     {
         Console.WriteLine("Please submit the OTP again.");
         otp = Console.ReadLine();
-        (embeddedAccountAddress, _) = await embeddedAccount.SubmitOTP(otp);
+        (inAppWalletAddress, _) = await inAppWallet.SubmitOTP(otp);
     }
-    if (embeddedAccountAddress == null)
+    if (inAppWalletAddress == null)
     {
         Console.WriteLine("OTP login failed. Please try again.");
         return;
     }
 }
 
-// Connect the smart account with embedded signer and grant a session key to pk account (advanced use case)
-_ = await smartAccount.CreateSessionKey(
-    signerAddress: await privateKeyAccount.GetAddress(),
+// Create smart wallet with InAppWallet signer
+var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+
+// Connect the smart wallet with InAppWallet signer and grant a session key to pk wallet (advanced use case)
+_ = await smartWallet.CreateSessionKey(
+    signerAddress: await privateKeyWallet.GetAddress(),
     approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
     nativeTokenLimitPerTransactionInWei: "0",
     permissionStartTimestamp: "0",
@@ -132,33 +134,33 @@ _ = await smartAccount.CreateSessionKey(
     reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
 );
 
-// Reconnect to same smart account with pk account as signer (specifying account address override)
-smartAccount = await SmartAccount.Create(
+// Reconnect to same smart wallet with pk wallet as signer (specifying wallet address override)
+smartWallet = await SmartWallet.Create(
     client: client,
-    personalAccount: privateKeyAccount,
+    personalWallet: privateKeyWallet,
     factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
     gasless: true,
     chainId: 421614,
-    accountAddressOverride: await smartAccount.GetAddress()
+    accountAddressOverride: await smartWallet.GetAddress()
 );
 
 // Log addresses
-Console.WriteLine($"PrivateKey Account: {await privateKeyAccount.GetAddress()}");
-Console.WriteLine($"Embedded Account: {await embeddedAccount.GetAddress()}");
-Console.WriteLine($"Smart Account: {await smartAccount.GetAddress()}");
+Console.WriteLine($"PrivateKey Wallet: {await privateKeyWallet.GetAddress()}");
+Console.WriteLine($"InAppWallet: {await inAppWallet.GetAddress()}");
+Console.WriteLine($"Smart Wallet: {await smartWallet.GetAddress()}");
 
 // Sign, triggering deploy as needed and 1271 verification if it's a smart wallet
 var message = "Hello, Thirdweb!";
-var signature = await smartAccount.PersonalSign(message);
+var signature = await smartWallet.PersonalSign(message);
 Console.WriteLine($"Signed message: {signature}");
 
-var balanceBefore = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartAccount.GetAddress());
+var balanceBefore = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartWallet.GetAddress());
 Console.WriteLine($"Balance before mint: {balanceBefore}");
 
-var writeResult = await ThirdwebContract.Write(smartAccount, contract, "mintTo", 0, await smartAccount.GetAddress(), 100);
+var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
 Console.WriteLine($"Contract write result: {writeResult}");
 
-var balanceAfter = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartAccount.GetAddress());
+var balanceAfter = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartWallet.GetAddress());
 Console.WriteLine($"Balance after mint: {balanceAfter}");
 
 // Storage actions

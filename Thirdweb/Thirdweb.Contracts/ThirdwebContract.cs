@@ -63,7 +63,7 @@ namespace Thirdweb
             return function.DecodeTypeOutput<T>(resultData);
         }
 
-        public static async Task<string> Write(IThirdwebAccount account, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
+        public static async Task<string> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(contract.Client, contract.Chain);
 
@@ -73,7 +73,7 @@ namespace Thirdweb
 
             var transaction = new TransactionInput
             {
-                From = await account.GetAddress(),
+                From = await wallet.GetAddress(),
                 To = contract.Address,
                 Data = data,
             };
@@ -85,15 +85,15 @@ namespace Thirdweb
             transaction.Value = new HexBigInteger(weiValue);
 
             string hash;
-            switch (account.AccountType)
+            switch (wallet.AccountType)
             {
                 case ThirdwebAccountType.PrivateKeyAccount:
-                    transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await account.GetAddress(), "latest"));
-                    var signedTx = await account.SignTransaction(transaction, contract.Chain);
+                    transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await wallet.GetAddress(), "latest"));
+                    var signedTx = await wallet.SignTransaction(transaction, contract.Chain);
                     hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
                     break;
                 case ThirdwebAccountType.SmartAccount:
-                    var smartAccount = account as SmartAccount;
+                    var smartAccount = wallet as SmartWallet;
                     hash = await smartAccount.SendTransaction(transaction);
                     break;
                 default:

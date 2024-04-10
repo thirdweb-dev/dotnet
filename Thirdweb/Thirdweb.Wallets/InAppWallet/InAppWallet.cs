@@ -1,24 +1,15 @@
-using System.Numerics;
-using System.Text;
-using Nethereum.ABI.EIP712;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Hex.HexTypes;
-using Nethereum.Model;
-using Nethereum.RPC.Eth.DTOs;
-using Nethereum.RPC.Eth.Mappers;
 using Nethereum.Signer;
-using Nethereum.Signer.EIP712;
 using Thirdweb.EWS;
 
 namespace Thirdweb
 {
-    public class EmbeddedAccount : PrivateKeyAccount
+    public class InAppWallet : PrivateKeyWallet
     {
         internal EmbeddedWallet _embeddedWallet;
         internal string _email;
         internal string _phoneNumber;
 
-        internal EmbeddedAccount(ThirdwebClient client, string email, string phoneNumber, EmbeddedWallet embeddedWallet, EthECKey ecKey)
+        internal InAppWallet(ThirdwebClient client, string email, string phoneNumber, EmbeddedWallet embeddedWallet, EthECKey ecKey)
             : base(client, ecKey)
         {
             _email = email;
@@ -26,7 +17,7 @@ namespace Thirdweb
             _embeddedWallet = embeddedWallet;
         }
 
-        public static async Task<EmbeddedAccount> Create(ThirdwebClient client, string email = null, string phoneNumber = null)
+        public static async Task<InAppWallet> Create(ThirdwebClient client, string email = null, string phoneNumber = null)
         {
             if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber))
             {
@@ -42,10 +33,10 @@ namespace Thirdweb
             }
             catch
             {
-                Console.WriteLine("User not found. Please call EmbeddedAccount.SendOTP() to initialize the login process.");
+                Console.WriteLine("User not found. Please call InAppWallet.SendOTP() to initialize the login process.");
                 ecKey = null;
             }
-            return new EmbeddedAccount(client, email, phoneNumber, embeddedWallet, ecKey);
+            return new InAppWallet(client, email, phoneNumber, embeddedWallet, ecKey);
         }
 
         public override async Task Disconnect()
@@ -78,7 +69,7 @@ namespace Thirdweb
                     throw new Exception("Email or Phone Number must be provided to login.");
                 }
 
-                Console.WriteLine("OTP sent to user. Please call EmbeddedAccount.SubmitOTP to login.");
+                Console.WriteLine("OTP sent to user. Please call InAppWallet.SubmitOTP to login.");
             }
             catch (Exception e)
             {
