@@ -4,9 +4,9 @@ using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb.Tests;
 
-public class SmartAccountTests : BaseTests
+public class SmartWalletTests : BaseTests
 {
-    public SmartAccountTests(ITestOutputHelper output)
+    public SmartWalletTests(ITestOutputHelper output)
         : base(output) { }
 
     private async Task<SmartWallet> GetSmartAccount()

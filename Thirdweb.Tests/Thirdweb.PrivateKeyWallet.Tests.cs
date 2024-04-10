@@ -4,9 +4,9 @@ using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb.Tests;
 
-public class PrivateKeyAccountTests : BaseTests
+public class PrivateKeyWalletTests : BaseTests
 {
-    public PrivateKeyAccountTests(ITestOutputHelper output)
+    public PrivateKeyWalletTests(ITestOutputHelper output)
         : base(output) { }
 
     private async Task<PrivateKeyWallet> GetAccount()
