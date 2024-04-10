@@ -48,8 +48,9 @@ namespace Thirdweb
             return new EmbeddedAccount(client, email, phoneNumber, embeddedWallet, ecKey);
         }
 
-        public async Task ClearSession()
+        public override async Task Disconnect()
         {
+            await base.Disconnect();
             await _embeddedWallet.SignOutAsync();
         }
 
