@@ -170,7 +170,19 @@ namespace Thirdweb
                     {
                         if (rpcResponse.Error != null)
                         {
-                            tcs.SetException(new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message}"));
+                            var revertMsg = "";
+                            if (rpcResponse.Error.Data != null)
+                            {
+                                try
+                                {
+                                    revertMsg = new Nethereum.ABI.FunctionEncoding.FunctionCallDecoder().DecodeFunctionErrorMessage(Utils.StringToHex(rpcResponse.Error.Data.ToString()));
+                                }
+                                catch
+                                {
+                                    revertMsg = rpcResponse.Error.Data.ToString();
+                                }
+                            }
+                            tcs.SetException(new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message} {revertMsg}"));
                         }
                         else
                         {
