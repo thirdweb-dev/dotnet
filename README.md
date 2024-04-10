@@ -34,9 +34,8 @@ var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23
 var readResult = await ThirdwebContract.Read<string>(contract, "name");
 Console.WriteLine($"Contract read result: {readResult}");
 
-// Create a smart account to unlock gasless features, with an embedded account as signer to unlock web2 auth
+// Create embedded account as signer to unlock web2 auth
 var embeddedAccount = await EmbeddedAccount.Create(client: client, email: "email@email.com"); // or email: null, phoneNumber: "+1234567890"
-var smartAccount = await SmartAccount.Create(client: client, personalAccount: embeddedAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
 
 // Relog if embedded account not logged in
 if (!await embeddedAccount.IsConnected())
@@ -57,6 +56,9 @@ if (!await embeddedAccount.IsConnected())
         return;
     }
 }
+
+// Create a smart account to unlock gasless features, with embedded account as a signer
+var smartAccount = await SmartAccount.Create(client: client, personalAccount: embeddedAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
 
 // Log addresses
 Console.WriteLine($"Embedded Account: {await embeddedAccount.GetAddress()}");

@@ -23,7 +23,6 @@ internal class Program
         // Create accounts (this is an advanced use case, typically one account is plenty)
         var privateKeyAccount = await PrivateKeyAccount.Create(client: client, privateKeyHex: privateKey);
         var embeddedAccount = await EmbeddedAccount.Create(client: client, email: "firekeeper+7121271d@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
-        var smartAccount = await SmartAccount.Create(client: client, personalAccount: embeddedAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
 
         // // Reset embedded account (optional step for testing login flow)
         // if (await embeddedAccount.IsConnected())
@@ -50,6 +49,9 @@ internal class Program
                 return;
             }
         }
+
+        // Create smart account with embedded signer
+        var smartAccount = await SmartAccount.Create(client: client, personalAccount: embeddedAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
 
         // Connect the smart account with embedded signer and grant a session key to pk account (advanced use case)
         _ = await smartAccount.CreateSessionKey(
