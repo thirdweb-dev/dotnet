@@ -8,13 +8,13 @@ public class ClientTests : BaseTests
     [Fact]
     public void NoSecretKeyNoClientId()
     {
-        Assert.Throws<InvalidOperationException>(() => new ThirdwebClient());
+        Assert.Throws<InvalidOperationException>(() => ThirdwebClient.Create());
     }
 
     [Fact]
     public void SecretKeyInitialization()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
         Assert.NotNull(client.ClientId);
         Assert.NotNull(client.SecretKey);
         Assert.Null(client.BundleId);
@@ -26,7 +26,7 @@ public class ClientTests : BaseTests
     public void ClientIdInitialization()
     {
         var clientId = "test-client-id";
-        var client = new ThirdwebClient(clientId: clientId);
+        var client = ThirdwebClient.Create(clientId: clientId);
         Assert.NotNull(client.ClientId);
         Assert.Null(client.SecretKey);
         Assert.Null(client.BundleId);
@@ -37,7 +37,7 @@ public class ClientTests : BaseTests
     public void BundleIdInitialization()
     {
         var bundleId = "test-bundle-id";
-        var exception = Assert.Throws<InvalidOperationException>(() => new ThirdwebClient(bundleId: bundleId));
+        var exception = Assert.Throws<InvalidOperationException>(() => ThirdwebClient.Create(bundleId: bundleId));
         Assert.Equal("ClientId or SecretKey must be provided", exception.Message);
     }
 
@@ -45,7 +45,7 @@ public class ClientTests : BaseTests
     public void ClientIdAndSecretKeyInitialization()
     {
         var clientId = "test-client-id";
-        var client = new ThirdwebClient(clientId: clientId, secretKey: _secretKey);
+        var client = ThirdwebClient.Create(clientId: clientId, secretKey: _secretKey);
         Assert.NotNull(client.ClientId);
         Assert.NotNull(client.SecretKey);
         Assert.Null(client.BundleId);
@@ -59,7 +59,7 @@ public class ClientTests : BaseTests
     {
         var clientId = "test-client-id";
         var bundleId = "test-bundle-id";
-        var client = new ThirdwebClient(clientId: clientId, bundleId: bundleId);
+        var client = ThirdwebClient.Create(clientId: clientId, bundleId: bundleId);
         Assert.NotNull(client.ClientId);
         Assert.NotNull(client.BundleId);
         Assert.Null(client.SecretKey);
@@ -71,7 +71,7 @@ public class ClientTests : BaseTests
     public void SecretKeyAndBundleIdInitialization()
     {
         var bundleId = "test-bundle-id";
-        var client = new ThirdwebClient(secretKey: _secretKey, bundleId: bundleId);
+        var client = ThirdwebClient.Create(secretKey: _secretKey, bundleId: bundleId);
         Assert.NotNull(client.SecretKey);
         Assert.NotNull(client.BundleId);
         Assert.NotNull(client.ClientId);
@@ -83,7 +83,7 @@ public class ClientTests : BaseTests
     [Fact]
     public void TimeoutOptions()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 30000, other: 30000));
+        var client = ThirdwebClient.Create(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 30000, other: 30000));
         Assert.NotNull(client.FetchTimeoutOptions);
         Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage));
         Assert.Equal(30000, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
@@ -94,7 +94,7 @@ public class ClientTests : BaseTests
     [Fact]
     public void NoTimeoutOptions()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
         Assert.NotNull(client.FetchTimeoutOptions);
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage));
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));

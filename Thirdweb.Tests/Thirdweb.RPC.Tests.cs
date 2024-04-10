@@ -10,7 +10,7 @@ public class RpcTests : BaseTests
     [Fact]
     public async Task GetBlockNumber()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 10000));
+        var client = ThirdwebClient.Create(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 10000));
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var blockNumber = await rpc.SendRequestAsync<string>("eth_blockNumber");
         Assert.NotNull(blockNumber);
@@ -20,7 +20,7 @@ public class RpcTests : BaseTests
     [Fact]
     public async Task TestAuth()
     {
-        var client = new ThirdwebClient(clientId: "hi", fetchTimeoutOptions: new TimeoutOptions(rpc: 60000));
+        var client = ThirdwebClient.Create(clientId: "hi", fetchTimeoutOptions: new TimeoutOptions(rpc: 60000));
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var exception = await Assert.ThrowsAsync<HttpRequestException>(async () => await rpc.SendRequestAsync<string>("eth_blockNumber"));
         _output.WriteLine($"TestAuth Exception Message: {exception.Message}");
@@ -29,7 +29,7 @@ public class RpcTests : BaseTests
     [Fact]
     public async Task TestTimeout()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 0));
+        var client = ThirdwebClient.Create(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 0));
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var exception = await Assert.ThrowsAsync<TimeoutException>(async () => await rpc.SendRequestAsync<string>("eth_chainId"));
         _output.WriteLine($"TestTimeout Exception Message: {exception.Message}");
@@ -38,7 +38,7 @@ public class RpcTests : BaseTests
     [Fact]
     public async Task TestBatch()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var req = rpc.SendRequestAsync<string>("eth_blockNumber");
         _ = await rpc.SendRequestAsync<string>("eth_chainId");
@@ -56,7 +56,7 @@ public class RpcTests : BaseTests
     [Fact]
     public async Task TestDeserialization()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await rpc.SendRequestAsync<BigInteger>("eth_blockNumber"));
         Assert.Equal("Failed to deserialize RPC response.", exception.Message);
@@ -67,14 +67,14 @@ public class RpcTests : BaseTests
     {
         var clientException = Assert.Throws<ArgumentNullException>(() => ThirdwebRPC.GetRpcInstance(null, 0));
         Assert.Equal("client", clientException.ParamName);
-        var chainIdException = Assert.Throws<ArgumentException>(() => ThirdwebRPC.GetRpcInstance(new ThirdwebClient(secretKey: _secretKey), 0));
+        var chainIdException = Assert.Throws<ArgumentException>(() => ThirdwebRPC.GetRpcInstance(ThirdwebClient.Create(secretKey: _secretKey), 0));
         Assert.Equal("Invalid Chain ID", chainIdException.Message);
     }
 
     [Fact]
     public async Task TestBundleIdRpc()
     {
-        var client = new ThirdwebClient(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
+        var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var blockNumber = await rpc.SendRequestAsync<string>("eth_blockNumber");
         Assert.NotNull(blockNumber);
@@ -84,7 +84,7 @@ public class RpcTests : BaseTests
     [Fact]
     public async Task TestRpcError()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var exception = await Assert.ThrowsAsync<Exception>(async () => await rpc.SendRequestAsync<string>("eth_invalidMethod"));
         Assert.Contains("RPC Error for request", exception.Message);

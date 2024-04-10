@@ -12,43 +12,40 @@ using Thirdweb.EWS;
 
 namespace Thirdweb
 {
-    public class EmbeddedAccount : IThirdwebAccount
+    public class EmbeddedAccount : PrivateKeyAccount
     {
-        public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
+        internal EmbeddedWallet _embeddedWallet;
+        internal string _email;
+        internal string _phoneNumber;
 
-        private ThirdwebClient _client;
-        private EmbeddedWallet _embeddedWallet;
-        private User _user;
-        private EthECKey _ecKey;
-        private string _email;
-        private string _phoneNumber;
+        internal EmbeddedAccount(ThirdwebClient client, string email, string phoneNumber, EmbeddedWallet embeddedWallet, EthECKey ecKey)
+            : base(client, ecKey)
+        {
+            _email = email;
+            _phoneNumber = phoneNumber;
+            _embeddedWallet = embeddedWallet;
+        }
 
-        public EmbeddedAccount(ThirdwebClient client, string email = null, string phoneNumber = null)
+        public static async Task<EmbeddedAccount> Create(ThirdwebClient client, string email = null, string phoneNumber = null)
         {
             if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber))
             {
                 throw new ArgumentException("Email or Phone Number must be provided to login.");
             }
 
-            _embeddedWallet = new EmbeddedWallet(client);
-            _email = email;
-            _phoneNumber = phoneNumber;
-            _client = client;
-        }
-
-        public async Task Connect()
-        {
+            var embeddedWallet = new EmbeddedWallet(client);
+            EthECKey ecKey;
             try
             {
-                _user = await _embeddedWallet.GetUserAsync(_email, _email == null ? "PhoneOTP" : "EmailOTP");
-                _ecKey = new EthECKey(_user.Account.PrivateKey);
+                var user = await embeddedWallet.GetUserAsync(email, email == null ? "PhoneOTP" : "EmailOTP");
+                ecKey = new EthECKey(user.Account.PrivateKey);
             }
             catch
             {
                 Console.WriteLine("User not found. Please call EmbeddedAccount.SendOTP() to initialize the login process.");
-                _user = null;
-                _ecKey = null;
+                ecKey = null;
             }
+            return new EmbeddedAccount(client, email, phoneNumber, embeddedWallet, ecKey);
         }
 
         #region OTP Flow
@@ -111,8 +108,7 @@ namespace Thirdweb
             }
             else
             {
-                _user = res.User;
-                _ecKey = new EthECKey(_user.Account.PrivateKey);
+                _ecKey = new EthECKey(res.User.Account.PrivateKey);
                 return (await GetAddress(), false);
             }
         }
@@ -128,142 +124,5 @@ namespace Thirdweb
         }
 
         #endregion
-
-        public Task<string> GetAddress()
-        {
-            return Task.FromResult(_ecKey.GetPublicAddress());
-        }
-
-        public Task<string> EthSign(string message)
-        {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message), "Message to sign cannot be null.");
-            }
-
-            var signer = new MessageSigner();
-            var signature = signer.Sign(Encoding.UTF8.GetBytes(message), _ecKey);
-            return Task.FromResult(signature);
-        }
-
-        public Task<string> PersonalSign(byte[] rawMessage)
-        {
-            if (rawMessage == null)
-            {
-                throw new ArgumentNullException(nameof(rawMessage), "Message to sign cannot be null.");
-            }
-
-            var signer = new EthereumMessageSigner();
-            var signature = signer.Sign(rawMessage, _ecKey);
-            return Task.FromResult(signature);
-        }
-
-        public Task<string> PersonalSign(string message)
-        {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message), "Message to sign cannot be null.");
-            }
-
-            var signer = new EthereumMessageSigner();
-            var signature = signer.EncodeUTF8AndSign(message, _ecKey);
-            return Task.FromResult(signature);
-        }
-
-        public Task<string> SignTypedDataV4(string json)
-        {
-            if (json == null)
-            {
-                throw new ArgumentNullException(nameof(json), "Json to sign cannot be null.");
-            }
-
-            var signer = new Eip712TypedDataSigner();
-            var signature = signer.SignTypedDataV4(json, _ecKey);
-            return Task.FromResult(signature);
-        }
-
-        public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
-            where TDomain : IDomain
-        {
-            if (data == null)
-            {
-                throw new ArgumentNullException(nameof(data), "Data to sign cannot be null.");
-            }
-
-            var signer = new Eip712TypedDataSigner();
-            var signature = signer.SignTypedDataV4(data, typedData, _ecKey);
-            return Task.FromResult(signature);
-        }
-
-        public async Task<string> SignTransaction(TransactionInput transaction, BigInteger chainId)
-        {
-            if (transaction == null)
-            {
-                throw new ArgumentNullException(nameof(transaction));
-            }
-
-            if (string.IsNullOrWhiteSpace(transaction.From))
-            {
-                transaction.From = await GetAddress();
-            }
-            else if (transaction.From != await GetAddress())
-            {
-                throw new Exception("Transaction 'From' address does not match the wallet address");
-            }
-
-            var nonce = transaction.Nonce ?? throw new ArgumentNullException(nameof(transaction), "Transaction nonce has not been set");
-
-            var gasLimit = transaction.Gas;
-            var value = transaction.Value ?? new HexBigInteger(0);
-
-            string signedTransaction;
-            if (transaction.Type != null && transaction.Type.Value == TransactionType.EIP1559.AsByte())
-            {
-                var maxPriorityFeePerGas = transaction.MaxPriorityFeePerGas.Value;
-                var maxFeePerGas = transaction.MaxFeePerGas.Value;
-                var transaction1559 = new Transaction1559(
-                    chainId,
-                    nonce,
-                    maxPriorityFeePerGas,
-                    maxFeePerGas,
-                    gasLimit,
-                    transaction.To,
-                    value,
-                    transaction.Data,
-                    transaction.AccessList.ToSignerAccessListItemArray()
-                );
-
-                var signer = new Transaction1559Signer();
-                signer.SignTransaction(_ecKey, transaction1559);
-                signedTransaction = transaction1559.GetRLPEncoded().ToHex();
-            }
-            else
-            {
-                var gasPrice = transaction.GasPrice;
-                var legacySigner = new LegacyTransactionSigner();
-                signedTransaction = legacySigner.SignTransaction(_ecKey.GetPrivateKey(), chainId, transaction.To, value.Value, nonce, gasPrice.Value, gasLimit.Value, transaction.Data);
-            }
-
-            return "0x" + signedTransaction;
-        }
-
-        public Task<bool> IsConnected()
-        {
-            return Task.FromResult(_ecKey != null);
-        }
-
-        public async Task Disconnect()
-        {
-            try
-            {
-                await _embeddedWallet.SignOutAsync();
-            }
-            catch
-            {
-                Console.WriteLine("Failed to sign out user. Proceeding anyway.");
-            }
-            _user = null;
-            _ecKey = null;
-        }
     }
 }
