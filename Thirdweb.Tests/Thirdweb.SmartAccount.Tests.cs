@@ -142,6 +142,17 @@ public class SmartAccountTests : BaseTests
     }
 
     [Fact]
+    public async Task IsValidSiganture_Invalid()
+    {
+        var account = await GetSmartAccount();
+        var sig = await account.PersonalSign("Hello, world!");
+        Assert.NotNull(sig);
+        sig += "1";
+        var res = await account.IsValidSignature("Hello, world!", sig);
+        Assert.False(res);
+    }
+
+    [Fact]
     public async Task CreateSessionKey()
     {
         var account = await GetSmartAccount();

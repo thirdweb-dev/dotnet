@@ -33,6 +33,15 @@ public class WalletTests : BaseTests
     }
 
     [Fact]
+    public async Task PersonalSignRaw()
+    {
+        var wallet = await GetAccount();
+        var message = "Hello, world!";
+        var signature = await wallet.PersonalSign(System.Text.Encoding.UTF8.GetBytes(message));
+        Assert.NotNull(signature);
+    }
+
+    [Fact]
     public async Task PersonalSign()
     {
         var wallet = await GetAccount();
