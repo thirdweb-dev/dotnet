@@ -4,16 +4,16 @@ using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb.Tests;
 
-public class SmartAccountTests : BaseTests
+public class SmartWalletTests : BaseTests
 {
-    public SmartAccountTests(ITestOutputHelper output)
+    public SmartWalletTests(ITestOutputHelper output)
         : base(output) { }
 
-    private async Task<SmartAccount> GetSmartAccount()
+    private async Task<SmartWallet> GetSmartAccount()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
-        var smartAccount = await SmartAccount.Create(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
     }
 
@@ -28,10 +28,10 @@ public class SmartAccountTests : BaseTests
     public async Task Initialization_Fail()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
         await privateKeyAccount.Disconnect();
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await SmartAccount.Create(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614)
+            async () => await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614)
         );
         Assert.Equal("SmartAccount.Connect: Personal account must be connected.", ex.Message);
     }
@@ -47,10 +47,10 @@ public class SmartAccountTests : BaseTests
     public async Task IsDeployed_False()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
-        var smartAccount = await SmartAccount.Create(
+        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var smartAccount = await SmartWallet.Create(
             client,
-            personalAccount: privateKeyAccount,
+            personalWallet: privateKeyAccount,
             factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
             gasless: true,
             chainId: 421614,
@@ -78,8 +78,8 @@ public class SmartAccountTests : BaseTests
     public async Task SendTransaction_ClientBundleId_Success()
     {
         var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
-        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
-        var smartAccount = await SmartAccount.Create(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         var tx = await smartAccount.SendTransaction(
             new TransactionInput()
             {
@@ -113,17 +113,17 @@ public class SmartAccountTests : BaseTests
         var account = await GetSmartAccount();
         var personalAccount = await account.GetPersonalAccount();
         Assert.NotNull(personalAccount);
-        _ = Assert.IsType<PrivateKeyAccount>(personalAccount);
+        _ = Assert.IsType<PrivateKeyWallet>(personalAccount);
     }
 
     [Fact]
     public async Task GetAddress_WithOverride()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
-        var smartAccount = await SmartAccount.Create(
+        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var smartAccount = await SmartWallet.Create(
             client,
-            personalAccount: privateKeyAccount,
+            personalWallet: privateKeyAccount,
             factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
             gasless: true,
             chainId: 421614,

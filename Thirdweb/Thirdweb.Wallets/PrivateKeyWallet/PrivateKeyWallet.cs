@@ -11,24 +11,24 @@ using Nethereum.Signer.EIP712;
 
 namespace Thirdweb
 {
-    public class PrivateKeyAccount : IThirdwebAccount
+    public class PrivateKeyWallet : IThirdwebWallet
     {
         public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
 
         protected ThirdwebClient _client;
         protected EthECKey _ecKey;
 
-        protected PrivateKeyAccount(ThirdwebClient client, EthECKey key)
+        protected PrivateKeyWallet(ThirdwebClient client, EthECKey key)
         {
             _client = client;
             _ecKey = key;
         }
 
-        public static Task<PrivateKeyAccount> Create(ThirdwebClient client, string privateKeyHex)
+        public static Task<PrivateKeyWallet> Create(ThirdwebClient client, string privateKeyHex)
         {
             return string.IsNullOrEmpty(privateKeyHex)
                 ? throw new ArgumentNullException(nameof(privateKeyHex), "Private key cannot be null or empty.")
-                : Task.FromResult(new PrivateKeyAccount(client, new EthECKey(privateKeyHex)));
+                : Task.FromResult(new PrivateKeyWallet(client, new EthECKey(privateKeyHex)));
         }
 
         public virtual Task<string> GetAddress()

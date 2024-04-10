@@ -4,7 +4,7 @@ using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb
 {
-    public interface IThirdwebAccount
+    public interface IThirdwebWallet
     {
         public ThirdwebAccountType AccountType { get; }
         public Task<string> GetAddress();

@@ -11,7 +11,7 @@ namespace Thirdweb
             BigInteger chainId,
             string verifyingContract,
             AccountAbstraction.SignerPermissionRequest signerPermissionRequest,
-            IThirdwebAccount signer
+            IThirdwebWallet signer
         )
         {
             var typedData = GetTypedDefinition_SmartAccount(domainName, version, chainId, verifyingContract);
@@ -24,7 +24,7 @@ namespace Thirdweb
             BigInteger chainId,
             string verifyingContract,
             byte[] message,
-            IThirdwebAccount signer
+            IThirdwebWallet signer
         )
         {
             var typedData = GetTypedDefinition_SmartAccount_AccountMessage(domainName, version, chainId, verifyingContract);
