@@ -1,8 +1,6 @@
 ﻿using System.Numerics;
 using Nethereum.Hex.HexTypes;
-using Nethereum.Model;
 using Nethereum.RPC.Eth.DTOs;
-using Org.BouncyCastle.Utilities.Encoders;
 
 namespace Thirdweb
 {
@@ -13,7 +11,15 @@ namespace Thirdweb
         internal BigInteger Chain { get; private set; }
         internal string Abi { get; private set; }
 
-        public ThirdwebContract(ThirdwebClient client, string address, BigInteger chain, string abi)
+        private ThirdwebContract(ThirdwebClient client, string address, BigInteger chain, string abi)
+        {
+            Client = client;
+            Address = address;
+            Chain = chain;
+            Abi = abi;
+        }
+
+        public static async Task<ThirdwebContract> Create(ThirdwebClient client, string address, BigInteger chain, string abi = null)
         {
             if (client == null)
             {
@@ -30,15 +36,8 @@ namespace Thirdweb
                 throw new ArgumentException("Chain must be provided");
             }
 
-            if (string.IsNullOrEmpty(abi))
-            {
-                throw new ArgumentException("Abi must be provided");
-            }
-
-            Client = client;
-            Address = address;
-            Chain = chain;
-            Abi = abi;
+            abi ??= await FetchAbi(address, chain);
+            return new ThirdwebContract(client, address, chain, abi);
         }
 
         public static async Task<string> FetchAbi(string address, BigInteger chainId)
@@ -52,7 +51,7 @@ namespace Thirdweb
             }
         }
 
-        public static async Task<T> ReadContract<T>(ThirdwebContract contract, string method, params object[] parameters)
+        public static async Task<T> Read<T>(ThirdwebContract contract, string method, params object[] parameters)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(contract.Client, contract.Chain);
 
@@ -64,7 +63,7 @@ namespace Thirdweb
             return function.DecodeTypeOutput<T>(resultData);
         }
 
-        public static async Task<string> WriteContract(ThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
+        public static async Task<string> Write(IThirdwebAccount account, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(contract.Client, contract.Chain);
 
@@ -74,7 +73,7 @@ namespace Thirdweb
 
             var transaction = new TransactionInput
             {
-                From = await wallet.GetAddress(),
+                From = await account.GetAddress(),
                 To = contract.Address,
                 Data = data,
             };
@@ -86,15 +85,15 @@ namespace Thirdweb
             transaction.Value = new HexBigInteger(weiValue);
 
             string hash;
-            switch (wallet.ActiveAccount.AccountType)
+            switch (account.AccountType)
             {
                 case ThirdwebAccountType.PrivateKeyAccount:
-                    transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await wallet.GetAddress(), "latest"));
-                    var signedTx = await wallet.SignTransaction(transaction, contract.Chain);
+                    transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await account.GetAddress(), "latest"));
+                    var signedTx = await account.SignTransaction(transaction, contract.Chain);
                     hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
                     break;
                 case ThirdwebAccountType.SmartAccount:
-                    var smartAccount = wallet.ActiveAccount as SmartAccount;
+                    var smartAccount = account as SmartAccount;
                     hash = await smartAccount.SendTransaction(transaction);
                     break;
                 default:

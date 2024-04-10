@@ -21,7 +21,7 @@ public class UtilsTests : BaseTests
     [Fact]
     public async Task GetTransactionReceipt()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
         var chainId = 421614;
         var normalTxHash = "0x5a0b6cdb01ecfb25b368d3de1ac844414980ee3c330ec8c1435117b75027b5d7";
         var failedTxHash = "0xd2840219ffe172377c8a455c13d95e4dca204d5c0dd72232093e092eef412488";
@@ -44,7 +44,7 @@ public class UtilsTests : BaseTests
     [Fact]
     public async Task GetTransactionReceipt_AAReasonString()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
         var chainId = 84532;
         var aaSilentRevertTxHashWithReason = "0x5374743bbb749df47a279ac21e6ed472c30cd471923a7bc78db6a40e1b6924de";
         var aaFailedReceiptWithReason = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetTransactionReceipt(client, chainId, aaSilentRevertTxHashWithReason));
@@ -54,7 +54,7 @@ public class UtilsTests : BaseTests
     [Fact]
     public async Task GetTransactionReceipt_CancellationToken()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
         var chainId = 421614;
         var normalTxHash = "0x5a0b6cdb01ecfb25b368d3de1ac844414980ee3c330ec8c1435117b75027b5d7";
         var failedTxHash = "0xd2840219ffe172377c8a455c13d95e4dca204d5c0dd72232093e092eef412488";

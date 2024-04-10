@@ -1,5 +1,4 @@
 ﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Tests")]
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Console")]
 
 namespace Thirdweb
 {
@@ -10,7 +9,7 @@ namespace Thirdweb
         internal string BundleId { get; }
         internal ITimeoutOptions FetchTimeoutOptions { get; }
 
-        public ThirdwebClient(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null)
+        private ThirdwebClient(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null)
         {
             if (string.IsNullOrEmpty(clientId) && string.IsNullOrEmpty(secretKey))
             {
@@ -30,6 +29,11 @@ namespace Thirdweb
             BundleId = bundleId;
 
             FetchTimeoutOptions = fetchTimeoutOptions ?? new TimeoutOptions();
+        }
+
+        public static ThirdwebClient Create(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null)
+        {
+            return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions);
         }
     }
 }

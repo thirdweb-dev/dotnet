@@ -11,11 +11,9 @@ public class SmartAccountTests : BaseTests
 
     private async Task<SmartAccount> GetSmartAccount()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
-        var privateKeyAccount = new PrivateKeyAccount(client, _testPrivateKey);
-        await privateKeyAccount.Connect();
-        var smartAccount = new SmartAccount(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-        await smartAccount.Connect();
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
+        var smartAccount = await SmartAccount.Create(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
     }
 
@@ -29,10 +27,12 @@ public class SmartAccountTests : BaseTests
     [Fact]
     public async Task Initialization_Fail()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
-        var privateKeyAccount = new PrivateKeyAccount(client, _testPrivateKey);
-        var smartAccount = new SmartAccount(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(smartAccount.Connect);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
+        await privateKeyAccount.Disconnect();
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await SmartAccount.Create(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614)
+        );
         Assert.Equal("SmartAccount.Connect: Personal account must be connected.", ex.Message);
     }
 
@@ -46,10 +46,9 @@ public class SmartAccountTests : BaseTests
     [Fact]
     public async Task IsDeployed_False()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
-        var privateKeyAccount = new PrivateKeyAccount(client, _testPrivateKey);
-        await privateKeyAccount.Connect();
-        var smartAccount = new SmartAccount(
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
+        var smartAccount = await SmartAccount.Create(
             client,
             personalAccount: privateKeyAccount,
             factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
@@ -57,7 +56,6 @@ public class SmartAccountTests : BaseTests
             chainId: 421614,
             accountAddressOverride: "0x75A4e181286F5767c38dFBE65fe1Ad4793aCB642" // vanity
         );
-        await smartAccount.Connect();
         Assert.False(await smartAccount.IsDeployed());
     }
 
@@ -79,11 +77,9 @@ public class SmartAccountTests : BaseTests
     [Fact]
     public async Task SendTransaction_ClientBundleId_Success()
     {
-        var client = new ThirdwebClient(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
-        var privateKeyAccount = new PrivateKeyAccount(client, _testPrivateKey);
-        await privateKeyAccount.Connect();
-        var smartAccount = new SmartAccount(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-        await smartAccount.Connect();
+        var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
+        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
+        var smartAccount = await SmartAccount.Create(client, personalAccount: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         var tx = await smartAccount.SendTransaction(
             new TransactionInput()
             {
@@ -123,10 +119,9 @@ public class SmartAccountTests : BaseTests
     [Fact]
     public async Task GetAddress_WithOverride()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
-        var privateKeyAccount = new PrivateKeyAccount(client, _testPrivateKey);
-        await privateKeyAccount.Connect();
-        var smartAccount = new SmartAccount(
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var privateKeyAccount = await PrivateKeyAccount.Create(client, _testPrivateKey);
+        var smartAccount = await SmartAccount.Create(
             client,
             personalAccount: privateKeyAccount,
             factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
@@ -134,7 +129,6 @@ public class SmartAccountTests : BaseTests
             chainId: 421614,
             accountAddressOverride: "0x75A4e181286F5767c38dFBE65fe1Ad4793aCB642" // vanity
         );
-        await smartAccount.Connect();
         var address = await smartAccount.GetAddress();
         Assert.Equal("0x75A4e181286F5767c38dFBE65fe1Ad4793aCB642", address);
     }
@@ -145,6 +139,17 @@ public class SmartAccountTests : BaseTests
         var account = await GetSmartAccount();
         var sig = await account.PersonalSign("Hello, world!");
         Assert.NotNull(sig);
+    }
+
+    [Fact]
+    public async Task IsValidSiganture_Invalid()
+    {
+        var account = await GetSmartAccount();
+        var sig = await account.PersonalSign("Hello, world!");
+        Assert.NotNull(sig);
+        sig += "1";
+        var res = await account.IsValidSignature("Hello, world!", sig);
+        Assert.False(res);
     }
 
     [Fact]

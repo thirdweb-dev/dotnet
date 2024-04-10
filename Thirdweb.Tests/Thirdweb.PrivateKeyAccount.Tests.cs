@@ -9,41 +9,39 @@ public class PrivateKeyAccountTests : BaseTests
     public PrivateKeyAccountTests(ITestOutputHelper output)
         : base(output) { }
 
-    private PrivateKeyAccount GetAccount()
+    private async Task<PrivateKeyAccount> GetAccount()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
-        var privateKeyAccount = new PrivateKeyAccount(client: client, privateKeyHex: _testPrivateKey);
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var privateKeyAccount = await PrivateKeyAccount.Create(client: client, privateKeyHex: _testPrivateKey);
         return privateKeyAccount;
     }
 
     [Fact]
-    public void Initialization_Success()
+    public async Task Initialization_Success()
     {
-        var account = GetAccount();
+        var account = await GetAccount();
         Assert.NotNull(account);
     }
 
     [Fact]
-    public void Initialization_NullPrivateKey()
+    public async void Initialization_NullPrivateKey()
     {
-        var client = new ThirdwebClient(secretKey: _secretKey);
-        var ex = Assert.Throws<ArgumentNullException>(() => new PrivateKeyAccount(client, null));
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () => await PrivateKeyAccount.Create(client, null));
         Assert.Equal("Private key cannot be null or empty. (Parameter 'privateKeyHex')", ex.Message);
     }
 
     [Fact]
     public async Task Connect()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         Assert.True(await account.IsConnected());
     }
 
     [Fact]
     public async Task GetAddress()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var address = await account.GetAddress();
         Assert.True(address.Length == 42);
     }
@@ -51,8 +49,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task EthSign_Success()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var message = "Hello, World!";
         var signature = await account.EthSign(message);
         Assert.True(signature.Length == 132);
@@ -61,8 +58,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task EthSign_NullMessage()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.EthSign(null));
         Assert.Equal("Message to sign cannot be null. (Parameter 'message')", ex.Message);
     }
@@ -70,8 +66,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task PersonalSign_Success()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var message = "Hello, World!";
         var signature = await account.PersonalSign(message);
         Assert.True(signature.Length == 132);
@@ -80,8 +75,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task PersonalSign_EmptyMessage()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.PersonalSign(string.Empty));
         Assert.Equal("Message to sign cannot be null. (Parameter 'message')", ex.Message);
     }
@@ -89,8 +83,8 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task PersonalSign_NullyMessage()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
+
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.PersonalSign(null as string));
         Assert.Equal("Message to sign cannot be null. (Parameter 'message')", ex.Message);
     }
@@ -98,8 +92,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task PersonalSignRaw_Success()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var message = System.Text.Encoding.UTF8.GetBytes("Hello, World!");
         var signature = await account.PersonalSign(message);
         Assert.True(signature.Length == 132);
@@ -108,8 +101,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task PersonalSignRaw_NullMessage()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.PersonalSign(null as byte[]));
         Assert.Equal("Message to sign cannot be null. (Parameter 'rawMessage')", ex.Message);
     }
@@ -117,8 +109,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTypedDataV4_Success()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var json =
             "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallet\",\"type\":\"address\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person\"},{\"name\":\"contents\",\"type\":\"string\"}]},\"primaryType\":\"Mail\",\"domain\":{\"name\":\"Ether Mail\",\"version\":\"1\",\"chainId\":1,\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\":{\"from\":{\"name\":\"Cow\",\"wallet\":\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\":{\"name\":\"Bob\",\"wallet\":\"0xbBbBBBBbbBBBbbbBbbBbbBBbBbbBbBbBbBbbBBbB\"},\"contents\":\"Hello, Bob!\"}}";
         var signature = await account.SignTypedDataV4(json);
@@ -128,8 +119,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTypedDataV4_NullJson()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTypedDataV4(null));
         Assert.Equal("Json to sign cannot be null. (Parameter 'json')", ex.Message);
     }
@@ -137,8 +127,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTypedDataV4_EmptyJson()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTypedDataV4(string.Empty));
         Assert.Equal("Json to sign cannot be null. (Parameter 'json')", ex.Message);
     }
@@ -146,8 +135,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTypedDataV4_Typed()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var typedData = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 421614, await account.GetAddress());
         var accountMessage = new AccountAbstraction.AccountMessage { Message = System.Text.Encoding.UTF8.GetBytes("Hello, world!") };
         var signature = await account.SignTypedDataV4(accountMessage, typedData);
@@ -157,8 +145,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTypedDataV4_Typed_NullData()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var typedData = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 421614, await account.GetAddress());
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTypedDataV4(null as string, typedData));
         Assert.Equal("Data to sign cannot be null. (Parameter 'data')", ex.Message);
@@ -167,8 +154,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTransaction_Success()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var transaction = new TransactionInput
         {
             From = await account.GetAddress(),
@@ -186,8 +172,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTransaction_NullTransaction()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTransaction(null, 421614));
         Assert.Equal("Value cannot be null. (Parameter 'transaction')", ex.Message);
     }
@@ -195,8 +180,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTransaction_NoNonce()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var transaction = new TransactionInput
         {
             From = await account.GetAddress(),
@@ -212,8 +196,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTransaction_WrongFrom()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var transaction = new TransactionInput
         {
             From = Constants.ADDRESS_ZERO,
@@ -230,8 +213,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTransaction_NoGasPrice()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var transaction = new TransactionInput
         {
             From = await account.GetAddress(),
@@ -248,8 +230,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTransaction_1559_Success()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var transaction = new TransactionInput
         {
             From = await account.GetAddress(),
@@ -269,8 +250,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTransaction_1559_NoMaxFeePerGas()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var transaction = new TransactionInput
         {
             From = await account.GetAddress(),
@@ -289,8 +269,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task SignTransaction_1559_NoMaxPriorityFeePerGas()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         var transaction = new TransactionInput
         {
             From = await account.GetAddress(),
@@ -309,23 +288,22 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task IsConnected_True()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         Assert.True(await account.IsConnected());
     }
 
     [Fact]
     public async Task IsConnected_False()
     {
-        var account = GetAccount();
+        var account = await GetAccount();
+        await account.Disconnect();
         Assert.False(await account.IsConnected());
     }
 
     [Fact]
     public async Task Disconnect()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         await account.Disconnect();
         Assert.False(await account.IsConnected());
     }
@@ -333,7 +311,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task Disconnect_NotConnected()
     {
-        var account = GetAccount();
+        var account = await GetAccount();
         await account.Disconnect();
         Assert.False(await account.IsConnected());
     }
@@ -341,8 +319,7 @@ public class PrivateKeyAccountTests : BaseTests
     [Fact]
     public async Task Disconnect_Connected()
     {
-        var account = GetAccount();
-        await account.Connect();
+        var account = await GetAccount();
         await account.Disconnect();
         Assert.False(await account.IsConnected());
     }

@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Thirdweb
 {
-    public class ThirdwebStorage
+    public static class ThirdwebStorage
     {
         public static async Task<T> Download<T>(ThirdwebClient client, string uri, int? requestTimeout = null)
         {

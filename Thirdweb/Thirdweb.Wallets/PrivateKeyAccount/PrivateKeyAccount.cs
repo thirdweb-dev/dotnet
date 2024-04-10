@@ -15,34 +15,28 @@ namespace Thirdweb
     {
         public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
 
-        private ThirdwebClient _client;
-        private EthECKey _ecKey;
-        private string _privateKeyHex;
+        protected ThirdwebClient _client;
+        protected EthECKey _ecKey;
 
-        public PrivateKeyAccount(ThirdwebClient client, string privateKeyHex)
+        protected PrivateKeyAccount(ThirdwebClient client, EthECKey key)
         {
-            if (string.IsNullOrEmpty(privateKeyHex))
-            {
-                throw new ArgumentNullException(nameof(privateKeyHex), "Private key cannot be null or empty.");
-            }
-
             _client = client;
-            _privateKeyHex = privateKeyHex;
+            _ecKey = key;
         }
 
-        public Task Connect()
+        public static Task<PrivateKeyAccount> Create(ThirdwebClient client, string privateKeyHex)
         {
-            _ecKey = new EthECKey(_privateKeyHex);
-            _privateKeyHex = null;
-            return Task.CompletedTask;
+            return string.IsNullOrEmpty(privateKeyHex)
+                ? throw new ArgumentNullException(nameof(privateKeyHex), "Private key cannot be null or empty.")
+                : Task.FromResult(new PrivateKeyAccount(client, new EthECKey(privateKeyHex)));
         }
 
-        public Task<string> GetAddress()
+        public virtual Task<string> GetAddress()
         {
             return Task.FromResult(_ecKey.GetPublicAddress());
         }
 
-        public Task<string> EthSign(string message)
+        public virtual Task<string> EthSign(string message)
         {
             if (message == null)
             {
@@ -54,7 +48,7 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
-        public Task<string> PersonalSign(byte[] rawMessage)
+        public virtual Task<string> PersonalSign(byte[] rawMessage)
         {
             if (rawMessage == null)
             {
@@ -66,7 +60,7 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
-        public Task<string> PersonalSign(string message)
+        public virtual Task<string> PersonalSign(string message)
         {
             if (string.IsNullOrEmpty(message))
             {
@@ -78,7 +72,7 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
-        public Task<string> SignTypedDataV4(string json)
+        public virtual Task<string> SignTypedDataV4(string json)
         {
             if (string.IsNullOrEmpty(json))
             {
@@ -90,7 +84,7 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
-        public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
+        public virtual Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
             where TDomain : IDomain
         {
             if (data == null)
@@ -103,7 +97,7 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
-        public async Task<string> SignTransaction(TransactionInput transaction, BigInteger chainId)
+        public virtual async Task<string> SignTransaction(TransactionInput transaction, BigInteger chainId)
         {
             if (transaction == null)
             {
@@ -163,12 +157,12 @@ namespace Thirdweb
             return "0x" + signedTransaction;
         }
 
-        public Task<bool> IsConnected()
+        public virtual Task<bool> IsConnected()
         {
             return Task.FromResult(_ecKey != null);
         }
 
-        public Task Disconnect()
+        public virtual Task Disconnect()
         {
             _ecKey = null;
             return Task.CompletedTask;
