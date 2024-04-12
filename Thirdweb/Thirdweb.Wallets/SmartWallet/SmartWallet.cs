@@ -246,7 +246,7 @@ namespace Thirdweb
         {
             var input = new TransactionInput("0x", _accountContract.Address, new HexBigInteger(0));
             var txHash = await SendTransaction(input);
-            _ = await Utils.GetTransactionReceipt(_client, _chainId, txHash);
+            _ = await ThirdwebTransaction.WaitForTransactionReceipt(_client, _chainId, txHash);
         }
 
         public Task<IThirdwebWallet> GetPersonalAccount()
@@ -350,7 +350,7 @@ namespace Thirdweb
                 Data = data
             };
             var txHash = await SendTransaction(txInput);
-            return await Utils.GetTransactionReceipt(_client, _chainId, txHash);
+            return await ThirdwebTransaction.WaitForTransactionReceipt(_client, _chainId, txHash);
         }
 
         public async Task<TransactionReceipt> AddAdmin(string admin)
@@ -378,7 +378,7 @@ namespace Thirdweb
                 Data = data
             };
             var txHash = await SendTransaction(txInput);
-            return await Utils.GetTransactionReceipt(_client, _chainId, txHash);
+            return await ThirdwebTransaction.WaitForTransactionReceipt(_client, _chainId, txHash);
         }
 
         public async Task<TransactionReceipt> RemoveAdmin(string admin)
@@ -406,7 +406,7 @@ namespace Thirdweb
                 Data = data
             };
             var txHash = await SendTransaction(txInput);
-            return await Utils.GetTransactionReceipt(_client, _chainId, txHash);
+            return await ThirdwebTransaction.WaitForTransactionReceipt(_client, _chainId, txHash);
         }
 
         public Task<string> SignTypedDataV4(string json)
