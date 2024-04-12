@@ -13,6 +13,9 @@ It provides a set of convenient methods and classes to simplify the integration 
 - Connect to any EVM network
 - Query blockchain data using Thirdweb RPC
 - Interact with smart contracts
+- In-App Wallets
+- Account Abstraction
+- Compatible with GoDot
 
 ## Installation
 
