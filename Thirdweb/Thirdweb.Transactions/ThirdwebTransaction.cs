@@ -32,6 +32,7 @@ namespace Thirdweb
 
         public static async Task<ThirdwebTransaction> Create(ThirdwebClient client, IThirdwebWallet wallet, TransactionInput txInput, BigInteger chainId)
         {
+            txInput.From ??= await wallet.GetAddress();
             return await wallet.GetAddress() != txInput.From
                 ? throw new ArgumentException("Transaction sender (from) must match wallet address")
                 : client == null
@@ -86,26 +87,46 @@ namespace Thirdweb
 
         public static async Task<GasCosts> EstimateTotalCosts(ThirdwebTransaction transaction)
         {
-            var gasLimit = await EstimateGasLimit(transaction);
-            var gasPrice = await EstimateGasPrice(transaction._client, transaction.Input.ChainId.Value);
+            var gasPrice = transaction.Input.GasPrice?.Value ?? await EstimateGasPrice(transaction);
+            var gasLimit = transaction.Input.Gas?.Value ?? await EstimateGasLimit(transaction, true);
             var gasCost = BigInteger.Multiply(gasLimit, gasPrice);
             var gasCostWithValue = BigInteger.Add(gasCost, transaction.Input.Value?.Value ?? 0);
             return new GasCosts { ether = gasCostWithValue.ToString().ToEth(18, false), wei = gasCostWithValue };
         }
 
-        public static async Task<BigInteger> EstimateGasPrice(ThirdwebClient client, BigInteger chainId, bool withBump = true)
+        public static async Task<BigInteger> EstimateGasPrice(ThirdwebTransaction transaction, bool withBump = true)
         {
             {
-                var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+                var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
                 var hex = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice"));
                 return withBump ? hex.Value * 10 / 9 : hex.Value;
             }
         }
 
-        public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction)
+        public static async Task<BigInteger> Simulate(ThirdwebTransaction transaction)
+        {
+            return await EstimateGasLimit(transaction, false);
+        }
+
+        public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction, bool overrideBalance = true)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
-            var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input);
+            var from = transaction.Input.From;
+            var hex = overrideBalance
+                ? await rpc.SendRequestAsync<string>(
+                    "eth_estimateGas",
+                    transaction.Input,
+                    "latest",
+                    new Dictionary<string, Dictionary<string, string>>()
+                    {
+                        {
+                            from,
+                            new() { { "balance", "0xFFFFFFFFFFFFFFFFFFFF" } }
+                        }
+                    }
+                )
+                : await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest");
+
             return new HexBigInteger(hex).Value;
         }
 
@@ -117,12 +138,12 @@ namespace Thirdweb
             }
 
             transaction.Input.From ??= await transaction._wallet.GetAddress();
-            transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction));
             transaction.Input.Value ??= new HexBigInteger(0);
             transaction.Input.Data ??= "0x";
-            transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction._client, transaction.Input.ChainId.Value));
+            transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction));
             transaction.Input.MaxFeePerGas = null;
             transaction.Input.MaxPriorityFeePerGas = null;
+            transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction));
 
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             string hash;

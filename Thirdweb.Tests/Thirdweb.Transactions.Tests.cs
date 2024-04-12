@@ -1,4 +1,6 @@
 ﻿using System.Numerics;
+using Nethereum.Hex.HexTypes;
+using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb.Tests;
 
@@ -6,6 +8,109 @@ public class TransactionTests : BaseTests
 {
     public TransactionTests(ITestOutputHelper output)
         : base(output) { }
+
+    private async Task<ThirdwebTransaction> CreateSampleTransaction()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var chainId = new BigInteger(1);
+
+        var transaction = await ThirdwebTransaction.Create(client, wallet, new TransactionInput(), chainId);
+        return transaction;
+    }
+
+    [Fact]
+    public async Task Create_ValidatesInputParameters()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var txInput = new TransactionInput() { From = await wallet.GetAddress() };
+        var chainId = new BigInteger(1);
+        var transaction = await ThirdwebTransaction.Create(client, wallet, txInput, chainId);
+        Assert.NotNull(transaction);
+    }
+
+    [Fact]
+    public async Task Create_ThrowsOnInvalidChainId()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var txInput = new TransactionInput() { From = "0x123" };
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
+    }
+
+    [Fact]
+    public async Task SetTo_UpdatesToAddress()
+    {
+        var transaction = await CreateSampleTransaction();
+        transaction.SetTo("0x456");
+        Assert.Equal("0x456", transaction.Input.To);
+    }
+
+    [Fact]
+    public async Task SetValue_SetsValue()
+    {
+        var transaction = await CreateSampleTransaction();
+        var value = new BigInteger(1000);
+        transaction.SetValue(value);
+        Assert.Equal(value.ToHexBigInteger(), transaction.Input.Value);
+    }
+
+    [Fact]
+    public async Task Send_ThrowsIfToAddressNotProvided()
+    {
+        var transaction = await CreateSampleTransaction();
+        transaction.SetTo(null);
+
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Send(transaction));
+    }
+
+    [Fact]
+    public async Task Send_CorrectlyHandlesNonce()
+    {
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetNonce(123);
+
+        Assert.Equal("0x7b", transaction.Input.Nonce.HexValue);
+        Assert.Equal("123", transaction.Input.Nonce.Value.ToString());
+    }
+
+    [Fact]
+    public async Task EstimateTotalCosts_CalculatesCostsCorrectly()
+    {
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetValue(new BigInteger(1000));
+        _ = transaction.SetGasLimit(21000);
+
+        var costs = await ThirdwebTransaction.EstimateTotalCosts(transaction);
+
+        Assert.NotEqual(BigInteger.Zero, costs.wei);
+    }
+
+    [Fact]
+    public async Task Simulate_ThrowsInsufficientFunds()
+    {
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetValue(new BigInteger(1000000000000000000));
+        _ = transaction.SetGasLimit(21000);
+
+        var exception = await Assert.ThrowsAsync<Exception>(() => ThirdwebTransaction.Simulate(transaction));
+        Assert.Contains("insufficient funds", exception.Message);
+    }
+
+    [Fact]
+    public async Task Simulate_ReturnsGasEstimate()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var transaction = await ThirdwebTransaction.Create(client, smartAccount, new TransactionInput(), 421614);
+        _ = transaction.SetValue(new BigInteger(0));
+        _ = transaction.SetGasLimit(250000);
+
+        var gas = await ThirdwebTransaction.Simulate(transaction);
+        Assert.NotEqual(BigInteger.Zero, gas);
+    }
 
     [Fact]
     public async Task WaitForTransactionReceipt()
