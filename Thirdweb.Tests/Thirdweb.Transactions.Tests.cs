@@ -136,6 +136,16 @@ public class TransactionTests : BaseTests
     }
 
     [Fact]
+    public async Task EstimateTotalCosts_WithoutValue_CalculatesCostsCorrectly()
+    {
+        var transaction = await CreateSampleTransaction();
+
+        var costs = await ThirdwebTransaction.EstimateTotalCosts(transaction);
+
+        Assert.NotEqual(BigInteger.Zero, costs.wei);
+    }
+
+    [Fact]
     public async Task EstimateGasCosts_CalculatesCostsCorrectly()
     {
         var transaction = await CreateSampleTransaction();
