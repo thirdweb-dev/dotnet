@@ -123,15 +123,18 @@ namespace Thirdweb
 
         public static string FormatERC20(this string wei, int decimalsToDisplay = 4, int decimals = 18, bool addCommas = false)
         {
-            decimals = decimals == 0 ? 18 : decimals;
             if (!BigInteger.TryParse(wei, out var weiBigInt))
             {
                 throw new ArgumentException("Invalid wei value.");
             }
 
             var eth = (double)weiBigInt / Math.Pow(10.0, decimals);
-            var format = addCommas ? "#,0." : "#0.";
-            format += new string('0', decimalsToDisplay);
+            var format = addCommas ? "#,0" : "#0";
+            if (decimalsToDisplay > 0)
+            {
+                format += ".";
+                format += new string('0', decimalsToDisplay);
+            }
 
             return eth.ToString(format);
         }
