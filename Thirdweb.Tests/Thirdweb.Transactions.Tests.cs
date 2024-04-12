@@ -36,7 +36,8 @@ public class TransactionTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
         var txInput = new TransactionInput() { From = "0x123" };
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
+        Assert.Contains("Transaction sender (from) must match wallet address", ex.Message);
     }
 
     [Fact]

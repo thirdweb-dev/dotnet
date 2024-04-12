@@ -32,8 +32,9 @@ namespace Thirdweb
 
         public static async Task<ThirdwebTransaction> Create(ThirdwebClient client, IThirdwebWallet wallet, TransactionInput txInput, BigInteger chainId)
         {
-            txInput.From ??= await wallet.GetAddress();
-            return await wallet.GetAddress() != txInput.From
+            var address = await wallet.GetAddress();
+            txInput.From ??= address;
+            return address != txInput.From
                 ? throw new ArgumentException("Transaction sender (from) must match wallet address")
                 : client == null
                     ? throw new ArgumentNullException(nameof(client))
