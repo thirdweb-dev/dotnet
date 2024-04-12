@@ -9,7 +9,7 @@ using Nethereum.Hex.HexConvertors.Extensions;
 
 namespace Thirdweb
 {
-    public struct GasCosts
+    public struct TotalCosts
     {
         public string ether;
         public BigInteger wei;
@@ -85,13 +85,13 @@ namespace Thirdweb
             return this;
         }
 
-        public static async Task<GasCosts> EstimateTotalCosts(ThirdwebTransaction transaction)
+        public static async Task<TotalCosts> EstimateTotalCosts(ThirdwebTransaction transaction)
         {
             var gasPrice = transaction.Input.GasPrice?.Value ?? await EstimateGasPrice(transaction);
             var gasLimit = transaction.Input.Gas?.Value ?? await EstimateGasLimit(transaction, true);
             var gasCost = BigInteger.Multiply(gasLimit, gasPrice);
             var gasCostWithValue = BigInteger.Add(gasCost, transaction.Input.Value?.Value ?? 0);
-            return new GasCosts { ether = gasCostWithValue.ToString().ToEth(18, false), wei = gasCostWithValue };
+            return new TotalCosts { ether = gasCostWithValue.ToString().ToEth(18, false), wei = gasCostWithValue };
         }
 
         public static async Task<BigInteger> EstimateGasPrice(ThirdwebTransaction transaction, bool withBump = true)
