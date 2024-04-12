@@ -63,7 +63,7 @@ namespace Thirdweb
             return function.DecodeTypeOutput<T>(resultData);
         }
 
-        public static async Task<TransactionReceipt> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
+        public static async Task<ThirdwebTransaction> Prepare(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
         {
             var service = new Nethereum.Contracts.Contract(null, contract.Abi, contract.Address);
             var function = service.GetFunction(method);
@@ -76,7 +76,12 @@ namespace Thirdweb
                 Value = new HexBigInteger(weiValue),
             };
 
-            var thirdwebTx = await ThirdwebTransaction.Create(contract.Client, wallet, transaction, contract.Chain);
+            return await ThirdwebTransaction.Create(contract.Client, wallet, transaction, contract.Chain);
+        }
+
+        public static async Task<TransactionReceipt> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
+        {
+            var thirdwebTx = await Prepare(wallet, contract, method, weiValue, parameters);
             return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(thirdwebTx);
         }
     }
