@@ -63,44 +63,21 @@ namespace Thirdweb
             return function.DecodeTypeOutput<T>(resultData);
         }
 
-        public static async Task<string> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
+        public static async Task<TransactionReceipt> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
         {
-            var rpc = ThirdwebRPC.GetRpcInstance(contract.Client, contract.Chain);
-
             var service = new Nethereum.Contracts.Contract(null, contract.Abi, contract.Address);
             var function = service.GetFunction(method);
             var data = function.GetData(parameters);
-
             var transaction = new TransactionInput
             {
                 From = await wallet.GetAddress(),
                 To = contract.Address,
                 Data = data,
+                Value = new HexBigInteger(weiValue),
             };
 
-            // TODO: Implement 1559
-            transaction.Gas = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_estimateGas", transaction));
-            transaction.GasPrice = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice"));
-            transaction.GasPrice = new HexBigInteger(transaction.GasPrice.Value * 10 / 9);
-            transaction.Value = new HexBigInteger(weiValue);
-
-            string hash;
-            switch (wallet.AccountType)
-            {
-                case ThirdwebAccountType.PrivateKeyAccount:
-                    transaction.Nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await wallet.GetAddress(), "latest"));
-                    var signedTx = await wallet.SignTransaction(transaction, contract.Chain);
-                    hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
-                    break;
-                case ThirdwebAccountType.SmartAccount:
-                    var smartAccount = wallet as SmartWallet;
-                    hash = await smartAccount.SendTransaction(transaction);
-                    break;
-                default:
-                    throw new NotImplementedException("Account type not supported");
-            }
-            Console.WriteLine($"Transaction hash: {hash}");
-            return hash;
+            var thirdwebTx = await ThirdwebTransaction.Create(contract.Client, wallet, transaction, contract.Chain);
+            return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(thirdwebTx);
         }
     }
 }

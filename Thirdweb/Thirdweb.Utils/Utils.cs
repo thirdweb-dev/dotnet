@@ -1,10 +1,8 @@
-﻿using System.Numerics;
+﻿using System.Globalization;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
-using Nethereum.ABI.FunctionEncoding;
-using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Signer;
 
 namespace Thirdweb
@@ -28,49 +26,6 @@ namespace Thirdweb
             }
 
             return hex.ToString();
-        }
-
-        public static async Task<TransactionReceipt> GetTransactionReceipt(ThirdwebClient client, BigInteger chainId, string txHash, CancellationToken cancellationToken = default)
-        {
-            var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
-            var receipt = await rpc.SendRequestAsync<TransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
-            while (receipt == null)
-            {
-                if (cancellationToken != CancellationToken.None)
-                {
-                    await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
-                    cancellationToken.ThrowIfCancellationRequested();
-                }
-                else
-                {
-                    await Task.Delay(1000, CancellationToken.None).ConfigureAwait(false);
-                }
-
-                receipt = await rpc.SendRequestAsync<TransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
-            }
-
-            if (receipt.Failed())
-            {
-                throw new Exception($"Transaction {txHash} execution reverted.");
-            }
-
-            var userOpEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationEventEventDTO>();
-            if (userOpEvent != null && userOpEvent.Count > 0 && userOpEvent[0].Event.Success == false)
-            {
-                var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
-                if (revertReasonEvent != null && revertReasonEvent.Count > 0)
-                {
-                    var revertReason = revertReasonEvent[0].Event.RevertReason;
-                    var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
-                    throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
-                }
-                else
-                {
-                    throw new Exception($"Transaction {txHash} execution silently reverted with no reason string");
-                }
-            }
-
-            return receipt;
         }
 
         public static byte[] HashPrefixedMessage(this byte[] messageBytes)
@@ -148,6 +103,45 @@ namespace Thirdweb
             }
 
             return headers;
+        }
+
+        public static string ToWei(this string eth)
+        {
+            if (!double.TryParse(eth, NumberStyles.Number, CultureInfo.InvariantCulture, out var ethDouble))
+            {
+                throw new ArgumentException("Invalid eth value.");
+            }
+
+            var wei = (BigInteger)(ethDouble * Constants.DECIMALS_18);
+            return wei.ToString();
+        }
+
+        public static string ToEth(this string wei, int decimalsToDisplay = 4, bool addCommas = false)
+        {
+            return FormatERC20(wei, decimalsToDisplay, 18, addCommas);
+        }
+
+        public static string FormatERC20(this string wei, int decimalsToDisplay = 4, int decimals = 18, bool addCommas = false)
+        {
+            decimals = decimals == 0 ? 18 : decimals;
+            if (!BigInteger.TryParse(wei, out var weiBigInt))
+            {
+                throw new ArgumentException("Invalid wei value.");
+            }
+
+            var eth = (double)weiBigInt / Math.Pow(10.0, decimals);
+            var format = addCommas ? "#,0" : "#0";
+            if (decimalsToDisplay > 0)
+            {
+                format += ".";
+            }
+
+            for (var i = 0; i < decimalsToDisplay; i++)
+            {
+                format += "#";
+            }
+
+            return eth.ToString(format);
         }
     }
 }

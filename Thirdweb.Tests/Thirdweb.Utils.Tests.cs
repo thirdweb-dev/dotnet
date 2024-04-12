@@ -28,16 +28,16 @@ public class UtilsTests : BaseTests
         var aaTxHash = "0xbf76bd85e1759cf5cf9f4c7c52e76a74d32687f0b516017ff28192d04df50782";
         var aaSilentRevertTxHash = "0x8ada86c63846da7a3f91b8c8332de03f134e7619886425df858ee5400a9d9958";
 
-        var normalReceipt = await Utils.GetTransactionReceipt(client, chainId, normalTxHash);
+        var normalReceipt = await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, normalTxHash);
         Assert.NotNull(normalReceipt);
 
-        var failedReceipt = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetTransactionReceipt(client, chainId, failedTxHash));
+        var failedReceipt = await Assert.ThrowsAsync<Exception>(async () => await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, failedTxHash));
         Assert.Equal($"Transaction {failedTxHash} execution reverted.", failedReceipt.Message);
 
-        var aaReceipt = await Utils.GetTransactionReceipt(client, chainId, aaTxHash);
+        var aaReceipt = await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, aaTxHash);
         Assert.NotNull(aaReceipt);
 
-        var aaFailedReceipt = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetTransactionReceipt(client, chainId, aaSilentRevertTxHash));
+        var aaFailedReceipt = await Assert.ThrowsAsync<Exception>(async () => await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, aaSilentRevertTxHash));
         Assert.StartsWith($"Transaction {aaSilentRevertTxHash} execution silently reverted", aaFailedReceipt.Message);
     }
 
@@ -47,7 +47,7 @@ public class UtilsTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var chainId = 84532;
         var aaSilentRevertTxHashWithReason = "0x5374743bbb749df47a279ac21e6ed472c30cd471923a7bc78db6a40e1b6924de";
-        var aaFailedReceiptWithReason = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetTransactionReceipt(client, chainId, aaSilentRevertTxHashWithReason));
+        var aaFailedReceiptWithReason = await Assert.ThrowsAsync<Exception>(async () => await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, aaSilentRevertTxHashWithReason));
         Assert.StartsWith($"Transaction {aaSilentRevertTxHashWithReason} execution silently reverted:", aaFailedReceiptWithReason.Message);
     }
 
@@ -63,37 +63,37 @@ public class UtilsTests : BaseTests
 
         var cts = new CancellationTokenSource();
         cts.CancelAfter(10000);
-        var normalReceipt = await Utils.GetTransactionReceipt(client, chainId, normalTxHash, cts.Token);
+        var normalReceipt = await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, normalTxHash, cts.Token);
         Assert.NotNull(normalReceipt);
 
         cts = new CancellationTokenSource();
         cts.CancelAfter(10000);
-        var failedReceipt = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetTransactionReceipt(client, chainId, failedTxHash, cts.Token));
+        var failedReceipt = await Assert.ThrowsAsync<Exception>(async () => await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, failedTxHash, cts.Token));
         Assert.Equal($"Transaction {failedTxHash} execution reverted.", failedReceipt.Message);
 
         cts = new CancellationTokenSource();
         cts.CancelAfter(10000);
-        var aaReceipt = await Utils.GetTransactionReceipt(client, chainId, aaTxHash, cts.Token);
+        var aaReceipt = await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, aaTxHash, cts.Token);
         Assert.NotNull(aaReceipt);
 
         cts = new CancellationTokenSource();
         cts.CancelAfter(10000);
-        var aaFailedReceipt = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetTransactionReceipt(client, chainId, aaSilentRevertTxHash, cts.Token));
+        var aaFailedReceipt = await Assert.ThrowsAsync<Exception>(async () => await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, aaSilentRevertTxHash, cts.Token));
         Assert.StartsWith($"Transaction {aaSilentRevertTxHash} execution silently reverted", aaFailedReceipt.Message);
 
         var infiniteTxHash = "0x55181384a4b908ddf6311cf0eb55ea0aa2b1ef4d9e0cc047eab9051fec284958";
         cts = new CancellationTokenSource();
         cts.CancelAfter(1);
-        var infiniteReceipt = await Assert.ThrowsAsync<TaskCanceledException>(async () => await Utils.GetTransactionReceipt(client, chainId, infiniteTxHash, cts.Token));
+        var infiniteReceipt = await Assert.ThrowsAsync<TaskCanceledException>(async () => await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, infiniteTxHash, cts.Token));
         Assert.Equal("A task was canceled.", infiniteReceipt.Message);
 
         cts = new CancellationTokenSource();
-        var infiniteReceipt2 = Assert.ThrowsAsync<TaskCanceledException>(() => Utils.GetTransactionReceipt(client, chainId, infiniteTxHash, cts.Token));
+        var infiniteReceipt2 = Assert.ThrowsAsync<TaskCanceledException>(() => ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, infiniteTxHash, cts.Token));
         await Task.Delay(2000);
         cts.Cancel();
         Assert.Equal("A task was canceled.", (await infiniteReceipt2).Message);
 
-        var aaReceipt2 = await Utils.GetTransactionReceipt(client, chainId, aaTxHash, CancellationToken.None);
+        var aaReceipt2 = await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, aaTxHash, CancellationToken.None);
         Assert.NotNull(aaReceipt2);
     }
 

@@ -100,9 +100,9 @@ public class ContractsTests : BaseTests
         var data = new byte[] { };
         var result = await ThirdwebContract.Write(smartAccount, contract, "claim", 0, receiver, quantity, currency, pricePerToken, allowlistProof, data);
         Assert.NotNull(result);
-        var receipt = await Utils.GetTransactionReceipt(contract.Client, contract.Chain, result);
+        var receipt = await ThirdwebTransaction.WaitForTransactionReceipt(contract.Client, contract.Chain, result.TransactionHash);
         Assert.NotNull(receipt);
-        Assert.Equal(result, receipt.TransactionHash);
+        Assert.Equal(result.TransactionHash, receipt.TransactionHash);
     }
 
     [Fact]
