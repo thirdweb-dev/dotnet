@@ -1,5 +1,6 @@
 # Thirdweb .NET SDK
 
+![NuGet Version](https://img.shields.io/nuget/v/Thirdweb)
 [![codecov](https://codecov.io/gh/thirdweb-dev/thirdweb-dotnet/graph/badge.svg?token=AFF179W07C)](https://codecov.io/gh/thirdweb-dev/thirdweb-dotnet)
 
 ## Overview
