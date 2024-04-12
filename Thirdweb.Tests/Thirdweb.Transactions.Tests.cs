@@ -60,7 +60,7 @@ public class TransactionTests : BaseTests
     public async Task SetTo_UpdatesToAddress()
     {
         var transaction = await CreateSampleTransaction();
-        transaction.SetTo("0x456");
+        _ = transaction.SetTo("0x456");
         Assert.Equal("0x456", transaction.Input.To);
     }
 
@@ -69,7 +69,7 @@ public class TransactionTests : BaseTests
     {
         var transaction = await CreateSampleTransaction();
         var value = new BigInteger(1000);
-        transaction.SetValue(value);
+        _ = transaction.SetValue(value);
         Assert.Equal(value.ToHexBigInteger(), transaction.Input.Value);
     }
 
@@ -87,15 +87,15 @@ public class TransactionTests : BaseTests
     {
         var transaction = await CreateSampleTransaction();
         var gas = new BigInteger(1000);
-        transaction.SetGasLimit(gas);
-        Assert.Equal(gas.ToHexBigInteger(), transaction.Input.Gas);
+        _ = transaction.SetGasPrice(gas);
+        Assert.Equal(gas.ToHexBigInteger(), transaction.Input.GasPrice);
     }
 
     [Fact]
     public async Task Send_ThrowsIfToAddressNotProvided()
     {
         var transaction = await CreateSampleTransaction();
-        transaction.SetTo(null);
+        _ = transaction.SetTo(null);
 
         _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Send(transaction));
     }
@@ -116,6 +116,18 @@ public class TransactionTests : BaseTests
         var transaction = await CreateSampleTransaction();
         _ = transaction.SetValue(new BigInteger(1000));
         _ = transaction.SetGasLimit(21000);
+        _ = transaction.SetGasPrice(new BigInteger(1000000000));
+
+        var costs = await ThirdwebTransaction.EstimateTotalCosts(transaction);
+
+        Assert.NotEqual(BigInteger.Zero, costs.wei);
+    }
+
+    [Fact]
+    public async Task EstimateTotalCosts_WithoutSetting_CalculatesCostsCorrectly()
+    {
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetValue(new BigInteger(1000));
 
         var costs = await ThirdwebTransaction.EstimateTotalCosts(transaction);
 
@@ -128,8 +140,20 @@ public class TransactionTests : BaseTests
         var transaction = await CreateSampleTransaction();
         _ = transaction.SetValue(new BigInteger(1000));
         _ = transaction.SetGasLimit(21000);
+        _ = transaction.SetGasPrice(new BigInteger(1000000000));
 
-        var costs = await ThirdwebTransaction.EstimateTotalCosts(transaction);
+        var costs = await ThirdwebTransaction.EstimateGasCosts(transaction);
+
+        Assert.NotEqual(BigInteger.Zero, costs.wei);
+    }
+
+    [Fact]
+    public async Task EstimateGasCosts_WithoutSetting_CalculatesCostsCorrectly()
+    {
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetValue(new BigInteger(1000));
+
+        var costs = await ThirdwebTransaction.EstimateGasCosts(transaction);
 
         Assert.NotEqual(BigInteger.Zero, costs.wei);
     }
