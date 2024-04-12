@@ -130,16 +130,8 @@ namespace Thirdweb
             }
 
             var eth = (double)weiBigInt / Math.Pow(10.0, decimals);
-            var format = addCommas ? "#,0" : "#0";
-            if (decimalsToDisplay > 0)
-            {
-                format += ".";
-            }
-
-            for (var i = 0; i < decimalsToDisplay; i++)
-            {
-                format += "#";
-            }
+            var format = addCommas ? "#,0." : "#0.";
+            format += new string('0', decimalsToDisplay);
 
             return eth.ToString(format);
         }
