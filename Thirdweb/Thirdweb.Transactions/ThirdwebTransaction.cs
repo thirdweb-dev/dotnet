@@ -85,6 +85,14 @@ namespace Thirdweb
             return this;
         }
 
+        public static async Task<TotalCosts> EstimateGasCosts(ThirdwebTransaction transaction)
+        {
+            var gasPrice = transaction.Input.GasPrice?.Value ?? await EstimateGasPrice(transaction);
+            var gasLimit = transaction.Input.Gas?.Value ?? await EstimateGasLimit(transaction, true);
+            var gasCost = BigInteger.Multiply(gasLimit, gasPrice);
+            return new TotalCosts { ether = gasCost.ToString().ToEth(18, false), wei = gasCost };
+        }
+
         public static async Task<TotalCosts> EstimateTotalCosts(ThirdwebTransaction transaction)
         {
             var gasPrice = transaction.Input.GasPrice?.Value ?? await EstimateGasPrice(transaction);

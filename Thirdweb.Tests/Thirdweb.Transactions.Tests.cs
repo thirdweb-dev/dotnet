@@ -123,6 +123,32 @@ public class TransactionTests : BaseTests
     }
 
     [Fact]
+    public async Task EstimateGasCosts_CalculatesCostsCorrectly()
+    {
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetValue(new BigInteger(1000));
+        _ = transaction.SetGasLimit(21000);
+
+        var costs = await ThirdwebTransaction.EstimateTotalCosts(transaction);
+
+        Assert.NotEqual(BigInteger.Zero, costs.wei);
+    }
+
+    [Fact]
+    public async Task EstimateTotalCosts_HigherThanGasCostsByValue()
+    {
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetValue(new BigInteger(1000));
+        _ = transaction.SetGasLimit(21000);
+
+        var totalCosts = await ThirdwebTransaction.EstimateTotalCosts(transaction);
+        var gasCosts = await ThirdwebTransaction.EstimateGasCosts(transaction);
+
+        Assert.True(totalCosts.wei > gasCosts.wei);
+        Assert.True(totalCosts.wei - gasCosts.wei == transaction.Input.Value.Value);
+    }
+
+    [Fact]
     public async Task EstimateGasPrice_BumpsCorrectly()
     {
         var transaction = await CreateSampleTransaction();
