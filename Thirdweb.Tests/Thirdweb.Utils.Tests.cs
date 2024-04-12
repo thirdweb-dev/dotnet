@@ -189,14 +189,14 @@ public class UtilsTests : BaseTests
     public void ToWei_ThrowsOnInvalidInput()
     {
         var invalidEth = "abc";
-        Assert.Throws<ArgumentException>(() => Utils.ToWei(invalidEth));
+        _ = Assert.Throws<ArgumentException>(() => Utils.ToWei(invalidEth));
     }
 
     [Fact]
     public void ToWei_ThrowsExceptionForInvalidInput()
     {
         var invalidEth = "invalid";
-        Assert.Throws<ArgumentException>(() => Utils.ToWei(invalidEth));
+        _ = Assert.Throws<ArgumentException>(() => Utils.ToWei(invalidEth));
     }
 
     [Fact]
