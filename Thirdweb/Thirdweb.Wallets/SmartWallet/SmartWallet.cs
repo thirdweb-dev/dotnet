@@ -5,6 +5,7 @@ using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
+using Newtonsoft.Json;
 using Thirdweb.AccountAbstraction;
 
 namespace Thirdweb
@@ -420,9 +421,16 @@ namespace Thirdweb
             return _personalAccount.SignTypedDataV4(data, typedData);
         }
 
-        public Task<string> SignTransaction(TransactionInput transaction, BigInteger chainId)
+        public async Task<BigInteger> EstimateUserOperationGas(TransactionInput transaction, BigInteger chainId)
         {
-            return _personalAccount.SignTransaction(transaction, chainId);
+            var signedOp = await SignUserOp(transaction);
+            var cost = signedOp.CallGasLimit + signedOp.VerificationGasLimit + signedOp.PreVerificationGas;
+            return cost;
+        }
+
+        public async Task<string> SignTransaction(TransactionInput transaction, BigInteger chainId)
+        {
+            return JsonConvert.SerializeObject(EncodeUserOperation(await SignUserOp(transaction)));
         }
 
         public Task<bool> IsConnected()
