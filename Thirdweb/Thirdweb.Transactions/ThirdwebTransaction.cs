@@ -156,7 +156,7 @@ namespace Thirdweb
             {
                 case ThirdwebAccountType.PrivateKeyAccount:
                     transaction.Input.Nonce ??= new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await transaction._wallet.GetAddress(), "latest"));
-                    var signedTx = await transaction._wallet.SignTransaction(transaction.Input, transaction.Input.ChainId.Value);
+                    var signedTx = await Sign(transaction);
                     hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
                     break;
                 case ThirdwebAccountType.SmartAccount:

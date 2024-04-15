@@ -93,6 +93,27 @@ public class TransactionTests : BaseTests
     }
 
     [Fact]
+    public async Task Sign_SmartWallet_SignsTransaction()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var transaction = await ThirdwebTransaction.Create(
+            client,
+            smartAccount,
+            new TransactionInput()
+            {
+                To = Constants.ADDRESS_ZERO,
+                Value = new HexBigInteger(0),
+                Data = "0x"
+            },
+            421614
+        );
+        var signed = await ThirdwebTransaction.Sign(transaction);
+        Assert.NotNull(signed);
+    }
+
+    [Fact]
     public async Task Send_ThrowsIfToAddressNotProvided()
     {
         var transaction = await CreateSampleTransaction();
