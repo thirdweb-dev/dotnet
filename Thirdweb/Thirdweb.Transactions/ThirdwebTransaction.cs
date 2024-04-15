@@ -1,7 +1,6 @@
 using System.Numerics;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
-using Nethereum.RPC.Eth.Transactions;
 using Newtonsoft.Json;
 using Nethereum.Contracts;
 using Nethereum.ABI.FunctionEncoding;
@@ -34,6 +33,7 @@ namespace Thirdweb
         {
             var address = await wallet.GetAddress();
             txInput.From ??= address;
+            txInput.Data ??= "0x";
             return address != txInput.From
                 ? throw new ArgumentException("Transaction sender (from) must match wallet address")
                 : client == null
@@ -89,54 +89,50 @@ namespace Thirdweb
         public static async Task<TotalCosts> EstimateGasCosts(ThirdwebTransaction transaction)
         {
             var gasPrice = transaction.Input.GasPrice?.Value ?? await EstimateGasPrice(transaction);
-            var gasLimit = transaction.Input.Gas?.Value ?? await EstimateGasLimit(transaction, true);
+            var gasLimit = transaction.Input.Gas?.Value ?? await EstimateGasLimit(transaction);
             var gasCost = BigInteger.Multiply(gasLimit, gasPrice);
             return new TotalCosts { ether = gasCost.ToString().ToEth(18, false), wei = gasCost };
         }
 
         public static async Task<TotalCosts> EstimateTotalCosts(ThirdwebTransaction transaction)
         {
-            var gasPrice = transaction.Input.GasPrice?.Value ?? await EstimateGasPrice(transaction);
-            var gasLimit = transaction.Input.Gas?.Value ?? await EstimateGasLimit(transaction, true);
-            var gasCost = BigInteger.Multiply(gasLimit, gasPrice);
-            var gasCostWithValue = BigInteger.Add(gasCost, transaction.Input.Value?.Value ?? 0);
-            return new TotalCosts { ether = gasCostWithValue.ToString().ToEth(18, false), wei = gasCostWithValue };
+            var gasCosts = await EstimateGasCosts(transaction);
+            var value = transaction.Input.Value?.Value ?? 0;
+            return new TotalCosts { ether = (value + gasCosts.wei).ToString().ToEth(18, false), wei = value + gasCosts.wei };
         }
 
         public static async Task<BigInteger> EstimateGasPrice(ThirdwebTransaction transaction, bool withBump = true)
         {
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var hex = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice"));
+            return withBump ? hex.Value * 10 / 9 : hex.Value;
+        }
+
+        public static async Task<string> Simulate(ThirdwebTransaction transaction)
+        {
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var data = await rpc.SendRequestAsync<string>("eth_call", transaction.Input, "latest");
+            return data;
+        }
+
+        public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction)
+        {
+            if (transaction._wallet.AccountType == ThirdwebAccountType.SmartAccount)
+            {
+                var smartAccount = transaction._wallet as SmartWallet;
+                return await smartAccount.EstimateUserOperationGas(transaction.Input, transaction.Input.ChainId.Value);
+            }
+            else
             {
                 var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
-                var hex = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice"));
-                return withBump ? hex.Value * 10 / 9 : hex.Value;
+                var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest");
+                return new HexBigInteger(hex).Value;
             }
         }
 
-        public static async Task<BigInteger> Simulate(ThirdwebTransaction transaction)
+        public static async Task<string> Sign(ThirdwebTransaction transaction)
         {
-            return await EstimateGasLimit(transaction, false);
-        }
-
-        public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction, bool overrideBalance = true)
-        {
-            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
-            var from = transaction.Input.From;
-            var hex = overrideBalance
-                ? await rpc.SendRequestAsync<string>(
-                    "eth_estimateGas",
-                    transaction.Input,
-                    "latest",
-                    new Dictionary<string, Dictionary<string, string>>()
-                    {
-                        {
-                            from,
-                            new() { { "balance", "0xFFFFFFFFFFFFFFFFFFFF" } }
-                        }
-                    }
-                )
-                : await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest");
-
-            return new HexBigInteger(hex).Value;
+            return await transaction._wallet.SignTransaction(transaction.Input, transaction.Input.ChainId.Value);
         }
 
         public static async Task<string> Send(ThirdwebTransaction transaction)
@@ -149,10 +145,10 @@ namespace Thirdweb
             transaction.Input.From ??= await transaction._wallet.GetAddress();
             transaction.Input.Value ??= new HexBigInteger(0);
             transaction.Input.Data ??= "0x";
-            transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction));
             transaction.Input.MaxFeePerGas = null;
             transaction.Input.MaxPriorityFeePerGas = null;
             transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction));
+            transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction));
 
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             string hash;
@@ -160,7 +156,7 @@ namespace Thirdweb
             {
                 case ThirdwebAccountType.PrivateKeyAccount:
                     transaction.Input.Nonce ??= new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await transaction._wallet.GetAddress(), "latest"));
-                    var signedTx = await transaction._wallet.SignTransaction(transaction.Input, transaction.Input.ChainId.Value);
+                    var signedTx = await Sign(transaction);
                     hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
                     break;
                 case ThirdwebAccountType.SmartAccount:
