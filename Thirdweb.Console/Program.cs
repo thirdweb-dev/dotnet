@@ -1,6 +1,9 @@
 ﻿using System.Numerics;
 using Thirdweb;
 using dotenv.net;
+using Newtonsoft.Json;
+using Nethereum.RPC.Eth.DTOs;
+using Nethereum.Hex.HexTypes;
 
 DotEnv.Load();
 
@@ -89,6 +92,42 @@ Console.WriteLine($"Contract write result: {writeResult}");
 
 var balanceAfter = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartWallet.GetAddress());
 Console.WriteLine($"Balance after mint: {balanceAfter}");
+
+// Transaction Builder
+var preparedTx = await ThirdwebContract.Prepare(wallet: smartWallet, contract: contract, method: "mintTo", weiValue: 0, parameters: new object[] { await smartWallet.GetAddress(), 100 });
+Console.WriteLine($"Prepared transaction: {preparedTx}");
+var estimatedCosts = await ThirdwebTransaction.EstimateGasCosts(preparedTx);
+Console.WriteLine($"Estimated ETH gas cost: {estimatedCosts.ether}");
+var totalCosts = await ThirdwebTransaction.EstimateTotalCosts(preparedTx);
+Console.WriteLine($"Estimated ETH total cost: {totalCosts.ether}");
+var simulationData = await ThirdwebTransaction.Simulate(preparedTx);
+Console.WriteLine($"Simulation data: {simulationData}");
+var txHash = await ThirdwebTransaction.Send(preparedTx);
+Console.WriteLine($"Transaction hash: {txHash}");
+var receipt = await ThirdwebTransaction.WaitForTransactionReceipt(client, 421614, txHash);
+Console.WriteLine($"Transaction receipt: {JsonConvert.SerializeObject(receipt)}");
+
+// Transaction Builder - raw transfer
+var rawTx = new TransactionInput
+{
+    From = await smartWallet.GetAddress(),
+    To = await smartWallet.GetAddress(),
+    Value = new HexBigInteger(BigInteger.Zero),
+    Data = "0x",
+};
+var preparedRawTx = await ThirdwebTransaction.Create(client: client, wallet: smartWallet, txInput: rawTx, chainId: 421614);
+Console.WriteLine($"Prepared raw transaction: {preparedRawTx}");
+var estimatedCostsRaw = await ThirdwebTransaction.EstimateGasCosts(preparedRawTx);
+Console.WriteLine($"Estimated ETH gas cost: {estimatedCostsRaw.ether}");
+var totalCostsRaw = await ThirdwebTransaction.EstimateTotalCosts(preparedRawTx);
+Console.WriteLine($"Estimated ETH total cost: {totalCostsRaw.ether}");
+var simulationDataRaw = await ThirdwebTransaction.Simulate(preparedRawTx);
+Console.WriteLine($"Simulation data: {simulationDataRaw}");
+var txHashRaw = await ThirdwebTransaction.Send(preparedRawTx);
+Console.WriteLine($"Raw transaction hash: {txHashRaw}");
+var receiptRaw = await ThirdwebTransaction.WaitForTransactionReceipt(client, 421614, txHashRaw);
+Console.WriteLine($"Raw transaction receipt: {JsonConvert.SerializeObject(receiptRaw)}");
+
 
 // Storage actions
 
