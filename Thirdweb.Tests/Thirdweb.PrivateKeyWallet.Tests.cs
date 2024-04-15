@@ -170,6 +170,23 @@ public class PrivateKeyWalletTests : BaseTests
     }
 
     [Fact]
+    public async Task SignTransaction_NoFrom_Success()
+    {
+        var account = await GetAccount();
+        var transaction = new TransactionInput
+        {
+            To = Constants.ADDRESS_ZERO,
+            // Value = new HexBigInteger(0),
+            Gas = new HexBigInteger(21000),
+            Data = "0x",
+            Nonce = new HexBigInteger(99999999999),
+            GasPrice = new HexBigInteger(10000000000)
+        };
+        var signature = await account.SignTransaction(transaction, 421614);
+        Assert.NotNull(signature);
+    }
+
+    [Fact]
     public async Task SignTransaction_NullTransaction()
     {
         var account = await GetAccount();
