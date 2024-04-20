@@ -36,9 +36,6 @@ namespace Thirdweb
     [Serializable]
     public class LoginPayloadData
     {
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
         [JsonProperty("domain")]
         public string Domain { get; set; }
 
@@ -71,10 +68,5 @@ namespace Thirdweb
 
         [JsonProperty("resources", NullValueHandling = NullValueHandling.Ignore)]
         public List<string> Resources { get; set; }
-
-        public LoginPayloadData()
-        {
-            Type = "evm";
-        }
     }
 }
