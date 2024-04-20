@@ -224,6 +224,27 @@ public class UtilsTests : BaseTests
     }
 
     [Fact]
+    public void GenerateSIWE_WithResources_ReturnsCorrectValue()
+    {
+        var loginPayloadData = new LoginPayloadData
+        {
+            Version = "1",
+            ChainId = "421614",
+            Nonce = "0",
+            Address = Constants.ADDRESS_ZERO,
+            Domain = "thirdweb.com",
+            IssuedAt = "0",
+            ExpirationTime = "0",
+            InvalidBefore = "0",
+            Resources = new List<string>() { "resource1", "resource2" }
+        };
+        var expectedSIWE =
+            "thirdweb.com wants you to sign in with your Ethereum account:\n0x0000000000000000000000000000000000000000\n\n\nVersion: 1\nChain ID: 421614\nNonce: 0\nIssued At: 0\nExpiration Time: 0\nNot Before: 0\nResources:\n- resource1\n- resource2";
+        var siwe = Utils.GenerateSIWE(loginPayloadData);
+        Assert.Equal(expectedSIWE, siwe);
+    }
+
+    [Fact]
     public void GenerateSIWE_ThrowsOnNullLoginPayloadData()
     {
         LoginPayloadData? loginPayloadData = null;
