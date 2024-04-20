@@ -202,4 +202,133 @@ public class UtilsTests : BaseTests
         var invalidWei = "not_a_number";
         Assert.Throws<ArgumentException>(() => Utils.FormatERC20(invalidWei, 4));
     }
+
+    [Fact]
+    public void GenerateSIWE_ReturnsCorrectValue()
+    {
+        var loginPayloadData = new LoginPayloadData
+        {
+            Version = "1",
+            ChainId = "421614",
+            Nonce = "0",
+            Address = Constants.ADDRESS_ZERO,
+            Domain = "thirdweb.com",
+            IssuedAt = "0",
+            ExpirationTime = "0",
+            InvalidBefore = "0"
+        };
+        var expectedSIWE =
+            "thirdweb.com wants you to sign in with your Ethereum account:\n0x0000000000000000000000000000000000000000\n\n\nVersion: 1\nChain ID: 421614\nNonce: 0\nIssued At: 0\nExpiration Time: 0\nNot Before: 0";
+        var siwe = Utils.GenerateSIWE(loginPayloadData);
+        Assert.Equal(expectedSIWE, siwe);
+    }
+
+    [Fact]
+    public void GenerateSIWE_ThrowsOnNullLoginPayloadData()
+    {
+        LoginPayloadData? loginPayloadData = null;
+        _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
+    }
+
+    [Fact]
+    public void GenerateSIWE_ThrowsOnNullDomain()
+    {
+        var loginPayloadData = new LoginPayloadData
+        {
+            Version = "1",
+            ChainId = "421614",
+            Nonce = "0",
+            Address = Constants.ADDRESS_ZERO,
+            Domain = null!,
+            IssuedAt = "0",
+            ExpirationTime = "0",
+            InvalidBefore = "0"
+        };
+        _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
+    }
+
+    [Fact]
+    public void GenerateSIWE_ThrowsOnNullAddress()
+    {
+        var loginPayloadData = new LoginPayloadData
+        {
+            Version = "1",
+            ChainId = "421614",
+            Nonce = "0",
+            Address = null!,
+            Domain = "thirdweb.com",
+            IssuedAt = "0",
+            ExpirationTime = "0",
+            InvalidBefore = "0"
+        };
+        _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
+    }
+
+    [Fact]
+    public void GenerateSIWE_ThrowsOnNullVersion()
+    {
+        var loginPayloadData = new LoginPayloadData
+        {
+            Version = null!,
+            ChainId = "421614",
+            Nonce = "0",
+            Address = Constants.ADDRESS_ZERO,
+            Domain = "thirdweb.com",
+            IssuedAt = "0",
+            ExpirationTime = "0",
+            InvalidBefore = "0"
+        };
+        _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
+    }
+
+    [Fact]
+    public void GenerateSIWE_ThrowsOnNullChainId()
+    {
+        var loginPayloadData = new LoginPayloadData
+        {
+            Version = "1",
+            ChainId = null!,
+            Nonce = "0",
+            Address = Constants.ADDRESS_ZERO,
+            Domain = "thirdweb.com",
+            IssuedAt = "0",
+            ExpirationTime = "0",
+            InvalidBefore = "0"
+        };
+        _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
+    }
+
+    [Fact]
+    public void GenerateSIWE_ThrowsOnNullNonce()
+    {
+        var loginPayloadData = new LoginPayloadData
+        {
+            Version = "1",
+            ChainId = "421614",
+            Nonce = null!,
+            Address = Constants.ADDRESS_ZERO,
+            Domain = "thirdweb.com",
+            IssuedAt = "0",
+            ExpirationTime = "0",
+            InvalidBefore = "0"
+        };
+        _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
+    }
+
+    [Fact]
+    public void GenerateSIWE_ThrowsOnNullIssuedAt()
+    {
+        var loginPayloadData = new LoginPayloadData
+        {
+            Version = "1",
+            ChainId = "421614",
+            Nonce = "0",
+            Address = Constants.ADDRESS_ZERO,
+            Domain = "thirdweb.com",
+            IssuedAt = null!,
+            ExpirationTime = "0",
+            InvalidBefore = "0"
+        };
+        _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
+    }
 }
