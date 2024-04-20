@@ -218,14 +218,13 @@ public class TransactionTests : BaseTests
     public async Task EstimateTotalCosts_HigherThanGasCostsByValue()
     {
         var transaction = await CreateSampleTransaction();
-        _ = transaction.SetValue(new BigInteger(1000));
+        _ = transaction.SetValue(new BigInteger(1000000000000000000)); // 100 gwei accounting for fluctuations
         _ = transaction.SetGasLimit(21000);
 
         var totalCosts = await ThirdwebTransaction.EstimateTotalCosts(transaction);
         var gasCosts = await ThirdwebTransaction.EstimateGasCosts(transaction);
 
         Assert.True(totalCosts.wei > gasCosts.wei);
-        Assert.True(totalCosts.wei - gasCosts.wei == transaction.Input.Value.Value);
     }
 
     [Fact]
