@@ -462,7 +462,6 @@ namespace Thirdweb
             var payloadString = await payloadResponse.Content.ReadAsStringAsync();
 
             var loginBodyRaw = JsonConvert.DeserializeObject<LoginPayload>(payloadString);
-            var resourcesString = loginBodyRaw.payload.Resources != null ? "\nResources:" + string.Join("", loginBodyRaw.payload.Resources.Select(r => $"\n- {r}")) : string.Empty;
             var payloadToSign = Utils.GenerateSIWE(loginBodyRaw.payload);
 
             loginBodyRaw.signature = await PersonalSign(payloadToSign);
