@@ -138,5 +138,23 @@ namespace Thirdweb
 
             return eth.ToString(format);
         }
+
+        public static string GenerateSIWE(LoginPayloadData loginPayloadData)
+        {
+            var resourcesString = loginPayloadData.Resources != null ? "\nResources:" + string.Join("", loginPayloadData.Resources.Select(r => $"\n- {r}")) : string.Empty;
+            var payloadToSign =
+                $"{loginPayloadData.Domain} wants you to sign in with your Ethereum account:"
+                + $"\n{loginPayloadData.Address}\n\n"
+                + $"{(string.IsNullOrEmpty(loginPayloadData.Statement) ? "" : $"{loginPayloadData.Statement}\n")}"
+                + $"{(string.IsNullOrEmpty(loginPayloadData.Uri) ? "" : $"\nURI: {loginPayloadData.Uri}")}"
+                + $"\nVersion: {loginPayloadData.Version}"
+                + $"\nChain ID: {loginPayloadData.ChainId}"
+                + $"\nNonce: {loginPayloadData.Nonce}"
+                + $"\nIssued At: {loginPayloadData.IssuedAt}"
+                + $"{(string.IsNullOrEmpty(loginPayloadData.ExpirationTime) ? "" : $"\nExpiration Time: {loginPayloadData.ExpirationTime}")}"
+                + $"{(string.IsNullOrEmpty(loginPayloadData.InvalidBefore) ? "" : $"\nNot Before: {loginPayloadData.InvalidBefore}")}"
+                + resourcesString;
+            return payloadToSign;
+        }
     }
 }
