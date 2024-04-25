@@ -229,6 +229,19 @@ public class TransactionTests : BaseTests
     }
 
     [Fact]
+    public async Task EstimateGasFees_ReturnsCorrectly()
+    {
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetValue(new BigInteger(1000));
+        _ = transaction.SetTo(Constants.ADDRESS_ZERO);
+
+        (var maxFee, var maxPrio) = await ThirdwebTransaction.EstimateGasFees(transaction);
+
+        Assert.NotEqual(BigInteger.Zero, maxFee);
+        Assert.NotEqual(BigInteger.Zero, maxPrio);
+    }
+
+    [Fact]
     public async Task EstimateGasPrice_BumpsCorrectly()
     {
         var transaction = await CreateSampleTransaction();

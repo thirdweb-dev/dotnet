@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Nethereum.Contracts;
 using Nethereum.ABI.FunctionEncoding;
 using Nethereum.Hex.HexConvertors.Extensions;
+using Newtonsoft.Json.Linq;
 
 namespace Thirdweb
 {
@@ -101,6 +102,44 @@ namespace Thirdweb
             return new TotalCosts { ether = (value + gasCosts.wei).ToString().ToEth(18, false), wei = value + gasCosts.wei };
         }
 
+        public static async Task<(BigInteger, BigInteger)> EstimateGasFees(ThirdwebTransaction transaction, bool withBump = true)
+        {
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var chainId = transaction.Input.ChainId.Value;
+            var gasPrice = await EstimateGasPrice(transaction, withBump);
+
+            try
+            {
+                var block = await rpc.SendRequestAsync<JObject>("eth_getBlockByNumber", "latest", true);
+                var maxPriorityFeePerGas = await rpc.SendRequestAsync<BigInteger?>("eth_maxPriorityFeePerGas");
+                var baseBlockFee = block["result"]?["baseFeePerGas"]?.ToObject<BigInteger>() ?? new BigInteger(100);
+
+                if (chainId == 42220 || chainId == 44787 || chainId == 62320)
+                {
+                    return (gasPrice, gasPrice);
+                }
+
+                if (!maxPriorityFeePerGas.HasValue)
+                {
+                    maxPriorityFeePerGas = new BigInteger(2);
+                }
+
+                var preferredMaxPriorityFeePerGas = maxPriorityFeePerGas.Value * 10 / 9;
+                var maxFeePerGas = (baseBlockFee * 2) + preferredMaxPriorityFeePerGas;
+
+                if (withBump)
+                {
+                    maxFeePerGas *= 10 / 9;
+                }
+
+                return (maxFeePerGas, preferredMaxPriorityFeePerGas);
+            }
+            catch
+            {
+                return (gasPrice, gasPrice);
+            }
+        }
+
         public static async Task<BigInteger> EstimateGasPrice(ThirdwebTransaction transaction, bool withBump = true)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
@@ -145,10 +184,20 @@ namespace Thirdweb
             transaction.Input.From ??= await transaction._wallet.GetAddress();
             transaction.Input.Value ??= new HexBigInteger(0);
             transaction.Input.Data ??= "0x";
-            transaction.Input.MaxFeePerGas = null;
-            transaction.Input.MaxPriorityFeePerGas = null;
             transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction));
-            transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction));
+
+            if (transaction.Input.GasPrice == null)
+            {
+                (var maxFee, var maxPrio) = await EstimateGasFees(transaction);
+                transaction.Input.MaxFeePerGas ??= new HexBigInteger(maxFee);
+                transaction.Input.MaxPriorityFeePerGas ??= new HexBigInteger(maxPrio);
+            }
+            else
+            {
+                transaction.Input.MaxFeePerGas = null;
+                transaction.Input.MaxPriorityFeePerGas = null;
+                transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction));
+            }
 
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             string hash;
