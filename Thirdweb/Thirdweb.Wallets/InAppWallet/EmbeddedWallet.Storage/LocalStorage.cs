@@ -27,13 +27,13 @@ namespace Thirdweb.EWS
         private readonly Storage storage;
         private readonly string filePath;
 
-        internal LocalStorage(string clientId)
+        internal LocalStorage(string clientId, string storageDirectoryPath = null)
         {
             string directory;
 #if UNITY_5_3_OR_NEWER
                 directory = Application.persistentDataPath;
 #else
-            directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            directory = storageDirectoryPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             // Console.WriteLine($"Embedded Wallet Storage: Using '{directory}'");
 #endif
             directory = Path.Combine(directory, "EWS");
