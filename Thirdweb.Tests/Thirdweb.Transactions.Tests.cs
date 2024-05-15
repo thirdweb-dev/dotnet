@@ -221,10 +221,13 @@ public class TransactionTests : BaseTests
         _ = transaction.SetValue(new BigInteger(1000000000000000000)); // 100 gwei accounting for fluctuations
         _ = transaction.SetGasLimit(21000);
 
-        var totalCosts = await ThirdwebTransaction.EstimateTotalCosts(transaction);
-        var gasCosts = await ThirdwebTransaction.EstimateGasCosts(transaction);
+        var totalCostsTask = ThirdwebTransaction.EstimateTotalCosts(transaction);
+        var gasCostsTask = ThirdwebTransaction.EstimateGasCosts(transaction);
 
-        Assert.True(totalCosts.wei > gasCosts.wei);
+        var costs = await Task.WhenAll(totalCostsTask, gasCostsTask);
+
+        Assert.True(costs[0].wei > costs[1].wei);
+        Assert.True(costs[0].wei - costs[1].wei == transaction.Input.Value.Value);
     }
 
     [Fact]
