@@ -218,7 +218,7 @@ public class TransactionTests : BaseTests
     public async Task EstimateTotalCosts_HigherThanGasCostsByValue()
     {
         var transaction = await CreateSampleTransaction();
-        _ = transaction.SetValue(new BigInteger(1000));
+        _ = transaction.SetValue(new BigInteger(1000000000000000000)); // 100 gwei accounting for fluctuations
         _ = transaction.SetGasLimit(21000);
 
         var totalCostsTask = ThirdwebTransaction.EstimateTotalCosts(transaction);

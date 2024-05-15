@@ -138,5 +138,52 @@ namespace Thirdweb
 
             return eth.ToString(format);
         }
+
+        public static string GenerateSIWE(LoginPayloadData loginPayloadData)
+        {
+            if (loginPayloadData == null)
+            {
+                throw new ArgumentNullException(nameof(loginPayloadData));
+            }
+            else if (string.IsNullOrEmpty(loginPayloadData.Domain))
+            {
+                throw new ArgumentNullException(nameof(loginPayloadData.Domain));
+            }
+            else if (string.IsNullOrEmpty(loginPayloadData.Address))
+            {
+                throw new ArgumentNullException(nameof(loginPayloadData.Address));
+            }
+            else if (string.IsNullOrEmpty(loginPayloadData.Version))
+            {
+                throw new ArgumentNullException(nameof(loginPayloadData.Version));
+            }
+            else if (string.IsNullOrEmpty(loginPayloadData.ChainId))
+            {
+                throw new ArgumentNullException(nameof(loginPayloadData.ChainId));
+            }
+            else if (string.IsNullOrEmpty(loginPayloadData.Nonce))
+            {
+                throw new ArgumentNullException(nameof(loginPayloadData.Nonce));
+            }
+            else if (string.IsNullOrEmpty(loginPayloadData.IssuedAt))
+            {
+                throw new ArgumentNullException(nameof(loginPayloadData.IssuedAt));
+            }
+
+            var resourcesString = loginPayloadData.Resources != null ? "\nResources:" + string.Join("", loginPayloadData.Resources.Select(r => $"\n- {r}")) : string.Empty;
+            var payloadToSign =
+                $"{loginPayloadData.Domain} wants you to sign in with your Ethereum account:"
+                + $"\n{loginPayloadData.Address}\n\n"
+                + $"{(string.IsNullOrEmpty(loginPayloadData.Statement) ? "" : $"{loginPayloadData.Statement}\n")}"
+                + $"{(string.IsNullOrEmpty(loginPayloadData.Uri) ? "" : $"\nURI: {loginPayloadData.Uri}")}"
+                + $"\nVersion: {loginPayloadData.Version}"
+                + $"\nChain ID: {loginPayloadData.ChainId}"
+                + $"\nNonce: {loginPayloadData.Nonce}"
+                + $"\nIssued At: {loginPayloadData.IssuedAt}"
+                + $"{(string.IsNullOrEmpty(loginPayloadData.ExpirationTime) ? "" : $"\nExpiration Time: {loginPayloadData.ExpirationTime}")}"
+                + $"{(string.IsNullOrEmpty(loginPayloadData.InvalidBefore) ? "" : $"\nNot Before: {loginPayloadData.InvalidBefore}")}"
+                + resourcesString;
+            return payloadToSign;
+        }
     }
 }
