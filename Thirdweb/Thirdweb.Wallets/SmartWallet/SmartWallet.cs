@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Text;
 using Nethereum.ABI.EIP712;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
@@ -442,6 +443,36 @@ namespace Thirdweb
         {
             _accountContract = null;
             return Task.CompletedTask;
+        }
+
+        public virtual async Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", HttpClient httpClient = null)
+        {
+            var payloadURL = domain + authPayloadPath;
+            var loginURL = domain + authLoginPath;
+
+            var payloadBodyRaw = new { address = await GetAddress(), chainId = chainId.ToString() };
+            var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
+
+            httpClient ??= new HttpClient();
+
+            using var payloadRequest = new HttpRequestMessage(HttpMethod.Post, payloadURL);
+            payloadRequest.Content = new StringContent(payloadBody, Encoding.UTF8, "application/json");
+            var payloadResponse = await httpClient.SendAsync(payloadRequest);
+            _ = payloadResponse.EnsureSuccessStatusCode();
+            var payloadString = await payloadResponse.Content.ReadAsStringAsync();
+
+            var loginBodyRaw = JsonConvert.DeserializeObject<LoginPayload>(payloadString);
+            var payloadToSign = Utils.GenerateSIWE(loginBodyRaw.payload);
+
+            loginBodyRaw.signature = await PersonalSign(payloadToSign);
+            var loginBody = JsonConvert.SerializeObject(new { payload = loginBodyRaw });
+
+            using var loginRequest = new HttpRequestMessage(HttpMethod.Post, loginURL);
+            loginRequest.Content = new StringContent(loginBody, Encoding.UTF8, "application/json");
+            var loginResponse = await httpClient.SendAsync(loginRequest);
+            _ = loginResponse.EnsureSuccessStatusCode();
+            var responseString = await loginResponse.Content.ReadAsStringAsync();
+            return responseString;
         }
     }
 }

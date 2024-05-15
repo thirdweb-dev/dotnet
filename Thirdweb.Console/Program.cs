@@ -52,81 +52,83 @@ if (!await inAppWallet.IsConnected())
 
 // Create smart wallet with InAppWallet signer
 var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+var res = await smartWallet.Authenticate("http://localhost:8000", 421614);
+Console.WriteLine($"Smart wallet auth result: {res}");
 
-// Grant a session key to pk wallet (advanced use case)
-_ = await smartWallet.CreateSessionKey(
-    signerAddress: await privateKeyWallet.GetAddress(),
-    approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
-    nativeTokenLimitPerTransactionInWei: "0",
-    permissionStartTimestamp: "0",
-    permissionEndTimestamp: (Utils.GetUnixTimeStampNow() + 86400).ToString(),
-    reqValidityStartTimestamp: "0",
-    reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
-);
+// // Grant a session key to pk wallet (advanced use case)
+// _ = await smartWallet.CreateSessionKey(
+//     signerAddress: await privateKeyWallet.GetAddress(),
+//     approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
+//     nativeTokenLimitPerTransactionInWei: "0",
+//     permissionStartTimestamp: "0",
+//     permissionEndTimestamp: (Utils.GetUnixTimeStampNow() + 86400).ToString(),
+//     reqValidityStartTimestamp: "0",
+//     reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
+// );
 
-// Reconnect to same smart wallet with pk wallet as signer (specifying wallet address override)
-smartWallet = await SmartWallet.Create(
-    client: client,
-    personalWallet: privateKeyWallet,
-    factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
-    gasless: true,
-    chainId: 421614,
-    accountAddressOverride: await smartWallet.GetAddress()
-);
+// // Reconnect to same smart wallet with pk wallet as signer (specifying wallet address override)
+// smartWallet = await SmartWallet.Create(
+//     client: client,
+//     personalWallet: privateKeyWallet,
+//     factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
+//     gasless: true,
+//     chainId: 421614,
+//     accountAddressOverride: await smartWallet.GetAddress()
+// );
 
-// Log addresses
-Console.WriteLine($"PrivateKey Wallet: {await privateKeyWallet.GetAddress()}");
-Console.WriteLine($"InAppWallet: {await inAppWallet.GetAddress()}");
-Console.WriteLine($"Smart Wallet: {await smartWallet.GetAddress()}");
+// // Log addresses
+// Console.WriteLine($"PrivateKey Wallet: {await privateKeyWallet.GetAddress()}");
+// Console.WriteLine($"InAppWallet: {await inAppWallet.GetAddress()}");
+// Console.WriteLine($"Smart Wallet: {await smartWallet.GetAddress()}");
 
-// Sign, triggering deploy as needed and 1271 verification if it's a smart wallet
-var message = "Hello, Thirdweb!";
-var signature = await smartWallet.PersonalSign(message);
-Console.WriteLine($"Signed message: {signature}");
+// // Sign, triggering deploy as needed and 1271 verification if it's a smart wallet
+// var message = "Hello, Thirdweb!";
+// var signature = await smartWallet.PersonalSign(message);
+// Console.WriteLine($"Signed message: {signature}");
 
-var balanceBefore = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartWallet.GetAddress());
-Console.WriteLine($"Balance before mint: {balanceBefore}");
+// var balanceBefore = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartWallet.GetAddress());
+// Console.WriteLine($"Balance before mint: {balanceBefore}");
 
-var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
-Console.WriteLine($"Contract write result: {writeResult}");
+// var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
+// Console.WriteLine($"Contract write result: {writeResult}");
 
-var balanceAfter = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartWallet.GetAddress());
-Console.WriteLine($"Balance after mint: {balanceAfter}");
+// var balanceAfter = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartWallet.GetAddress());
+// Console.WriteLine($"Balance after mint: {balanceAfter}");
 
-// Transaction Builder
-var preparedTx = await ThirdwebContract.Prepare(wallet: smartWallet, contract: contract, method: "mintTo", weiValue: 0, parameters: new object[] { await smartWallet.GetAddress(), 100 });
-Console.WriteLine($"Prepared transaction: {preparedTx}");
-var estimatedCosts = await ThirdwebTransaction.EstimateGasCosts(preparedTx);
-Console.WriteLine($"Estimated ETH gas cost: {estimatedCosts.ether}");
-var totalCosts = await ThirdwebTransaction.EstimateTotalCosts(preparedTx);
-Console.WriteLine($"Estimated ETH total cost: {totalCosts.ether}");
-var simulationData = await ThirdwebTransaction.Simulate(preparedTx);
-Console.WriteLine($"Simulation data: {simulationData}");
-var txHash = await ThirdwebTransaction.Send(preparedTx);
-Console.WriteLine($"Transaction hash: {txHash}");
-var receipt = await ThirdwebTransaction.WaitForTransactionReceipt(client, 421614, txHash);
-Console.WriteLine($"Transaction receipt: {JsonConvert.SerializeObject(receipt)}");
+// // Transaction Builder
+// var preparedTx = await ThirdwebContract.Prepare(wallet: smartWallet, contract: contract, method: "mintTo", weiValue: 0, parameters: new object[] { await smartWallet.GetAddress(), 100 });
+// Console.WriteLine($"Prepared transaction: {preparedTx}");
+// var estimatedCosts = await ThirdwebTransaction.EstimateGasCosts(preparedTx);
+// Console.WriteLine($"Estimated ETH gas cost: {estimatedCosts.ether}");
+// var totalCosts = await ThirdwebTransaction.EstimateTotalCosts(preparedTx);
+// Console.WriteLine($"Estimated ETH total cost: {totalCosts.ether}");
+// var simulationData = await ThirdwebTransaction.Simulate(preparedTx);
+// Console.WriteLine($"Simulation data: {simulationData}");
+// var txHash = await ThirdwebTransaction.Send(preparedTx);
+// Console.WriteLine($"Transaction hash: {txHash}");
+// var receipt = await ThirdwebTransaction.WaitForTransactionReceipt(client, 421614, txHash);
+// Console.WriteLine($"Transaction receipt: {JsonConvert.SerializeObject(receipt)}");
 
-// Transaction Builder - raw transfer
-var rawTx = new TransactionInput
-{
-    From = await smartWallet.GetAddress(),
-    To = await smartWallet.GetAddress(),
-    Value = new HexBigInteger(BigInteger.Zero),
-    Data = "0x",
-};
-var preparedRawTx = await ThirdwebTransaction.Create(client: client, wallet: smartWallet, txInput: rawTx, chainId: 421614);
-Console.WriteLine($"Prepared raw transaction: {preparedRawTx}");
-var estimatedCostsRaw = await ThirdwebTransaction.EstimateGasCosts(preparedRawTx);
-Console.WriteLine($"Estimated ETH gas cost: {estimatedCostsRaw.ether}");
-var totalCostsRaw = await ThirdwebTransaction.EstimateTotalCosts(preparedRawTx);
-Console.WriteLine($"Estimated ETH total cost: {totalCostsRaw.ether}");
-var simulationDataRaw = await ThirdwebTransaction.Simulate(preparedRawTx);
-Console.WriteLine($"Simulation data: {simulationDataRaw}");
-var txHashRaw = await ThirdwebTransaction.Send(preparedRawTx);
-Console.WriteLine($"Raw transaction hash: {txHashRaw}");
-var receiptRaw = await ThirdwebTransaction.WaitForTransactionReceipt(client, 421614, txHashRaw);
-Console.WriteLine($"Raw transaction receipt: {JsonConvert.SerializeObject(receiptRaw)}");
+// // Transaction Builder - raw transfer
+// var rawTx = new TransactionInput
+// {
+//     From = await smartWallet.GetAddress(),
+//     To = await smartWallet.GetAddress(),
+//     Value = new HexBigInteger(BigInteger.Zero),
+//     Data = "0x",
+// };
+// var preparedRawTx = await ThirdwebTransaction.Create(client: client, wallet: smartWallet, txInput: rawTx, chainId: 421614);
+// Console.WriteLine($"Prepared raw transaction: {preparedRawTx}");
+// var estimatedCostsRaw = await ThirdwebTransaction.EstimateGasCosts(preparedRawTx);
+// Console.WriteLine($"Estimated ETH gas cost: {estimatedCostsRaw.ether}");
+// var totalCostsRaw = await ThirdwebTransaction.EstimateTotalCosts(preparedRawTx);
+// Console.WriteLine($"Estimated ETH total cost: {totalCostsRaw.ether}");
+// var simulationDataRaw = await ThirdwebTransaction.Simulate(preparedRawTx);
+// Console.WriteLine($"Simulation data: {simulationDataRaw}");
+// var txHashRaw = await ThirdwebTransaction.Send(preparedRawTx);
+// Console.WriteLine($"Raw transaction hash: {txHashRaw}");
+// var receiptRaw = await ThirdwebTransaction.WaitForTransactionReceipt(client, 421614, txHashRaw);
+// Console.WriteLine($"Raw transaction receipt: {JsonConvert.SerializeObject(receiptRaw)}");
 
 
 // Storage actions
