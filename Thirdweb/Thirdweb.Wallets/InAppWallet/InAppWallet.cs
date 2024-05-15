@@ -30,7 +30,13 @@ namespace Thirdweb
             _authProvider = authProvider;
         }
 
-        public static async Task<InAppWallet> Create(ThirdwebClient client, string email = null, string phoneNumber = null, AuthProvider authprovider = AuthProvider.Default)
+        public static async Task<InAppWallet> Create(
+            ThirdwebClient client,
+            string email = null,
+            string phoneNumber = null,
+            AuthProvider authprovider = AuthProvider.Default,
+            string storageDirectoryPath = null
+        )
         {
             if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber) && authprovider == AuthProvider.Default)
             {
@@ -46,7 +52,7 @@ namespace Thirdweb
                 _ => throw new ArgumentException("Invalid AuthProvider"),
             };
 
-            var embeddedWallet = new EmbeddedWallet(client);
+            var embeddedWallet = new EmbeddedWallet(client, storageDirectoryPath);
             EthECKey ecKey;
             try
             {

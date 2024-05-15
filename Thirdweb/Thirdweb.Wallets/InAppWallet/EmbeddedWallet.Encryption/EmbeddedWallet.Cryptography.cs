@@ -27,7 +27,7 @@ namespace Thirdweb.EWS
             }
             else
             {
-                iterationCount = DEPRECATED_ITERATION_COUNT;
+                iterationCount = CURRENT_ITERATION_COUNT;
             }
 
             byte[] key = GetEncryptionKey(password, salt, iterationCount);
