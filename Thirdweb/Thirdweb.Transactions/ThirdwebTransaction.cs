@@ -227,7 +227,7 @@ namespace Thirdweb
                 // paymasterInput	        bytes
                 var zkTx = new AccountAbstraction.ZkSyncAATransaction
                 {
-                    TxType = 113, // 712 can't be used as it has to be one byte long
+                    TxType = 0x71, // 712 can't be used as it has to be one byte long
                     From = transaction.Input.From,
                     To = transaction.Input.To,
                     GasLimit = transaction.Input.Gas.Value,
