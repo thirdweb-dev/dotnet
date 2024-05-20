@@ -45,7 +45,7 @@ namespace Thirdweb
             IThirdwebWallet signer
         )
         {
-            var typedData = GetTypedDefinition_ZkSyncTransaction(domainName, version, chainId);
+            var typedData = GetTypedDefinition_ZkSyncTransaction(domainName, version, chainId, transaction.From);
             return await signer.SignTypedDataV4(transaction, typedData);
         }
 
@@ -102,7 +102,7 @@ namespace Thirdweb
             };
         }
 
-        public static TypedData<Domain> GetTypedDefinition_ZkSyncTransaction(string domainName, string version, BigInteger chainId)
+        public static TypedData<Domain> GetTypedDefinition_ZkSyncTransaction(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
             return new TypedData<Domain>
             {
@@ -110,10 +110,11 @@ namespace Thirdweb
                 {
                     Name = domainName,
                     Version = version,
-                    ChainId = chainId
+                    ChainId = chainId,
+                    VerifyingContract = verifyingContract
                 },
                 Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(AccountAbstraction.ZkSyncAATransaction)),
-                PrimaryType = nameof(AccountAbstraction.ZkSyncAATransaction)
+                PrimaryType = nameof(AccountAbstraction.ZkSyncAATransaction),
             };
         }
 
