@@ -174,7 +174,7 @@ namespace Thirdweb
             return await transaction._wallet.SignTransaction(transaction.Input, transaction.Input.ChainId.Value);
         }
 
-        public static async Task<string> Send(ThirdwebTransaction transaction)
+        public static async Task<string> Send(ThirdwebTransaction transaction, string zkSyncPaymaster = null, string zkSyncPaymasterInput = null)
         {
             if (transaction.Input.To == null)
             {
@@ -208,60 +208,60 @@ namespace Thirdweb
 
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             string hash;
-            switch (transaction._wallet.AccountType)
+            var isZkAA = zkSyncPaymaster != null && zkSyncPaymasterInput != null;
+            if (isZkAA && (transaction.Input.ChainId.Value.Equals(324) || transaction.Input.ChainId.Value.Equals(300)))
             {
-                case ThirdwebAccountType.PrivateKeyAccount:
-                    transaction.Input.Nonce ??= new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await transaction._wallet.GetAddress(), "latest"));
-                    var signedTx = await Sign(transaction);
-                    hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
-                    break;
-                case ThirdwebAccountType.SmartAccount:
-                    // zksync native AA
-                    if (transaction.Input.ChainId.Value.Equals(324) || transaction.Input.ChainId.Value.Equals(300))
-                    {
-                        // Field name               Type
-                        // txType	                uint256
-                        // from	                    uint256
-                        // to	                    uint256
-                        // gasLimit	                uint256
-                        // gasPerPubdataByteLimit	uint256
-                        // maxFeePerGas	            uint256
-                        // maxPriorityFeePerGas	    uint256
-                        // paymaster	            uint256
-                        // nonce	                uint256
-                        // value	                uint256
-                        // data	                    bytes
-                        // factoryDeps	            bytes32[]
-                        // paymasterInput	        bytes
-                        var zkTx = new
-                        {
-                            txType = 113, // 712 can't be used as it has to be one byte long
-                            from = transaction.Input.From,
-                            to = transaction.Input.To,
-                            gasLimit = transaction.Input.Gas.Value,
-                            gasPerPubdataByteLimit = 50000,
-                            maxFeePerGas = transaction.Input.MaxFeePerGas.Value,
-                            maxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas.Value,
-                            paymaster = "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
-                            nonce = transaction.Input.Nonce.Value,
-                            value = transaction.Input.Value.Value,
-                            data = transaction.Input.Data,
-                            factoryDeps = Array.Empty<byte>(),
-                            paymasterInput = "0x"
-                        };
-                        var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);
-                        hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", zkTxSigned);
+                // Field name               Type
+                // txType	                uint256
+                // from	                    uint256
+                // to	                    uint256
+                // gasLimit	                uint256
+                // gasPerPubdataByteLimit	uint256
+                // maxFeePerGas	            uint256
+                // maxPriorityFeePerGas	    uint256
+                // paymaster	            uint256
+                // nonce	                uint256
+                // value	                uint256
+                // data	                    bytes
+                // factoryDeps	            bytes32[]
+                // paymasterInput	        bytes
+                var zkTx = new
+                {
+                    txType = 113, // 712 can't be used as it has to be one byte long
+                    from = transaction.Input.From,
+                    to = transaction.Input.To,
+                    gasLimit = transaction.Input.Gas.Value,
+                    gasPerPubdataByteLimit = 50000,
+                    maxFeePerGas = transaction.Input.MaxFeePerGas.Value,
+                    maxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas.Value,
+                    paymaster = zkSyncPaymaster,
+                    nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
+                    value = transaction.Input.Value.Value,
+                    data = transaction.Input.Data,
+                    factoryDeps = Array.Empty<byte>(),
+                    paymasterInput = zkSyncPaymasterInput
+                };
+                Console.WriteLine($"ZkSync transaction: {JsonConvert.SerializeObject(zkTx)}");
+                var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);
+                hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", zkTxSigned);
+            }
+            else
+            {
+                switch (transaction._wallet.AccountType)
+                {
+                    case ThirdwebAccountType.PrivateKeyAccount:
+                        transaction.Input.Nonce ??= new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", await transaction._wallet.GetAddress(), "latest"));
+                        var signedTx = await Sign(transaction);
+                        hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
                         break;
-                    }
-                    else
-                    {
+                    case ThirdwebAccountType.SmartAccount:
+
                         var smartAccount = transaction._wallet as SmartWallet;
                         hash = await smartAccount.SendTransaction(transaction.Input);
                         break;
-                    }
-
-                default:
-                    throw new NotImplementedException("Account type not supported");
+                    default:
+                        throw new NotImplementedException("Account type not supported");
+                }
             }
             Console.WriteLine($"Transaction hash: {hash}");
             return hash;

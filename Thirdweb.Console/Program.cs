@@ -77,7 +77,11 @@ var tx = await ThirdwebTransaction.Create(
     },
     300
 );
-var txHash = await ThirdwebTransaction.Send(tx);
+var txHash = await ThirdwebTransaction.Send(
+    transaction: tx,
+    zkSyncPaymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
+    zkSyncPaymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+);
 Console.WriteLine($"Transaction hash: {txHash}");
 
 
