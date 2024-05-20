@@ -225,21 +225,21 @@ namespace Thirdweb
                 // data	                    bytes
                 // factoryDeps	            bytes32[]
                 // paymasterInput	        bytes
-                var zkTx = new
+                var zkTx = new AccountAbstraction.ZkSyncAATransaction
                 {
-                    txType = 113, // 712 can't be used as it has to be one byte long
-                    from = transaction.Input.From,
-                    to = transaction.Input.To,
-                    gasLimit = transaction.Input.Gas.Value,
-                    gasPerPubdataByteLimit = 50000,
-                    maxFeePerGas = transaction.Input.MaxFeePerGas.Value,
-                    maxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas.Value,
-                    paymaster = zkSyncPaymaster,
-                    nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
-                    value = transaction.Input.Value.Value,
-                    data = transaction.Input.Data,
-                    factoryDeps = Array.Empty<byte>(),
-                    paymasterInput = zkSyncPaymasterInput
+                    TxType = 113, // 712 can't be used as it has to be one byte long
+                    From = transaction.Input.From,
+                    To = transaction.Input.To,
+                    GasLimit = transaction.Input.Gas.Value,
+                    GasPerPubdataByteLimit = 50000,
+                    MaxFeePerGas = transaction.Input.MaxFeePerGas.Value,
+                    MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas.Value,
+                    Paymaster = zkSyncPaymaster,
+                    Nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
+                    Value = transaction.Input.Value.Value,
+                    Data = transaction.Input.Data.HexToByteArray(),
+                    FactoryDeps = Array.Empty<byte>(),
+                    PaymasterInput = zkSyncPaymasterInput.HexToByteArray()
                 };
                 Console.WriteLine($"ZkSync transaction: {JsonConvert.SerializeObject(zkTx)}");
                 var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);

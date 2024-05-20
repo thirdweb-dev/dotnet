@@ -37,28 +37,38 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(accountMessage, typedData);
         }
 
-        public static async Task<string> GenerateSignature_ZkSyncTransaction(string domainName, string version, BigInteger chainId, dynamic transaction, IThirdwebWallet signer)
+        public static async Task<string> GenerateSignature_ZkSyncTransaction(
+            string domainName,
+            string version,
+            BigInteger chainId,
+            AccountAbstraction.ZkSyncAATransaction transaction,
+            IThirdwebWallet signer
+        )
         {
             var typedData = GetTypedDefinition_ZkSyncTransaction(domainName, version, chainId);
-
-            var typedDataSigner = new Eip712TypedDataSigner();
-            var encodedTypedData = typedDataSigner.EncodeTypedData(transaction, typedData);
-
-            var hash = Utils.HashMessage(encodedTypedData);
-            var signature = await signer.EthSign(hash);
-            var signatureHex = signature.ToHex();
-
-            transaction.customData = new
-            {
-                gasPerPubdata = transaction.gasPerPubdataByteLimit,
-                paymasterParams = transaction.paymasterParams,
-                customSignature = signatureHex,
-            };
-
-            var serializedTx = SerializeEip712(transaction, signature);
-            Console.WriteLine($"Serialized tx: {serializedTx}");
-            return serializedTx;
+            return await signer.SignTypedDataV4(transaction, typedData);
         }
+
+        // private static EthECDSASignature ParseSignature(string signatureHex)
+        // {
+        //     var signatureBytes = signatureHex.HexToByteArray();
+        //     if (signatureBytes.Length != 65)
+        //     {
+        //         throw new ArgumentException("Invalid signature length.");
+        //     }
+
+        //     var r = new byte[32];
+        //     var s = new byte[32];
+        //     var v = new byte[1];
+
+        //     Array.Copy(signatureBytes, 0, r, 0, 32);
+        //     Array.Copy(signatureBytes, 32, s, 0, 32);
+        //     Array.Copy(signatureBytes, 64, v, 0, 1);
+
+        //     var vValue = (v[0] == 0 || v[0] == 1) ? v[0] + 27 : v[0]; // Adjust v value if necessary
+
+        //     return new EthECDSASignature(new Org.BouncyCastle.Math.BigInteger(r), new Org.BouncyCastle.Math.BigInteger(s), vValue.ToBytesForRLPEncoding());
+        // }
 
         public static TypedData<Domain> GetTypedDefinition_SmartAccount(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
@@ -102,103 +112,66 @@ namespace Thirdweb
                     Version = version,
                     ChainId = chainId
                 },
-                Types = new Dictionary<string, MemberDescription[]>
-                {
-                    ["EIP712Domain"] = new[]
-                    {
-                        new MemberDescription { Name = "name", Type = "string" },
-                        new MemberDescription { Name = "version", Type = "string" },
-                        new MemberDescription { Name = "chainId", Type = "uint256" }
-                    },
-                    ["Transaction"] = new[]
-                    {
-                        new MemberDescription { Name = "txType", Type = "uint256" },
-                        new MemberDescription { Name = "from", Type = "address" },
-                        new MemberDescription { Name = "to", Type = "address" },
-                        new MemberDescription { Name = "gasLimit", Type = "uint256" },
-                        new MemberDescription { Name = "gasPerPubdataByteLimit", Type = "uint256" },
-                        new MemberDescription { Name = "maxFeePerGas", Type = "uint256" },
-                        new MemberDescription { Name = "maxPriorityFeePerGas", Type = "uint256" },
-                        new MemberDescription { Name = "paymaster", Type = "address" },
-                        new MemberDescription { Name = "nonce", Type = "uint256" },
-                        new MemberDescription { Name = "value", Type = "uint256" },
-                        new MemberDescription { Name = "data", Type = "bytes" },
-                        new MemberDescription { Name = "factoryDeps", Type = "bytes32[]" },
-                        new MemberDescription { Name = "paymasterInput", Type = "bytes" }
-                    }
-                },
-                PrimaryType = "Transaction"
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(AccountAbstraction.ZkSyncAATransaction)),
+                PrimaryType = nameof(AccountAbstraction.ZkSyncAATransaction)
             };
         }
 
-        private static string SerializeEip712(dynamic transaction, EthECDSASignature signature)
-        {
-            if (transaction.chainId == null)
-            {
-                throw new ArgumentException("Transaction chainId isn't set!");
-            }
+        // private static string SerializeEip712(AccountAbstraction.ZkSyncAATransaction transaction, EthECDSASignature signature, BigInteger chainId)
+        // {
+        //     if (transaction.From == null)
+        //     {
+        //         throw new ArgumentException("Explicitly providing `from` field is required for EIP712 transactions!");
+        //     }
 
-            if (transaction.from == null)
-            {
-                throw new ArgumentException("Explicitly providing `from` field is required for EIP712 transactions!");
-            }
+        //     var fields = new List<byte[]>
+        //     {
+        //         RLP.EncodeElement(transaction.Nonce.ToByteArray()),
+        //         RLP.EncodeElement(transaction.MaxPriorityFeePerGas.ToByteArray()),
+        //         RLP.EncodeElement(transaction.MaxFeePerGas.ToByteArray()),
+        //         RLP.EncodeElement(transaction.GasLimit.ToByteArray()),
+        //         RLP.EncodeElement(transaction.To.HexToByteArray()),
+        //         RLP.EncodeElement(transaction.Value.ToByteArray()),
+        //         RLP.EncodeElement(transaction.Data)
+        //     };
 
-            var fields = new List<byte[]>
-            {
-                RLP.EncodeElement(transaction.nonce.ToByteArray()),
-                RLP.EncodeElement(transaction.maxPriorityFeePerGas.ToByteArray()),
-                RLP.EncodeElement(transaction.maxFeePerGas.ToByteArray()),
-                RLP.EncodeElement(transaction.gasLimit.ToByteArray()),
-                RLP.EncodeElement(transaction.to.HexToByteArray()),
-                RLP.EncodeElement(transaction.value.ToByteArray()),
-                RLP.EncodeElement(transaction.data.HexToByteArray())
-            };
+        //     if (signature != null)
+        //     {
+        //         fields.Add(RLP.EncodeElement(signature.V));
+        //         fields.Add(RLP.EncodeElement(signature.R));
+        //         fields.Add(RLP.EncodeElement(signature.S));
+        //     }
+        //     else
+        //     {
+        //         fields.Add(RLP.EncodeElement(chainId.ToByteArray()));
+        //         fields.Add(RLP.EncodeElement(Array.Empty<byte>()));
+        //         fields.Add(RLP.EncodeElement(Array.Empty<byte>()));
+        //     }
 
-            if (signature != null)
-            {
-                fields.Add(RLP.EncodeElement(signature.V));
-                fields.Add(RLP.EncodeElement(signature.R));
-                fields.Add(RLP.EncodeElement(signature.S));
-            }
-            else
-            {
-                fields.Add(RLP.EncodeElement(transaction.chainId.ToByteArray()));
-                fields.Add(RLP.EncodeElement(Array.Empty<byte>()));
-                fields.Add(RLP.EncodeElement(Array.Empty<byte>()));
-            }
+        //     fields.Add(RLP.EncodeElement(chainId.ToByteArray()));
+        //     fields.Add(RLP.EncodeElement(transaction.From.HexToByteArray()));
 
-            fields.Add(RLP.EncodeElement(transaction.chainId.ToByteArray()));
-            fields.Add(RLP.EncodeElement(transaction.from.HexToByteArray()));
+        //     // Add meta
+        //     fields.Add(RLP.EncodeElement(transaction.GasPerPubdataByteLimit.ToByteArray()));
+        //     fields.Add(RLP.EncodeList(Array.Empty<byte[]>()));
 
-            // Add meta
-            fields.Add(RLP.EncodeElement(transaction.customData.gasPerPubdata.ToByteArray()));
-            fields.Add(RLP.EncodeList(Array.Empty<byte>()));
+        //     if (transaction.PaymasterInput.Length == 0)
+        //     {
+        //         throw new ArgumentException("Empty signatures are not supported!");
+        //     }
+        //     fields.Add(RLP.EncodeElement(transaction.PaymasterInput));
 
-            if (transaction.customData.customSignature.Length == 0)
-            {
-                throw new ArgumentException("Empty signatures are not supported!");
-            }
-            fields.Add(RLP.EncodeElement(transaction.customData.customSignature.HexToByteArray()));
+        //     if (transaction.Paymaster != null)
+        //     {
+        //         fields.Add(RLP.EncodeList(new byte[][] { RLP.EncodeElement(transaction.Paymaster.HexToByteArray()), RLP.EncodeElement(transaction.PaymasterInput) }));
+        //     }
+        //     else
+        //     {
+        //         fields.Add(RLP.EncodeList(Array.Empty<byte[]>()));
+        //     }
 
-            if (transaction.customData.paymasterParams != null)
-            {
-                fields.Add(
-                    RLP.EncodeList(
-                        new byte[]
-                        {
-                            RLP.EncodeElement(transaction.customData.paymasterParams.paymaster.HexToByteArray()),
-                            RLP.EncodeElement(transaction.customData.paymasterParams.paymasterInput.HexToByteArray())
-                        }
-                    )
-                );
-            }
-            else
-            {
-                fields.Add(RLP.EncodeList(Array.Empty<byte>()));
-            }
-
-            var rlpEncoded = RLP.EncodeList(fields.ToArray());
-            return "0x" + BitConverter.ToString(rlpEncoded).Replace("-", "");
-        }
+        //     var rlpEncoded = RLP.EncodeList(fields.ToArray());
+        //     return "0x" + BitConverter.ToString(rlpEncoded).Replace("-", "");
+        // }
     }
 }

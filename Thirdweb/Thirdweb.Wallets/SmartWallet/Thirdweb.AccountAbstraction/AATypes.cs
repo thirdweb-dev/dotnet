@@ -170,7 +170,49 @@ namespace Thirdweb.AccountAbstraction
 
     public class AccountMessage
     {
-        [Nethereum.ABI.FunctionEncoding.Attributes.Parameter("bytes", "message", 1)]
+        [Parameter("bytes", "message", 1)]
         public virtual byte[] Message { get; set; }
+    }
+
+    public class ZkSyncAATransaction
+    {
+        [Parameter("uint256", "txType", 1)]
+        public virtual BigInteger TxType { get; set; }
+
+        [Parameter("address", "from", 2)]
+        public virtual string From { get; set; }
+
+        [Parameter("address", "to", 3)]
+        public virtual string To { get; set; }
+
+        [Parameter("uint256", "gasLimit", 4)]
+        public virtual BigInteger GasLimit { get; set; }
+
+        [Parameter("uint256", "gasPerPubdataByteLimit", 5)]
+        public virtual BigInteger GasPerPubdataByteLimit { get; set; }
+
+        [Parameter("uint256", "maxFeePerGas", 6)]
+        public virtual BigInteger MaxFeePerGas { get; set; }
+
+        [Parameter("uint256", "maxPriorityFeePerGas", 7)]
+        public virtual BigInteger MaxPriorityFeePerGas { get; set; }
+
+        [Parameter("address", "paymaster", 8)]
+        public virtual string Paymaster { get; set; }
+
+        [Parameter("uint256", "nonce", 9)]
+        public virtual BigInteger Nonce { get; set; }
+
+        [Parameter("uint256", "value", 10)]
+        public virtual BigInteger Value { get; set; }
+
+        [Parameter("bytes", "data", 11)]
+        public virtual byte[] Data { get; set; }
+
+        [Parameter("bytes32[]", "factoryDeps", 12)]
+        public virtual byte[] FactoryDeps { get; set; }
+
+        [Parameter("bytes", "paymasterInput", 13)]
+        public virtual byte[] PaymasterInput { get; set; }
     }
 }
