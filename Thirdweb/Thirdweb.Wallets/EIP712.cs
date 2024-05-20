@@ -1,9 +1,12 @@
 using System.Numerics;
 using Nethereum.ABI.EIP712;
 using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Model;
 using Nethereum.RLP;
 using Nethereum.Signer;
+using Nethereum.Signer.Crypto;
 using Nethereum.Signer.EIP712;
+using Nethereum.Util;
 using Newtonsoft.Json;
 
 namespace Thirdweb
@@ -46,29 +49,15 @@ namespace Thirdweb
         )
         {
             var typedData = GetTypedDefinition_ZkSyncTransaction(domainName, version, chainId, transaction.From);
-            return await signer.SignTypedDataV4(transaction, typedData);
+
+            var typedDataSigner = new Eip712TypedDataSigner();
+            var encodedTypedData = typedDataSigner.EncodeTypedData(transaction, typedData);
+            var hash = new Sha3Keccack().CalculateHash(encodedTypedData);
+            var signatureHex = await signer.EthSign(hash);
+            var signatureRaw = ECDSASignatureFactory.ExtractECDSASignature(signatureHex);
+            var serializedTx = SerializeEip712(transaction, signatureRaw, signatureHex, chainId);
+            return serializedTx;
         }
-
-        // private static EthECDSASignature ParseSignature(string signatureHex)
-        // {
-        //     var signatureBytes = signatureHex.HexToByteArray();
-        //     if (signatureBytes.Length != 65)
-        //     {
-        //         throw new ArgumentException("Invalid signature length.");
-        //     }
-
-        //     var r = new byte[32];
-        //     var s = new byte[32];
-        //     var v = new byte[1];
-
-        //     Array.Copy(signatureBytes, 0, r, 0, 32);
-        //     Array.Copy(signatureBytes, 32, s, 0, 32);
-        //     Array.Copy(signatureBytes, 64, v, 0, 1);
-
-        //     var vValue = (v[0] == 0 || v[0] == 1) ? v[0] + 27 : v[0]; // Adjust v value if necessary
-
-        //     return new EthECDSASignature(new Org.BouncyCastle.Math.BigInteger(r), new Org.BouncyCastle.Math.BigInteger(s), vValue.ToBytesForRLPEncoding());
-        // }
 
         public static TypedData<Domain> GetTypedDefinition_SmartAccount(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
@@ -118,61 +107,39 @@ namespace Thirdweb
             };
         }
 
-        // private static string SerializeEip712(AccountAbstraction.ZkSyncAATransaction transaction, EthECDSASignature signature, BigInteger chainId)
-        // {
-        //     if (transaction.From == null)
-        //     {
-        //         throw new ArgumentException("Explicitly providing `from` field is required for EIP712 transactions!");
-        //     }
+        private static string SerializeEip712(AccountAbstraction.ZkSyncAATransaction transaction, ECDSASignature signature, string signatureHex, BigInteger chainId)
+        {
+            if (chainId == 0)
+            {
+                throw new ArgumentException("Chain ID must be provided for EIP712 transactions!");
+            }
 
-        //     var fields = new List<byte[]>
-        //     {
-        //         RLP.EncodeElement(transaction.Nonce.ToByteArray()),
-        //         RLP.EncodeElement(transaction.MaxPriorityFeePerGas.ToByteArray()),
-        //         RLP.EncodeElement(transaction.MaxFeePerGas.ToByteArray()),
-        //         RLP.EncodeElement(transaction.GasLimit.ToByteArray()),
-        //         RLP.EncodeElement(transaction.To.HexToByteArray()),
-        //         RLP.EncodeElement(transaction.Value.ToByteArray()),
-        //         RLP.EncodeElement(transaction.Data)
-        //     };
+            if (string.IsNullOrEmpty(transaction.From))
+            {
+                throw new ArgumentException("From address must be provided for EIP712 transactions!");
+            }
 
-        //     if (signature != null)
-        //     {
-        //         fields.Add(RLP.EncodeElement(signature.V));
-        //         fields.Add(RLP.EncodeElement(signature.R));
-        //         fields.Add(RLP.EncodeElement(signature.S));
-        //     }
-        //     else
-        //     {
-        //         fields.Add(RLP.EncodeElement(chainId.ToByteArray()));
-        //         fields.Add(RLP.EncodeElement(Array.Empty<byte>()));
-        //         fields.Add(RLP.EncodeElement(Array.Empty<byte>()));
-        //     }
-
-        //     fields.Add(RLP.EncodeElement(chainId.ToByteArray()));
-        //     fields.Add(RLP.EncodeElement(transaction.From.HexToByteArray()));
-
-        //     // Add meta
-        //     fields.Add(RLP.EncodeElement(transaction.GasPerPubdataByteLimit.ToByteArray()));
-        //     fields.Add(RLP.EncodeList(Array.Empty<byte[]>()));
-
-        //     if (transaction.PaymasterInput.Length == 0)
-        //     {
-        //         throw new ArgumentException("Empty signatures are not supported!");
-        //     }
-        //     fields.Add(RLP.EncodeElement(transaction.PaymasterInput));
-
-        //     if (transaction.Paymaster != null)
-        //     {
-        //         fields.Add(RLP.EncodeList(new byte[][] { RLP.EncodeElement(transaction.Paymaster.HexToByteArray()), RLP.EncodeElement(transaction.PaymasterInput) }));
-        //     }
-        //     else
-        //     {
-        //         fields.Add(RLP.EncodeList(Array.Empty<byte[]>()));
-        //     }
-
-        //     var rlpEncoded = RLP.EncodeList(fields.ToArray());
-        //     return "0x" + BitConverter.ToString(rlpEncoded).Replace("-", "");
-        // }
+            return "0x71"
+                + RLP.EncodeList(
+                        transaction.Nonce.ToBytesForRLPEncoding(),
+                        transaction.MaxPriorityFeePerGas.ToBytesForRLPEncoding(),
+                        transaction.MaxFeePerGas.ToBytesForRLPEncoding(),
+                        transaction.GasLimit.ToBytesForRLPEncoding(),
+                        transaction.To.ToBytesForRLPEncoding(),
+                        transaction.Value.ToBytesForRLPEncoding(),
+                        transaction.Data.ToHex().ToBytesForRLPEncoding(),
+                        signature.V.ToHex().ToBytesForRLPEncoding(),
+                        signature.R.ToByteArray().ToHex().ToBytesForRLPEncoding(),
+                        signature.S.ToByteArray().ToHex().ToBytesForRLPEncoding(),
+                        chainId.ToBytesForRLPEncoding(),
+                        transaction.From.ToBytesForRLPEncoding(),
+                        transaction.GasPerPubdataByteLimit.ToBytesForRLPEncoding(),
+                        transaction.FactoryDeps.ToHex().ToBytesForRLPEncoding() ?? Array.Empty<byte>().ToHex().ToBytesForRLPEncoding(),
+                        signatureHex.ToBytesForRLPEncoding(),
+                        transaction.Paymaster.ToBytesForRLPEncoding(),
+                        transaction.PaymasterInput.ToHex().ToBytesForRLPEncoding()
+                    )
+                    .ToHex();
+        }
     }
 }

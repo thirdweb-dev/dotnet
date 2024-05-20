@@ -243,6 +243,7 @@ namespace Thirdweb
                 };
                 Console.WriteLine($"ZkSync transaction: {JsonConvert.SerializeObject(zkTx)}");
                 var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);
+                Console.WriteLine($"ZkSync transaction signed: {zkTxSigned}");
                 hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", zkTxSigned);
             }
             else
