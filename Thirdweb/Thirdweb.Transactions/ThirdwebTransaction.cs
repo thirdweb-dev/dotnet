@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Nethereum.Contracts;
 using Nethereum.ABI.FunctionEncoding;
 using Nethereum.Hex.HexConvertors.Extensions;
+using Newtonsoft.Json.Linq;
 
 namespace Thirdweb
 {
@@ -16,12 +17,12 @@ namespace Thirdweb
 
     public class ThirdwebTransaction
     {
-        public TransactionInput Input { get; private set; }
+        public ThirdwebTransactionInput Input { get; private set; }
 
         private readonly ThirdwebClient _client;
         private readonly IThirdwebWallet _wallet;
 
-        private ThirdwebTransaction(ThirdwebClient client, IThirdwebWallet wallet, TransactionInput txInput, BigInteger chainId)
+        private ThirdwebTransaction(ThirdwebClient client, IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
         {
             Input = txInput;
             _client = client;
@@ -29,7 +30,7 @@ namespace Thirdweb
             Input.ChainId = chainId.ToHexBigInteger();
         }
 
-        public static async Task<ThirdwebTransaction> Create(ThirdwebClient client, IThirdwebWallet wallet, TransactionInput txInput, BigInteger chainId)
+        public static async Task<ThirdwebTransaction> Create(ThirdwebClient client, IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
         {
             var address = await wallet.GetAddress();
             txInput.From ??= address;
@@ -108,6 +109,44 @@ namespace Thirdweb
             return withBump ? hex.Value * 10 / 9 : hex.Value;
         }
 
+        public static async Task<(BigInteger, BigInteger)> EstimateGasFees(ThirdwebTransaction transaction, bool withBump = true)
+        {
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var chainId = transaction.Input.ChainId.Value;
+            var gasPrice = await EstimateGasPrice(transaction, withBump);
+
+            try
+            {
+                var block = await rpc.SendRequestAsync<JObject>("eth_getBlockByNumber", "latest", true);
+                var maxPriorityFeePerGas = await rpc.SendRequestAsync<BigInteger?>("eth_maxPriorityFeePerGas");
+                var baseBlockFee = block["result"]?["baseFeePerGas"]?.ToObject<BigInteger>() ?? new BigInteger(100);
+
+                if (chainId == 42220 || chainId == 44787 || chainId == 62320)
+                {
+                    return (gasPrice, gasPrice);
+                }
+
+                if (!maxPriorityFeePerGas.HasValue)
+                {
+                    maxPriorityFeePerGas = new BigInteger(2);
+                }
+
+                var preferredMaxPriorityFeePerGas = maxPriorityFeePerGas.Value * 10 / 9;
+                var maxFeePerGas = (baseBlockFee * 2) + preferredMaxPriorityFeePerGas;
+
+                if (withBump)
+                {
+                    maxFeePerGas *= 10 / 9;
+                }
+
+                return (maxFeePerGas, preferredMaxPriorityFeePerGas);
+            }
+            catch
+            {
+                return (gasPrice, gasPrice);
+            }
+        }
+
         public static async Task<string> Simulate(ThirdwebTransaction transaction)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
@@ -142,13 +181,30 @@ namespace Thirdweb
                 throw new ArgumentException("To address must be provided");
             }
 
+            if (transaction.Input.GasPrice != null && (transaction.Input.MaxFeePerGas != null || transaction.Input.MaxPriorityFeePerGas != null))
+            {
+                throw new InvalidOperationException("Transaction GasPrice and MaxFeePerGas/MaxPriorityFeePerGas cannot be set at the same time");
+            }
+
             transaction.Input.From ??= await transaction._wallet.GetAddress();
             transaction.Input.Value ??= new HexBigInteger(0);
             transaction.Input.Data ??= "0x";
-            transaction.Input.MaxFeePerGas = null;
-            transaction.Input.MaxPriorityFeePerGas = null;
             transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction));
-            transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction));
+            if (transaction.Input.MaxFeePerGas == null && transaction.Input.MaxPriorityFeePerGas == null && transaction.Input.GasPrice == null)
+            {
+                Console.WriteLine("Sending as EIP-1559 tx");
+                var (maxFeePerGas, maxPriorityFeePerGas) = await EstimateGasFees(transaction);
+                transaction.Input.MaxFeePerGas ??= maxFeePerGas.ToHexBigInteger();
+                transaction.Input.MaxPriorityFeePerGas ??= maxPriorityFeePerGas.ToHexBigInteger();
+                transaction.Input.GasPrice = null;
+            }
+            else
+            {
+                Console.WriteLine("Sending as legacy tx");
+                transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction));
+                transaction.Input.MaxFeePerGas = null;
+                transaction.Input.MaxPriorityFeePerGas = null;
+            }
 
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             string hash;
@@ -160,9 +216,50 @@ namespace Thirdweb
                     hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
                     break;
                 case ThirdwebAccountType.SmartAccount:
-                    var smartAccount = transaction._wallet as SmartWallet;
-                    hash = await smartAccount.SendTransaction(transaction.Input);
-                    break;
+                    // zksync native AA
+                    if (transaction.Input.ChainId.Value.Equals(324) || transaction.Input.ChainId.Value.Equals(300))
+                    {
+                        // Field name               Type
+                        // txType	                uint256
+                        // from	                    uint256
+                        // to	                    uint256
+                        // gasLimit	                uint256
+                        // gasPerPubdataByteLimit	uint256
+                        // maxFeePerGas	            uint256
+                        // maxPriorityFeePerGas	    uint256
+                        // paymaster	            uint256
+                        // nonce	                uint256
+                        // value	                uint256
+                        // data	                    bytes
+                        // factoryDeps	            bytes32[]
+                        // paymasterInput	        bytes
+                        var zkTx = new
+                        {
+                            txType = 113, // 712 can't be used as it has to be one byte long
+                            from = transaction.Input.From,
+                            to = transaction.Input.To,
+                            gasLimit = transaction.Input.Gas.Value,
+                            gasPerPubdataByteLimit = 50000,
+                            maxFeePerGas = transaction.Input.MaxFeePerGas.Value,
+                            maxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas.Value,
+                            paymaster = "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
+                            nonce = transaction.Input.Nonce.Value,
+                            value = transaction.Input.Value.Value,
+                            data = transaction.Input.Data,
+                            factoryDeps = Array.Empty<byte>(),
+                            paymasterInput = "0x"
+                        };
+                        var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);
+                        hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", zkTxSigned);
+                        break;
+                    }
+                    else
+                    {
+                        var smartAccount = transaction._wallet as SmartWallet;
+                        hash = await smartAccount.SendTransaction(transaction.Input);
+                        break;
+                    }
+
                 default:
                     throw new NotImplementedException("Account type not supported");
             }

@@ -15,7 +15,7 @@ public class TransactionTests : BaseTests
         var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
         var chainId = new BigInteger(1);
 
-        var transaction = await ThirdwebTransaction.Create(client, wallet, new TransactionInput(), chainId);
+        var transaction = await ThirdwebTransaction.Create(client, wallet, new ThirdwebTransactionInput(), chainId);
         return transaction;
     }
 
@@ -24,7 +24,7 @@ public class TransactionTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
-        var txInput = new TransactionInput() { From = await wallet.GetAddress() };
+        var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress() };
         var chainId = new BigInteger(1);
         var transaction = await ThirdwebTransaction.Create(client, wallet, txInput, chainId);
         Assert.NotNull(transaction);
@@ -35,7 +35,7 @@ public class TransactionTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
-        var txInput = new TransactionInput() { From = "0x123" };
+        var txInput = new ThirdwebTransactionInput() { From = "0x123" };
         var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
         Assert.Contains("Transaction sender (from) must match wallet address", ex.Message);
     }
@@ -45,7 +45,7 @@ public class TransactionTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
-        var txInput = new TransactionInput();
+        var txInput = new ThirdwebTransactionInput();
         _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
     }
 
@@ -101,7 +101,7 @@ public class TransactionTests : BaseTests
         var transaction = await ThirdwebTransaction.Create(
             client,
             smartAccount,
-            new TransactionInput()
+            new ThirdwebTransactionInput()
             {
                 To = Constants.ADDRESS_ZERO,
                 Value = new HexBigInteger(0),
@@ -199,13 +199,13 @@ public class TransactionTests : BaseTests
         var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
         var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
 
-        var transaction = await ThirdwebTransaction.Create(client, smartAccount, new TransactionInput(), 421614);
+        var transaction = await ThirdwebTransaction.Create(client, smartAccount, new ThirdwebTransactionInput(), 421614);
         _ = transaction.SetTo(Constants.ADDRESS_ZERO);
         _ = transaction.SetValue(new BigInteger(1000));
 
         var smartCosts = await ThirdwebTransaction.EstimateGasCosts(transaction);
 
-        transaction = await ThirdwebTransaction.Create(client, privateKeyAccount, new TransactionInput(), 421614);
+        transaction = await ThirdwebTransaction.Create(client, privateKeyAccount, new ThirdwebTransactionInput(), 421614);
         _ = transaction.SetTo(Constants.ADDRESS_ZERO);
         _ = transaction.SetValue(new BigInteger(1000));
 
@@ -228,6 +228,19 @@ public class TransactionTests : BaseTests
 
         Assert.True(costs[0].wei > costs[1].wei);
         Assert.True(costs[0].wei - costs[1].wei == transaction.Input.Value.Value);
+    }
+
+    [Fact]
+    public async Task EstimateGasFees_ReturnsCorrectly()
+    {
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetValue(new BigInteger(1000));
+        _ = transaction.SetTo(Constants.ADDRESS_ZERO);
+
+        (var maxFee, var maxPrio) = await ThirdwebTransaction.EstimateGasFees(transaction);
+
+        Assert.NotEqual(BigInteger.Zero, maxFee);
+        Assert.NotEqual(BigInteger.Zero, maxPrio);
     }
 
     [Fact]
@@ -257,7 +270,7 @@ public class TransactionTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
         var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-        var transaction = await ThirdwebTransaction.Create(client, smartAccount, new TransactionInput(), 421614);
+        var transaction = await ThirdwebTransaction.Create(client, smartAccount, new ThirdwebTransactionInput(), 421614);
         _ = transaction.SetValue(new BigInteger(0));
         _ = transaction.SetGasLimit(250000);
 

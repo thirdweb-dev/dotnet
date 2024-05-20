@@ -104,7 +104,7 @@ public class WalletTests : BaseTests
     public async Task SignTransaction()
     {
         var wallet = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             To = await wallet.GetAddress(),
             Data = "0x",

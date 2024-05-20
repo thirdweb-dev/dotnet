@@ -155,7 +155,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_Success()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -173,7 +173,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_NoFrom_Success()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             To = Constants.ADDRESS_ZERO,
             // Value = new HexBigInteger(0),
@@ -198,7 +198,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_NoNonce()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -214,7 +214,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_WrongFrom()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = Constants.ADDRESS_ZERO,
             To = Constants.ADDRESS_ZERO,
@@ -231,7 +231,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_NoGasPrice()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -248,7 +248,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_1559_Success()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -268,7 +268,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_1559_NoMaxFeePerGas()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -287,7 +287,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_1559_NoMaxPriorityFeePerGas()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,

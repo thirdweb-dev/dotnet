@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
+using Nethereum.Util;
 
 namespace Thirdweb
 {
@@ -38,6 +39,16 @@ namespace Thirdweb
         {
             var signer = new EthereumMessageSigner();
             return signer.HashPrefixedMessage(Encoding.UTF8.GetBytes(message)).ToHex(true);
+        }
+
+        public static byte[] HashMessage(this byte[] messageBytes)
+        {
+            return Sha3Keccack.Current.CalculateHash(messageBytes);
+        }
+
+        public static string HashMessage(this string message)
+        {
+            return Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(message)).ToHex(true);
         }
 
         public static string BytesToHex(byte[] bytes)

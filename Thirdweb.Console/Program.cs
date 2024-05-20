@@ -28,10 +28,10 @@ var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyH
 var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
 
 // Reset InAppWallet (optional step for testing login flow)
-if (await inAppWallet.IsConnected())
-{
-    await inAppWallet.Disconnect();
-}
+// if (await inAppWallet.IsConnected())
+// {
+//     await inAppWallet.Disconnect();
+// }
 
 // Relog if InAppWallet not logged in
 if (!await inAppWallet.IsConnected())
@@ -64,10 +64,28 @@ if (!await inAppWallet.IsConnected())
     // }
 }
 
+// Test 113
+var tx = await ThirdwebTransaction.Create(
+    client,
+    inAppWallet,
+    new ThirdwebTransactionInput()
+    {
+        From = await inAppWallet.GetAddress(),
+        To = await inAppWallet.GetAddress(),
+        Value = new HexBigInteger(BigInteger.Zero),
+        Data = "0x"
+    },
+    300
+);
+var txHash = await ThirdwebTransaction.Send(tx);
+Console.WriteLine($"Transaction hash: {txHash}");
+
+
+
 // Create smart wallet with InAppWallet signer
-var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-var res = await smartWallet.Authenticate("http://localhost:8000", 421614);
-Console.WriteLine($"Smart wallet auth result: {res}");
+// var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+// var res = await smartWallet.Authenticate("http://localhost:8000", 421614);
+// Console.WriteLine($"Smart wallet auth result: {res}");
 
 // // Grant a session key to pk wallet (advanced use case)
 // _ = await smartWallet.CreateSessionKey(
@@ -124,7 +142,7 @@ Console.WriteLine($"Smart wallet auth result: {res}");
 // Console.WriteLine($"Transaction receipt: {JsonConvert.SerializeObject(receipt)}");
 
 // // Transaction Builder - raw transfer
-// var rawTx = new TransactionInput
+// var rawTx = new ThirdwebTransactionInput
 // {
 //     From = await smartWallet.GetAddress(),
 //     To = await smartWallet.GetAddress(),
