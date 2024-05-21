@@ -1,6 +1,7 @@
 using System.Numerics;
 using Nethereum.ABI.EIP712;
 using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Hex.HexTypes;
 using Nethereum.Model;
 using Nethereum.RLP;
 using Nethereum.Signer;
@@ -48,14 +49,15 @@ namespace Thirdweb
             IThirdwebWallet signer
         )
         {
-            var typedData = GetTypedDefinition_ZkSyncTransaction(domainName, version, chainId, transaction.From);
-
-            var typedDataSigner = new Eip712TypedDataSigner();
-            var encodedTypedData = typedDataSigner.EncodeTypedData(transaction, typedData);
-            var hash = new Sha3Keccack().CalculateHash(encodedTypedData);
+            var typedData = GetTypedDefinition_ZkSyncTransaction(domainName, version, chainId);
+            var typedDataEncoder = new Eip712TypedDataEncoder();
+            var hash = typedDataEncoder.EncodeAndHashTypedData(transaction, typedData);
+            Console.WriteLine($"Hash: {hash.ToHex(true)}");
             var signatureHex = await signer.EthSign(hash);
-            var signatureRaw = ECDSASignatureFactory.ExtractECDSASignature(signatureHex);
+            Console.WriteLine($"Signature: {signatureHex}");
+            var signatureRaw = EthECDSASignatureFactory.ExtractECDSASignature(signatureHex);
             var serializedTx = SerializeEip712(transaction, signatureRaw, signatureHex, chainId);
+            Console.WriteLine($"Serialized: {serializedTx}");
             return serializedTx;
         }
 
@@ -91,23 +93,22 @@ namespace Thirdweb
             };
         }
 
-        public static TypedData<Domain> GetTypedDefinition_ZkSyncTransaction(string domainName, string version, BigInteger chainId, string verifyingContract)
+        public static TypedData<DomainWithNameVersionAndChainId> GetTypedDefinition_ZkSyncTransaction(string domainName, string version, BigInteger chainId)
         {
-            return new TypedData<Domain>
+            return new TypedData<DomainWithNameVersionAndChainId>
             {
-                Domain = new Domain
+                Domain = new DomainWithNameVersionAndChainId
                 {
                     Name = domainName,
                     Version = version,
                     ChainId = chainId,
-                    VerifyingContract = verifyingContract
                 },
-                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(AccountAbstraction.ZkSyncAATransaction)),
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(DomainWithNameVersionAndChainId), typeof(AccountAbstraction.ZkSyncAATransaction)),
                 PrimaryType = nameof(AccountAbstraction.ZkSyncAATransaction),
             };
         }
 
-        private static string SerializeEip712(AccountAbstraction.ZkSyncAATransaction transaction, ECDSASignature signature, string signatureHex, BigInteger chainId)
+        private static string SerializeEip712(AccountAbstraction.ZkSyncAATransaction transaction, EthECDSASignature signature, string signatureHex, BigInteger chainId)
         {
             if (chainId == 0)
             {
@@ -119,27 +120,53 @@ namespace Thirdweb
                 throw new ArgumentException("From address must be provided for EIP712 transactions!");
             }
 
-            return "0x71"
-                + RLP.EncodeList(
-                        transaction.Nonce.ToBytesForRLPEncoding(),
-                        transaction.MaxPriorityFeePerGas.ToBytesForRLPEncoding(),
-                        transaction.MaxFeePerGas.ToBytesForRLPEncoding(),
-                        transaction.GasLimit.ToBytesForRLPEncoding(),
-                        transaction.To.ToBytesForRLPEncoding(),
-                        transaction.Value.ToBytesForRLPEncoding(),
-                        transaction.Data.ToHex().ToBytesForRLPEncoding(),
-                        signature.V.ToHex().ToBytesForRLPEncoding(),
-                        signature.R.ToByteArray().ToHex().ToBytesForRLPEncoding(),
-                        signature.S.ToByteArray().ToHex().ToBytesForRLPEncoding(),
-                        chainId.ToBytesForRLPEncoding(),
-                        transaction.From.ToBytesForRLPEncoding(),
-                        transaction.GasPerPubdataByteLimit.ToBytesForRLPEncoding(),
-                        transaction.FactoryDeps.ToHex().ToBytesForRLPEncoding() ?? Array.Empty<byte>().ToHex().ToBytesForRLPEncoding(),
-                        signatureHex.ToBytesForRLPEncoding(),
-                        transaction.Paymaster.ToBytesForRLPEncoding(),
-                        transaction.PaymasterInput.ToHex().ToBytesForRLPEncoding()
-                    )
-                    .ToHex();
+            var fields = new List<byte[]>
+            {
+                transaction.Nonce.ToByteArray(isUnsigned: true, isBigEndian: true),
+                transaction.MaxPriorityFeePerGas.ToByteArray(isUnsigned: true, isBigEndian: true),
+                transaction.MaxFeePerGas.ToByteArray(isUnsigned: true, isBigEndian: true),
+                transaction.GasLimit.ToByteArray(isUnsigned: true, isBigEndian: true),
+                transaction.To.HexToByteArray(),
+                transaction.Value == 0 ? new byte[0] : transaction.Value.ToByteArray(isUnsigned: true, isBigEndian: true),
+                transaction.Data == null ? new byte[0] : transaction.Data,
+            };
+
+            if (signature != null)
+            {
+                fields.Add(new BigInteger(signature.V).ToByteArray(isUnsigned: false, isBigEndian: true));
+                fields.Add(new BigInteger(signature.R).ToByteArray(isUnsigned: false, isBigEndian: true));
+                fields.Add(new BigInteger(signature.S).ToByteArray(isUnsigned: false, isBigEndian: true));
+            }
+            else
+            {
+                fields.Add(chainId.ToByteArray(isUnsigned: true, isBigEndian: true));
+                fields.Add(new byte[0]);
+                fields.Add(new byte[0]);
+            }
+
+            fields.Add(chainId.ToByteArray(isUnsigned: true, isBigEndian: true));
+            fields.Add(transaction.From.HexToByteArray());
+
+            // Add meta
+            fields.Add(transaction.GasPerPubdataByteLimit.ToByteArray(isUnsigned: true, isBigEndian: true));
+            fields.Add(RLP.EncodeList(transaction.FactoryDeps));
+            fields.Add(signatureHex.HexToByteArray());
+
+            if (!string.IsNullOrEmpty(transaction.Paymaster) && transaction.PaymasterInput != null)
+            {
+                fields.Add(transaction.Paymaster.HexToByteArray());
+                fields.Add(transaction.PaymasterInput);
+            }
+            else
+            {
+                fields.Add(new byte[0]);
+            }
+
+            // 0x71f901250c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a780801ca095bdae3d9ee4919b95ccb65008fb834b876cf6daab54f08914a3682b692dac3ba007de707e93d03249ffcaac274caf27e513cbe96d78d24c0136ab8a2aae94a66782012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c35081c0b8413bac2d692b68a31489f054abdaf66c874b83fb0850b6cc959b91e49e3daebd9567a694ae2a8aab36014cd2786de9cb13e527af4c27accaff4932d0937e70de071c94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
+
+            // 0x71f901260c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a7808080a02ce7dea3c25ac28c69ef5d425933bf6195c7c5648e4e228e3dca1f62f147449ea06b626df4ccad17b8c472ddba39b113c0e8f49569572fdd4ac2f6e2ddfc29726682012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c350c0b8412ce7dea3c25ac28c69ef5d425933bf6195c7c5648e4e228e3dca1f62f147449e6b626df4ccad17b8c472ddba39b113c0e8f49569572fdd4ac2f6e2ddfc2972661bf85b94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
+
+            return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray()).ToHex();
         }
     }
 }

@@ -190,18 +190,16 @@ namespace Thirdweb
             transaction.Input.Value ??= new HexBigInteger(0);
             transaction.Input.Data ??= "0x";
             transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction));
-            if (transaction.Input.MaxFeePerGas == null && transaction.Input.MaxPriorityFeePerGas == null && transaction.Input.GasPrice == null)
+            if (transaction.Input.GasPrice == null)
             {
                 Console.WriteLine("Sending as EIP-1559 tx");
                 var (maxFeePerGas, maxPriorityFeePerGas) = await EstimateGasFees(transaction);
                 transaction.Input.MaxFeePerGas ??= maxFeePerGas.ToHexBigInteger();
                 transaction.Input.MaxPriorityFeePerGas ??= maxPriorityFeePerGas.ToHexBigInteger();
-                transaction.Input.GasPrice = null;
             }
             else
             {
                 Console.WriteLine("Sending as legacy tx");
-                transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction));
                 transaction.Input.MaxFeePerGas = null;
                 transaction.Input.MaxPriorityFeePerGas = null;
             }
@@ -232,13 +230,13 @@ namespace Thirdweb
                     To = transaction.Input.To,
                     GasLimit = transaction.Input.Gas.Value,
                     GasPerPubdataByteLimit = 50000,
-                    MaxFeePerGas = transaction.Input.MaxFeePerGas.Value,
-                    MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas.Value,
+                    MaxFeePerGas = transaction.Input.MaxFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
+                    MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
                     Paymaster = zkSyncPaymaster,
                     Nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
                     Value = transaction.Input.Value.Value,
                     Data = transaction.Input.Data.HexToByteArray(),
-                    FactoryDeps = Array.Empty<byte>(),
+                    FactoryDeps = new byte[][] { },
                     PaymasterInput = zkSyncPaymasterInput.HexToByteArray()
                 };
                 Console.WriteLine($"ZkSync transaction: {JsonConvert.SerializeObject(zkTx)}");

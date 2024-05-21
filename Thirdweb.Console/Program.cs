@@ -67,13 +67,17 @@ if (!await inAppWallet.IsConnected())
 // Test 113
 var tx = await ThirdwebTransaction.Create(
     client,
-    inAppWallet,
+    privateKeyWallet,
     new ThirdwebTransactionInput()
     {
-        From = await inAppWallet.GetAddress(),
-        To = await inAppWallet.GetAddress(),
+        From = await privateKeyWallet.GetAddress(),
+        To = await privateKeyWallet.GetAddress(),
         Value = new HexBigInteger(BigInteger.Zero),
-        Data = "0x"
+        Data = "0x",
+        MaxFeePerGas = new HexBigInteger(25000000),
+        MaxPriorityFeePerGas = new HexBigInteger(25000000),
+        Gas = new HexBigInteger(20000000),
+        ChainId = new HexBigInteger(300),
     },
     300
 );
