@@ -131,42 +131,26 @@ namespace Thirdweb
                 transaction.Data == null ? new byte[0] : transaction.Data,
             };
 
-            if (signature != null)
-            {
-                fields.Add(new BigInteger(signature.V).ToByteArray(isUnsigned: false, isBigEndian: true));
-                fields.Add(new BigInteger(signature.R).ToByteArray(isUnsigned: false, isBigEndian: true));
-                fields.Add(new BigInteger(signature.S).ToByteArray(isUnsigned: false, isBigEndian: true));
-            }
-            else
-            {
-                fields.Add(chainId.ToByteArray(isUnsigned: true, isBigEndian: true));
-                fields.Add(new byte[0]);
-                fields.Add(new byte[0]);
-            }
+            fields.Add(new BigInteger(signature.V).ToByteArray(isUnsigned: false, isBigEndian: true));
+            fields.Add(new BigInteger(signature.R).ToByteArray(isUnsigned: false, isBigEndian: true));
+            fields.Add(new BigInteger(signature.S).ToByteArray(isUnsigned: false, isBigEndian: true));
 
             fields.Add(chainId.ToByteArray(isUnsigned: true, isBigEndian: true));
             fields.Add(transaction.From.HexToByteArray());
 
             // Add meta
             fields.Add(transaction.GasPerPubdataByteLimit.ToByteArray(isUnsigned: true, isBigEndian: true));
-            fields.Add(RLP.EncodeList(transaction.FactoryDeps));
+            fields.Add(new byte[] { }); // TODO: FactoryDeps
             fields.Add(signatureHex.HexToByteArray());
 
-            if (!string.IsNullOrEmpty(transaction.Paymaster) && transaction.PaymasterInput != null)
-            {
-                fields.Add(transaction.Paymaster.HexToByteArray());
-                fields.Add(transaction.PaymasterInput);
-            }
-            else
-            {
-                fields.Add(new byte[0]);
-            }
+            fields.Add(transaction.Paymaster.HexToByteArray());
+            fields.Add(transaction.PaymasterInput);
 
-            // 0x71f901250c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a780801ca095bdae3d9ee4919b95ccb65008fb834b876cf6daab54f08914a3682b692dac3ba007de707e93d03249ffcaac274caf27e513cbe96d78d24c0136ab8a2aae94a66782012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c35081c0b8413bac2d692b68a31489f054abdaf66c874b83fb0850b6cc959b91e49e3daebd9567a694ae2a8aab36014cd2786de9cb13e527af4c27accaff4932d0937e70de071c94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
+            // 0x71f901240c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a780801ca095bdae3d9ee4919b95ccb65008fb834b876cf6daab54f08914a3682b692dac3ba007de707e93d03249ffcaac274caf27e513cbe96d78d24c0136ab8a2aae94a66782012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c350c0b8413bac2d692b68a31489f054abdaf66c874b83fb0850b6cc959b91e49e3daebd9567a694ae2a8aab36014cd2786de9cb13e527af4c27accaff4932d0937e70de071c94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
 
             // 0x71f901260c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a7808080a02ce7dea3c25ac28c69ef5d425933bf6195c7c5648e4e228e3dca1f62f147449ea06b626df4ccad17b8c472ddba39b113c0e8f49569572fdd4ac2f6e2ddfc29726682012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c350c0b8412ce7dea3c25ac28c69ef5d425933bf6195c7c5648e4e228e3dca1f62f147449e6b626df4ccad17b8c472ddba39b113c0e8f49569572fdd4ac2f6e2ddfc2972661bf85b94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
 
-            return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray()).ToHex();
+            return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray(), new int[] { 13 }).ToHex(); // 13 = FactoryDeps
         }
     }
 }
