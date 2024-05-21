@@ -207,30 +207,15 @@ namespace Thirdweb
             var isZkAA = zkSyncPaymaster != null && zkSyncPaymasterInput != null;
             if (isZkAA && (transaction.Input.ChainId.Value.Equals(324) || transaction.Input.ChainId.Value.Equals(300)))
             {
-                // Field name               Type
-                // txType	                uint256
-                // from	                    uint256
-                // to	                    uint256
-                // gasLimit	                uint256
-                // gasPerPubdataByteLimit	uint256
-                // maxFeePerGas	            uint256
-                // maxPriorityFeePerGas	    uint256
-                // paymaster	            uint256
-                // nonce	                uint256
-                // value	                uint256
-                // data	                    bytes
-                // factoryDeps	            bytes32[]
-                // paymasterInput	        bytes
                 var zkTx = new AccountAbstraction.ZkSyncAATransaction
                 {
-                    TxType = 0x71, // 712 can't be used as it has to be one byte long
+                    TxType = 0x71,
                     From = new HexBigInteger(transaction.Input.From).Value,
                     To = new HexBigInteger(transaction.Input.To).Value,
                     GasLimit = transaction.Input.Gas.Value,
                     GasPerPubdataByteLimit = 50000,
                     MaxFeePerGas = transaction.Input.MaxFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
                     MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
-                    // unsigned bigint of paymaster hex string
                     Paymaster = new HexBigInteger(zkSyncPaymaster).Value,
                     Nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
                     Value = transaction.Input.Value.Value,
