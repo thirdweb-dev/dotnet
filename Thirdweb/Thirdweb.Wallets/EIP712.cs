@@ -51,15 +51,9 @@ namespace Thirdweb
         )
         {
             var typedData = GetTypedDefinition_ZkSyncTransaction(domainName, version, chainId);
-            var typedDataEncoder = new Eip712TypedDataEncoder();
-            var hash = typedDataEncoder.EncodeAndHashTypedData(transaction, typedData);
-            Console.WriteLine($"Hash: {hash.ToHex(true)}");
-            var signatureHex = await signer.EthSign(hash);
-            Console.WriteLine($"Signature: {signatureHex}");
+            var signatureHex = await signer.SignTypedDataV4(transaction, typedData);
             var signatureRaw = EthECDSASignatureFactory.ExtractECDSASignature(signatureHex);
-            var serializedTx = SerializeEip712(transaction, signatureRaw, chainId);
-            Console.WriteLine($"Serialized: {serializedTx}");
-            return serializedTx;
+            return SerializeEip712(transaction, signatureRaw, chainId);
         }
 
         public static TypedData<Domain> GetTypedDefinition_SmartAccount(string domainName, string version, BigInteger chainId, string verifyingContract)
@@ -116,18 +110,13 @@ namespace Thirdweb
                 throw new ArgumentException("Chain ID must be provided for EIP712 transactions!");
             }
 
-            if (string.IsNullOrEmpty(transaction.From))
-            {
-                throw new ArgumentException("From address must be provided for EIP712 transactions!");
-            }
-
             var fields = new List<byte[]>
             {
                 transaction.Nonce.ToByteArray(isUnsigned: true, isBigEndian: true),
                 transaction.MaxPriorityFeePerGas.ToByteArray(isUnsigned: true, isBigEndian: true),
                 transaction.MaxFeePerGas.ToByteArray(isUnsigned: true, isBigEndian: true),
                 transaction.GasLimit.ToByteArray(isUnsigned: true, isBigEndian: true),
-                transaction.To.HexToByteArray(),
+                transaction.To.ToByteArray(isUnsigned: true, isBigEndian: true),
                 transaction.Value == 0 ? new byte[0] : transaction.Value.ToByteArray(isUnsigned: true, isBigEndian: true),
                 transaction.Data == null ? new byte[0] : transaction.Data,
             };
@@ -137,21 +126,16 @@ namespace Thirdweb
             fields.Add(signature.S);
 
             fields.Add(chainId.ToByteArray(isUnsigned: true, isBigEndian: true));
-            fields.Add(transaction.From.HexToByteArray());
+            fields.Add(transaction.From.ToByteArray(isUnsigned: true, isBigEndian: true));
 
             // Add meta
             fields.Add(transaction.GasPerPubdataByteLimit.ToByteArray(isUnsigned: true, isBigEndian: true));
             fields.Add(new byte[] { }); // TODO: FactoryDeps
             fields.Add(signature.CreateStringSignature().HexToByteArray());
+            // add array of rlp encoded paymaster/paymasterinput
+            fields.Add(RLP.EncodeElement(transaction.Paymaster.ToByteArray(isUnsigned: true, isBigEndian: true)).Concat(RLP.EncodeElement(transaction.PaymasterInput)).ToArray());
 
-            fields.Add(transaction.Paymaster.HexToByteArray());
-            fields.Add(transaction.PaymasterInput);
-
-            // 0x71f901240c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a7808080a0b200bd413af7e1440b3b5ef7ff46360936d702438a805960373d07a2c6159014a00a667fddcbda9b4620fd2a39940df01f5634fe7eade921160eb2fae9ec984f8e82012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c350c0b841b200bd413af7e1440b3b5ef7ff46360936d702438a805960373d07a2c61590140a667fddcbda9b4620fd2a39940df01f5634fe7eade921160eb2fae9ec984f8e1b94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
-
-            // 0x71f901260c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a7808080a02ce7dea3c25ac28c69ef5d425933bf6195c7c5648e4e228e3dca1f62f147449ea06b626df4ccad17b8c472ddba39b113c0e8f49569572fdd4ac2f6e2ddfc29726682012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c350c0b8412ce7dea3c25ac28c69ef5d425933bf6195c7c5648e4e228e3dca1f62f147449e6b626df4ccad17b8c472ddba39b113c0e8f49569572fdd4ac2f6e2ddfc2972661bf85b94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
-
-            return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray(), new int[] { 13 }).ToHex(); // 13 = FactoryDeps
+            return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray(), new int[] { 13, 15 }).ToHex();
         }
     }
 }

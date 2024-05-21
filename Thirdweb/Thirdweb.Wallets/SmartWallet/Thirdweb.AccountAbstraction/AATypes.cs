@@ -180,11 +180,11 @@ namespace Thirdweb.AccountAbstraction
         [Parameter("uint256", "txType", 1)]
         public virtual BigInteger TxType { get; set; }
 
-        [Parameter("address", "from", 2)]
-        public virtual string From { get; set; }
+        [Parameter("uint256", "from", 2)]
+        public virtual BigInteger From { get; set; }
 
-        [Parameter("address", "to", 3)]
-        public virtual string To { get; set; }
+        [Parameter("uint256", "to", 3)]
+        public virtual BigInteger To { get; set; }
 
         [Parameter("uint256", "gasLimit", 4)]
         public virtual BigInteger GasLimit { get; set; }
@@ -198,8 +198,8 @@ namespace Thirdweb.AccountAbstraction
         [Parameter("uint256", "maxPriorityFeePerGas", 7)]
         public virtual BigInteger MaxPriorityFeePerGas { get; set; }
 
-        [Parameter("address", "paymaster", 8)]
-        public virtual string Paymaster { get; set; }
+        [Parameter("uint256", "paymaster", 8)]
+        public virtual BigInteger Paymaster { get; set; }
 
         [Parameter("uint256", "nonce", 9)]
         public virtual BigInteger Nonce { get; set; }

@@ -192,14 +192,12 @@ namespace Thirdweb
             transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction));
             if (transaction.Input.GasPrice == null)
             {
-                Console.WriteLine("Sending as EIP-1559 tx");
                 var (maxFeePerGas, maxPriorityFeePerGas) = await EstimateGasFees(transaction);
                 transaction.Input.MaxFeePerGas ??= maxFeePerGas.ToHexBigInteger();
                 transaction.Input.MaxPriorityFeePerGas ??= maxPriorityFeePerGas.ToHexBigInteger();
             }
             else
             {
-                Console.WriteLine("Sending as legacy tx");
                 transaction.Input.MaxFeePerGas = null;
                 transaction.Input.MaxPriorityFeePerGas = null;
             }
@@ -226,22 +224,21 @@ namespace Thirdweb
                 var zkTx = new AccountAbstraction.ZkSyncAATransaction
                 {
                     TxType = 0x71, // 712 can't be used as it has to be one byte long
-                    From = transaction.Input.From,
-                    To = transaction.Input.To,
+                    From = new HexBigInteger(transaction.Input.From).Value,
+                    To = new HexBigInteger(transaction.Input.To).Value,
                     GasLimit = transaction.Input.Gas.Value,
                     GasPerPubdataByteLimit = 50000,
                     MaxFeePerGas = transaction.Input.MaxFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
                     MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
-                    Paymaster = zkSyncPaymaster,
+                    // unsigned bigint of paymaster hex string
+                    Paymaster = new HexBigInteger(zkSyncPaymaster).Value,
                     Nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
                     Value = transaction.Input.Value.Value,
                     Data = transaction.Input.Data.HexToByteArray(),
                     FactoryDeps = new byte[] { },
                     PaymasterInput = zkSyncPaymasterInput.HexToByteArray()
                 };
-                Console.WriteLine($"ZkSync transaction: {JsonConvert.SerializeObject(zkTx)}");
                 var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);
-                Console.WriteLine($"ZkSync transaction signed: {zkTxSigned}");
                 hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", zkTxSigned);
             }
             else
@@ -262,7 +259,6 @@ namespace Thirdweb
                         throw new NotImplementedException("Account type not supported");
                 }
             }
-            Console.WriteLine($"Transaction hash: {hash}");
             return hash;
         }
 
