@@ -174,6 +174,7 @@ namespace Thirdweb.AccountAbstraction
         public virtual byte[] Message { get; set; }
     }
 
+    [Struct("Transaction")]
     public class ZkSyncAATransaction
     {
         [Parameter("uint256", "txType", 1)]
@@ -210,7 +211,7 @@ namespace Thirdweb.AccountAbstraction
         public virtual byte[] Data { get; set; }
 
         [Parameter("bytes32[]", "factoryDeps", 12)]
-        public virtual byte[][] FactoryDeps { get; set; }
+        public virtual byte[] FactoryDeps { get; set; }
 
         [Parameter("bytes", "paymasterInput", 13)]
         public virtual byte[] PaymasterInput { get; set; }

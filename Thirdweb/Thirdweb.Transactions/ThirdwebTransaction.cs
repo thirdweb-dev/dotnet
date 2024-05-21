@@ -236,7 +236,7 @@ namespace Thirdweb
                     Nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
                     Value = transaction.Input.Value.Value,
                     Data = transaction.Input.Data.HexToByteArray(),
-                    FactoryDeps = new byte[][] { },
+                    FactoryDeps = new byte[] { },
                     PaymasterInput = zkSyncPaymasterInput.HexToByteArray()
                 };
                 Console.WriteLine($"ZkSync transaction: {JsonConvert.SerializeObject(zkTx)}");

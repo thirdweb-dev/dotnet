@@ -1,5 +1,6 @@
 using System.Numerics;
 using Nethereum.ABI.EIP712;
+using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Model;
@@ -56,7 +57,7 @@ namespace Thirdweb
             var signatureHex = await signer.EthSign(hash);
             Console.WriteLine($"Signature: {signatureHex}");
             var signatureRaw = EthECDSASignatureFactory.ExtractECDSASignature(signatureHex);
-            var serializedTx = SerializeEip712(transaction, signatureRaw, signatureHex, chainId);
+            var serializedTx = SerializeEip712(transaction, signatureRaw, chainId);
             Console.WriteLine($"Serialized: {serializedTx}");
             return serializedTx;
         }
@@ -104,11 +105,11 @@ namespace Thirdweb
                     ChainId = chainId,
                 },
                 Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(DomainWithNameVersionAndChainId), typeof(AccountAbstraction.ZkSyncAATransaction)),
-                PrimaryType = nameof(AccountAbstraction.ZkSyncAATransaction),
+                PrimaryType = "Transaction",
             };
         }
 
-        private static string SerializeEip712(AccountAbstraction.ZkSyncAATransaction transaction, EthECDSASignature signature, string signatureHex, BigInteger chainId)
+        private static string SerializeEip712(AccountAbstraction.ZkSyncAATransaction transaction, EthECDSASignature signature, BigInteger chainId)
         {
             if (chainId == 0)
             {
@@ -131,7 +132,7 @@ namespace Thirdweb
                 transaction.Data == null ? new byte[0] : transaction.Data,
             };
 
-            fields.Add(new BigInteger(signature.V).ToByteArray(isUnsigned: false, isBigEndian: true));
+            fields.Add(signature.IsVSignedForYParity() ? new byte[] { 0x1b } : new byte[] { });
             fields.Add(new BigInteger(signature.R).ToByteArray(isUnsigned: false, isBigEndian: true));
             fields.Add(new BigInteger(signature.S).ToByteArray(isUnsigned: false, isBigEndian: true));
 
@@ -141,12 +142,12 @@ namespace Thirdweb
             // Add meta
             fields.Add(transaction.GasPerPubdataByteLimit.ToByteArray(isUnsigned: true, isBigEndian: true));
             fields.Add(new byte[] { }); // TODO: FactoryDeps
-            fields.Add(signatureHex.HexToByteArray());
+            fields.Add(signature.CreateStringSignature().HexToByteArray());
 
             fields.Add(transaction.Paymaster.HexToByteArray());
             fields.Add(transaction.PaymasterInput);
 
-            // 0x71f901240c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a780801ca095bdae3d9ee4919b95ccb65008fb834b876cf6daab54f08914a3682b692dac3ba007de707e93d03249ffcaac274caf27e513cbe96d78d24c0136ab8a2aae94a66782012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c350c0b8413bac2d692b68a31489f054abdaf66c874b83fb0850b6cc959b91e49e3daebd9567a694ae2a8aab36014cd2786de9cb13e527af4c27accaff4932d0937e70de071c94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
+            // 0x71f901240c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a7808080a0149015c6a2073d376059808a4302d736093646fff75e3b0b44e1f73a41bd00b2a08e4f98ece9fab20e1621e9ad7efe34561ff00d94392afd20469bdacbdd7f660a82012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c350c0b841b200bd413af7e1440b3b5ef7ff46360936d702438a805960373d07a2c61590140a667fddcbda9b4620fd2a39940df01f5634fe7eade921160eb2fae9ec984f8e1b94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
 
             // 0x71f901260c84017d784084017d78408401312d009483e13cd6b1179be8b8cb5858accbba84394cf9a7808080a02ce7dea3c25ac28c69ef5d425933bf6195c7c5648e4e228e3dca1f62f147449ea06b626df4ccad17b8c472ddba39b113c0e8f49569572fdd4ac2f6e2ddfc29726682012c9483e13cd6b1179be8b8cb5858accbba84394cf9a782c350c0b8412ce7dea3c25ac28c69ef5d425933bf6195c7c5648e4e228e3dca1f62f147449e6b626df4ccad17b8c472ddba39b113c0e8f49569572fdd4ac2f6e2ddfc2972661bf85b94ba226d47cbb2731cbaa67c916c57d68484aa269fb8448c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
 
