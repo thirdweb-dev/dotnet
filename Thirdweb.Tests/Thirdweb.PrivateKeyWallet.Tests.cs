@@ -59,7 +59,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task EthSign_NullMessage()
     {
         var account = await GetAccount();
-        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.EthSign(null));
+        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.EthSign(null as string));
         Assert.Equal("Message to sign cannot be null. (Parameter 'message')", ex.Message);
     }
 
@@ -256,7 +256,6 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            Type = new HexBigInteger(2),
             MaxFeePerGas = new HexBigInteger(10000000000),
             MaxPriorityFeePerGas = new HexBigInteger(10000000000)
         };
@@ -276,7 +275,6 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            Type = new HexBigInteger(2),
             MaxPriorityFeePerGas = new HexBigInteger(10000000000)
         };
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction, 421614));
@@ -295,7 +293,6 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            Type = new HexBigInteger(2),
             MaxFeePerGas = new HexBigInteger(10000000000)
         };
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction, 421614));
