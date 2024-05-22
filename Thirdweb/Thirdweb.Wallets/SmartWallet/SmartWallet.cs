@@ -61,8 +61,7 @@ namespace Thirdweb
             string accountAddressOverride = null,
             string entryPoint = null,
             string bundlerUrl = null,
-            string paymasterUrl = null,
-            string zkSyncPaymasterAddress = null
+            string paymasterUrl = null
         )
         {
             if (!await personalWallet.IsConnected())
@@ -79,8 +78,9 @@ namespace Thirdweb
             ThirdwebContract accountContract = null;
             ThirdwebContract zkSyncPaymasterContract = null;
 
-            if ((chainId == 324 || chainId == 300) && !string.IsNullOrEmpty(zkSyncPaymasterAddress))
+            if (chainId == 324 || chainId == 300)
             {
+                var zkSyncPaymasterAddress = Constants.ZKSYNC_SIGNATUREBASED_PAYMASTER;
                 zkSyncPaymasterContract = await ThirdwebContract.Create(
                     client,
                     zkSyncPaymasterAddress,
