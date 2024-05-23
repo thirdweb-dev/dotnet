@@ -1,3 +1,4 @@
+using System.Numerics;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
@@ -53,5 +54,31 @@ namespace Thirdweb
 
         [JsonProperty(PropertyName = "chainId")]
         public HexBigInteger ChainId { get; set; }
+
+        [JsonProperty(PropertyName = "zkSyncOptions", NullValueHandling = NullValueHandling.Ignore)]
+        public ZkSyncOptions ZkSync { get; set; }
+    }
+
+    public class ZkSyncOptions
+    {
+        [JsonProperty(PropertyName = "gasPerPubdataByteLimit")]
+        public BigInteger GasPerPubdataByteLimit { get; set; }
+
+        [JsonProperty(PropertyName = "factoryDeps")]
+        public List<byte[]> FactoryDeps { get; set; }
+
+        [JsonProperty(PropertyName = "paymaster")]
+        public BigInteger Paymaster { get; set; }
+
+        [JsonProperty(PropertyName = "paymasterInput")]
+        public byte[] PaymasterInput { get; set; }
+
+        public ZkSyncOptions(string paymaster, string paymasterInput, BigInteger? gasPerPubdataByteLimit = null, List<byte[]> factoryDeps = null)
+        {
+            Paymaster = new HexBigInteger(paymaster).Value;
+            PaymasterInput = paymasterInput.HexToByteArray();
+            GasPerPubdataByteLimit = gasPerPubdataByteLimit ?? new BigInteger(50000);
+            FactoryDeps = factoryDeps ?? new List<byte[]>();
+        }
     }
 }

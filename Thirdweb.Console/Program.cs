@@ -64,28 +64,31 @@ if (!await inAppWallet.IsConnected())
     // }
 }
 
-// Test 113
+// Prepare a transaction directly, or with Contract.Prepare
 var tx = await ThirdwebTransaction.Create(
-    client,
-    privateKeyWallet,
-    new ThirdwebTransactionInput()
+    client: client,
+    wallet: privateKeyWallet,
+    txInput: new ThirdwebTransactionInput()
     {
         From = await privateKeyWallet.GetAddress(),
         To = await privateKeyWallet.GetAddress(),
         Value = new HexBigInteger(BigInteger.Zero),
-        Data = "0x",
-        MaxFeePerGas = new HexBigInteger(25000000),
-        MaxPriorityFeePerGas = new HexBigInteger(25000000),
-        Gas = new HexBigInteger(20000000),
-        ChainId = new HexBigInteger(300),
     },
-    300
+    chainId: 300
 );
-var txHash = await ThirdwebTransaction.Send(
-    transaction: tx,
-    zkSyncPaymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
-    zkSyncPaymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+
+// Set zkSync options
+tx.SetZkSyncOptions(
+    new ZkSyncOptions(
+        // Paymaster contract address
+        paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
+        // IPaymasterFlow interface encoded data
+        paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+    )
 );
+
+// Send as usual, it's now gasless!
+var txHash = await ThirdwebTransaction.Send(transaction: tx);
 Console.WriteLine($"Transaction hash: {txHash}");
 
 
