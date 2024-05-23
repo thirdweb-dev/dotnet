@@ -74,7 +74,7 @@ public class SmartWalletTests : BaseTests
     {
         var account = await GetSmartAccount();
         var tx = await account.SendTransaction(
-            new TransactionInput()
+            new ThirdwebTransactionInput()
             {
                 From = await account.GetAddress(),
                 To = await account.GetAddress(),
@@ -91,7 +91,7 @@ public class SmartWalletTests : BaseTests
         var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
         var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         var tx = await smartAccount.SendTransaction(
-            new TransactionInput()
+            new ThirdwebTransactionInput()
             {
                 From = await smartAccount.GetAddress(),
                 To = await smartAccount.GetAddress(),

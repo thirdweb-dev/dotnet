@@ -9,6 +9,7 @@ namespace Thirdweb
     {
         public ThirdwebAccountType AccountType { get; }
         public Task<string> GetAddress();
+        public Task<string> EthSign(byte[] rawMessage);
         public Task<string> EthSign(string message);
         public Task<string> PersonalSign(byte[] rawMessage);
         public Task<string> PersonalSign(string message);
@@ -16,7 +17,7 @@ namespace Thirdweb
         public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
             where TDomain : IDomain;
         public Task<bool> IsConnected();
-        public Task<string> SignTransaction(TransactionInput transaction, BigInteger chainId);
+        public Task<string> SignTransaction(ThirdwebTransactionInput transaction, BigInteger chainId);
         public Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", HttpClient httpClient = null);
     }
 

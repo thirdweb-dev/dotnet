@@ -28,10 +28,10 @@ var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyH
 var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
 
 // Reset InAppWallet (optional step for testing login flow)
-if (await inAppWallet.IsConnected())
-{
-    await inAppWallet.Disconnect();
-}
+// if (await inAppWallet.IsConnected())
+// {
+//     await inAppWallet.Disconnect();
+// }
 
 // Relog if InAppWallet not logged in
 if (!await inAppWallet.IsConnected())
@@ -64,10 +64,39 @@ if (!await inAppWallet.IsConnected())
     // }
 }
 
+// Prepare a transaction directly, or with Contract.Prepare
+var tx = await ThirdwebTransaction.Create(
+    client: client,
+    wallet: privateKeyWallet,
+    txInput: new ThirdwebTransactionInput()
+    {
+        From = await privateKeyWallet.GetAddress(),
+        To = await privateKeyWallet.GetAddress(),
+        Value = new HexBigInteger(BigInteger.Zero),
+    },
+    chainId: 300
+);
+
+// Set zkSync options
+tx.SetZkSyncOptions(
+    new ZkSyncOptions(
+        // Paymaster contract address
+        paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
+        // IPaymasterFlow interface encoded data
+        paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+    )
+);
+
+// Send as usual, it's now gasless!
+var txHash = await ThirdwebTransaction.Send(transaction: tx);
+Console.WriteLine($"Transaction hash: {txHash}");
+
+
+
 // Create smart wallet with InAppWallet signer
-var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-var res = await smartWallet.Authenticate("http://localhost:8000", 421614);
-Console.WriteLine($"Smart wallet auth result: {res}");
+// var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+// var res = await smartWallet.Authenticate("http://localhost:8000", 421614);
+// Console.WriteLine($"Smart wallet auth result: {res}");
 
 // // Grant a session key to pk wallet (advanced use case)
 // _ = await smartWallet.CreateSessionKey(
@@ -124,7 +153,7 @@ Console.WriteLine($"Smart wallet auth result: {res}");
 // Console.WriteLine($"Transaction receipt: {JsonConvert.SerializeObject(receipt)}");
 
 // // Transaction Builder - raw transfer
-// var rawTx = new TransactionInput
+// var rawTx = new ThirdwebTransactionInput
 // {
 //     From = await smartWallet.GetAddress(),
 //     To = await smartWallet.GetAddress(),

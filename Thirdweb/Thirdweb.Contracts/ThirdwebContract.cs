@@ -68,7 +68,7 @@ namespace Thirdweb
             var service = new Nethereum.Contracts.Contract(null, contract.Abi, contract.Address);
             var function = service.GetFunction(method);
             var data = function.GetData(parameters);
-            var transaction = new TransactionInput
+            var transaction = new ThirdwebTransactionInput
             {
                 From = await wallet.GetAddress(),
                 To = contract.Address,

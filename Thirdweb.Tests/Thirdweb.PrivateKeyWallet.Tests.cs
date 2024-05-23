@@ -59,8 +59,25 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task EthSign_NullMessage()
     {
         var account = await GetAccount();
-        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.EthSign(null));
+        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.EthSign(null as string));
         Assert.Equal("Message to sign cannot be null. (Parameter 'message')", ex.Message);
+    }
+
+    [Fact]
+    public async Task EthSignRaw_Success()
+    {
+        var account = await GetAccount();
+        var message = "Hello, World!";
+        var signature = await account.EthSign(System.Text.Encoding.UTF8.GetBytes(message));
+        Assert.True(signature.Length == 132);
+    }
+
+    [Fact]
+    public async Task EthSignRaw_NullMessage()
+    {
+        var account = await GetAccount();
+        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.EthSign(null as byte[]));
+        Assert.Equal("Message to sign cannot be null. (Parameter 'rawMessage')", ex.Message);
     }
 
     [Fact]
@@ -155,7 +172,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_Success()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -173,7 +190,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_NoFrom_Success()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             To = Constants.ADDRESS_ZERO,
             // Value = new HexBigInteger(0),
@@ -198,7 +215,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_NoNonce()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -214,7 +231,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_WrongFrom()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = Constants.ADDRESS_ZERO,
             To = Constants.ADDRESS_ZERO,
@@ -231,7 +248,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_NoGasPrice()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -241,14 +258,14 @@ public class PrivateKeyWalletTests : BaseTests
             Nonce = new HexBigInteger(99999999999)
         };
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction, 421614));
-        Assert.Equal("Transaction gas price must be set for legacy transactions", ex.Message);
+        Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);
     }
 
     [Fact]
     public async Task SignTransaction_1559_Success()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -256,7 +273,6 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            Type = new HexBigInteger(2),
             MaxFeePerGas = new HexBigInteger(10000000000),
             MaxPriorityFeePerGas = new HexBigInteger(10000000000)
         };
@@ -268,7 +284,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_1559_NoMaxFeePerGas()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -276,7 +292,6 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            Type = new HexBigInteger(2),
             MaxPriorityFeePerGas = new HexBigInteger(10000000000)
         };
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction, 421614));
@@ -287,7 +302,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_1559_NoMaxPriorityFeePerGas()
     {
         var account = await GetAccount();
-        var transaction = new TransactionInput
+        var transaction = new ThirdwebTransactionInput
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -295,7 +310,6 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            Type = new HexBigInteger(2),
             MaxFeePerGas = new HexBigInteger(10000000000)
         };
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction, 421614));

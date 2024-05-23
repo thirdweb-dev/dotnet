@@ -32,6 +32,17 @@ public class UtilsTests : BaseTests
     }
 
     [Fact]
+    public void HashMessage()
+    {
+        var messageStr = "Hello, World!";
+        var message = System.Text.Encoding.UTF8.GetBytes(messageStr);
+        var hashStr = Utils.HashMessage(messageStr);
+        var hash = Utils.HashMessage(message);
+        Assert.Equal(hashStr, Utils.BytesToHex(hash));
+        Assert.Equal("0xacaf3289d7b601cbd114fb36c4d29c85bbfd5e133f14cb355c3fd8d99367964f", hashStr);
+    }
+
+    [Fact]
     public void BytesToHex()
     {
         var bytes = new byte[] { 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF };

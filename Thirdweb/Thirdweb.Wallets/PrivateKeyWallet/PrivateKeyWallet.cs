@@ -37,6 +37,18 @@ namespace Thirdweb
             return Task.FromResult(_ecKey.GetPublicAddress());
         }
 
+        public virtual Task<string> EthSign(byte[] rawMessage)
+        {
+            if (rawMessage == null)
+            {
+                throw new ArgumentNullException(nameof(rawMessage), "Message to sign cannot be null.");
+            }
+
+            var signer = new MessageSigner();
+            var signature = signer.Sign(rawMessage, _ecKey);
+            return Task.FromResult(signature);
+        }
+
         public virtual Task<string> EthSign(string message)
         {
             if (message == null)
@@ -98,7 +110,7 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
-        public virtual async Task<string> SignTransaction(TransactionInput transaction, BigInteger chainId)
+        public virtual async Task<string> SignTransaction(ThirdwebTransactionInput transaction, BigInteger chainId)
         {
             if (transaction == null)
             {
@@ -120,7 +132,14 @@ namespace Thirdweb
             var value = transaction.Value ?? new HexBigInteger(0);
 
             string signedTransaction;
-            if (transaction.Type != null && transaction.Type.Value == TransactionType.EIP1559.AsByte())
+
+            if (transaction.GasPrice != null)
+            {
+                var gasPrice = transaction.GasPrice;
+                var legacySigner = new LegacyTransactionSigner();
+                signedTransaction = legacySigner.SignTransaction(_ecKey.GetPrivateKey(), chainId, transaction.To, value.Value, nonce, gasPrice.Value, gasLimit.Value, transaction.Data);
+            }
+            else
             {
                 if (transaction.MaxPriorityFeePerGas == null || transaction.MaxFeePerGas == null)
                 {
@@ -128,31 +147,11 @@ namespace Thirdweb
                 }
                 var maxPriorityFeePerGas = transaction.MaxPriorityFeePerGas.Value;
                 var maxFeePerGas = transaction.MaxFeePerGas.Value;
-                var transaction1559 = new Transaction1559(
-                    chainId,
-                    nonce,
-                    maxPriorityFeePerGas,
-                    maxFeePerGas,
-                    gasLimit,
-                    transaction.To,
-                    value,
-                    transaction.Data,
-                    transaction.AccessList.ToSignerAccessListItemArray()
-                );
+                var transaction1559 = new Transaction1559(chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, transaction.To, value, transaction.Data, null);
 
                 var signer = new Transaction1559Signer();
                 signer.SignTransaction(_ecKey, transaction1559);
                 signedTransaction = transaction1559.GetRLPEncoded().ToHex();
-            }
-            else
-            {
-                if (transaction.GasPrice == null)
-                {
-                    throw new InvalidOperationException("Transaction gas price must be set for legacy transactions");
-                }
-                var gasPrice = transaction.GasPrice;
-                var legacySigner = new LegacyTransactionSigner();
-                signedTransaction = legacySigner.SignTransaction(_ecKey.GetPrivateKey(), chainId, transaction.To, value.Value, nonce, gasPrice.Value, gasLimit.Value, transaction.Data);
             }
 
             return "0x" + signedTransaction;

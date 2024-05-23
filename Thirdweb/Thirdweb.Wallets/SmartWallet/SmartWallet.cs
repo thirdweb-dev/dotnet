@@ -98,7 +98,7 @@ namespace Thirdweb
             return code != "0x";
         }
 
-        public async Task<string> SendTransaction(TransactionInput transaction)
+        public async Task<string> SendTransaction(ThirdwebTransactionInput transaction)
         {
             if (transaction == null)
             {
@@ -120,7 +120,7 @@ namespace Thirdweb
             return data.HexToByteArray();
         }
 
-        private async Task<UserOperation> SignUserOp(TransactionInput transactionInput, int? requestId = null)
+        private async Task<UserOperation> SignUserOp(ThirdwebTransactionInput transactionInput, int? requestId = null)
         {
             requestId ??= 1;
 
@@ -246,7 +246,12 @@ namespace Thirdweb
 
         public async Task ForceDeploy()
         {
-            var input = new TransactionInput("0x", _accountContract.Address, new HexBigInteger(0));
+            var input = new ThirdwebTransactionInput()
+            {
+                Data = "0x",
+                To = _accountContract.Address,
+                Value = new HexBigInteger(0)
+            };
             var txHash = await SendTransaction(input);
             _ = await ThirdwebTransaction.WaitForTransactionReceipt(_client, _chainId, txHash);
         }
@@ -259,6 +264,11 @@ namespace Thirdweb
         public Task<string> GetAddress()
         {
             return Task.FromResult(_accountContract.Address);
+        }
+
+        public Task<string> EthSign(byte[] rawMessage)
+        {
+            return _personalAccount.EthSign(rawMessage);
         }
 
         public Task<string> EthSign(string message)
@@ -344,7 +354,7 @@ namespace Thirdweb
 
             var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
             var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
-            var txInput = new TransactionInput()
+            var txInput = new ThirdwebTransactionInput()
             {
                 From = await GetAddress(),
                 To = _accountContract.Address,
@@ -372,7 +382,7 @@ namespace Thirdweb
 
             var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
             var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
-            var txInput = new TransactionInput()
+            var txInput = new ThirdwebTransactionInput()
             {
                 From = await GetAddress(),
                 To = _accountContract.Address,
@@ -400,7 +410,7 @@ namespace Thirdweb
 
             var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
             var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
-            var txInput = new TransactionInput()
+            var txInput = new ThirdwebTransactionInput()
             {
                 From = await GetAddress(),
                 To = _accountContract.Address,
@@ -422,14 +432,14 @@ namespace Thirdweb
             return _personalAccount.SignTypedDataV4(data, typedData);
         }
 
-        public async Task<BigInteger> EstimateUserOperationGas(TransactionInput transaction, BigInteger chainId)
+        public async Task<BigInteger> EstimateUserOperationGas(ThirdwebTransactionInput transaction, BigInteger chainId)
         {
             var signedOp = await SignUserOp(transaction);
             var cost = signedOp.CallGasLimit + signedOp.VerificationGasLimit + signedOp.PreVerificationGas;
             return cost;
         }
 
-        public async Task<string> SignTransaction(TransactionInput transaction, BigInteger chainId)
+        public async Task<string> SignTransaction(ThirdwebTransactionInput transaction, BigInteger chainId)
         {
             return JsonConvert.SerializeObject(EncodeUserOperation(await SignUserOp(transaction)));
         }

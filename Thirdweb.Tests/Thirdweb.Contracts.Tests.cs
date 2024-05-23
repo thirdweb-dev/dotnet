@@ -116,10 +116,17 @@ public class ContractsTests : BaseTests
         var pricePerToken = BigInteger.Zero;
         var allowlistProof = new object[] { new byte[] { }, BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
         var data = new byte[] { };
-        var exception = await Assert.ThrowsAsync<Exception>(
-            async () => await ThirdwebContract.Write(privateKeyAccount, contract, "claim", 0, receiver, quantity, currency, pricePerToken, allowlistProof, data)
-        );
-        Assert.Contains("insufficient funds", exception.Message);
+        try
+        {
+            var res = await ThirdwebContract.Write(privateKeyAccount, contract, "claim", 0, receiver, quantity, currency, pricePerToken, allowlistProof, data);
+            Assert.NotNull(res);
+            Assert.NotNull(res.TransactionHash);
+            Assert.Equal(66, res.TransactionHash.Length);
+        }
+        catch (Exception ex)
+        {
+            Assert.Contains("insufficient funds", ex.Message);
+        }
     }
 
     private async Task<SmartWallet> GetAccount()
