@@ -35,15 +35,28 @@ namespace Thirdweb
             var address = await wallet.GetAddress();
             txInput.From ??= address;
             txInput.Data ??= "0x";
-            return address != txInput.From
-                ? throw new ArgumentException("Transaction sender (from) must match wallet address")
-                : client == null
-                    ? throw new ArgumentNullException(nameof(client))
-                    : wallet == null
-                        ? throw new ArgumentNullException(nameof(wallet))
-                        : chainId == 0
-                            ? throw new ArgumentException("Invalid Chain ID")
-                            : new ThirdwebTransaction(client, wallet, txInput, chainId);
+
+            if (address != txInput.From)
+            {
+                throw new ArgumentException("Transaction sender (from) must match wallet address");
+            }
+
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (chainId == 0)
+            {
+                throw new ArgumentException("Invalid Chain ID");
+            }
+
+            return new ThirdwebTransaction(client, wallet, txInput, chainId);
         }
 
         public override string ToString()
