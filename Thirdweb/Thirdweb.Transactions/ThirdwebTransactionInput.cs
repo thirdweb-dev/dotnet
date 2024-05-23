@@ -56,10 +56,10 @@ namespace Thirdweb
         public HexBigInteger ChainId { get; set; }
 
         [JsonProperty(PropertyName = "zkSyncOptions", NullValueHandling = NullValueHandling.Ignore)]
-        public ZkSyncOptions ZkSync { get; set; }
+        public ZkSyncOptions? ZkSync { get; set; }
     }
 
-    public class ZkSyncOptions
+    public struct ZkSyncOptions
     {
         [JsonProperty(PropertyName = "gasPerPubdataByteLimit")]
         public BigInteger GasPerPubdataByteLimit { get; set; }

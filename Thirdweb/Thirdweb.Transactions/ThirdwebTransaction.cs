@@ -87,6 +87,24 @@ namespace Thirdweb
             return this;
         }
 
+        public ThirdwebTransaction SetMaxFeePerGas(BigInteger maxFeePerGas)
+        {
+            Input.MaxFeePerGas = maxFeePerGas.ToHexBigInteger();
+            return this;
+        }
+
+        public ThirdwebTransaction SetMaxPriorityFeePerGas(BigInteger maxPriorityFeePerGas)
+        {
+            Input.MaxPriorityFeePerGas = maxPriorityFeePerGas.ToHexBigInteger();
+            return this;
+        }
+
+        public ThirdwebTransaction SetChainId(BigInteger chainId)
+        {
+            Input.ChainId = chainId.ToHexBigInteger();
+            return this;
+        }
+
         public ThirdwebTransaction SetZkSyncOptions(ZkSyncOptions zkSyncOptions)
         {
             Input.ZkSync = zkSyncOptions;
@@ -232,12 +250,12 @@ namespace Thirdweb
                     GasPerPubdataByteLimit = 50000,
                     MaxFeePerGas = transaction.Input.MaxFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
                     MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
-                    Paymaster = transaction.Input.ZkSync.Paymaster,
+                    Paymaster = transaction.Input.ZkSync.Value.Paymaster,
                     Nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
                     Value = transaction.Input.Value.Value,
                     Data = transaction.Input.Data.HexToByteArray(),
-                    FactoryDeps = transaction.Input.ZkSync.FactoryDeps,
-                    PaymasterInput = transaction.Input.ZkSync.PaymasterInput
+                    FactoryDeps = transaction.Input.ZkSync.Value.FactoryDeps,
+                    PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput
                 };
                 Console.WriteLine("zkTx: " + JsonConvert.SerializeObject(zkTx));
                 var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);
@@ -316,9 +334,9 @@ namespace Thirdweb
         private static bool IsZkSyncTransaction(ThirdwebTransaction transaction)
         {
             return (transaction.Input.ChainId.Value.Equals(324) || transaction.Input.ChainId.Value.Equals(300))
-                && transaction.Input.ZkSync != null
-                && transaction.Input.ZkSync.Paymaster != 0
-                && transaction.Input.ZkSync.PaymasterInput != null;
+                && transaction.Input.ZkSync.HasValue
+                && transaction.Input.ZkSync.Value.Paymaster != 0
+                && transaction.Input.ZkSync.Value.PaymasterInput != null;
         }
     }
 }
