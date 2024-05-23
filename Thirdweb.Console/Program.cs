@@ -65,45 +65,28 @@ if (!await inAppWallet.IsConnected())
 }
 
 // Test 113
-// var tx = await ThirdwebTransaction.Create(
-//     client,
-//     privateKeyWallet,
-//     new ThirdwebTransactionInput()
-//     {
-//         From = await privateKeyWallet.GetAddress(),
-//         To = await privateKeyWallet.GetAddress(),
-//         Value = new HexBigInteger(BigInteger.Zero),
-//         Data = "0x",
-//         MaxFeePerGas = new HexBigInteger(25000000),
-//         MaxPriorityFeePerGas = new HexBigInteger(25000000),
-//         Gas = new HexBigInteger(20000000),
-//         ChainId = new HexBigInteger(300),
-//     },
-//     300
-// );
-// var rawZkSyncAaTxHash = await ThirdwebTransaction.Send(
-//     transaction: tx,
-//     zkSyncPaymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
-//     zkSyncPaymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
-// );
-// Console.WriteLine($"Transaction hash: {rawZkSyncAaTxHash}");
-
-var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 300, gasless: true, zkSyncPaymasterAddress: "0xE74eA4e1785F74016e0076754B5ca6d8ADC10934");
-var zkSyncSignatureBasedAaTxHash = await zkSmartWallet.SendTransaction(
+var tx = await ThirdwebTransaction.Create(
+    client,
+    privateKeyWallet,
     new ThirdwebTransactionInput()
     {
-        From = await zkSmartWallet.GetAddress(),
-        To = await zkSmartWallet.GetAddress(),
+        From = await privateKeyWallet.GetAddress(),
+        To = await privateKeyWallet.GetAddress(),
         Value = new HexBigInteger(BigInteger.Zero),
         Data = "0x",
         MaxFeePerGas = new HexBigInteger(25000000),
         MaxPriorityFeePerGas = new HexBigInteger(25000000),
         Gas = new HexBigInteger(20000000),
         ChainId = new HexBigInteger(300),
-        Nonce = await ThirdwebRPC.GetRpcInstance(client, 300).SendRequestAsync<HexBigInteger>("eth_getTransactionCount", new object[] { await zkSmartWallet.GetAddress(), "latest" })
-    }
+    },
+    300
 );
-Console.WriteLine($"Transaction hash: {zkSyncSignatureBasedAaTxHash}");
+var txHash = await ThirdwebTransaction.Send(
+    transaction: tx,
+    zkSyncPaymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
+    zkSyncPaymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+);
+Console.WriteLine($"Transaction hash: {txHash}");
 
 
 

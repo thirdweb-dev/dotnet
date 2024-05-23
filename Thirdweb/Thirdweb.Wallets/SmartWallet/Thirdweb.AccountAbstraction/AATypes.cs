@@ -91,11 +91,6 @@ namespace Thirdweb.AccountAbstraction
         public string paymasterAndData { get; set; }
     }
 
-    public class PMSponsorTransactionResponse
-    {
-        public string paymasterInput { get; set; }
-    }
-
     public class ThirdwebGetUserOperationGasPriceResponse
     {
         public string maxFeePerGas { get; set; }
