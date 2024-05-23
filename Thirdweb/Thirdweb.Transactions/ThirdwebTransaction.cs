@@ -156,7 +156,8 @@ namespace Thirdweb
                 var fees = await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest");
                 var maxFee = fees["max_fee_per_gas"].ToObject<HexBigInteger>().Value;
                 var maxPriorityFee = fees["max_priority_fee_per_gas"].ToObject<HexBigInteger>().Value;
-                return (maxFee, maxPriorityFee == 0 ? maxFee : maxPriorityFee);
+                maxPriorityFee = maxPriorityFee == 0 ? maxFee : maxPriorityFee;
+                return withBump ? (maxFee * 10 / 9, maxPriorityFee * 10 / 9) : (maxFee, maxPriorityFee);
             }
 
             var gasPrice = await EstimateGasPrice(transaction, withBump);
@@ -210,10 +211,16 @@ namespace Thirdweb
             else
             {
                 var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
-                var hex = IsZkSyncTransaction(transaction)
-                    ? (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest"))["gas_limit"].ToString()
-                    : await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest");
-                return new HexBigInteger(hex).Value;
+                if (IsZkSyncTransaction(transaction))
+                {
+                    var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest"))["gas_limit"].ToString();
+                    return new HexBigInteger(hex).Value * 10 / 7;
+                }
+                else
+                {
+                    var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest");
+                    return new HexBigInteger(hex).Value;
+                }
             }
         }
 
@@ -260,7 +267,7 @@ namespace Thirdweb
                     From = new HexBigInteger(transaction.Input.From).Value,
                     To = new HexBigInteger(transaction.Input.To).Value,
                     GasLimit = transaction.Input.Gas.Value,
-                    GasPerPubdataByteLimit = 50000,
+                    GasPerPubdataByteLimit = transaction.Input.ZkSync?.GasPerPubdataByteLimit ?? 50000,
                     MaxFeePerGas = transaction.Input.MaxFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
                     MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
                     Paymaster = transaction.Input.ZkSync.Value.Paymaster,
