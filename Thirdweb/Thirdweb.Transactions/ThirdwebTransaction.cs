@@ -270,7 +270,6 @@ namespace Thirdweb
                     FactoryDeps = transaction.Input.ZkSync.Value.FactoryDeps,
                     PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput
                 };
-                Console.WriteLine("zkTx: " + JsonConvert.SerializeObject(zkTx));
                 var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);
                 hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", zkTxSigned);
             }

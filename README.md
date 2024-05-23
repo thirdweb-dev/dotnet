@@ -183,4 +183,32 @@ Console.WriteLine($"Balance after mint: {balanceAfter}");
 // var rpc = ThirdwebRPC.GetRpcInstance(client, 421614);
 // var blockNumber = await rpc.SendRequestAsync<string>("eth_blockNumber");
 // Console.WriteLine($"Block number: {blockNumber}");
+
+// Use ZkSync Native AA in 3 steps
+
+// // 1. Prepare a transaction directly, or with Contract.Prepare
+// var tx = await ThirdwebTransaction.Create(
+//     client: client,
+//     wallet: privateKeyWallet,
+//     txInput: new ThirdwebTransactionInput()
+//     {
+//         From = await privateKeyWallet.GetAddress(),
+//         To = await privateKeyWallet.GetAddress(),
+//         Value = new HexBigInteger(BigInteger.Zero),
+//     },
+//     chainId: 300
+// );
+// // 2. Set zkSync options
+// tx.SetZkSyncOptions(
+//     new ZkSyncOptions(
+//         // Paymaster contract address
+//         paymaster: "0xMyGaslessPaymaster",
+//         // IPaymasterFlow interface encoded data
+//         paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+//     )
+// );
+// // 3. Send as usual, it's now gasless!
+// var txHash = await ThirdwebTransaction.Send(transaction: tx);
+// Console.WriteLine($"Transaction hash: {txHash}");
+
 ```
