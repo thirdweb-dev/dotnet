@@ -115,6 +115,7 @@ public class TransactionTests : BaseTests
     {
         var transaction = await CreateSampleTransaction();
         var gas = new BigInteger(1000);
+        _ = transaction.SetTo(Constants.ADDRESS_ZERO);
         _ = transaction.SetGasPrice(gas);
         _ = transaction.SetMaxFeePerGas(gas);
         _ = transaction.SetMaxPriorityFeePerGas(gas);
