@@ -121,7 +121,7 @@ namespace Thirdweb
                 transaction.Data == null ? new byte[0] : transaction.Data,
             };
 
-            fields.Add(signature.IsVSignedForYParity() ? new byte[] { 0x1b } : new byte[] { });
+            fields.Add(signature.IsVSignedForYParity() ? new byte[] { 0x1b } : new byte[] { 0x1c });
             fields.Add(signature.R);
             fields.Add(signature.S);
 
