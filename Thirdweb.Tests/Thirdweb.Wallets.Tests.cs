@@ -24,6 +24,15 @@ public class WalletTests : BaseTests
     }
 
     [Fact]
+    public async Task EthSignRaw()
+    {
+        var wallet = await GetAccount();
+        var message = "Hello, world!";
+        var signature = await wallet.EthSign(System.Text.Encoding.UTF8.GetBytes(message));
+        Assert.NotNull(signature);
+    }
+
+    [Fact]
     public async Task EthSign()
     {
         var wallet = await GetAccount();

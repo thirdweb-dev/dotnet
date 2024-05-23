@@ -75,7 +75,7 @@ public class TransactionTests : BaseTests
     }
 
     [Fact]
-    public async Task SetValue_SetsData()
+    public async Task SetData_SetsData()
     {
         var transaction = await CreateSampleTransaction();
         var data = "0x123456";
@@ -84,12 +84,42 @@ public class TransactionTests : BaseTests
     }
 
     [Fact]
-    public async Task SetValue_SetsGasPrice()
+    public async Task SetGasPrice_SetsGasPrice()
     {
         var transaction = await CreateSampleTransaction();
         var gas = new BigInteger(1000);
         _ = transaction.SetGasPrice(gas);
         Assert.Equal(gas.ToHexBigInteger(), transaction.Input.GasPrice);
+    }
+
+    [Fact]
+    public async Task SetMaxFeePerGas_SetsMaxFeePerGas()
+    {
+        var transaction = await CreateSampleTransaction();
+        var gas = new BigInteger(1000);
+        _ = transaction.SetMaxFeePerGas(gas);
+        Assert.Equal(gas.ToHexBigInteger(), transaction.Input.MaxFeePerGas);
+    }
+
+    [Fact]
+    public async Task SetMaxPriorityFeePerGas_SetsMaxPriorityFeePerGas()
+    {
+        var transaction = await CreateSampleTransaction();
+        var gas = new BigInteger(1000);
+        _ = transaction.SetMaxPriorityFeePerGas(gas);
+        Assert.Equal(gas.ToHexBigInteger(), transaction.Input.MaxPriorityFeePerGas);
+    }
+
+    [Fact]
+    public async Task SetAllGasParams_ThrowsInvalid()
+    {
+        var transaction = await CreateSampleTransaction();
+        var gas = new BigInteger(1000);
+        _ = transaction.SetGasPrice(gas);
+        _ = transaction.SetMaxFeePerGas(gas);
+        _ = transaction.SetMaxPriorityFeePerGas(gas);
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ThirdwebTransaction.Send(transaction));
+        Assert.Contains("Transaction GasPrice and MaxFeePerGas/MaxPriorityFeePerGas cannot be set at the same time", ex.Message);
     }
 
     [Fact]
