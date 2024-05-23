@@ -88,7 +88,7 @@ if (!await inAppWallet.IsConnected())
 // );
 // Console.WriteLine($"Transaction hash: {rawZkSyncAaTxHash}");
 
-var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 300, gasless: true);
+var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 300, gasless: true, zkSyncPaymasterAddress: "0xE74eA4e1785F74016e0076754B5ca6d8ADC10934");
 var zkSyncSignatureBasedAaTxHash = await zkSmartWallet.SendTransaction(
     new ThirdwebTransactionInput()
     {
