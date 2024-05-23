@@ -64,6 +64,23 @@ public class PrivateKeyWalletTests : BaseTests
     }
 
     [Fact]
+    public async Task EthSignRaw_Success()
+    {
+        var account = await GetAccount();
+        var message = "Hello, World!";
+        var signature = await account.EthSign(System.Text.Encoding.UTF8.GetBytes(message));
+        Assert.True(signature.Length == 132);
+    }
+
+    [Fact]
+    public async Task EthSignRaw_NullMessage()
+    {
+        var account = await GetAccount();
+        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.EthSign(null as byte[]));
+        Assert.Equal("Message to sign cannot be null. (Parameter 'rawMessage')", ex.Message);
+    }
+
+    [Fact]
     public async Task PersonalSign_Success()
     {
         var account = await GetAccount();
