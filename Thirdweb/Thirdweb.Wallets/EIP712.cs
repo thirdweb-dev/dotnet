@@ -58,7 +58,7 @@ namespace Thirdweb
             return SerializeEip712(transaction, signatureRaw, chainId);
         }
 
-        public async static Task<string> GenerateSignature_MinimalForwarder(
+        public static async Task<string> GenerateSignature_MinimalForwarder(
             string domainName,
             string version,
             BigInteger chainId,
@@ -71,7 +71,7 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(forwardRequest, typedData);
         }
 
-        public async static Task<string> GenerateSignature_TokenERC20(
+        public static async Task<string> GenerateSignature_TokenERC20(
             string domainName,
             string version,
             BigInteger chainId,
@@ -84,7 +84,7 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(mintRequest, typedData);
         }
 
-        public async static Task<string> GenerateSignature_TokenERC721(
+        public static async Task<string> GenerateSignature_TokenERC721(
             string domainName,
             string version,
             BigInteger chainId,
@@ -97,7 +97,7 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(mintRequest, typedData);
         }
 
-        public async static Task<string> GenerateSignature_TokenERC1155(
+        public static async Task<string> GenerateSignature_TokenERC1155(
             string domainName,
             string version,
             BigInteger chainId,
