@@ -290,7 +290,6 @@ namespace Thirdweb
                         hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
                         break;
                     case ThirdwebAccountType.SmartAccount:
-
                         var smartAccount = transaction._wallet as SmartWallet;
                         hash = await smartAccount.SendTransaction(transaction.Input);
                         break;

@@ -65,31 +65,43 @@ if (!await inAppWallet.IsConnected())
 }
 
 // Prepare a transaction directly, or with Contract.Prepare
-var tx = await ThirdwebTransaction.Create(
-    client: client,
-    wallet: privateKeyWallet,
-    txInput: new ThirdwebTransactionInput()
+// var tx = await ThirdwebTransaction.Create(
+//     client: client,
+//     wallet: privateKeyWallet,
+//     txInput: new ThirdwebTransactionInput()
+//     {
+//         From = await privateKeyWallet.GetAddress(),
+//         To = await privateKeyWallet.GetAddress(),
+//         Value = new HexBigInteger(BigInteger.Zero),
+//     },
+//     chainId: 300
+// );
+
+// // Set zkSync options
+// tx.SetZkSyncOptions(
+//     new ZkSyncOptions(
+//         // Paymaster contract address
+//         paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
+//         // IPaymasterFlow interface encoded data
+//         paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+//     )
+// );
+
+// // Send as usual, it's now gasless!
+// var txHash = await ThirdwebTransaction.Send(transaction: tx);
+// Console.WriteLine($"Transaction hash: {txHash}");
+
+var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 300, gasless: true);
+var zkSyncSignatureBasedAaTxHash = await zkSmartWallet.SendTransaction(
+    new ThirdwebTransactionInput()
     {
-        From = await privateKeyWallet.GetAddress(),
-        To = await privateKeyWallet.GetAddress(),
+        From = await zkSmartWallet.GetAddress(),
+        To = await zkSmartWallet.GetAddress(),
         Value = new HexBigInteger(BigInteger.Zero),
-    },
-    chainId: 300
+        Data = "0x",
+    }
 );
-
-// Set zkSync options
-tx.SetZkSyncOptions(
-    new ZkSyncOptions(
-        // Paymaster contract address
-        paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
-        // IPaymasterFlow interface encoded data
-        paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
-    )
-);
-
-// Send as usual, it's now gasless!
-var txHash = await ThirdwebTransaction.Send(transaction: tx);
-Console.WriteLine($"Transaction hash: {txHash}");
+Console.WriteLine($"Transaction hash: {zkSyncSignatureBasedAaTxHash}");
 
 
 
