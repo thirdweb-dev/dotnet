@@ -25,7 +25,7 @@ Console.WriteLine($"Contract read result: {readResult}");
 var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
 
 // var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+7121271d@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
-var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
+// var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
 
 // Reset InAppWallet (optional step for testing login flow)
 // if (await inAppWallet.IsConnected())
@@ -34,35 +34,35 @@ var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthPro
 // }
 
 // Relog if InAppWallet not logged in
-if (!await inAppWallet.IsConnected())
-{
-    var address = await inAppWallet.LoginWithOauth(
-        isMobile: false,
-        (url) =>
-        {
-            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-            _ = Process.Start(psi);
-        },
-        "thirdweb://",
-        new InAppWalletBrowser()
-    );
-    Console.WriteLine($"InAppWallet address: {address}");
-    // await inAppWallet.SendOTP();
-    // Console.WriteLine("Please submit the OTP.");
-    // var otp = Console.ReadLine();
-    // (var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
-    // if (inAppWalletAddress == null && canRetry)
-    // {
-    //     Console.WriteLine("Please submit the OTP again.");
-    //     otp = Console.ReadLine();
-    //     (inAppWalletAddress, _) = await inAppWallet.SubmitOTP(otp);
-    // }
-    // if (inAppWalletAddress == null)
-    // {
-    //     Console.WriteLine("OTP login failed. Please try again.");
-    //     return;
-    // }
-}
+// if (!await inAppWallet.IsConnected())
+// {
+//     var address = await inAppWallet.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         "thirdweb://",
+//         new InAppWalletBrowser()
+//     );
+//     Console.WriteLine($"InAppWallet address: {address}");
+// await inAppWallet.SendOTP();
+// Console.WriteLine("Please submit the OTP.");
+// var otp = Console.ReadLine();
+// (var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
+// if (inAppWalletAddress == null && canRetry)
+// {
+//     Console.WriteLine("Please submit the OTP again.");
+//     otp = Console.ReadLine();
+//     (inAppWalletAddress, _) = await inAppWallet.SubmitOTP(otp);
+// }
+// if (inAppWalletAddress == null)
+// {
+//     Console.WriteLine("OTP login failed. Please try again.");
+//     return;
+// }
+// }
 
 // Prepare a transaction directly, or with Contract.Prepare
 // var tx = await ThirdwebTransaction.Create(
@@ -92,6 +92,7 @@ if (!await inAppWallet.IsConnected())
 // Console.WriteLine($"Transaction hash: {txHash}");
 
 var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 300, gasless: true);
+Console.WriteLine($"Smart wallet address: {await zkSmartWallet.GetAddress()}");
 var zkSyncSignatureBasedAaTxHash = await zkSmartWallet.SendTransaction(
     new ThirdwebTransactionInput()
     {
@@ -99,6 +100,7 @@ var zkSyncSignatureBasedAaTxHash = await zkSmartWallet.SendTransaction(
         To = await zkSmartWallet.GetAddress(),
         Value = new HexBigInteger(BigInteger.Zero),
         Data = "0x",
+        Gas = new HexBigInteger(25000000)
     }
 );
 Console.WriteLine($"Transaction hash: {zkSyncSignatureBasedAaTxHash}");

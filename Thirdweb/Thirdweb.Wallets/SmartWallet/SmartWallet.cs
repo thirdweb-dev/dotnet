@@ -24,7 +24,6 @@ namespace Thirdweb
         protected BigInteger _chainId;
         protected string _bundlerUrl;
         protected string _paymasterUrl;
-        protected ThirdwebContract _zkSyncPaymaster;
         protected bool IsZkSync => _chainId == 324 || _chainId == 300;
 
         protected SmartWallet(
@@ -36,8 +35,7 @@ namespace Thirdweb
             string paymasterUrl,
             ThirdwebContract entryPointContract,
             ThirdwebContract factoryContract,
-            ThirdwebContract accountContract,
-            ThirdwebContract zkSyncPaymaster
+            ThirdwebContract accountContract
         )
         {
             _client = client;
@@ -49,7 +47,6 @@ namespace Thirdweb
             _entryPointContract = entryPointContract;
             _factoryContract = factoryContract;
             _accountContract = accountContract;
-            _zkSyncPaymaster = zkSyncPaymaster;
         }
 
         public static async Task<SmartWallet> Create(
@@ -76,18 +73,8 @@ namespace Thirdweb
             ThirdwebContract entryPointContract = null;
             ThirdwebContract factoryContract = null;
             ThirdwebContract accountContract = null;
-            ThirdwebContract zkSyncPaymasterContract = null;
 
-            if (chainId == 324 || chainId == 300)
-            {
-                zkSyncPaymasterContract = await ThirdwebContract.Create(
-                    client,
-                    Constants.ZKSYNC_SIGNATUREBASED_PAYMASTER,
-                    chainId,
-                    "[{\"type\": \"constructor\",\"name\": \"\",\"inputs\": [{\"type\": \"address\",\"name\": \"_signer\",\"internalType\": \"address\"}],\"outputs\": [],\"stateMutability\": \"nonpayable\"},{\"type\": \"error\",\"name\": \"InvalidShortString\",\"inputs\": [],\"outputs\": []},{\"type\": \"error\",\"name\": \"StringTooLong\",\"inputs\": [{\"type\": \"string\",\"name\": \"str\",\"internalType\": \"string\"}],\"outputs\": []},{\"type\": \"event\",\"name\": \"EIP712DomainChanged\",\"inputs\": [],\"outputs\": [],\"anonymous\": false},{\"type\": \"event\",\"name\": \"OwnershipTransferred\",\"inputs\": [{\"type\": \"address\",\"name\": \"previousOwner\",\"indexed\": true,\"internalType\": \"address\"},{\"type\": \"address\",\"name\": \"newOwner\",\"indexed\": true,\"internalType\": \"address\"}],\"outputs\": [],\"anonymous\": false},{\"type\": \"function\",\"name\": \"SIGNATURE_TYPEHASH\",\"inputs\": [],\"outputs\": [{\"type\": \"bytes32\",\"name\": \"\",\"internalType\": \"bytes32\"}],\"stateMutability\": \"view\"},{\"type\": \"function\",\"name\": \"cancelNonce\",\"inputs\": [{\"type\": \"address\",\"name\": \"_userAddress\",\"internalType\": \"address\"}],\"outputs\": [],\"stateMutability\": \"nonpayable\"},{\"type\": \"function\",\"name\": \"changeSigner\",\"inputs\": [{\"type\": \"address\",\"name\": \"_signer\",\"internalType\": \"address\"}],\"outputs\": [],\"stateMutability\": \"nonpayable\"},{\"type\": \"function\",\"name\": \"domainSeparator\",\"inputs\": [],\"outputs\": [{\"type\": \"bytes32\",\"name\": \"\",\"internalType\": \"bytes32\"}],\"stateMutability\": \"view\"},{\"type\": \"function\",\"name\": \"eip712Domain\",\"inputs\": [],\"outputs\": [{\"type\": \"bytes1\",\"name\": \"fields\",\"internalType\": \"bytes1\"},{\"type\": \"string\",\"name\": \"name\",\"internalType\": \"string\"},{\"type\": \"string\",\"name\": \"version\",\"internalType\": \"string\"},{\"type\": \"uint256\",\"name\": \"chainId\",\"internalType\": \"uint256\"},{\"type\": \"address\",\"name\": \"verifyingContract\",\"internalType\": \"address\"},{\"type\": \"bytes32\",\"name\": \"salt\",\"internalType\": \"bytes32\"},{\"type\": \"uint256[]\",\"name\": \"extensions\",\"internalType\": \"uint256[]\"}],\"stateMutability\": \"view\"},{\"type\": \"function\",\"name\": \"nonces\",\"inputs\": [{\"type\": \"address\",\"name\": \"\",\"internalType\": \"address\"}],\"outputs\": [{\"type\": \"uint256\",\"name\": \"\",\"internalType\": \"uint256\"}],\"stateMutability\": \"view\"},{\"type\": \"function\",\"name\": \"owner\",\"inputs\": [],\"outputs\": [{\"type\": \"address\",\"name\": \"\",\"internalType\": \"address\"}],\"stateMutability\": \"view\"},{\"type\": \"function\",\"name\": \"postTransaction\",\"inputs\": [{\"type\": \"bytes\",\"name\": \"_context\",\"internalType\": \"bytes\"},{\"type\": \"tuple\",\"name\": \"_transaction\",\"components\": [{\"type\": \"uint256\",\"name\": \"txType\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"from\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"to\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"gasLimit\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"gasPerPubdataByteLimit\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"maxFeePerGas\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"maxPriorityFeePerGas\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"paymaster\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"nonce\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"value\",\"internalType\": \"uint256\"},{\"type\": \"uint256[4]\",\"name\": \"reserved\",\"internalType\": \"uint256[4]\"},{\"type\": \"bytes\",\"name\": \"data\",\"internalType\": \"bytes\"},{\"type\": \"bytes\",\"name\": \"signature\",\"internalType\": \"bytes\"},{\"type\": \"bytes32[]\",\"name\": \"factoryDeps\",\"internalType\": \"bytes32[]\"},{\"type\": \"bytes\",\"name\": \"paymasterInput\",\"internalType\": \"bytes\"},{\"type\": \"bytes\",\"name\": \"reservedDynamic\",\"internalType\": \"bytes\"}],\"internalType\": \"struct Transaction\"},{\"type\": \"bytes32\",\"name\": \"\",\"internalType\": \"bytes32\"},{\"type\": \"bytes32\",\"name\": \"\",\"internalType\": \"bytes32\"},{\"type\": \"uint8\",\"name\": \"_txResult\",\"internalType\": \"enum ExecutionResult\"},{\"type\": \"uint256\",\"name\": \"_maxRefundedGas\",\"internalType\": \"uint256\"}],\"outputs\": [],\"stateMutability\": \"payable\"},{\"type\": \"function\",\"name\": \"renounceOwnership\",\"inputs\": [],\"outputs\": [],\"stateMutability\": \"nonpayable\"},{\"type\": \"function\",\"name\": \"signer\",\"inputs\": [],\"outputs\": [{\"type\": \"address\",\"name\": \"\",\"internalType\": \"address\"}],\"stateMutability\": \"view\"},{\"type\": \"function\",\"name\": \"transferOwnership\",\"inputs\": [{\"type\": \"address\",\"name\": \"newOwner\",\"internalType\": \"address\"}],\"outputs\": [],\"stateMutability\": \"nonpayable\"},{\"type\": \"function\",\"name\": \"validateAndPayForPaymasterTransaction\",\"inputs\": [{\"type\": \"bytes32\",\"name\": \"\",\"internalType\": \"bytes32\"},{\"type\": \"bytes32\",\"name\": \"\",\"internalType\": \"bytes32\"},{\"type\": \"tuple\",\"name\": \"_transaction\",\"components\": [{\"type\": \"uint256\",\"name\": \"txType\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"from\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"to\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"gasLimit\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"gasPerPubdataByteLimit\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"maxFeePerGas\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"maxPriorityFeePerGas\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"paymaster\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"nonce\",\"internalType\": \"uint256\"},{\"type\": \"uint256\",\"name\": \"value\",\"internalType\": \"uint256\"},{\"type\": \"uint256[4]\",\"name\": \"reserved\",\"internalType\": \"uint256[4]\"},{\"type\": \"bytes\",\"name\": \"data\",\"internalType\": \"bytes\"},{\"type\": \"bytes\",\"name\": \"signature\",\"internalType\": \"bytes\"},{\"type\": \"bytes32[]\",\"name\": \"factoryDeps\",\"internalType\": \"bytes32[]\"},{\"type\": \"bytes\",\"name\": \"paymasterInput\",\"internalType\": \"bytes\"},{\"type\": \"bytes\",\"name\": \"reservedDynamic\",\"internalType\": \"bytes\"}],\"internalType\": \"struct Transaction\"}],\"outputs\": [{\"type\": \"bytes4\",\"name\": \"magic\",\"internalType\": \"bytes4\"},{\"type\": \"bytes\",\"name\": \"context\",\"internalType\": \"bytes\"}],\"stateMutability\": \"payable\"},{\"type\": \"function\",\"name\": \"withdraw\",\"inputs\": [{\"type\": \"address\",\"name\": \"_to\",\"internalType\": \"address\"}],\"outputs\": [],\"stateMutability\": \"nonpayable\"},{\"type\": \"receive\",\"name\": \"\",\"inputs\": [],\"outputs\": [],\"stateMutability\": \"payable\"}]"
-                );
-            }
-            else
+            if (chainId != 324 && chainId != 300)
             {
                 entryPointContract = await ThirdwebContract.Create(
                     client,
@@ -110,7 +97,7 @@ namespace Thirdweb
                 );
             }
 
-            return new SmartWallet(client, personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract, zkSyncPaymasterContract);
+            return new SmartWallet(client, personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract);
         }
 
         public async Task<bool> IsDeployed()
@@ -136,9 +123,8 @@ namespace Thirdweb
                 var transaction = await ThirdwebTransaction.Create(_client, _personalAccount, transactionInput, _chainId);
                 if (_gasless)
                 {
-                    var paymaster = _zkSyncPaymaster.Address;
-                    var paymasterInput = await GetPaymasterInput(transactionInput);
-                    transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: Utils.BytesToHex(paymasterInput)));
+                    (var paymaster, var paymasterInput) = await GetPaymasterInput(transactionInput);
+                    transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
                 }
                 return await ThirdwebTransaction.Send(transaction);
             }
@@ -247,16 +233,16 @@ namespace Thirdweb
             return await ThirdwebContract.Read<BigInteger>(_entryPointContract, "getNonce", await GetAddress(), randomInt192);
         }
 
-        private async Task<byte[]> GetPaymasterInput(ThirdwebTransactionInput transactionInput)
+        private async Task<(string, string)> GetPaymasterInput(ThirdwebTransactionInput transactionInput)
         {
             if (_gasless)
             {
                 var paymasterInput = await BundlerClient.PMSponsorTransaction(_client, _paymasterUrl, 1, transactionInput);
-                return paymasterInput.paymasterInput.HexToByteArray();
+                return (paymasterInput.paymaster, paymasterInput.paymasterInput);
             }
             else
             {
-                return new byte[] { };
+                return (null, null);
             }
         }
 

@@ -93,6 +93,7 @@ namespace Thirdweb.AccountAbstraction
 
     public class PMSponsorTransactionResponse
     {
+        public string paymaster { get; set; }
         public string paymasterInput { get; set; }
     }
 
