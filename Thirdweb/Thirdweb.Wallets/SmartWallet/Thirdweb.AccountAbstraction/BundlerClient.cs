@@ -55,9 +55,9 @@ namespace Thirdweb.AccountAbstraction
             }
         }
 
-        public static async Task<PMSponsorTransactionResponse> PMSponsorTransaction(ThirdwebClient client, string paymasterUrl, object requestId, ThirdwebTransactionInput userOp, string entryPoint)
+        public static async Task<PMSponsorTransactionResponse> PMSponsorTransaction(ThirdwebClient client, string paymasterUrl, object requestId, ThirdwebTransactionInput txInput)
         {
-            var response = await BundlerRequest(client, paymasterUrl, requestId, "pm_sponsorTransaction", userOp, new EntryPointWrapper() { entryPoint = entryPoint });
+            var response = await BundlerRequest(client, paymasterUrl, requestId, "pm_sponsorTransaction", txInput);
             try
             {
                 return JsonConvert.DeserializeObject<PMSponsorTransactionResponse>(response.Result.ToString());

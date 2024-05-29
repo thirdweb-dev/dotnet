@@ -251,7 +251,7 @@ namespace Thirdweb
         {
             if (_gasless)
             {
-                var paymasterInput = await BundlerClient.PMSponsorTransaction(_client, _paymasterUrl, 1, transactionInput, _entryPointContract.Address);
+                var paymasterInput = await BundlerClient.PMSponsorTransaction(_client, _paymasterUrl, 1, transactionInput);
                 return paymasterInput.paymasterInput.HexToByteArray();
             }
             else
