@@ -15,7 +15,9 @@ namespace Thirdweb
 {
     public static class EIP712
     {
-        public async static Task<string> GenerateSignature_SmartAccount(
+        #region Generation
+
+        public static async Task<string> GenerateSignature_SmartAccount(
             string domainName,
             string version,
             BigInteger chainId,
@@ -28,7 +30,7 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(signerPermissionRequest, typedData);
         }
 
-        public async static Task<string> GenerateSignature_SmartAccount_AccountMessage(
+        public static async Task<string> GenerateSignature_SmartAccount_AccountMessage(
             string domainName,
             string version,
             BigInteger chainId,
@@ -55,6 +57,62 @@ namespace Thirdweb
             var signatureRaw = EthECDSASignatureFactory.ExtractECDSASignature(signatureHex);
             return SerializeEip712(transaction, signatureRaw, chainId);
         }
+
+        public async static Task<string> GenerateSignature_MinimalForwarder(
+            string domainName,
+            string version,
+            BigInteger chainId,
+            string verifyingContract,
+            Contracts.Forwarder.ForwardRequest forwardRequest,
+            IThirdwebWallet signer
+        )
+        {
+            var typedData = GetTypedDefinition_MinimalForwarder(domainName, version, chainId, verifyingContract);
+            return await signer.SignTypedDataV4(forwardRequest, typedData);
+        }
+
+        public async static Task<string> GenerateSignature_TokenERC20(
+            string domainName,
+            string version,
+            BigInteger chainId,
+            string verifyingContract,
+            Contracts.TokenERC20.MintRequest mintRequest,
+            IThirdwebWallet signer
+        )
+        {
+            var typedData = GetTypedDefinition_TokenERC20(domainName, version, chainId, verifyingContract);
+            return await signer.SignTypedDataV4(mintRequest, typedData);
+        }
+
+        public async static Task<string> GenerateSignature_TokenERC721(
+            string domainName,
+            string version,
+            BigInteger chainId,
+            string verifyingContract,
+            Contracts.TokenERC721.MintRequest mintRequest,
+            IThirdwebWallet signer
+        )
+        {
+            var typedData = GetTypedDefinition_TokenERC721(domainName, version, chainId, verifyingContract);
+            return await signer.SignTypedDataV4(mintRequest, typedData);
+        }
+
+        public async static Task<string> GenerateSignature_TokenERC1155(
+            string domainName,
+            string version,
+            BigInteger chainId,
+            string verifyingContract,
+            Contracts.TokenERC1155.MintRequest mintRequest,
+            IThirdwebWallet signer
+        )
+        {
+            var typedData = GetTypedDefinition_TokenERC1155(domainName, version, chainId, verifyingContract);
+            return await signer.SignTypedDataV4(mintRequest, typedData);
+        }
+
+        #endregion
+
+        #region Typed Definitions
 
         public static TypedData<Domain> GetTypedDefinition_SmartAccount(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
@@ -103,6 +161,74 @@ namespace Thirdweb
             };
         }
 
+        public static TypedData<Domain> GetTypedDefinition_TokenERC20(string domainName, string version, BigInteger chainId, string verifyingContract)
+        {
+            return new TypedData<Domain>
+            {
+                Domain = new Domain
+                {
+                    Name = domainName,
+                    Version = version,
+                    ChainId = chainId,
+                    VerifyingContract = verifyingContract,
+                },
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Contracts.TokenERC20.MintRequest)),
+                PrimaryType = nameof(Contracts.TokenERC20.MintRequest),
+            };
+        }
+
+        public static TypedData<Domain> GetTypedDefinition_TokenERC721(string domainName, string version, BigInteger chainId, string verifyingContract)
+        {
+            return new TypedData<Domain>
+            {
+                Domain = new Domain
+                {
+                    Name = domainName,
+                    Version = version,
+                    ChainId = chainId,
+                    VerifyingContract = verifyingContract,
+                },
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Contracts.TokenERC721.MintRequest)),
+                PrimaryType = nameof(Contracts.TokenERC721.MintRequest),
+            };
+        }
+
+        public static TypedData<Domain> GetTypedDefinition_TokenERC1155(string domainName, string version, BigInteger chainId, string verifyingContract)
+        {
+            return new TypedData<Domain>
+            {
+                Domain = new Domain
+                {
+                    Name = domainName,
+                    Version = version,
+                    ChainId = chainId,
+                    VerifyingContract = verifyingContract,
+                },
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Contracts.TokenERC1155.MintRequest)),
+                PrimaryType = nameof(Contracts.TokenERC1155.MintRequest),
+            };
+        }
+
+        public static TypedData<Domain> GetTypedDefinition_MinimalForwarder(string domainName, string version, BigInteger chainId, string verifyingContract)
+        {
+            return new TypedData<Domain>
+            {
+                Domain = new Domain
+                {
+                    Name = domainName,
+                    Version = version,
+                    ChainId = chainId,
+                    VerifyingContract = verifyingContract,
+                },
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Contracts.Forwarder.ForwardRequest)),
+                PrimaryType = nameof(Contracts.Forwarder.ForwardRequest),
+            };
+        }
+
+        #endregion
+
+        #region Helpers
+
         private static string SerializeEip712(AccountAbstraction.ZkSyncAATransaction transaction, EthECDSASignature signature, BigInteger chainId)
         {
             if (chainId == 0)
@@ -137,5 +263,7 @@ namespace Thirdweb
 
             return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray(), new int[] { 13, 15 }).ToHex();
         }
+
+        #endregion
     }
 }
