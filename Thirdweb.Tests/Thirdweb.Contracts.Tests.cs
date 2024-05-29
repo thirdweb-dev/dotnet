@@ -129,6 +129,85 @@ public class ContractsTests : BaseTests
         }
     }
 
+    [Fact]
+    public async Task SignatureMint_Generate()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var signer = await PrivateKeyWallet.Create(client, _testPrivateKey);
+
+        var randomDomain = "Test";
+        var randomVersion = "1.0.0";
+        var randomChainId = 421614;
+        var randomContractAddress = "0xD04F98C88cE1054c90022EE34d566B9237a1203C";
+
+        // GenerateSignature_MinimalForwarder
+        var forwardRequest = new Contracts.Forwarder.ForwardRequest
+        {
+            From = "0x123",
+            To = "0x456",
+            Value = BigInteger.Zero,
+            Gas = BigInteger.Zero,
+            Nonce = BigInteger.Zero,
+            Data = "0x"
+        };
+        var signature = await EIP712.GenerateSignature_MinimalForwarder(randomDomain, randomVersion, randomChainId, randomContractAddress, forwardRequest, signer);
+        Assert.NotNull(signature);
+        Assert.StartsWith("0x", signature);
+        // GenerateSignature_TokenERC20
+        var mintRequest20 = new Contracts.TokenERC20.MintRequest
+        {
+            To = await signer.GetAddress(),
+            PrimarySaleRecipient = await signer.GetAddress(),
+            Quantity = 1,
+            Price = 0,
+            Currency = Constants.ADDRESS_ZERO,
+            ValidityEndTimestamp = 0,
+            ValidityStartTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            Uid = new byte[] { 0x01 }
+        };
+        var signature20 = await EIP712.GenerateSignature_TokenERC20(randomDomain, randomVersion, randomChainId, randomContractAddress, mintRequest20, signer);
+        Assert.NotNull(signature20);
+        Assert.StartsWith("0x", signature20);
+
+        // GenerateSignature_TokenERC721
+        var mintRequest721 = new Contracts.TokenERC721.MintRequest
+        {
+            To = await signer.GetAddress(),
+            RoyaltyRecipient = await signer.GetAddress(),
+            RoyaltyBps = 0,
+            PrimarySaleRecipient = await signer.GetAddress(),
+            Uri = "https://example.com",
+            Price = 0,
+            Currency = Constants.ADDRESS_ZERO,
+            ValidityEndTimestamp = 0,
+            ValidityStartTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            Uid = new byte[] { 0x01 }
+        };
+        var signature721 = await EIP712.GenerateSignature_TokenERC721(randomDomain, randomVersion, randomChainId, randomContractAddress, mintRequest721, signer);
+        Assert.NotNull(signature721);
+        Assert.StartsWith("0x", signature721);
+
+        // GenerateSignature_TokenERC1155
+        var mintRequest1155 = new Contracts.TokenERC1155.MintRequest
+        {
+            To = await signer.GetAddress(),
+            RoyaltyRecipient = await signer.GetAddress(),
+            RoyaltyBps = 0,
+            PrimarySaleRecipient = await signer.GetAddress(),
+            TokenId = 1,
+            Uri = "https://example.com",
+            Quantity = 1,
+            PricePerToken = 0,
+            Currency = Constants.ADDRESS_ZERO,
+            ValidityEndTimestamp = 0,
+            ValidityStartTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            Uid = new byte[] { 0x01 }
+        };
+        var signature1155 = await EIP712.GenerateSignature_TokenERC1155(randomDomain, randomVersion, randomChainId, randomContractAddress, mintRequest1155, signer);
+        Assert.NotNull(signature1155);
+        Assert.StartsWith("0x", signature1155);
+    }
+
     private async Task<SmartWallet> GetAccount()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
