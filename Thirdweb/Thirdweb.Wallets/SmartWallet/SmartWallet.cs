@@ -127,7 +127,7 @@ namespace Thirdweb
                 }
                 if (transactionInput.MaxFeePerGas == null)
                 {
-                    (var maxFee, var maxPrio) = await ThirdwebTransaction.EstimateGasFees(transaction);
+                    (var maxFee, _) = await ThirdwebTransaction.EstimateGasFees(transaction);
                     _ = transaction.SetMaxFeePerGas(maxFee);
                 }
                 if (_gasless)
