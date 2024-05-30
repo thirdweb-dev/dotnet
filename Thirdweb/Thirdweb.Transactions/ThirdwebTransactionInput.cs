@@ -62,7 +62,7 @@ namespace Thirdweb
     public struct ZkSyncOptions
     {
         [JsonProperty(PropertyName = "gasPerPubdataByteLimit")]
-        public BigInteger GasPerPubdataByteLimit { get; set; }
+        public BigInteger? GasPerPubdataByteLimit { get; set; }
 
         [JsonProperty(PropertyName = "factoryDeps")]
         public List<byte[]> FactoryDeps { get; set; }
@@ -75,10 +75,18 @@ namespace Thirdweb
 
         public ZkSyncOptions(string paymaster, string paymasterInput, BigInteger? gasPerPubdataByteLimit = null, List<byte[]> factoryDeps = null)
         {
-            Paymaster = new HexBigInteger(paymaster).Value;
-            PaymasterInput = paymasterInput.HexToByteArray();
-            GasPerPubdataByteLimit = gasPerPubdataByteLimit ?? new BigInteger(50000);
-            FactoryDeps = factoryDeps ?? new List<byte[]>();
+            if (string.IsNullOrEmpty(paymaster) || string.IsNullOrEmpty(paymasterInput))
+            {
+                Paymaster = 0;
+                PaymasterInput = null;
+            }
+            else
+            {
+                Paymaster = new HexBigInteger(paymaster).Value;
+                PaymasterInput = paymasterInput.HexToByteArray();
+                GasPerPubdataByteLimit = gasPerPubdataByteLimit;
+                FactoryDeps = factoryDeps ?? new List<byte[]>();
+            }
         }
     }
 }

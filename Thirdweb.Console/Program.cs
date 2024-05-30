@@ -93,16 +93,8 @@ var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyH
 
 var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 300, gasless: true);
 Console.WriteLine($"Smart wallet address: {await zkSmartWallet.GetAddress()}");
-var zkSyncSignatureBasedAaTxHash = await zkSmartWallet.SendTransaction(
-    new ThirdwebTransactionInput()
-    {
-        From = await zkSmartWallet.GetAddress(),
-        To = await zkSmartWallet.GetAddress(),
-        Value = new HexBigInteger(BigInteger.Zero),
-        Data = "0x",
-        Gas = new HexBigInteger(25000000)
-    }
-);
+var zkAaTx = await ThirdwebTransaction.Create(client, zkSmartWallet, new ThirdwebTransactionInput() { From = await zkSmartWallet.GetAddress(), To = await zkSmartWallet.GetAddress(), }, 300);
+var zkSyncSignatureBasedAaTxHash = await ThirdwebTransaction.Send(zkAaTx);
 Console.WriteLine($"Transaction hash: {zkSyncSignatureBasedAaTxHash}");
 
 

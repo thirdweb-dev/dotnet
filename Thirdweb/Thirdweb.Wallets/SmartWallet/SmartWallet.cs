@@ -121,6 +121,15 @@ namespace Thirdweb
             if (IsZkSync)
             {
                 var transaction = await ThirdwebTransaction.Create(_client, _personalAccount, transactionInput, _chainId);
+                if (transactionInput.Gas == null)
+                {
+                    _ = transaction.SetGasLimit(await ThirdwebTransaction.EstimateGasLimit(transaction));
+                }
+                if (transactionInput.MaxFeePerGas == null)
+                {
+                    (var maxFee, var maxPrio) = await ThirdwebTransaction.EstimateGasFees(transaction);
+                    _ = transaction.SetMaxFeePerGas(maxFee);
+                }
                 if (_gasless)
                 {
                     (var paymaster, var paymasterInput) = await GetPaymasterInput(transactionInput);

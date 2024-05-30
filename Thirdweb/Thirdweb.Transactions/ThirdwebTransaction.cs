@@ -36,6 +36,11 @@ namespace Thirdweb
             txInput.From ??= address;
             txInput.Data ??= "0x";
 
+            if (txInput.To == null)
+            {
+                throw new ArgumentException("Transaction recipient (to) must be provided");
+            }
+
             if (address != txInput.From)
             {
                 throw new ArgumentException("Transaction sender (from) must match wallet address");
@@ -203,6 +208,14 @@ namespace Thirdweb
 
         public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction)
         {
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+
+            if (IsZkSyncTransaction(transaction))
+            {
+                var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest"))["gas_limit"].ToString();
+                return new HexBigInteger(hex).Value * 10 / 7;
+            }
+
             if (transaction._wallet.AccountType == ThirdwebAccountType.SmartAccount)
             {
                 var smartAccount = transaction._wallet as SmartWallet;
@@ -210,18 +223,16 @@ namespace Thirdweb
             }
             else
             {
-                var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
-                if (IsZkSyncTransaction(transaction))
-                {
-                    var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest"))["gas_limit"].ToString();
-                    return new HexBigInteger(hex).Value * 10 / 7;
-                }
-                else
-                {
-                    var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest");
-                    return new HexBigInteger(hex).Value;
-                }
+                var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest");
+                return new HexBigInteger(hex).Value;
             }
+        }
+
+        private static async Task<BigInteger> GetGasPerPubData(ThirdwebTransaction transaction)
+        {
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest"))["gas_per_pubdata_limit"].ToString();
+            return new HexBigInteger(hex).Value;
         }
 
         public static async Task<string> Sign(ThirdwebTransaction transaction)
@@ -231,11 +242,6 @@ namespace Thirdweb
 
         public static async Task<string> Send(ThirdwebTransaction transaction)
         {
-            if (transaction.Input.To == null)
-            {
-                throw new ArgumentException("To address must be provided");
-            }
-
             if (transaction.Input.GasPrice != null && (transaction.Input.MaxFeePerGas != null || transaction.Input.MaxPriorityFeePerGas != null))
             {
                 throw new InvalidOperationException("Transaction GasPrice and MaxFeePerGas/MaxPriorityFeePerGas cannot be set at the same time");
@@ -259,7 +265,7 @@ namespace Thirdweb
 
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             string hash;
-            if (IsZkSyncTransaction(transaction))
+            if (IsZkSyncTransaction(transaction) && transaction.Input.ZkSync.HasValue && transaction.Input.ZkSync.Value.Paymaster != 0 && transaction.Input.ZkSync.Value.PaymasterInput != null)
             {
                 var zkTx = new AccountAbstraction.ZkSyncAATransaction
                 {
@@ -267,7 +273,7 @@ namespace Thirdweb
                     From = new HexBigInteger(transaction.Input.From).Value,
                     To = new HexBigInteger(transaction.Input.To).Value,
                     GasLimit = transaction.Input.Gas.Value,
-                    GasPerPubdataByteLimit = transaction.Input.ZkSync?.GasPerPubdataByteLimit ?? 50000,
+                    GasPerPubdataByteLimit = transaction.Input.ZkSync?.GasPerPubdataByteLimit ?? await GetGasPerPubData(transaction),
                     MaxFeePerGas = transaction.Input.MaxFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
                     MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
                     Paymaster = transaction.Input.ZkSync.Value.Paymaster,
@@ -351,10 +357,7 @@ namespace Thirdweb
 
         private static bool IsZkSyncTransaction(ThirdwebTransaction transaction)
         {
-            return (transaction.Input.ChainId.Value.Equals(324) || transaction.Input.ChainId.Value.Equals(300))
-                && transaction.Input.ZkSync.HasValue
-                && transaction.Input.ZkSync.Value.Paymaster != 0
-                && transaction.Input.ZkSync.Value.PaymasterInput != null;
+            return transaction.Input.ChainId.Value.Equals(324) || transaction.Input.ChainId.Value.Equals(300);
         }
     }
 }
