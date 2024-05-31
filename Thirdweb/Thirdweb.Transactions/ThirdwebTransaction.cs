@@ -162,7 +162,7 @@ namespace Thirdweb
                 var maxFee = fees["max_fee_per_gas"].ToObject<HexBigInteger>().Value;
                 var maxPriorityFee = fees["max_priority_fee_per_gas"].ToObject<HexBigInteger>().Value;
                 maxPriorityFee = maxPriorityFee == 0 ? maxFee : maxPriorityFee;
-                return withBump ? (maxFee * 10 / 9, maxPriorityFee * 10 / 9) : (maxFee, maxPriorityFee);
+                return withBump ? (maxFee * 10 / 5, maxPriorityFee * 10 / 5) : (maxFee, maxPriorityFee);
             }
 
             var gasPrice = await EstimateGasPrice(transaction, withBump);
@@ -267,22 +267,7 @@ namespace Thirdweb
             string hash;
             if (IsZkSyncTransaction(transaction) && transaction.Input.ZkSync.HasValue && transaction.Input.ZkSync.Value.Paymaster != 0 && transaction.Input.ZkSync.Value.PaymasterInput != null)
             {
-                var zkTx = new AccountAbstraction.ZkSyncAATransaction
-                {
-                    TxType = 0x71,
-                    From = new HexBigInteger(transaction.Input.From).Value,
-                    To = new HexBigInteger(transaction.Input.To).Value,
-                    GasLimit = transaction.Input.Gas.Value,
-                    GasPerPubdataByteLimit = transaction.Input.ZkSync?.GasPerPubdataByteLimit ?? await GetGasPerPubData(transaction),
-                    MaxFeePerGas = transaction.Input.MaxFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
-                    MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
-                    Paymaster = transaction.Input.ZkSync.Value.Paymaster,
-                    Nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
-                    Value = transaction.Input.Value.Value,
-                    Data = transaction.Input.Data.HexToByteArray(),
-                    FactoryDeps = transaction.Input.ZkSync.Value.FactoryDeps,
-                    PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput
-                };
+                var zkTx = await ConvertToZkSyncTransaction(transaction);
                 var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);
                 hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", zkTxSigned);
             }
@@ -353,6 +338,27 @@ namespace Thirdweb
             }
 
             return receipt;
+        }
+
+        public static async Task<AccountAbstraction.ZkSyncAATransaction> ConvertToZkSyncTransaction(ThirdwebTransaction transaction)
+        {
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            return new AccountAbstraction.ZkSyncAATransaction
+            {
+                TxType = 0x71,
+                From = new HexBigInteger(transaction.Input.From).Value,
+                To = new HexBigInteger(transaction.Input.To).Value,
+                GasLimit = transaction.Input.Gas.Value,
+                GasPerPubdataByteLimit = transaction.Input.ZkSync?.GasPerPubdataByteLimit ?? await GetGasPerPubData(transaction),
+                MaxFeePerGas = transaction.Input.MaxFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
+                MaxPriorityFeePerGas = transaction.Input.MaxPriorityFeePerGas?.Value ?? transaction.Input.GasPrice.Value,
+                Paymaster = transaction.Input.ZkSync.Value.Paymaster,
+                Nonce = transaction.Input.Nonce ?? new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest")),
+                Value = transaction.Input.Value.Value,
+                Data = transaction.Input.Data.HexToByteArray(),
+                FactoryDeps = transaction.Input.ZkSync.Value.FactoryDeps,
+                PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput
+            };
         }
 
         private static bool IsZkSyncTransaction(ThirdwebTransaction transaction)

@@ -130,12 +130,37 @@ namespace Thirdweb
                     (var maxFee, _) = await ThirdwebTransaction.EstimateGasFees(transaction);
                     _ = transaction.SetMaxFeePerGas(maxFee);
                 }
+
                 if (_gasless)
                 {
-                    (var paymaster, var paymasterInput) = await GetPaymasterInput(transactionInput);
+                    (var paymaster, var paymasterInput) = await ZkPaymasterData(transactionInput);
                     transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
+                    var zkTx = await ThirdwebTransaction.ConvertToZkSyncTransaction(transaction);
+                    var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, this);
+                    // Match bundler ZkTransactionInput type without recreating
+                    var hash = await ZkBroadcastTransaction(
+                        new
+                        {
+                            nonce = zkTx.Nonce.ToString(),
+                            from = zkTx.From,
+                            to = zkTx.To,
+                            gas = zkTx.GasLimit.ToString(),
+                            gasPrice = string.Empty,
+                            value = zkTx.Value.ToString(),
+                            data = Utils.BytesToHex(zkTx.Data),
+                            maxFeePerGas = zkTx.MaxFeePerGas.ToString(),
+                            maxPriorityFeePerGas = zkTx.MaxPriorityFeePerGas.ToString(),
+                            chainId = _chainId.ToString(),
+                            signedTransaction = zkTxSigned,
+                            paymaster = paymaster
+                        }
+                    );
+                    return hash;
                 }
-                return await ThirdwebTransaction.Send(transaction);
+                else
+                {
+                    return await ThirdwebTransaction.Send(transaction);
+                }
             }
             else
             {
@@ -242,17 +267,23 @@ namespace Thirdweb
             return await ThirdwebContract.Read<BigInteger>(_entryPointContract, "getNonce", await GetAddress(), randomInt192);
         }
 
-        private async Task<(string, string)> GetPaymasterInput(ThirdwebTransactionInput transactionInput)
+        private async Task<(string, string)> ZkPaymasterData(ThirdwebTransactionInput transactionInput)
         {
             if (_gasless)
             {
-                var paymasterInput = await BundlerClient.PMSponsorTransaction(_client, _paymasterUrl, 1, transactionInput);
-                return (paymasterInput.paymaster, paymasterInput.paymasterInput);
+                var result = await BundlerClient.ZkPaymasterData(_client, _paymasterUrl, 1, transactionInput);
+                return (result.paymaster, result.paymasterInput);
             }
             else
             {
                 return (null, null);
             }
+        }
+
+        private async Task<string> ZkBroadcastTransaction(object transactionInput)
+        {
+            var result = await BundlerClient.ZkBroadcastTransaction(_client, _bundlerUrl, 1, transactionInput);
+            return result.transactionHash;
         }
 
         private async Task<byte[]> GetPaymasterAndData(object requestId, UserOperationHexified userOp)
