@@ -242,6 +242,11 @@ namespace Thirdweb
 
         public static async Task<string> Send(ThirdwebTransaction transaction)
         {
+            if (transaction.Input.To == null)
+            {
+                throw new InvalidOperationException("Transaction recipient (to) must be provided");
+            }
+
             if (transaction.Input.GasPrice != null && (transaction.Input.MaxFeePerGas != null || transaction.Input.MaxPriorityFeePerGas != null))
             {
                 throw new InvalidOperationException("Transaction GasPrice and MaxFeePerGas/MaxPriorityFeePerGas cannot be set at the same time");
