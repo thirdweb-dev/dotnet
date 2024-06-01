@@ -55,6 +55,25 @@ namespace Thirdweb.AccountAbstraction
             }
         }
 
+        public static async Task<ZkPaymasterDataResponse> ZkPaymasterData(ThirdwebClient client, string paymasterUrl, object requestId, ThirdwebTransactionInput txInput)
+        {
+            var response = await BundlerRequest(client, paymasterUrl, requestId, "zk_paymasterData", txInput);
+            try
+            {
+                return JsonConvert.DeserializeObject<ZkPaymasterDataResponse>(response.Result.ToString());
+            }
+            catch
+            {
+                return new ZkPaymasterDataResponse() { paymaster = null, paymasterInput = null };
+            }
+        }
+
+        public static async Task<ZkBroadcastTransactionResponse> ZkBroadcastTransaction(ThirdwebClient client, string paymasterUrl, object requestId, object txInput)
+        {
+            var response = await BundlerRequest(client, paymasterUrl, requestId, "zk_broadcastTransaction", txInput);
+            return JsonConvert.DeserializeObject<ZkBroadcastTransactionResponse>(response.Result.ToString());
+        }
+
         // Request
 
         private static async Task<RpcResponseMessage> BundlerRequest(ThirdwebClient client, string url, object requestId, string method, params object[] args)

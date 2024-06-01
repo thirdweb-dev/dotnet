@@ -238,8 +238,8 @@ namespace Thirdweb
 
             var fields = new List<byte[]>
             {
-                transaction.Nonce.ToByteArray(isUnsigned: true, isBigEndian: true),
-                transaction.MaxPriorityFeePerGas.ToByteArray(isUnsigned: true, isBigEndian: true),
+                transaction.Nonce == 0 ? new byte[0] : transaction.Nonce.ToByteArray(isUnsigned: true, isBigEndian: true),
+                transaction.MaxPriorityFeePerGas == 0 ? new byte[0] : transaction.MaxPriorityFeePerGas.ToByteArray(isUnsigned: true, isBigEndian: true),
                 transaction.MaxFeePerGas.ToByteArray(isUnsigned: true, isBigEndian: true),
                 transaction.GasLimit.ToByteArray(isUnsigned: true, isBigEndian: true),
                 transaction.To.ToByteArray(isUnsigned: true, isBigEndian: true),

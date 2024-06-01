@@ -216,4 +216,15 @@ namespace Thirdweb.AccountAbstraction
         [Parameter("bytes", "paymasterInput", 13)]
         public virtual byte[] PaymasterInput { get; set; }
     }
+
+    public class ZkPaymasterDataResponse
+    {
+        public string paymaster { get; set; }
+        public string paymasterInput { get; set; }
+    }
+
+    public class ZkBroadcastTransactionResponse
+    {
+        public string transactionHash { get; set; }
+    }
 }
