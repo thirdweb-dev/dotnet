@@ -121,6 +121,11 @@ namespace Thirdweb
             if (IsZkSync)
             {
                 var transaction = await ThirdwebTransaction.Create(_client, _personalAccount, transactionInput, _chainId);
+
+                if (transactionInput.Nonce == null)
+                {
+                    _ = transaction.SetNonce(await ThirdwebTransaction.GetNonce(transaction));
+                }
                 if (transactionInput.Gas == null)
                 {
                     _ = transaction.SetGasLimit(await ThirdwebTransaction.EstimateGasLimit(transaction));

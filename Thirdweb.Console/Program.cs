@@ -91,9 +91,9 @@ var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyH
 // var txHash = await ThirdwebTransaction.Send(transaction: tx);
 // Console.WriteLine($"Transaction hash: {txHash}");
 
-var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 300, gasless: true);
+var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 324, gasless: true);
 Console.WriteLine($"Smart wallet address: {await zkSmartWallet.GetAddress()}");
-var zkAaTx = await ThirdwebTransaction.Create(client, zkSmartWallet, new ThirdwebTransactionInput() { From = await zkSmartWallet.GetAddress(), To = await zkSmartWallet.GetAddress(), }, 300);
+var zkAaTx = await ThirdwebTransaction.Create(client, zkSmartWallet, new ThirdwebTransactionInput() { From = await zkSmartWallet.GetAddress(), To = await zkSmartWallet.GetAddress(), }, 324);
 var zkSyncSignatureBasedAaTxHash = await ThirdwebTransaction.Send(zkAaTx);
 Console.WriteLine($"Transaction hash: {zkSyncSignatureBasedAaTxHash}");
 
