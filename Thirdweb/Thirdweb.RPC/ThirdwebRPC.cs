@@ -17,12 +17,9 @@ namespace Thirdweb
         private Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new Dictionary<int, TaskCompletionSource<object>>();
         private int _requestIdCounter = 1;
 
-        private static readonly HttpClient _httpClient = new HttpClient();
         private static readonly Dictionary<string, ThirdwebRPC> _rpcs = new Dictionary<string, ThirdwebRPC>();
 
-        private readonly string _clientId;
-        private readonly string _secretKey;
-        private readonly string _bundleId;
+        private readonly IThirdwebHttpClient _httpClient;
 
         public static ThirdwebRPC GetRpcInstance(ThirdwebClient client, BigInteger chainId)
         {
@@ -94,19 +91,9 @@ namespace Thirdweb
             }
         }
 
-        static ThirdwebRPC()
-        {
-            _httpClient.DefaultRequestHeaders.Add("x-sdk-name", "Thirdweb.NET");
-            _httpClient.DefaultRequestHeaders.Add("x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription);
-            _httpClient.DefaultRequestHeaders.Add("x-sdk-platform", "dotnet");
-            _httpClient.DefaultRequestHeaders.Add("x-sdk-version", Constants.VERSION);
-        }
-
         private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
         {
-            _clientId = client.ClientId;
-            _secretKey = client.SecretKey;
-            _bundleId = client.BundleId;
+            _httpClient = client.HttpClient;
             _rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb.com/");
             _rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
             _batchSendInterval = TimeSpan.FromMilliseconds(100);
@@ -133,27 +120,12 @@ namespace Thirdweb
         private async Task SendBatchAsync(List<RpcRequest> batch)
         {
             var batchJson = JsonConvert.SerializeObject(batch);
-
-            var requestMessage = new HttpRequestMessage(HttpMethod.Post, _rpcUrl) { Content = new StringContent(batchJson, Encoding.UTF8, "application/json") };
-            if (!string.IsNullOrEmpty(_clientId))
-            {
-                requestMessage.Headers.Add("x-client-id", _clientId);
-            }
-
-            if (!string.IsNullOrEmpty(_secretKey))
-            {
-                requestMessage.Headers.Add("x-secret-key", _secretKey);
-            }
-
-            if (!string.IsNullOrEmpty(_bundleId))
-            {
-                requestMessage.Headers.Add("x-bundle-id", _bundleId);
-            }
+            var content = new StringContent(batchJson, Encoding.UTF8, "application/json");
 
             try
             {
                 using var cts = new CancellationTokenSource(_rpcTimeout);
-                var response = await _httpClient.SendAsync(requestMessage, cts.Token);
+                var response = await _httpClient.PostAsync(_rpcUrl.ToString(), content, cts.Token);
 
                 if (!response.IsSuccessStatusCode)
                 {

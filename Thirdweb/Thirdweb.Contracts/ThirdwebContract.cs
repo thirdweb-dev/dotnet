@@ -43,12 +43,10 @@ namespace Thirdweb
         public static async Task<string> FetchAbi(string address, BigInteger chainId)
         {
             var url = $"https://contract.thirdweb.com/abi/{chainId}/{address}";
-            using (var client = new HttpClient())
-            {
-                var response = await client.GetAsync(url);
-                _ = response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync();
-            }
+            using var client = ThirdwebHttpClientFactory.CreateThirdwebHttpClient();
+            var response = await client.GetAsync(url);
+            _ = response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync();
         }
 
         public static async Task<T> Read<T>(ThirdwebContract contract, string method, params object[] parameters)

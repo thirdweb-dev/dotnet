@@ -18,7 +18,7 @@ namespace Thirdweb
             where TDomain : IDomain;
         public Task<bool> IsConnected();
         public Task<string> SignTransaction(ThirdwebTransactionInput transaction, BigInteger chainId);
-        public Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", HttpClient httpClient = null);
+        public Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", IThirdwebHttpClient httpClient = null);
     }
 
     public enum ThirdwebAccountType

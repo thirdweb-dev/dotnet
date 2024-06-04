@@ -116,6 +116,12 @@ namespace Thirdweb
             return headers;
         }
 
+        public static bool IsThirdwebRequest(string uri)
+        {
+            var host = new Uri(uri).Host;
+            return host.EndsWith(".ipfscdn.io") || host.EndsWith(".thirdweb.com");
+        }
+
         public static string ToWei(this string eth)
         {
             if (!double.TryParse(eth, NumberStyles.Number, CultureInfo.InvariantCulture, out var ethDouble))

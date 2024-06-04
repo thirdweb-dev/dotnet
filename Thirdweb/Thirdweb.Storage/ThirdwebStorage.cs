@@ -13,16 +13,12 @@ namespace Thirdweb
 
             uri = uri.ReplaceIPFS($"https://{client.ClientId}.ipfscdn.io/ipfs/");
 
-            using var httpClient = new HttpClient();
+            using var httpClient = ThirdwebHttpClientFactory.CreateThirdwebHttpClient();
 
-            var isThirdwebRequest = new Uri(uri).Host.EndsWith(".ipfscdn.io");
-            if (isThirdwebRequest)
+            if (Utils.IsThirdwebRequest(uri))
             {
                 var headers = Utils.GetThirdwebHeaders(client);
-                foreach (var header in headers)
-                {
-                    httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
-                }
+                httpClient.SetHeaders(headers);
             }
 
             requestTimeout ??= client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage);
@@ -46,14 +42,12 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(path));
             }
 
-            using var httpClient = new HttpClient();
             using var form = new MultipartFormDataContent { { new ByteArrayContent(File.ReadAllBytes(path)), "file", Path.GetFileName(path) } };
 
+            using var httpClient = ThirdwebHttpClientFactory.CreateThirdwebHttpClient();
+
             var headers = Utils.GetThirdwebHeaders(client);
-            foreach (var header in headers)
-            {
-                httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
-            }
+            httpClient.SetHeaders(headers);
 
             var response = await httpClient.PostAsync(Constants.PIN_URI, form);
 

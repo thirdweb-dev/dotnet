@@ -78,37 +78,21 @@ namespace Thirdweb.AccountAbstraction
 
         private static async Task<RpcResponseMessage> BundlerRequest(ThirdwebClient client, string url, object requestId, string method, params object[] args)
         {
-            using var httpClient = new HttpClient();
+            using var httpClient = ThirdwebHttpClientFactory.CreateThirdwebHttpClient();
 #if DEBUG
             Console.WriteLine($"Bundler Request: {method}({JsonConvert.SerializeObject(args)}");
 #endif
             var requestMessage = new RpcRequestMessage(requestId, method, args);
             var requestMessageJson = JsonConvert.SerializeObject(requestMessage);
 
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, url) { Content = new StringContent(requestMessageJson, System.Text.Encoding.UTF8, "application/json") };
-            if (new Uri(url).Host.EndsWith(".thirdweb.com"))
+            var httpContent = new StringContent(requestMessageJson, System.Text.Encoding.UTF8, "application/json");
+            if (Utils.IsThirdwebRequest(url))
             {
-                httpRequestMessage.Headers.Add("x-sdk-name", "Thirdweb.NET");
-                httpRequestMessage.Headers.Add("x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription);
-                httpRequestMessage.Headers.Add("x-sdk-platform", "dotnet");
-                httpRequestMessage.Headers.Add("x-sdk-version", Constants.VERSION);
-                if (!string.IsNullOrEmpty(client.ClientId))
-                {
-                    httpRequestMessage.Headers.Add("x-client-id", client.ClientId);
-                }
-
-                if (!string.IsNullOrEmpty(client.SecretKey))
-                {
-                    httpRequestMessage.Headers.Add("x-secret-key", client.SecretKey);
-                }
-
-                if (!string.IsNullOrEmpty(client.BundleId))
-                {
-                    httpRequestMessage.Headers.Add("x-bundle-id", client.BundleId);
-                }
+                var headers = Utils.GetThirdwebHeaders(client);
+                httpClient.SetHeaders(headers);
             }
 
-            var httpResponse = await httpClient.SendAsync(httpRequestMessage);
+            var httpResponse = await httpClient.PostAsync(url, httpContent);
 
             if (!httpResponse.IsSuccessStatusCode)
             {

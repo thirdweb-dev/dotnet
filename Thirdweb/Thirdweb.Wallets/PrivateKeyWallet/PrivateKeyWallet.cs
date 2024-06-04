@@ -168,7 +168,13 @@ namespace Thirdweb
             return Task.CompletedTask;
         }
 
-        public virtual async Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", HttpClient httpClient = null)
+        public virtual async Task<string> Authenticate(
+            string domain,
+            BigInteger chainId,
+            string authPayloadPath = "/auth/payload",
+            string authLoginPath = "/auth/login",
+            IThirdwebHttpClient httpClient = null
+        )
         {
             var payloadURL = domain + authPayloadPath;
             var loginURL = domain + authLoginPath;
@@ -176,11 +182,10 @@ namespace Thirdweb
             var payloadBodyRaw = new { address = await GetAddress(), chainId = chainId.ToString() };
             var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
 
-            httpClient ??= new HttpClient();
+            using var client = httpClient ?? ThirdwebHttpClientFactory.CreateThirdwebHttpClient();
 
-            using var payloadRequest = new HttpRequestMessage(HttpMethod.Post, payloadURL);
-            payloadRequest.Content = new StringContent(payloadBody, Encoding.UTF8, "application/json");
-            var payloadResponse = await httpClient.SendAsync(payloadRequest);
+            var payloadContent = new StringContent(payloadBody, Encoding.UTF8, "application/json");
+            var payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);
             _ = payloadResponse.EnsureSuccessStatusCode();
             var payloadString = await payloadResponse.Content.ReadAsStringAsync();
 
@@ -190,9 +195,8 @@ namespace Thirdweb
             loginBodyRaw.signature = await PersonalSign(payloadToSign);
             var loginBody = JsonConvert.SerializeObject(new { payload = loginBodyRaw });
 
-            using var loginRequest = new HttpRequestMessage(HttpMethod.Post, loginURL);
-            loginRequest.Content = new StringContent(loginBody, Encoding.UTF8, "application/json");
-            var loginResponse = await httpClient.SendAsync(loginRequest);
+            var loginContent = new StringContent(loginBody, Encoding.UTF8, "application/json");
+            var loginResponse = await httpClient.PostAsync(loginURL, loginContent);
             _ = loginResponse.EnsureSuccessStatusCode();
             var responseString = await loginResponse.Content.ReadAsStringAsync();
             return responseString;
