@@ -495,25 +495,33 @@ namespace Thirdweb.EWS
         private Task<HttpResponseMessage> SendHttpWithAuthAsync(HttpRequestMessage httpRequestMessage, string authToken)
         {
             httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{authToken}");
-            if (httpRequestMessage.Method == HttpMethod.Get)
+
+            try
             {
-                return httpClient.GetAsync(httpRequestMessage.RequestUri.ToString());
+                if (httpRequestMessage.Method == HttpMethod.Get)
+                {
+                    return httpClient.GetAsync(httpRequestMessage.RequestUri.ToString());
+                }
+                else if (httpRequestMessage.Method == HttpMethod.Post)
+                {
+                    return httpClient.PostAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content);
+                }
+                else if (httpRequestMessage.Method == HttpMethod.Put)
+                {
+                    return httpClient.PutAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content);
+                }
+                else if (httpRequestMessage.Method == HttpMethod.Delete)
+                {
+                    return httpClient.DeleteAsync(httpRequestMessage.RequestUri.ToString());
+                }
+                else
+                {
+                    throw new InvalidOperationException("Unsupported HTTP method");
+                }
             }
-            else if (httpRequestMessage.Method == HttpMethod.Post)
+            finally
             {
-                return httpClient.PostAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content);
-            }
-            else if (httpRequestMessage.Method == HttpMethod.Put)
-            {
-                return httpClient.PutAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content);
-            }
-            else if (httpRequestMessage.Method == HttpMethod.Delete)
-            {
-                return httpClient.DeleteAsync(httpRequestMessage.RequestUri.ToString());
-            }
-            else
-            {
-                throw new InvalidOperationException("Unsupported HTTP method");
+                httpClient.RemoveHeader("Authorization");
             }
         }
 
