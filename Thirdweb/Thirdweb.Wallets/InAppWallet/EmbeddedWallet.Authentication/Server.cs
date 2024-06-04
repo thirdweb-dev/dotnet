@@ -71,6 +71,7 @@ namespace Thirdweb.EWS
             if (!string.IsNullOrEmpty(clientId))
             {
                 headers.Add("x-client-id", clientId);
+                headers.Add("x-thirdweb-client-id", clientId);
             }
 
             if (!string.IsNullOrEmpty(bundleId))
@@ -81,6 +82,7 @@ namespace Thirdweb.EWS
             if (!string.IsNullOrEmpty(secretKey))
             {
                 headers.Add("x-secret-key", secretKey);
+                headers.Add("x-thirdweb-secret-key", secretKey);
             }
 
             // EWS headers
