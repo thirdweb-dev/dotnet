@@ -40,32 +40,48 @@ namespace Thirdweb
             }
         }
 
-        public async Task<HttpResponseMessage> GetAsync(string requestUri, CancellationToken cancellationToken = default)
+        public async Task<ThirdwebHttpResponseMessage> GetAsync(string requestUri, CancellationToken cancellationToken = default)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
             AddHeaders(request);
-            return await _httpClient.SendAsync(request, cancellationToken);
+            var result = await _httpClient.SendAsync(request, cancellationToken);
+#pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
+            var resultContent = new ThirdwebHttpContent(await result.Content.ReadAsByteArrayAsync());
+#pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
+            return new ThirdwebHttpResponseMessage((long)result.StatusCode, resultContent, result.IsSuccessStatusCode);
         }
 
-        public async Task<HttpResponseMessage> PostAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
+        public async Task<ThirdwebHttpResponseMessage> PostAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, requestUri) { Content = content };
             AddHeaders(request);
-            return await _httpClient.SendAsync(request, cancellationToken);
+            var result = await _httpClient.SendAsync(request, cancellationToken);
+#pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
+            var resultContent = new ThirdwebHttpContent(await result.Content.ReadAsByteArrayAsync());
+#pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
+            return new ThirdwebHttpResponseMessage((long)result.StatusCode, resultContent, result.IsSuccessStatusCode);
         }
 
-        public async Task<HttpResponseMessage> PutAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
+        public async Task<ThirdwebHttpResponseMessage> PutAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
         {
             var request = new HttpRequestMessage(HttpMethod.Put, requestUri) { Content = content };
             AddHeaders(request);
-            return await _httpClient.SendAsync(request, cancellationToken);
+            var result = await _httpClient.SendAsync(request, cancellationToken);
+#pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
+            var resultContent = new ThirdwebHttpContent(await result.Content.ReadAsByteArrayAsync());
+#pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
+            return new ThirdwebHttpResponseMessage((long)result.StatusCode, resultContent, result.IsSuccessStatusCode);
         }
 
-        public async Task<HttpResponseMessage> DeleteAsync(string requestUri, CancellationToken cancellationToken = default)
+        public async Task<ThirdwebHttpResponseMessage> DeleteAsync(string requestUri, CancellationToken cancellationToken = default)
         {
             var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
             AddHeaders(request);
-            return await _httpClient.SendAsync(request, cancellationToken);
+            var result = await _httpClient.SendAsync(request, cancellationToken);
+#pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
+            var resultContent = new ThirdwebHttpContent(await result.Content.ReadAsByteArrayAsync());
+#pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
+            return new ThirdwebHttpResponseMessage((long)result.StatusCode, resultContent, result.IsSuccessStatusCode);
         }
 
         protected virtual void Dispose(bool disposing)

@@ -43,4 +43,20 @@
     <None Include="..\resources\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="UnityEngine">
+      <HintPath>unity\UnityEngine.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'UnityDebug|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE;UNITY_5_3_OR_NEWER</DefineConstants>
+    <OutputPath>bin\UnityDebug\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'UnityRelease|AnyCPU'">
+    <DefineConstants>TRACE;UNITY_5_3_OR_NEWER</DefineConstants>
+    <OutputPath>bin\UnityRelease\</OutputPath>
+  </PropertyGroup>
+
 </Project>

@@ -125,7 +125,7 @@ namespace Thirdweb
             try
             {
                 using var cts = new CancellationTokenSource(_rpcTimeout);
-                var response = await _httpClient.PostAsync(_rpcUrl.ToString(), content, cts.Token);
+                var response = await _httpClient.PostAsync(_rpcUrl.ToString(), content, cts.Token).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

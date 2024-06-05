@@ -1,9 +1,6 @@
 #if UNITY_5_3_OR_NEWER
+using UnityEngine;
 using UnityEngine.Networking;
-using System.Threading.Tasks;
-using System.Net.Http;
-using System.Collections.Generic;
-using System.Threading;
 
 namespace Thirdweb
 {
@@ -41,57 +38,91 @@ namespace Thirdweb
         {
             foreach (var header in _headers)
             {
-                request.SetRequestHeader(header.Key, header.Value);
+                if (header.Value != null)
+                {
+                    request.SetRequestHeader(header.Key, header.Value);
+                }
             }
         }
 
-        public async Task<HttpResponseMessage> GetAsync(string requestUri, CancellationToken cancellationToken = default)
+        public Task<ThirdwebHttpResponseMessage> GetAsync(string requestUri, CancellationToken cancellationToken = default)
         {
-            using (UnityWebRequest webRequest = UnityWebRequest.Get(requestUri))
+            return SendRequestAsync(() => UnityWebRequest.Get(requestUri), cancellationToken);
+        }
+
+        public Task<ThirdwebHttpResponseMessage> PostAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
+        {
+            return SendRequestAsync(
+                () =>
+                {
+                    var webRequest = new UnityWebRequest(requestUri, UnityWebRequest.kHttpVerbPOST)
+                    {
+                        uploadHandler = new UploadHandlerRaw(content.ReadAsByteArrayAsync().Result) { contentType = content.Headers.ContentType.ToString() },
+                        downloadHandler = new DownloadHandlerBuffer()
+                    };
+                    return webRequest;
+                },
+                cancellationToken
+            );
+        }
+
+        public Task<ThirdwebHttpResponseMessage> PutAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
+        {
+            return SendRequestAsync(
+                () =>
+                {
+                    var webRequest = UnityWebRequest.Put(requestUri, content.ReadAsByteArrayAsync().Result);
+                    webRequest.SetRequestHeader("Content-Type", content.Headers.ContentType.MediaType);
+                    return webRequest;
+                },
+                cancellationToken
+            );
+        }
+
+        public Task<ThirdwebHttpResponseMessage> DeleteAsync(string requestUri, CancellationToken cancellationToken = default)
+        {
+            return SendRequestAsync(() => UnityWebRequest.Delete(requestUri), cancellationToken);
+        }
+
+        private Task<ThirdwebHttpResponseMessage> SendRequestAsync(Func<UnityWebRequest> createRequest, CancellationToken cancellationToken)
+        {
+            var tcs = new TaskCompletionSource<ThirdwebHttpResponseMessage>();
+
+            _ = MainThreadExecutor.RunOnMainThread(async () =>
             {
+                using var webRequest = createRequest();
                 AddHeaders(webRequest);
-                await webRequest.SendWebRequest().WithCancellation(cancellationToken);
-                return ConvertToHttpResponseMessage(webRequest);
-            }
-        }
 
-        public async Task<HttpResponseMessage> PostAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
-        {
-            using (UnityWebRequest webRequest = UnityWebRequest.Post(requestUri, content.ToString()))
-            {
-                AddHeaders(webRequest);
-                await webRequest.SendWebRequest().WithCancellation(cancellationToken);
-                return ConvertToHttpResponseMessage(webRequest);
-            }
-        }
+                var operation = webRequest.SendWebRequest();
 
-        public async Task<HttpResponseMessage> PutAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
-        {
-            using (UnityWebRequest webRequest = UnityWebRequest.Put(requestUri, content.ToString()))
-            {
-                AddHeaders(webRequest);
-                await webRequest.SendWebRequest().WithCancellation(cancellationToken);
-                return ConvertToHttpResponseMessage(webRequest);
-            }
-        }
+                while (!operation.isDone)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        webRequest.Abort();
+                        tcs.SetCanceled();
+                        return;
+                    }
+                    await Task.Yield();
+                }
 
-        public async Task<HttpResponseMessage> DeleteAsync(string requestUri, CancellationToken cancellationToken = default)
-        {
-            using (UnityWebRequest webRequest = UnityWebRequest.Delete(requestUri))
-            {
-                AddHeaders(webRequest);
-                await webRequest.SendWebRequest().WithCancellation(cancellationToken);
-                return ConvertToHttpResponseMessage(webRequest);
-            }
-        }
+                if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
+                {
+                    tcs.SetException(new Exception(webRequest.error));
+                }
+                else
+                {
+                    tcs.SetResult(
+                        new ThirdwebHttpResponseMessage(
+                            statusCode: webRequest.responseCode,
+                            content: new ThirdwebHttpContent(webRequest.downloadHandler.text),
+                            isSuccessStatusCode: webRequest.responseCode >= 200 && webRequest.responseCode < 300
+                        )
+                    );
+                }
+            });
 
-        private HttpResponseMessage ConvertToHttpResponseMessage(UnityWebRequest webRequest)
-        {
-            var response = new HttpResponseMessage((HttpStatusCode)webRequest.responseCode)
-            {
-                Content = new StringContent(webRequest.downloadHandler.text)
-            };
-            return response;
+            return tcs.Task;
         }
 
         protected virtual void Dispose(bool disposing)
@@ -113,24 +144,55 @@ namespace Thirdweb
         }
     }
 
-    public static class UnityWebRequestExtensions
+    public static class MainThreadExecutor
     {
-        public static async Task WithCancellation(this UnityWebRequestAsyncOperation asyncOperation, CancellationToken cancellationToken)
-        {
-            while (!asyncOperation.isDone)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    asyncOperation.webRequest.Abort();
-                    throw new OperationCanceledException(cancellationToken);
-                }
+        private static readonly Queue<Action> actions = new Queue<Action>();
+        private static bool isInitialized;
 
-                await Task.Yield();
+        public static async Task RunOnMainThread(Action action)
+        {
+            if (!isInitialized)
+            {
+                Initialize();
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
+            var tcs = new TaskCompletionSource<bool>();
+            lock (actions)
+            {
+                actions.Enqueue(() =>
+                {
+                    action();
+                    tcs.SetResult(true);
+                });
+            }
+
+            await tcs.Task;
+        }
+
+        private static void Initialize()
+        {
+            if (!isInitialized)
+            {
+                isInitialized = true;
+                var go = new GameObject("MainThreadExecutor");
+                go.AddComponent<MainThreadExecutorBehaviour>();
+                GameObject.DontDestroyOnLoad(go);
+            }
+        }
+
+        private class MainThreadExecutorBehaviour : MonoBehaviour
+        {
+            void Update()
+            {
+                lock (actions)
+                {
+                    while (actions.Count > 0)
+                    {
+                        actions.Dequeue().Invoke();
+                    }
+                }
+            }
         }
     }
 }
-
 #endif

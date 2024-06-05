@@ -111,7 +111,7 @@ namespace Thirdweb.EWS
             {
                 Dictionary<string, string> queryParams = new() { { "clientId", clientId }, };
                 var uri = MakeUri("/embedded-wallet/developer-wallet-settings", queryParams);
-                HttpResponseMessage response = await httpClient.GetAsync(uri.ToString());
+                ThirdwebHttpResponseMessage response = await httpClient.GetAsync(uri.ToString());
                 var responseContent = await DeserializeAsync<RecoveryShareManagementResponse>(response);
                 return responseContent.Value ?? "AWS_MANAGED";
             }
@@ -221,7 +221,7 @@ namespace Thirdweb.EWS
                 }
             );
 
-            HttpResponseMessage response = await httpClient.GetAsync(uri.ToString());
+            ThirdwebHttpResponseMessage response = await httpClient.GetAsync(uri.ToString());
             await CheckStatusCodeAsync(response);
             var rv = await DeserializeAsync<HeadlessOauthLoginLinkResponse>(response);
             return rv.PlatformLoginLink;
@@ -239,7 +239,7 @@ namespace Thirdweb.EWS
                     { "clientId", clientId }
                 }
             );
-            HttpResponseMessage response = await httpClient.GetAsync(uri.ToString());
+            ThirdwebHttpResponseMessage response = await httpClient.GetAsync(uri.ToString());
             await CheckStatusCodeAsync(response);
             var result = await DeserializeAsync<IsEmailKmsOtpValidResponse>(response);
             return result.IsOtpValid;
@@ -257,7 +257,7 @@ namespace Thirdweb.EWS
                     clientId,
                 }
             );
-            HttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
+            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
             await CheckStatusCodeAsync(response);
             var result = await DeserializeAsync<IsEmailUserOtpValidResponse>(response);
             return result.IsValid;
@@ -268,7 +268,7 @@ namespace Thirdweb.EWS
         {
             var uri = MakeUri("/embedded-wallet/send-user-managed-email-otp");
             var content = MakeHttpContent(new { clientId, email = emailAddress });
-            HttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
+            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
             await CheckStatusCodeAsync(response);
         }
 
@@ -311,7 +311,7 @@ namespace Thirdweb.EWS
                     otp
                 }
             );
-            HttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
+            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
             await CheckStatusCodeAsync(response);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response);
             return new VerifyResult(
@@ -364,7 +364,7 @@ namespace Thirdweb.EWS
                     otpMethod = "email",
                 }
             );
-            HttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
+            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
             await CheckStatusCodeAsync(response);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response);
             var isNewUser = authVerifiedToken.VerifiedToken.IsNewUser;
@@ -420,7 +420,7 @@ namespace Thirdweb.EWS
                     otpMethod = "email",
                 }
             );
-            HttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
+            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
             await CheckStatusCodeAsync(response);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response);
             var isNewUser = authVerifiedToken.VerifiedToken.IsNewUser;
@@ -442,7 +442,7 @@ namespace Thirdweb.EWS
             var requestContent = new { jwt = jwtToken, developerClientId = clientId };
             var content = MakeHttpContent(requestContent);
             var uri = MakeUri("/embedded-wallet/validate-custom-jwt");
-            HttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
+            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
             await CheckStatusCodeAsync(response);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response);
             var isNewUser = authVerifiedToken.VerifiedToken.IsNewUser;
@@ -459,7 +459,7 @@ namespace Thirdweb.EWS
             var requestContent = new { payload, developerClientId = clientId };
             var content = MakeHttpContent(requestContent);
             var uri = MakeUri("/embedded-wallet/validate-custom-auth-endpoint");
-            HttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
+            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content);
             await CheckStatusCodeAsync(response);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response);
             var isNewUser = authVerifiedToken.VerifiedToken.IsNewUser;
@@ -494,7 +494,7 @@ namespace Thirdweb.EWS
 
         #region Misc
 
-        private Task<HttpResponseMessage> SendHttpWithAuthAsync(HttpRequestMessage httpRequestMessage, string authToken)
+        private Task<ThirdwebHttpResponseMessage> SendHttpWithAuthAsync(HttpRequestMessage httpRequestMessage, string authToken)
         {
             httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{authToken}");
 
@@ -527,13 +527,13 @@ namespace Thirdweb.EWS
             }
         }
 
-        private Task<HttpResponseMessage> SendHttpWithAuthAsync(Uri uri, string authToken)
+        private Task<ThirdwebHttpResponseMessage> SendHttpWithAuthAsync(Uri uri, string authToken)
         {
             HttpRequestMessage httpRequestMessage = new(HttpMethod.Get, uri);
             return SendHttpWithAuthAsync(httpRequestMessage, authToken);
         }
 
-        private static async Task CheckStatusCodeAsync(HttpResponseMessage response)
+        private static async Task CheckStatusCodeAsync(ThirdwebHttpResponseMessage response)
         {
             if (!response.IsSuccessStatusCode)
             {
@@ -542,7 +542,7 @@ namespace Thirdweb.EWS
             }
         }
 
-        private static async Task<T> DeserializeAsync<T>(HttpResponseMessage response)
+        private static async Task<T> DeserializeAsync<T>(ThirdwebHttpResponseMessage response)
         {
             JsonSerializer jsonSerializer = new();
             TextReader textReader = new StreamReader(await response.Content.ReadAsStreamAsync());

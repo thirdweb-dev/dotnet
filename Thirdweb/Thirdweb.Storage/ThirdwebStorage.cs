@@ -27,7 +27,7 @@ namespace Thirdweb
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Failed to download {uri}: {response.StatusCode} | {response.ReasonPhrase} | {await response.Content.ReadAsStringAsync()}");
+                throw new Exception($"Failed to download {uri}: {response.StatusCode} | {await response.Content.ReadAsStringAsync()}");
             }
 
             var content = await response.Content.ReadAsStringAsync();
@@ -53,7 +53,7 @@ namespace Thirdweb
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Failed to upload {path}: {response.StatusCode} | {response.ReasonPhrase} | {await response.Content.ReadAsStringAsync()}");
+                throw new Exception($"Failed to upload {path}: {response.StatusCode} | {await response.Content.ReadAsStringAsync()}");
             }
 
             var result = await response.Content.ReadAsStringAsync();

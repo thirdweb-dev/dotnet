@@ -44,7 +44,7 @@ namespace Thirdweb
         {
             var url = $"https://contract.thirdweb.com/abi/{chainId}/{address}";
             using var client = ThirdwebHttpClientFactory.CreateThirdwebHttpClient();
-            var response = await client.GetAsync(url);
+            var response = await client.GetAsync(url).ConfigureAwait(false);
             _ = response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
         }

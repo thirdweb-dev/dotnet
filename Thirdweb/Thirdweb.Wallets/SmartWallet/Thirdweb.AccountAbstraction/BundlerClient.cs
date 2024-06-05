@@ -96,7 +96,7 @@ namespace Thirdweb.AccountAbstraction
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                throw new Exception($"Bundler Request Failed. Error: {httpResponse.StatusCode} - {httpResponse.ReasonPhrase} - {await httpResponse.Content.ReadAsStringAsync()}");
+                throw new Exception($"Bundler Request Failed. Error: {httpResponse.StatusCode} - {await httpResponse.Content.ReadAsStringAsync()}");
             }
 
             var httpResponseJson = await httpResponse.Content.ReadAsStringAsync();
