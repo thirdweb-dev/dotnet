@@ -1,25 +1,29 @@
-# Thirdweb .NET SDK
+![net-banner](https://github.com/thirdweb-dev/thirdweb-dotnet/assets/43042585/6abcdae9-b49f-492a-98de-b01756e21798)
 
 ![NuGet Version](https://img.shields.io/nuget/v/Thirdweb)
 [![codecov](https://codecov.io/gh/thirdweb-dev/thirdweb-dotnet/graph/badge.svg?token=AFF179W07C)](https://codecov.io/gh/thirdweb-dev/thirdweb-dotnet)
 
 ## Overview
 
-The Thirdweb .NET SDK is a powerful library that allows developers to interact with the blockchain using the .NET framework.
-It provides a set of convenient methods and classes to simplify the integration of Web3 functionality into your .NET applications.
+The Thirdweb .NET SDK is a comprehensive library that allows developers to interact with the blockchain using the .NET framework. It simplifies the integration of Web3 functionality into your .NET applications with a robust set of methods and classes.
 
 ## Features
 
-- Connect to any EVM network
-- Query blockchain data using Thirdweb RPC
-- Interact with smart contracts
-- In-App Wallets
-- Account Abstraction
-- Compatible with GoDot
+- **Connect to any EVM network:** Easily connect to Ethereum and other EVM-compatible networks.
+- **Query blockchain data:** Use Thirdweb RPC to fetch blockchain data efficiently.
+- **Interact with smart contracts:** Simplified read and write operations for smart contracts.
+- **In-App Wallets:** Integrate user-friendly wallets within your applications, supporting email, phone, and OAuth login.
+- **Account Abstraction:** Simplify complex account management tasks with smart wallets.
+- **Gasless Transactions:** Enable transactions without requiring users to pay gas fees.
+- **Storage Solutions:** Download and upload files using IPFS.
+- **Transaction Builder:** Easily build and send transactions.
+- **Session Keys:** Advanced control for smart wallets to manage permissions and session durations.
 
 ## Installation
 
 To use the Thirdweb .NET SDK in your project, you can either download the source code and build it manually, or install it via NuGet package manager.
+
+Run the following command to install:
 
 ```
 dotnet add package Thirdweb
@@ -27,108 +31,108 @@ dotnet add package Thirdweb
 
 ## Usage
 
-**Simple Example**
+### Getting Started
+
+Initialize the Thirdweb client to connect to the blockchain.
+
+For frontend applications:
 
 ```csharp
-// A single client fits most use cases
 var client = ThirdwebClient.Create(clientId: "myClientId", bundleId: "com.my.bundleid");
+```
 
-// Optionally pass abi, if not passed we fetch it for you
+For backend applications:
+
+```csharp
+var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
+var client = ThirdwebClient.Create(secretKey: secretKey);
+```
+
+### Interacting with Smart Contracts
+
+You can interact with smart contracts by creating a contract instance and calling read/write methods.
+
+**Reading Data**
+
+```csharp
 var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
 var readResult = await ThirdwebContract.Read<string>(contract, "name");
 Console.WriteLine($"Contract read result: {readResult}");
+```
 
-// Create InAppWallet wallet as signer to unlock web2 auth
-var inAppWallet = await InAppWallet.Create(client: client, email: "email@email.com"); // or email: null, phoneNumber: "+1234567890"
+**Writing Data**
 
-// Relog if InAppWallet wallet not logged in
-if (!await inAppWallet.IsConnected())
-{
-    await inAppWallet.SendOTP();
-    Console.WriteLine("Please submit the OTP.");
-    var otp = Console.ReadLine();
-    (var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
-    if (inAppWalletAddress == null && canRetry)
-    {
-        Console.WriteLine("Please submit the OTP again.");
-        otp = Console.ReadLine();
-        (inAppWalletAddress, _) = await inAppWallet.SubmitOTP(otp);
-    }
-    if (inAppWalletAddress == null)
-    {
-        Console.WriteLine("OTP login failed. Please try again.");
-        return;
-    }
-}
-
-// Create a smart wallet to unlock gasless features, with InAppWallet as a signer
-var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-
-// Log addresses
-Console.WriteLine($"InAppWallet: {await inAppWallet.GetAddress()}");
-Console.WriteLine($"Smart Wallet: {await smartWallet.GetAddress()}");
-
-// Sign, triggering deploy as needed and 1271 verification if it's a smart wallet
-var message = "Hello, Thirdweb!";
-var signature = await smartWallet.PersonalSign(message);
-Console.WriteLine($"Signed message: {signature}");
-
+```csharp
 var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
 Console.WriteLine($"Contract write result: {writeResult}");
 ```
 
-**Advanced Example**
+### Wallet Interactions
+
+#### In-App Wallets
+
+In-app wallets facilitate user authentication and transactions with support for email, phone, and OAuth logins.
+
+**Email Login**
 
 ```csharp
-using Thirdweb;
+var inAppWallet = await InAppWallet.Create(client: client, email: "email@example.com");
 
-// Do not use secret keys client side, use client id/bundle id instead
-var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
-// Do not use private keys client side, use InAppWallet/SmartWallet instead
-var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
-
-// Fetch timeout options are optional, default is 60000ms
-var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 60000));
-
-var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
-var readResult = await ThirdwebContract.Read<string>(contract, "name");
-Console.WriteLine($"Contract read result: {readResult}");
-
-// Create wallets (this is an advanced use case, typically one wallet is plenty)
-var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
-var inAppWallet = await InAppWallet.Create(client: client, email: "email@email.com"); // or email: null, phoneNumber: "+1234567890"
-
-// // Reset InAppWallet (optional step for testing login flow)
-// if (await inAppWallet.IsConnected())
-// {
-//     await inAppWallet.Disconnect();
-// }
-
-// Relog if InAppWallet not logged in
-if (!await inAppWallet.IsConnected())
-{
+if (!await inAppWallet.IsConnected()) {
     await inAppWallet.SendOTP();
     Console.WriteLine("Please submit the OTP.");
     var otp = Console.ReadLine();
     (var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
-    if (inAppWalletAddress == null && canRetry)
-    {
+    if (inAppWalletAddress == null && canRetry) {
         Console.WriteLine("Please submit the OTP again.");
         otp = Console.ReadLine();
         (inAppWalletAddress, _) = await inAppWallet.SubmitOTP(otp);
     }
-    if (inAppWalletAddress == null)
-    {
+    if (inAppWalletAddress == null) {
         Console.WriteLine("OTP login failed. Please try again.");
         return;
     }
 }
 
-// Create smart wallet with InAppWallet signer
+Console.WriteLine($"InAppWallet: {await inAppWallet.GetAddress()}");
+```
+
+**OAuth Login**
+
+```csharp
+var inAppWallet = await InAppWallet.Create(client, oauthProvider: OAuthProvider.Google);
+
+if (!await inAppWallet.IsConnected()) {
+    var loginResult = await inAppWallet.Login();
+    Console.WriteLine($"OAuth login result: {loginResult}");
+}
+```
+
+#### Smart Wallets
+
+Smart wallets offer advanced functionalities such as gasless transactions and session keys.
+
+**Creating a Smart Wallet**
+
+```csharp
 var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
 
-// Connect the smart wallet with InAppWallet signer and grant a session key to pk wallet (advanced use case)
-_ = await smartWallet.CreateSessionKey(
+Console.WriteLine($"Smart Wallet: {await smartWallet.GetAddress()}");
+```
+
+**Gasless Transactions**
+
+```csharp
+var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
+Console.WriteLine($"Gasless transaction result: {writeResult}");
+```
+
+**Session Key Creation**
+
+Session keys provide temporary keys for smart wallets with specific permissions and durations. This is useful for granting limited access to a wallet.
+
+```csharp
+var sessionKey = await smartWallet.CreateSessionKey(
     signerAddress: await privateKeyWallet.GetAddress(),
     approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
     nativeTokenLimitPerTransactionInWei: "0",
@@ -137,78 +141,87 @@ _ = await smartWallet.CreateSessionKey(
     reqValidityStartTimestamp: "0",
     reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
 );
-
-// Reconnect to same smart wallet with pk wallet as signer (specifying wallet address override)
-smartWallet = await SmartWallet.Create(
-    client: client,
-    personalWallet: privateKeyWallet,
-    factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
-    gasless: true,
-    chainId: 421614,
-    accountAddressOverride: await smartWallet.GetAddress()
-);
-
-// Log addresses
-Console.WriteLine($"PrivateKey Wallet: {await privateKeyWallet.GetAddress()}");
-Console.WriteLine($"InAppWallet: {await inAppWallet.GetAddress()}");
-Console.WriteLine($"Smart Wallet: {await smartWallet.GetAddress()}");
-
-// Sign, triggering deploy as needed and 1271 verification if it's a smart wallet
-var message = "Hello, Thirdweb!";
-var signature = await smartWallet.PersonalSign(message);
-Console.WriteLine($"Signed message: {signature}");
-
-var balanceBefore = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartWallet.GetAddress());
-Console.WriteLine($"Balance before mint: {balanceBefore}");
-
-var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
-Console.WriteLine($"Contract write result: {writeResult}");
-
-var balanceAfter = await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", await smartWallet.GetAddress());
-Console.WriteLine($"Balance after mint: {balanceAfter}");
-
-// Storage actions
-
-// // Will download from IPFS or normal urls
-// var downloadResult = await ThirdwebStorage.Download<string>(client: client, uri: "AnyUrlIncludingIpfs");
-// Console.WriteLine($"Download result: {downloadResult}");
-
-// // Will upload to IPFS
-// var uploadResult = await ThirdwebStorage.Upload(client: client, path: "AnyPath");
-// Console.WriteLine($"Upload result preview: {uploadResult.PreviewUrl}");
-
-
-// Access RPC directly if needed, generally not recommended
-
-// var rpc = ThirdwebRPC.GetRpcInstance(client, 421614);
-// var blockNumber = await rpc.SendRequestAsync<string>("eth_blockNumber");
-// Console.WriteLine($"Block number: {blockNumber}");
-
-// Use ZkSync Native AA in 3 steps
-
-// // 1. Prepare a transaction directly, or with Contract.Prepare
-// var tx = await ThirdwebTransaction.Create(
-//     client: client,
-//     wallet: privateKeyWallet,
-//     txInput: new ThirdwebTransactionInput()
-//     {
-//         From = await privateKeyWallet.GetAddress(),
-//         To = await privateKeyWallet.GetAddress(),
-//         Value = new HexBigInteger(BigInteger.Zero),
-//     },
-//     chainId: 300
-// );
-// // 2. Set zkSync options
-// tx.SetZkSyncOptions(
-//     new ZkSyncOptions(
-//         // Paymaster contract address
-//         paymaster: "0xMyGaslessPaymaster",
-//         // IPaymasterFlow interface encoded data
-//         paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
-//     )
-// );
-// // 3. Send as usual, it's now gasless!
-// var txHash = await ThirdwebTransaction.Send(transaction: tx);
-// Console.WriteLine($"Transaction hash: {txHash}");
-
 ```
+
+You may then connect to a specific smart wallet address by passing an account override.
+
+```csharp
+var smartWallet = await SmartWallet.Create(...same parameters with new signer, accountAddressOverride: "0xInitialSmartWalletAddress");
+```
+
+#### Using Private Key Wallets
+
+Private key wallets allow you to interact with the blockchain using a private key. This is useful for server-side applications.
+
+```csharp
+var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
+var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
+Console.WriteLine($"PrivateKey Wallet: {await privateKeyWallet.GetAddress()}");
+```
+
+### Advanced Features
+
+**RPC Direct Access**
+
+Directly interact with the blockchain using the RPC instance. This allows for low-level access to blockchain data and functions.
+
+```csharp
+var rpc = ThirdwebRPC.GetRpcInstance(client, 421614);
+var blockNumber = await rpc.SendRequestAsync<string>("eth_blockNumber");
+Console.WriteLine($"Block number: {blockNumber}");
+```
+
+**ZkSync Native Account Abstraction**
+
+ZkSync 0x71 (113) type transacitons are supported through the Transaction Builder (DIY) or Smart Wallets (Managed).
+
+**DIY Approach**
+
+```csharp
+var tx = await ThirdwebTransaction.Create(
+    client: client,
+    wallet: privateKeyWallet,
+    txInput: new ThirdwebTransactionInput()
+    {
+        From = await privateKeyWallet.GetAddress(),
+        To = await privateKeyWallet.GetAddress(),
+        Value = new HexBigInteger(BigInteger.Zero),
+    },
+    chainId: 300
+);
+tx.SetZkSyncOptions(
+    new ZkSyncOptions(
+        paymaster: "0xMyGaslessPaymaster",
+        paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+    )
+);
+var txHash = await ThirdwebTransaction.Send(transaction: tx);
+Console.WriteLine($"Transaction hash: {txHash}");
+```
+
+**Managed Approach**
+
+With ZkSync, you don't need to pass an account factory address, and the rest works the same.
+
+```csharp
+var zkSyncWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, gasless: true, chainId: 300);
+
+Console.WriteLine($"ZkSync Smart Wallet: {await zkSyncWallet.GetAddress()}");
+
+var zkSyncWriteResult = await ThirdwebContract.Write(zkSyncWallet, contract, "mintTo", 0, await zkSyncWallet.GetAddress(), 100);
+Console.WriteLine($"ZkSync gasless transaction result: {zkSyncWriteResult}");
+```
+
+**Storage Solutions**
+
+Download and upload files using IPFS. This is useful for decentralized storage solutions.
+
+```csharp
+var downloadResult = await ThirdwebStorage.Download<string>(client: client, uri: "ipfs://exampleUri");
+Console.WriteLine($"Download result: {downloadResult}");
+
+var uploadResult = await ThirdwebStorage.Upload(client: client, path: "path/to/file");
+Console.WriteLine($"Upload result preview: {uploadResult.PreviewUrl}");
+```
+
+For more information, please refer to the [official documentation](https://portal.thirdweb.com/dotnet).
