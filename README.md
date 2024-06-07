@@ -1,7 +1,9 @@
 ![net-banner](https://github.com/thirdweb-dev/thirdweb-dotnet/assets/43042585/6abcdae9-b49f-492a-98de-b01756e21798)
 
-![NuGet Version](https://img.shields.io/nuget/v/Thirdweb)
-[![codecov](https://codecov.io/gh/thirdweb-dev/thirdweb-dotnet/graph/badge.svg?token=AFF179W07C)](https://codecov.io/gh/thirdweb-dev/thirdweb-dotnet)
+[<img alt="NuGet Version" src="https://img.shields.io/nuget/v/Thirdweb?logo=nuget&style=for-the-badge" height="30">](https://www.nuget.org/packages/Thirdweb)
+[<img alt="NuGet Downloads" src="https://img.shields.io/nuget/dt/Thirdweb?logo=nuget&style=for-the-badge" height="30">](https://www.nuget.org/packages/Thirdweb)
+[<img alt="Codecov" src="https://img.shields.io/codecov/c/github/thirdweb-dev/thirdweb-dotnet?logo=codecov&style=for-the-badge" height="30">](https://app.codecov.io/gh/thirdweb-dev/thirdweb-dotnet)
+
 
 ## Overview
 
