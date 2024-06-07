@@ -102,10 +102,22 @@ Console.WriteLine($"InAppWallet: {await inAppWallet.GetAddress()}");
 ```csharp
 var inAppWallet = await InAppWallet.Create(client, oauthProvider: OAuthProvider.Google);
 
-if (!await inAppWallet.IsConnected()) {
-    var loginResult = await inAppWallet.Login();
-    Console.WriteLine($"OAuth login result: {loginResult}");
-}
+// Windows console app example
+var address = await inAppWallet.LoginWithOauth(
+    isMobile: false,
+    browserOpenAction: (url) =>
+    {
+        var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+        _ = Process.Start(psi);
+    },
+);
+
+// Godot standalone example
+var address = await ThirdwebManager.Instance.InAppWallet.LoginWithOauth(
+        isMobile: OS.GetName() == "Android" || OS.GetName() == "iOS",
+        browserOpenAction: (url) => OS.ShellOpen(url),
+        mobileRedirectScheme: "thirdweb://"
+);
 ```
 
 #### Smart Wallets
