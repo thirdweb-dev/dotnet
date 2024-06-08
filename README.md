@@ -9,6 +9,8 @@
 
 The Thirdweb .NET SDK is a comprehensive library that allows developers to interact with the blockchain using the .NET framework. It simplifies the integration of Web3 functionality into your .NET applications with a robust set of methods and classes.
 
+
+
 ## Features
 
 - **Connect to any EVM network:** Easily connect to Ethereum and other EVM-compatible networks.
@@ -20,6 +22,7 @@ The Thirdweb .NET SDK is a comprehensive library that allows developers to inter
 - **Storage Solutions:** Download and upload files using IPFS.
 - **Transaction Builder:** Easily build and send transactions.
 - **Session Keys:** Advanced control for smart wallets to manage permissions and session durations.
+- **Godot Compatibility**: This SDK has been tested successfully in [Godot .NET](https://portal.thirdweb.com/dotnet/godot)
 
 ## Installation
 
@@ -32,6 +35,8 @@ dotnet add package Thirdweb
 ```
 
 ## Usage
+
+You can access the full documentation at https://portal.thirdweb.com/dotnet
 
 ### Getting Started
 
@@ -187,7 +192,7 @@ Console.WriteLine($"Block number: {blockNumber}");
 
 **ZkSync Native Account Abstraction**
 
-ZkSync 0x71 (113) type transacitons are supported through the Transaction Builder (DIY) or Smart Wallets (Managed).
+ZkSync 0x71 (113) type transactions are supported through the Transaction Builder (DIY) or Smart Wallets (Managed).
 
 **DIY Approach**
 
