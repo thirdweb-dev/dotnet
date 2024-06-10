@@ -18,8 +18,28 @@ namespace Thirdweb.EWS
         public EmbeddedWallet(ThirdwebClient client, string storageDirectoryPath = null)
         {
             localStorage = new LocalStorage(client.ClientId, storageDirectoryPath);
-            server = new Server(client.ClientId, client.BundleId, "dotnet", Constants.VERSION, client.SecretKey);
-            ivGenerator = new IvGenerator();
+
+            // Create a new client of same type with extra needed headers for EWS
+            var platform = client.HttpClient.Headers["x-sdk-platform"] ?? "dotnet";
+            var version = client.HttpClient.Headers["x-sdk-version"] ?? Constants.VERSION;
+            var thirdwebHttpClientType = client.HttpClient.GetType();
+            var ewsHttpClient = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
+            var headers = client.HttpClient.Headers.ToDictionary(entry => entry.Key, entry => entry.Value);
+            if (client.ClientId != null)
+            {
+                headers.Add("x-thirdweb-client-id", client.ClientId);
+            }
+            if (client.SecretKey != null)
+            {
+                headers.Add("x-thirdweb-secret-key", client.SecretKey);
+            }
+            headers.Add("x-session-nonce", Guid.NewGuid().ToString());
+            headers.Add("x-embedded-wallet-version", $"{platform}:{version}");
+            ewsHttpClient.SetHeaders(headers);
+
+            server = new Server(client, ewsHttpClient);
+
+            ivGenerator = new IvGenerator(storageDirectoryPath);
         }
     }
 }

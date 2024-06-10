@@ -554,7 +554,7 @@ namespace Thirdweb
             return cost;
         }
 
-        public async Task<string> SignTransaction(ThirdwebTransactionInput transaction, BigInteger chainId)
+        public async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
         {
             if (IsZkSync)
             {
@@ -575,15 +575,15 @@ namespace Thirdweb
             return Task.CompletedTask;
         }
 
-        public virtual async Task<string> Authenticate(
+        public async Task<string> Authenticate(
             string domain,
             BigInteger chainId,
             string authPayloadPath = "/auth/payload",
             string authLoginPath = "/auth/login",
-            IThirdwebHttpClient httpClient = null
+            IThirdwebHttpClient httpClientOverride = null
         )
         {
-            return await _personalAccount.Authenticate(domain, chainId, authPayloadPath, authLoginPath, httpClient);
+            return await _personalAccount.Authenticate(domain, chainId, authPayloadPath, authLoginPath, httpClientOverride);
         }
     }
 }

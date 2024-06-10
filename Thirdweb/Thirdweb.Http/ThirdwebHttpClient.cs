@@ -2,39 +2,40 @@ namespace Thirdweb
 {
     public class ThirdwebHttpClient : IThirdwebHttpClient
     {
+        public Dictionary<string, string> Headers { get; private set; }
+
         private readonly HttpClient _httpClient;
-        private Dictionary<string, string> _headers;
         private bool _disposed;
 
         public ThirdwebHttpClient()
         {
             _httpClient = new HttpClient();
-            _headers = new Dictionary<string, string>();
+            Headers = new Dictionary<string, string>();
         }
 
         public void SetHeaders(Dictionary<string, string> headers)
         {
-            _headers = new Dictionary<string, string>(headers);
+            Headers = new Dictionary<string, string>(headers);
         }
 
         public void ClearHeaders()
         {
-            _headers.Clear();
+            Headers.Clear();
         }
 
         public void AddHeader(string key, string value)
         {
-            _headers.Add(key, value);
+            Headers.Add(key, value);
         }
 
         public void RemoveHeader(string key)
         {
-            _ = _headers.Remove(key);
+            _ = Headers.Remove(key);
         }
 
         private void AddHeaders(HttpRequestMessage request)
         {
-            foreach (var header in _headers)
+            foreach (var header in Headers)
             {
                 _ = request.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }

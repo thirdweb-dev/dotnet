@@ -242,7 +242,7 @@ namespace Thirdweb
 
         public static async Task<string> Sign(ThirdwebTransaction transaction)
         {
-            return await transaction._wallet.SignTransaction(transaction.Input, transaction.Input.ChainId.Value);
+            return await transaction._wallet.SignTransaction(transaction.Input);
         }
 
         public static async Task<string> Send(ThirdwebTransaction transaction)
@@ -291,8 +291,8 @@ namespace Thirdweb
                         hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
                         break;
                     case ThirdwebAccountType.SmartAccount:
-                        var smartAccount = transaction._wallet as SmartWallet;
-                        hash = await smartAccount.SendTransaction(transaction.Input);
+                    case ThirdwebAccountType.ExternalAccount:
+                        hash = await transaction._wallet.SendTransaction(transaction.Input);
                         break;
                     default:
                         throw new NotImplementedException("Account type not supported");

@@ -4,11 +4,12 @@ namespace Thirdweb
 {
     public class ThirdwebClient
     {
+        public IThirdwebHttpClient HttpClient { get; }
+
         internal string SecretKey { get; }
         internal string ClientId { get; }
         internal string BundleId { get; }
         internal ITimeoutOptions FetchTimeoutOptions { get; }
-        internal IThirdwebHttpClient HttpClient { get; }
 
         private ThirdwebClient(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null, IThirdwebHttpClient httpClient = null)
         {
@@ -31,9 +32,10 @@ namespace Thirdweb
 
             FetchTimeoutOptions = fetchTimeoutOptions ?? new TimeoutOptions();
 
-            HttpClient =
-                httpClient
-                ?? ThirdwebHttpClientFactory.CreateThirdwebHttpClient(
+            if (httpClient == null)
+            {
+                HttpClient = new ThirdwebHttpClient();
+                HttpClient.SetHeaders(
                     new Dictionary<string, string>
                     {
                         { "x-sdk-name", "Thirdweb.NET" },
@@ -45,6 +47,11 @@ namespace Thirdweb
                         { "x-bundle-id", BundleId }
                     }
                 );
+            }
+            else
+            {
+                HttpClient = httpClient;
+            }
         }
 
         public static ThirdwebClient Create(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null, IThirdwebHttpClient httpClient = null)

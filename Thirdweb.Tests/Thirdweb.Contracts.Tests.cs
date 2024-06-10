@@ -11,7 +11,7 @@ public class ContractsTests : BaseTests
     [Fact]
     public async Task FetchAbi()
     {
-        var abi = await ThirdwebContract.FetchAbi(address: "0x1320Cafa93fb53Ed9068E3272cb270adbBEf149C", chainId: 84532);
+        var abi = await ThirdwebContract.FetchAbi(client: ThirdwebClient.Create(secretKey: _secretKey), address: "0x1320Cafa93fb53Ed9068E3272cb270adbBEf149C", chainId: 84532);
         Assert.NotNull(abi);
         Assert.NotEmpty(abi);
     }

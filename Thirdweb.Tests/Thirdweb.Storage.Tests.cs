@@ -52,7 +52,7 @@ public class StorageTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var exception = await Assert.ThrowsAsync<Exception>(() => ThirdwebStorage.Download<string>(client, "https://0.rpc.thirdweb.com/"));
         Assert.Contains("Failed to download", exception.Message);
-        Assert.Contains("BadRequest", exception.Message);
+        Assert.Contains("400", exception.Message);
     }
 
     [Fact]
@@ -99,6 +99,6 @@ public class StorageTests : BaseTests
         File.WriteAllText(path, "{\"test\": \"test\"}");
         var exception = await Assert.ThrowsAsync<Exception>(() => ThirdwebStorage.Upload(client, path));
         Assert.Contains("Failed to upload", exception.Message);
-        Assert.Contains("Unauthorized", exception.Message);
+        Assert.Contains("401", exception.Message);
     }
 }

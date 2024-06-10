@@ -121,9 +121,10 @@ public class WalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             GasPrice = new HexBigInteger(10000000000),
             Nonce = new HexBigInteger(9999999999999),
+            ChainId = new HexBigInteger(421614),
         };
         var rpc = ThirdwebRPC.GetRpcInstance(ThirdwebClient.Create(secretKey: _secretKey), 421614);
-        var signature = await wallet.SignTransaction(transaction, 421614);
+        var signature = await wallet.SignTransaction(transaction);
         Assert.NotNull(signature);
     }
 }

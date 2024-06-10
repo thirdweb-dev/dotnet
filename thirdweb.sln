@@ -19,8 +19,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-		UnityDebug|Any CPU = UnityDebug|Any CPU
-		UnityRelease|Any CPU = UnityRelease|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -35,10 +33,6 @@ Global
 		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.Release|x64.Build.0 = Release|Any CPU
 		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.Release|x86.ActiveCfg = Release|Any CPU
 		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.Release|x86.Build.0 = Release|Any CPU
-		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.UnityDebug|Any CPU.ActiveCfg = UnityDebug|Any CPU
-		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.UnityDebug|Any CPU.Build.0 = UnityDebug|Any CPU
-		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.UnityRelease|Any CPU.ActiveCfg = UnityRelease|Any CPU
-		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.UnityRelease|Any CPU.Build.0 = UnityRelease|Any CPU
 
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Debug|Any CPU.Build.0 = Debug|Any CPU
@@ -52,10 +46,6 @@ Global
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Release|x64.Build.0 = Release|Any CPU
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Release|x86.ActiveCfg = Release|Any CPU
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Release|x86.Build.0 = Release|Any CPU
-		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.UnityDebug|Any CPU.ActiveCfg = UnityDebug|Any CPU
-		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.UnityDebug|Any CPU.Build.0 = UnityDebug|Any CPU
-		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.UnityRelease|Any CPU.ActiveCfg = UnityRelease|Any CPU
-		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.UnityRelease|Any CPU.Build.0 = UnityRelease|Any CPU
 
 		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.Debug|Any CPU.Build.0 = Debug|Any CPU
@@ -69,9 +59,5 @@ Global
 		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.Release|x64.Build.0 = Release|Any CPU
 		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.Release|x86.ActiveCfg = Release|Any CPU
 		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.Release|x86.Build.0 = Release|Any CPU
-		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.UnityDebug|Any CPU.ActiveCfg = UnityDebug|Any CPU
-		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.UnityDebug|Any CPU.Build.0 = UnityDebug|Any CPU
-		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.UnityRelease|Any CPU.ActiveCfg = UnityRelease|Any CPU
-		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.UnityRelease|Any CPU.Build.0 = UnityRelease|Any CPU
 	EndGlobalSection
 EndGlobal

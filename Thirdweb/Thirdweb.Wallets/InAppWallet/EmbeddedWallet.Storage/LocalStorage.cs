@@ -1,11 +1,4 @@
-using System;
-using System.IO;
 using System.Runtime.Serialization.Json;
-using System.Security;
-using System.Threading.Tasks;
-#if UNITY_5_3_OR_NEWER
-using UnityEngine;
-#endif
 
 namespace Thirdweb.EWS
 {
@@ -30,12 +23,7 @@ namespace Thirdweb.EWS
         internal LocalStorage(string clientId, string storageDirectoryPath = null)
         {
             string directory;
-#if UNITY_5_3_OR_NEWER
-                directory = Application.persistentDataPath;
-#else
             directory = storageDirectoryPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            // Console.WriteLine($"Embedded Wallet Storage: Using '{directory}'");
-#endif
             directory = Path.Combine(directory, "EWS");
             Directory.CreateDirectory(directory);
             filePath = Path.Combine(directory, $"{clientId}.txt");

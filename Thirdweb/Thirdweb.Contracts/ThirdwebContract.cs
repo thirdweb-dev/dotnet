@@ -36,15 +36,15 @@ namespace Thirdweb
                 throw new ArgumentException("Chain must be provided");
             }
 
-            abi ??= await FetchAbi(address, chain);
+            abi ??= await FetchAbi(client, address, chain);
             return new ThirdwebContract(client, address, chain, abi);
         }
 
-        public static async Task<string> FetchAbi(string address, BigInteger chainId)
+        public static async Task<string> FetchAbi(ThirdwebClient client, string address, BigInteger chainId)
         {
             var url = $"https://contract.thirdweb.com/abi/{chainId}/{address}";
-            using var client = ThirdwebHttpClientFactory.CreateThirdwebHttpClient();
-            var response = await client.GetAsync(url).ConfigureAwait(false);
+            var httpClient = client.HttpClient;
+            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
             _ = response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
         }

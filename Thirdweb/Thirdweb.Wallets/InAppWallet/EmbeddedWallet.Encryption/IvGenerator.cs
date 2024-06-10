@@ -1,7 +1,4 @@
 using System.Security.Cryptography;
-#if UNITY_5_3_OR_NEWER
-using UnityEngine;
-#endif
 
 namespace Thirdweb.EWS
 {
@@ -18,14 +15,10 @@ namespace Thirdweb.EWS
         private const long prbsPeriod = (1L << nPrbsBits) - 1;
         private static readonly long taps = new int[] { nPrbsBits, 47, 21, 20 }.Aggregate(0L, (a, b) => a + (1L << (nPrbsBits - b))); // https://docs.xilinx.com/v/u/en-US/xapp052, page 5
 
-        internal IvGenerator()
+        internal IvGenerator(string storageDirectoryPath = null)
         {
             string directory;
-#if UNITY_5_3_OR_NEWER
-                directory = Application.persistentDataPath;
-#else
-            directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-#endif
+            directory = storageDirectoryPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             directory = Path.Combine(directory, "EWS");
             Directory.CreateDirectory(directory);
             ivFilePath = Path.Combine(directory, "iv.txt");

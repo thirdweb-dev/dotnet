@@ -2,6 +2,7 @@ namespace Thirdweb
 {
     public interface IThirdwebHttpClient : IDisposable
     {
+        Dictionary<string, string> Headers { get; }
         void SetHeaders(Dictionary<string, string> headers);
         void ClearHeaders();
         void AddHeader(string key, string value);

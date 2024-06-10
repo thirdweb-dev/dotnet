@@ -180,9 +180,10 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            GasPrice = new HexBigInteger(10000000000)
+            GasPrice = new HexBigInteger(10000000000),
+            ChainId = new HexBigInteger(421614)
         };
-        var signature = await account.SignTransaction(transaction, 421614);
+        var signature = await account.SignTransaction(transaction);
         Assert.NotNull(signature);
     }
 
@@ -197,9 +198,10 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            GasPrice = new HexBigInteger(10000000000)
+            GasPrice = new HexBigInteger(10000000000),
+            ChainId = new HexBigInteger(421614)
         };
-        var signature = await account.SignTransaction(transaction, 421614);
+        var signature = await account.SignTransaction(transaction);
         Assert.NotNull(signature);
     }
 
@@ -207,7 +209,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_NullTransaction()
     {
         var account = await GetAccount();
-        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTransaction(null, 421614));
+        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTransaction(null));
         Assert.Equal("Value cannot be null. (Parameter 'transaction')", ex.Message);
     }
 
@@ -223,7 +225,7 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x"
         };
-        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTransaction(transaction, 421614));
+        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction nonce has not been set (Parameter 'transaction')", ex.Message);
     }
 
@@ -238,9 +240,10 @@ public class PrivateKeyWalletTests : BaseTests
             Value = new HexBigInteger(0),
             Gas = new HexBigInteger(21000),
             Data = "0x",
-            Nonce = new HexBigInteger(99999999999)
+            Nonce = new HexBigInteger(99999999999),
+            ChainId = new HexBigInteger(421614)
         };
-        var ex = await Assert.ThrowsAsync<Exception>(() => account.SignTransaction(transaction, 421614));
+        var ex = await Assert.ThrowsAsync<Exception>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction 'From' address does not match the wallet address", ex.Message);
     }
 
@@ -255,9 +258,10 @@ public class PrivateKeyWalletTests : BaseTests
             Value = new HexBigInteger(0),
             Gas = new HexBigInteger(21000),
             Data = "0x",
-            Nonce = new HexBigInteger(99999999999)
+            Nonce = new HexBigInteger(99999999999),
+            ChainId = new HexBigInteger(421614)
         };
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction, 421614));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);
     }
 
@@ -274,9 +278,10 @@ public class PrivateKeyWalletTests : BaseTests
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
             MaxFeePerGas = new HexBigInteger(10000000000),
-            MaxPriorityFeePerGas = new HexBigInteger(10000000000)
+            MaxPriorityFeePerGas = new HexBigInteger(10000000000),
+            ChainId = new HexBigInteger(421614)
         };
-        var signature = await account.SignTransaction(transaction, 421614);
+        var signature = await account.SignTransaction(transaction);
         Assert.NotNull(signature);
     }
 
@@ -292,9 +297,10 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            MaxPriorityFeePerGas = new HexBigInteger(10000000000)
+            MaxPriorityFeePerGas = new HexBigInteger(10000000000),
+            ChainId = new HexBigInteger(421614)
         };
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction, 421614));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);
     }
 
@@ -310,9 +316,10 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            MaxFeePerGas = new HexBigInteger(10000000000)
+            MaxFeePerGas = new HexBigInteger(10000000000),
+            ChainId = new HexBigInteger(421614)
         };
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction, 421614));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);
     }
 

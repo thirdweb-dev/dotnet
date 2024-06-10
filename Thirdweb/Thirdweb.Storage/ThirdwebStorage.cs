@@ -13,7 +13,7 @@ namespace Thirdweb
 
             uri = uri.ReplaceIPFS($"https://{client.ClientId}.ipfscdn.io/ipfs/");
 
-            using var httpClient = ThirdwebHttpClientFactory.CreateThirdwebHttpClient();
+            var httpClient = client.HttpClient;
 
             if (Utils.IsThirdwebRequest(uri))
             {
@@ -44,7 +44,7 @@ namespace Thirdweb
 
             using var form = new MultipartFormDataContent { { new ByteArrayContent(File.ReadAllBytes(path)), "file", Path.GetFileName(path) } };
 
-            using var httpClient = ThirdwebHttpClientFactory.CreateThirdwebHttpClient();
+            var httpClient = client.HttpClient;
 
             var headers = Utils.GetThirdwebHeaders(client);
             httpClient.SetHeaders(headers);

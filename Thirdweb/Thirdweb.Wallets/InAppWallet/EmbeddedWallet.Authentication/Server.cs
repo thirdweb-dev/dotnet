@@ -46,50 +46,16 @@ namespace Thirdweb.EWS
         private const string ROOT_URL_LEGACY = "https://ews.thirdweb.com";
         private const string API_ROOT_PATH = "/api/2023-10-20";
         private const string API_ROOT_PATH_LEGACY = "/api/2022-08-12";
-        private const string SESSION_NONCE_HEADER = "x-session-nonce";
-        private const string EMBEDDED_WALLET_VERSION_HEADER = "x-embedded-wallet-version";
 
         private static readonly MediaTypeHeaderValue jsonContentType = MediaTypeHeaderValue.Parse("application/json");
         private readonly IThirdwebHttpClient httpClient;
 
         private readonly string clientId;
 
-        internal Server(string clientId, string bundleId, string platform, string version, string secretKey)
+        internal Server(ThirdwebClient client, IThirdwebHttpClient httpClient)
         {
-            this.clientId = clientId;
-
-            // Basic headers
-            var headers = new Dictionary<string, string>
-            {
-                { "x-sdk-name", "Thirdweb.NET" },
-                { "x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription },
-                { "x-sdk-platform", "dotnet" },
-                { "x-sdk-version", Constants.VERSION },
-            };
-
-            // Api Key headers
-            if (!string.IsNullOrEmpty(clientId))
-            {
-                headers.Add("x-client-id", clientId);
-                headers.Add("x-thirdweb-client-id", clientId);
-            }
-
-            if (!string.IsNullOrEmpty(bundleId))
-            {
-                headers.Add("x-bundle-id", bundleId);
-            }
-
-            if (!string.IsNullOrEmpty(secretKey))
-            {
-                headers.Add("x-secret-key", secretKey);
-                headers.Add("x-thirdweb-secret-key", secretKey);
-            }
-
-            // EWS headers
-            headers.Add(SESSION_NONCE_HEADER, Guid.NewGuid().ToString());
-            headers.Add(EMBEDDED_WALLET_VERSION_HEADER, $"{platform}:{version}");
-
-            httpClient = ThirdwebHttpClientFactory.CreateThirdwebHttpClient(headers);
+            this.clientId = client.ClientId;
+            this.httpClient = httpClient;
         }
 
         // embedded-wallet/verify-thirdweb-client-id
@@ -215,6 +181,7 @@ namespace Thirdweb.EWS
                 "/embedded-wallet/headless-oauth-login-link",
                 new Dictionary<string, string>
                 {
+                    // TODO: Use this for login link when it's ready in backend
                     { "platform", "unity" },
                     { "authProvider", authProvider },
                     { "baseUrl", "https://embedded-wallet.thirdweb.com" }
