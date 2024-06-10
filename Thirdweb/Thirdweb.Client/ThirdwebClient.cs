@@ -11,7 +11,14 @@ namespace Thirdweb
         internal string BundleId { get; }
         internal ITimeoutOptions FetchTimeoutOptions { get; }
 
-        private ThirdwebClient(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null, IThirdwebHttpClient httpClient = null)
+        private ThirdwebClient(
+            string clientId = null,
+            string secretKey = null,
+            string bundleId = null,
+            ITimeoutOptions fetchTimeoutOptions = null,
+            IThirdwebHttpClient httpClient = null,
+            Dictionary<string, string> headers = null
+        )
         {
             if (string.IsNullOrEmpty(clientId) && string.IsNullOrEmpty(secretKey))
             {
@@ -32,11 +39,10 @@ namespace Thirdweb
 
             FetchTimeoutOptions = fetchTimeoutOptions ?? new TimeoutOptions();
 
-            if (httpClient == null)
-            {
-                HttpClient = new ThirdwebHttpClient();
-                HttpClient.SetHeaders(
-                    new Dictionary<string, string>
+            HttpClient = httpClient ?? new ThirdwebHttpClient();
+            HttpClient.SetHeaders(
+                headers
+                    ?? new Dictionary<string, string>
                     {
                         { "x-sdk-name", "Thirdweb.NET" },
                         { "x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription },
@@ -46,17 +52,19 @@ namespace Thirdweb
                         { "x-secret-key", SecretKey },
                         { "x-bundle-id", BundleId }
                     }
-                );
-            }
-            else
-            {
-                HttpClient = httpClient;
-            }
+            );
         }
 
-        public static ThirdwebClient Create(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null, IThirdwebHttpClient httpClient = null)
+        public static ThirdwebClient Create(
+            string clientId = null,
+            string secretKey = null,
+            string bundleId = null,
+            ITimeoutOptions fetchTimeoutOptions = null,
+            IThirdwebHttpClient httpClient = null,
+            Dictionary<string, string> headers = null
+        )
         {
-            return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient);
+            return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient, headers);
         }
     }
 }

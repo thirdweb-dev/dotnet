@@ -20,11 +20,11 @@ namespace Thirdweb.EWS
             localStorage = new LocalStorage(client.ClientId, storageDirectoryPath);
 
             // Create a new client of same type with extra needed headers for EWS
-            var platform = client.HttpClient.Headers["x-sdk-platform"] ?? "dotnet";
-            var version = client.HttpClient.Headers["x-sdk-version"] ?? Constants.VERSION;
             var thirdwebHttpClientType = client.HttpClient.GetType();
             var ewsHttpClient = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
             var headers = client.HttpClient.Headers.ToDictionary(entry => entry.Key, entry => entry.Value);
+            var platform = client.HttpClient.Headers["x-sdk-platform"];
+            var version = client.HttpClient.Headers["x-sdk-version"];
             if (client.ClientId != null)
             {
                 headers.Add("x-thirdweb-client-id", client.ClientId);

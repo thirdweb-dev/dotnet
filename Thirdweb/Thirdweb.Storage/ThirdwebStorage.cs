@@ -15,12 +15,6 @@ namespace Thirdweb
 
             var httpClient = client.HttpClient;
 
-            if (Utils.IsThirdwebRequest(uri))
-            {
-                var headers = Utils.GetThirdwebHeaders(client);
-                httpClient.SetHeaders(headers);
-            }
-
             requestTimeout ??= client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage);
 
             var response = await httpClient.GetAsync(uri, new CancellationTokenSource(requestTimeout.Value).Token);
@@ -45,9 +39,6 @@ namespace Thirdweb
             using var form = new MultipartFormDataContent { { new ByteArrayContent(File.ReadAllBytes(path)), "file", Path.GetFileName(path) } };
 
             var httpClient = client.HttpClient;
-
-            var headers = Utils.GetThirdwebHeaders(client);
-            httpClient.SetHeaders(headers);
 
             var response = await httpClient.PostAsync(Constants.PIN_URI, form);
 

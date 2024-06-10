@@ -86,11 +86,6 @@ namespace Thirdweb.AccountAbstraction
             var requestMessageJson = JsonConvert.SerializeObject(requestMessage);
 
             var httpContent = new StringContent(requestMessageJson, System.Text.Encoding.UTF8, "application/json");
-            if (Utils.IsThirdwebRequest(url))
-            {
-                var headers = Utils.GetThirdwebHeaders(client);
-                httpClient.SetHeaders(headers);
-            }
 
             var httpResponse = await httpClient.PostAsync(url, httpContent);
 
