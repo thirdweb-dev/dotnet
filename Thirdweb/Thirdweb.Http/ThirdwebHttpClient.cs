@@ -63,26 +63,14 @@ namespace Thirdweb
             return new ThirdwebHttpResponseMessage((long)result.StatusCode, resultContent, result.IsSuccessStatusCode);
         }
 
-        public async Task<ThirdwebHttpResponseMessage> PutAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
+        public Task<ThirdwebHttpResponseMessage> PutAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
         {
-            var request = new HttpRequestMessage(HttpMethod.Put, requestUri) { Content = content };
-            AddHeaders(request);
-            var result = await _httpClient.SendAsync(request, cancellationToken);
-#pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
-            var resultContent = new ThirdwebHttpContent(await result.Content.ReadAsByteArrayAsync());
-#pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
-            return new ThirdwebHttpResponseMessage((long)result.StatusCode, resultContent, result.IsSuccessStatusCode);
+            throw new NotImplementedException();
         }
 
-        public async Task<ThirdwebHttpResponseMessage> DeleteAsync(string requestUri, CancellationToken cancellationToken = default)
+        public Task<ThirdwebHttpResponseMessage> DeleteAsync(string requestUri, CancellationToken cancellationToken = default)
         {
-            var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
-            AddHeaders(request);
-            var result = await _httpClient.SendAsync(request, cancellationToken);
-#pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
-            var resultContent = new ThirdwebHttpContent(await result.Content.ReadAsByteArrayAsync());
-#pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
-            return new ThirdwebHttpResponseMessage((long)result.StatusCode, resultContent, result.IsSuccessStatusCode);
+            throw new NotImplementedException();
         }
 
         protected virtual void Dispose(bool disposing)

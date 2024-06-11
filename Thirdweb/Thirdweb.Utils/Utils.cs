@@ -202,5 +202,10 @@ namespace Thirdweb
                 + resourcesString;
             return payloadToSign;
         }
+
+        public static bool IsZkSync(BigInteger chainId)
+        {
+            return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302);
+        }
     }
 }

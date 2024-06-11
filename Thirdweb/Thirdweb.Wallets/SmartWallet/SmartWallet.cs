@@ -24,7 +24,6 @@ namespace Thirdweb
         protected BigInteger _chainId;
         protected string _bundlerUrl;
         protected string _paymasterUrl;
-        protected bool IsZkSync => _chainId == 324 || _chainId == 300;
 
         protected SmartWallet(
             ThirdwebClient client,
@@ -74,7 +73,7 @@ namespace Thirdweb
             ThirdwebContract factoryContract = null;
             ThirdwebContract accountContract = null;
 
-            if (chainId != 324 && chainId != 300)
+            if (!Utils.IsZkSync(chainId))
             {
                 entryPointContract = await ThirdwebContract.Create(
                     client,
@@ -102,7 +101,7 @@ namespace Thirdweb
 
         public async Task<bool> IsDeployed()
         {
-            if (IsZkSync)
+            if (Utils.IsZkSync(_chainId))
             {
                 return true;
             }
@@ -118,7 +117,7 @@ namespace Thirdweb
                 throw new InvalidOperationException("SmartAccount.SendTransaction: Transaction input is required.");
             }
 
-            if (IsZkSync)
+            if (Utils.IsZkSync(_chainId))
             {
                 var transaction = await ThirdwebTransaction.Create(_client, _personalAccount, transactionInput, _chainId);
 
@@ -331,7 +330,7 @@ namespace Thirdweb
 
         public async Task ForceDeploy()
         {
-            if (IsZkSync)
+            if (Utils.IsZkSync(_chainId))
             {
                 return;
             }
@@ -353,7 +352,7 @@ namespace Thirdweb
 
         public async Task<string> GetAddress()
         {
-            return IsZkSync ? await _personalAccount.GetAddress() : _accountContract.Address;
+            return Utils.IsZkSync(_chainId) ? await _personalAccount.GetAddress() : _accountContract.Address;
         }
 
         public Task<string> EthSign(byte[] rawMessage)
@@ -373,7 +372,7 @@ namespace Thirdweb
 
         public async Task<string> PersonalSign(string message)
         {
-            if (IsZkSync)
+            if (Utils.IsZkSync(_chainId))
             {
                 return await _personalAccount.PersonalSign(message);
             }
@@ -434,7 +433,7 @@ namespace Thirdweb
             string reqValidityEndTimestamp
         )
         {
-            if (IsZkSync)
+            if (Utils.IsZkSync(_chainId))
             {
                 throw new Exception("Account Permissions are not supported in ZkSync");
             }
@@ -467,7 +466,7 @@ namespace Thirdweb
 
         public async Task<TransactionReceipt> AddAdmin(string admin)
         {
-            if (IsZkSync)
+            if (Utils.IsZkSync(_chainId))
             {
                 throw new Exception("Account Permissions are not supported in ZkSync");
             }
@@ -500,7 +499,7 @@ namespace Thirdweb
 
         public async Task<TransactionReceipt> RemoveAdmin(string admin)
         {
-            if (IsZkSync)
+            if (Utils.IsZkSync(_chainId))
             {
                 throw new Exception("Account Permissions are not supported in ZkSync");
             }
@@ -544,7 +543,7 @@ namespace Thirdweb
 
         public async Task<BigInteger> EstimateUserOperationGas(ThirdwebTransactionInput transaction, BigInteger chainId)
         {
-            if (IsZkSync)
+            if (Utils.IsZkSync(_chainId))
             {
                 throw new Exception("User Operations are not supported in ZkSync");
             }
@@ -556,7 +555,7 @@ namespace Thirdweb
 
         public async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
         {
-            if (IsZkSync)
+            if (Utils.IsZkSync(_chainId))
             {
                 throw new Exception("Offline Signing is not supported in ZkSync");
             }
@@ -566,7 +565,7 @@ namespace Thirdweb
 
         public async Task<bool> IsConnected()
         {
-            return IsZkSync ? await _personalAccount.IsConnected() : _accountContract != null;
+            return Utils.IsZkSync(_chainId) ? await _personalAccount.IsConnected() : _accountContract != null;
         }
 
         public Task Disconnect()

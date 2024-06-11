@@ -156,7 +156,7 @@ namespace Thirdweb
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             var chainId = transaction.Input.ChainId.Value;
 
-            if (IsZkSyncTransaction(transaction))
+            if (Utils.IsZkSync(transaction.Input.ChainId.Value))
             {
                 var fees = await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest");
                 var maxFee = fees["max_fee_per_gas"].ToObject<HexBigInteger>().Value;
@@ -209,7 +209,7 @@ namespace Thirdweb
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
 
-            if (IsZkSyncTransaction(transaction))
+            if (Utils.IsZkSync(transaction.Input.ChainId.Value))
             {
                 var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest"))["gas_limit"].ToString();
                 return new HexBigInteger(hex).Value * 10 / 5;
@@ -275,7 +275,12 @@ namespace Thirdweb
 
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             string hash;
-            if (IsZkSyncTransaction(transaction) && transaction.Input.ZkSync.HasValue && transaction.Input.ZkSync.Value.Paymaster != 0 && transaction.Input.ZkSync.Value.PaymasterInput != null)
+            if (
+                Utils.IsZkSync(transaction.Input.ChainId.Value)
+                && transaction.Input.ZkSync.HasValue
+                && transaction.Input.ZkSync.Value.Paymaster != 0
+                && transaction.Input.ZkSync.Value.PaymasterInput != null
+            )
             {
                 var zkTx = await ConvertToZkSyncTransaction(transaction);
                 var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet);
@@ -370,11 +375,6 @@ namespace Thirdweb
                 FactoryDeps = transaction.Input.ZkSync.Value.FactoryDeps,
                 PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput
             };
-        }
-
-        private static bool IsZkSyncTransaction(ThirdwebTransaction transaction)
-        {
-            return transaction.Input.ChainId.Value.Equals(324) || transaction.Input.ChainId.Value.Equals(300);
         }
     }
 }
