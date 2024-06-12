@@ -357,14 +357,23 @@ public class TransactionTests : BaseTests
     [Fact]
     public async Task EstimateGasFees_ReturnsCorrectly()
     {
-        var transaction = await CreateSampleTransaction();
-        _ = transaction.SetValue(new BigInteger(1000));
-        _ = transaction.SetTo(Constants.ADDRESS_ZERO);
+        var transaction = await ThirdwebTransaction.Create(
+            ThirdwebClient.Create(secretKey: _secretKey),
+            await PrivateKeyWallet.Create(ThirdwebClient.Create(secretKey: _secretKey), _testPrivateKey),
+            new ThirdwebTransactionInput()
+            {
+                To = Constants.ADDRESS_ZERO,
+                Value = new HexBigInteger(0),
+                Data = "0x",
+            },
+            250 // fantom for 1559 non zero prio
+        );
 
         (var maxFee, var maxPrio) = await ThirdwebTransaction.EstimateGasFees(transaction);
 
         Assert.NotEqual(BigInteger.Zero, maxFee);
         Assert.NotEqual(BigInteger.Zero, maxPrio);
+        Assert.NotEqual(maxFee, maxPrio);
     }
 
     [Fact]

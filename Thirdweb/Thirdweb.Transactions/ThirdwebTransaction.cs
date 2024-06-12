@@ -166,31 +166,31 @@ namespace Thirdweb
 
             var gasPrice = await EstimateGasPrice(transaction, withBump);
 
+            // Polygon Mainnet & Amoy
+            if (chainId == 137 || chainId == 80002)
+            {
+                return new(gasPrice * 3 / 2, gasPrice * 4 / 3);
+            }
+
+            // Celo Mainnet, Alfajores & Baklava
+            if (chainId == 42220 || chainId == 44787 || chainId == 62320)
+            {
+                return new(gasPrice, gasPrice);
+            }
+
             try
             {
-                var block = await rpc.SendRequestAsync<JObject>("eth_getBlockByNumber", "latest", true);
-                var maxPriorityFeePerGas = await rpc.SendRequestAsync<BigInteger?>("eth_maxPriorityFeePerGas");
-                var baseBlockFee = block["result"]?["baseFeePerGas"]?.ToObject<BigInteger>() ?? new BigInteger(100);
+                var block = await rpc.SendRequestAsync<JObject>(method: "eth_getBlockByNumber", "latest", true);
+                var baseBlockFee = block["baseFeePerGas"]?.ToObject<HexBigInteger>();
+                var maxFeePerGas = baseBlockFee.Value * 2;
+                var maxPriorityFeePerGas = ((await rpc.SendRequestAsync<HexBigInteger>("eth_maxPriorityFeePerGas"))?.Value) ?? maxFeePerGas / 2;
 
-                if (chainId == 42220 || chainId == 44787 || chainId == 62320)
+                if (maxPriorityFeePerGas > maxFeePerGas)
                 {
-                    return (gasPrice, gasPrice);
+                    maxPriorityFeePerGas = maxFeePerGas / 2;
                 }
 
-                if (!maxPriorityFeePerGas.HasValue)
-                {
-                    maxPriorityFeePerGas = new BigInteger(2);
-                }
-
-                var preferredMaxPriorityFeePerGas = maxPriorityFeePerGas.Value * 10 / 9;
-                var maxFeePerGas = (baseBlockFee * 2) + preferredMaxPriorityFeePerGas;
-
-                if (withBump)
-                {
-                    maxFeePerGas *= 10 / 9;
-                }
-
-                return (maxFeePerGas, preferredMaxPriorityFeePerGas);
+                return new((maxFeePerGas + maxPriorityFeePerGas) * 10 / 9, maxPriorityFeePerGas * 10 / 9);
             }
             catch
             {
