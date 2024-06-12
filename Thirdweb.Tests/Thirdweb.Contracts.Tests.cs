@@ -133,7 +133,7 @@ public class ContractsTests : BaseTests
     public async Task SignatureMint_Generate()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var signer = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var signer = await PrivateKeyWallet.Generate(client);
 
         var randomDomain = "Test";
         var randomVersion = "1.0.0";

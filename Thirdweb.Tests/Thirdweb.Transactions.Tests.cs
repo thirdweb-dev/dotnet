@@ -12,7 +12,7 @@ public class TransactionTests : BaseTests
     private async Task<ThirdwebTransaction> CreateSampleTransaction()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var wallet = await PrivateKeyWallet.Generate(client);
         var chainId = new BigInteger(421614);
 
         var transaction = await ThirdwebTransaction.Create(client, wallet, new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = await wallet.GetAddress(), }, chainId);
@@ -23,7 +23,7 @@ public class TransactionTests : BaseTests
     public async Task Create_ValidatesInputParameters()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
         var chainId = new BigInteger(421614);
         var transaction = await ThirdwebTransaction.Create(client, wallet, txInput, chainId);
@@ -34,7 +34,7 @@ public class TransactionTests : BaseTests
     public async Task Create_ThrowsOnNoTo()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress() };
         var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, 421614));
         Assert.Contains("Transaction recipient (to) must be provided", ex.Message);
@@ -44,7 +44,7 @@ public class TransactionTests : BaseTests
     public async Task Create_ThrowsOnInvalidAddress()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = "0xHello", To = Constants.ADDRESS_ZERO };
         var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, 421614));
         Assert.Contains("Transaction sender (from) must match wallet address", ex.Message);
@@ -54,7 +54,7 @@ public class TransactionTests : BaseTests
     public async Task Create_ThrowsOnNoClient()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
         var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(null, wallet, txInput, 421614));
         Assert.Contains("Client must be provided", ex.Message);
@@ -64,7 +64,7 @@ public class TransactionTests : BaseTests
     public async Task Create_ThrowsOnNoWallet()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
         var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, null, txInput, 421614));
         Assert.Contains("Wallet must be provided", ex.Message);
@@ -74,7 +74,7 @@ public class TransactionTests : BaseTests
     public async Task Create_ThrowsOnChainIdZero()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
         var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
         Assert.Contains("Invalid Chain ID", ex.Message);
@@ -158,7 +158,7 @@ public class TransactionTests : BaseTests
     public async Task Sign_SmartWallet_SignsTransaction()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         var transaction = await ThirdwebTransaction.Create(
             client,
@@ -359,7 +359,7 @@ public class TransactionTests : BaseTests
     {
         var transaction = await ThirdwebTransaction.Create(
             ThirdwebClient.Create(secretKey: _secretKey),
-            await PrivateKeyWallet.Create(ThirdwebClient.Create(secretKey: _secretKey), _testPrivateKey),
+            await PrivateKeyWallet.Generate(ThirdwebClient.Create(secretKey: _secretKey)),
             new ThirdwebTransactionInput()
             {
                 To = Constants.ADDRESS_ZERO,
@@ -401,7 +401,7 @@ public class TransactionTests : BaseTests
     public async Task Simulate_ReturnsDataOrThrowsIntrinsic()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         var transaction = await ThirdwebTransaction.Create(
             client,

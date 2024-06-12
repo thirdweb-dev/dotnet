@@ -12,7 +12,7 @@ public class PrivateKeyWalletTests : BaseTests
     private async Task<PrivateKeyWallet> GetAccount()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client: client, privateKeyHex: _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         return privateKeyAccount;
     }
 

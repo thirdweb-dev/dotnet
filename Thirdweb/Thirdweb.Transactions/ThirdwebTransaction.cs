@@ -237,7 +237,7 @@ namespace Thirdweb
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest"))["gas_per_pubdata_limit"].ToString();
-            return new HexBigInteger(hex).Value * 3 / 2;
+            return new HexBigInteger(hex).Value * 10 / 5;
         }
 
         public static async Task<string> Sign(ThirdwebTransaction transaction)

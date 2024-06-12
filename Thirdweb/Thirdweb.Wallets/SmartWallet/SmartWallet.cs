@@ -435,7 +435,7 @@ namespace Thirdweb
         {
             if (Utils.IsZkSync(_chainId))
             {
-                throw new Exception("Account Permissions are not supported in ZkSync");
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
             }
 
             var request = new SignerPermissionRequest()
@@ -468,7 +468,7 @@ namespace Thirdweb
         {
             if (Utils.IsZkSync(_chainId))
             {
-                throw new Exception("Account Permissions are not supported in ZkSync");
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
             }
 
             var request = new SignerPermissionRequest()
@@ -501,7 +501,7 @@ namespace Thirdweb
         {
             if (Utils.IsZkSync(_chainId))
             {
-                throw new Exception("Account Permissions are not supported in ZkSync");
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
             }
 
             var request = new SignerPermissionRequest()

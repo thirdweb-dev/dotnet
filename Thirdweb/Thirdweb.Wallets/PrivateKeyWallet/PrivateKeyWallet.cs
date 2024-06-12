@@ -32,6 +32,11 @@ namespace Thirdweb
                 : Task.FromResult(new PrivateKeyWallet(client, new EthECKey(privateKeyHex)));
         }
 
+        public static Task<PrivateKeyWallet> Generate(ThirdwebClient client)
+        {
+            return Task.FromResult(new PrivateKeyWallet(client, EthECKey.GenerateKey()));
+        }
+
         public virtual Task<string> GetAddress()
         {
             return Task.FromResult(_ecKey.GetPublicAddress());
