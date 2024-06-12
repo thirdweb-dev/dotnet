@@ -94,6 +94,11 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(contract));
             }
 
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
             if (string.IsNullOrEmpty(spenderAddress))
             {
                 throw new ArgumentException("Spender address must be provided");
@@ -110,6 +115,11 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(contract));
             }
 
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
             if (string.IsNullOrEmpty(toAddress))
             {
                 throw new ArgumentException("Recipient address must be provided");
@@ -124,6 +134,11 @@ namespace Thirdweb
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
             }
 
             if (string.IsNullOrEmpty(fromAddress))

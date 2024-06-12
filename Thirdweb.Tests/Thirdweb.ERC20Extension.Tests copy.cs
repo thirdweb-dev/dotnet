@@ -19,6 +19,56 @@ namespace Thirdweb.Tests
         }
 
         [Fact]
+        public async Task NullChecks()
+        {
+            var client = ThirdwebClient.Create(secretKey: _secretKey);
+            var contract = await ThirdwebContract.Create(client, _erc20ContractAddress, _chainId);
+            var wallet = await GetWallet();
+
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_BalanceOf(null));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_BalanceOf(string.Empty));
+
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_Allowance(null, null));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_Allowance(string.Empty, null));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_Allowance(null, string.Empty));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_Allowance(Constants.ADDRESS_ZERO, null));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_Allowance(null, Constants.ADDRESS_ZERO));
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_Approve(null, null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_Approve(wallet, null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_Approve(wallet, string.Empty, BigInteger.Zero));
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_Transfer(null, null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_Transfer(wallet, null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_Transfer(wallet, string.Empty, BigInteger.Zero));
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_TransferFrom(null, null, null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_TransferFrom(wallet, null, null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_TransferFrom(wallet, string.Empty, null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_TransferFrom(wallet, null, string.Empty, BigInteger.Zero));
+
+            contract = null;
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_BalanceOf(Constants.ADDRESS_ZERO));
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_TotalSupply());
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_Decimals());
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_Symbol());
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_Name());
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_Allowance(null, null));
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_Approve(wallet, Constants.ADDRESS_ZERO, BigInteger.Zero));
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_Transfer(wallet, Constants.ADDRESS_ZERO, BigInteger.Zero));
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_TransferFrom(wallet, Constants.ADDRESS_ZERO, Constants.ADDRESS_ZERO, BigInteger.Zero));
+        }
+
+        [Fact]
         public async Task ERC20_BalanceOf()
         {
             var client = ThirdwebClient.Create(secretKey: _secretKey);
