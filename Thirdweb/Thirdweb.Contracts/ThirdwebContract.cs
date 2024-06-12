@@ -11,6 +11,8 @@ namespace Thirdweb
         internal BigInteger Chain { get; private set; }
         internal string Abi { get; private set; }
 
+        private static Dictionary<string, string> _contractAbiCache = new();
+
         private ThirdwebContract(ThirdwebClient client, string address, BigInteger chain, string abi)
         {
             Client = client;
@@ -42,11 +44,18 @@ namespace Thirdweb
 
         public static async Task<string> FetchAbi(ThirdwebClient client, string address, BigInteger chainId)
         {
+            if (_contractAbiCache.TryGetValue($"{address}:{chainId}", out var cachedAbi))
+            {
+                return cachedAbi;
+            }
+
             var url = $"https://contract.thirdweb.com/abi/{chainId}/{address}";
             var httpClient = client.HttpClient;
             var response = await httpClient.GetAsync(url).ConfigureAwait(false);
             _ = response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            var abi = await response.Content.ReadAsStringAsync();
+            _contractAbiCache[$"{address}:{chainId}"] = abi;
+            return abi;
         }
 
         public static async Task<T> Read<T>(ThirdwebContract contract, string method, params object[] parameters)
