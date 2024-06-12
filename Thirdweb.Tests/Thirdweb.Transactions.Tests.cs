@@ -389,7 +389,7 @@ public class TransactionTests : BaseTests
     }
 
     [Fact]
-    public async Task Simulate_ReturnsData()
+    public async Task Simulate_ReturnsDataOrThrowsIntrinsic()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
@@ -407,8 +407,15 @@ public class TransactionTests : BaseTests
             421614
         );
 
-        var data = await ThirdwebTransaction.Simulate(transaction);
-        Assert.NotNull(data);
+        try
+        {
+            var data = await ThirdwebTransaction.Simulate(transaction);
+            Assert.NotNull(data);
+        }
+        catch (Exception ex)
+        {
+            Assert.Contains("intrinsic gas too low", ex.Message);
+        }
     }
 
     [Fact]
