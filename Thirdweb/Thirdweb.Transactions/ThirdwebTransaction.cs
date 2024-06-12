@@ -32,33 +32,33 @@ namespace Thirdweb
 
         public static async Task<ThirdwebTransaction> Create(ThirdwebClient client, IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
         {
-            var address = await wallet.GetAddress();
-            txInput.From ??= address;
-            txInput.Data ??= "0x";
-
-            if (txInput.To == null)
-            {
-                throw new ArgumentException("Transaction recipient (to) must be provided");
-            }
-
-            if (address != txInput.From)
-            {
-                throw new ArgumentException("Transaction sender (from) must match wallet address");
-            }
-
             if (client == null)
             {
-                throw new ArgumentNullException(nameof(client));
+                throw new ArgumentException("Client must be provided", nameof(client));
             }
 
             if (wallet == null)
             {
-                throw new ArgumentNullException(nameof(wallet));
+                throw new ArgumentException("Wallet must be provided", nameof(wallet));
             }
 
             if (chainId == 0)
             {
-                throw new ArgumentException("Invalid Chain ID");
+                throw new ArgumentException("Invalid Chain ID", nameof(chainId));
+            }
+
+            if (txInput.To == null)
+            {
+                throw new ArgumentException("Transaction recipient (to) must be provided", nameof(txInput));
+            }
+
+            var address = await wallet.GetAddress();
+            txInput.From ??= address;
+            txInput.Data ??= "0x";
+
+            if (address != txInput.From)
+            {
+                throw new ArgumentException("Transaction sender (from) must match wallet address", nameof(txInput));
             }
 
             return new ThirdwebTransaction(client, wallet, txInput, chainId);
@@ -237,7 +237,7 @@ namespace Thirdweb
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
             var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest"))["gas_per_pubdata_limit"].ToString();
-            return new HexBigInteger(hex).Value;
+            return new HexBigInteger(hex).Value * 3 / 2;
         }
 
         public static async Task<string> Sign(ThirdwebTransaction transaction)
