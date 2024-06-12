@@ -28,7 +28,7 @@ public class SmartWalletTests : BaseTests
     public async Task Initialization_Fail()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         await privateKeyAccount.Disconnect();
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614)
@@ -40,7 +40,7 @@ public class SmartWalletTests : BaseTests
     public async Task ForceDeploy_Success()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         await smartAccount.ForceDeploy();
         Assert.True(await smartAccount.IsDeployed());
@@ -57,7 +57,7 @@ public class SmartWalletTests : BaseTests
     public async Task IsDeployed_False()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(
             client,
             personalWallet: privateKeyAccount,
@@ -88,7 +88,7 @@ public class SmartWalletTests : BaseTests
     public async Task SendTransaction_ClientBundleId_Success()
     {
         var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         var tx = await smartAccount.SendTransaction(
             new ThirdwebTransactionInput()
@@ -130,7 +130,7 @@ public class SmartWalletTests : BaseTests
     public async Task GetAddress_WithOverride()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(
             client,
             personalWallet: privateKeyAccount,
