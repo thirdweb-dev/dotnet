@@ -9,18 +9,33 @@ namespace Thirdweb
         // Constructor to initialize from a string
         public ThirdwebHttpContent(string content)
         {
+            if (content == null)
+            {
+                throw new ArgumentNullException(nameof(content));
+            }
+
             this.content = Encoding.UTF8.GetBytes(content);
         }
 
         // Constructor to initialize from a byte array
         public ThirdwebHttpContent(byte[] content)
         {
+            if (content == null)
+            {
+                throw new ArgumentNullException(nameof(content));
+            }
+
             this.content = content;
         }
 
         // Constructor to initialize from a stream
         public ThirdwebHttpContent(Stream content)
         {
+            if (content == null)
+            {
+                throw new ArgumentNullException(nameof(content));
+            }
+
             using (var memoryStream = new MemoryStream())
             {
                 content.CopyTo(memoryStream);
