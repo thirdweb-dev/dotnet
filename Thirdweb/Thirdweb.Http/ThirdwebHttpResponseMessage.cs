@@ -1,5 +1,3 @@
-using System.Runtime.Serialization;
-
 namespace Thirdweb
 {
     public class ThirdwebHttpResponseMessage

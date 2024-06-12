@@ -261,5 +261,98 @@ namespace Thirdweb.Tests
 #nullable restore
 
         #endregion
+
+        #region ThirdwebHttpResponseMessage
+
+        [Fact]
+        public void Constructor_ShouldInitializeProperties()
+        {
+            // Arrange
+            var statusCode = 200;
+            var content = new ThirdwebHttpContent("Test Content");
+            var isSuccessStatusCode = true;
+
+            // Act
+            var responseMessage = new ThirdwebHttpResponseMessage(statusCode, content, isSuccessStatusCode);
+
+            // Assert
+            Assert.Equal(statusCode, responseMessage.StatusCode);
+            Assert.Equal(content, responseMessage.Content);
+            Assert.Equal(isSuccessStatusCode, responseMessage.IsSuccessStatusCode);
+        }
+
+        [Fact]
+        public void EnsureSuccessStatusCode_ShouldReturnSelfOnSuccess()
+        {
+            // Arrange
+            var statusCode = 200;
+            var content = new ThirdwebHttpContent("Test Content");
+            var isSuccessStatusCode = true;
+            var responseMessage = new ThirdwebHttpResponseMessage(statusCode, content, isSuccessStatusCode);
+
+            // Act
+            var result = responseMessage.EnsureSuccessStatusCode();
+
+            // Assert
+            Assert.Equal(responseMessage, result);
+        }
+
+        [Fact]
+        public async Task EnsureSuccessStatusCode_ShouldThrowExceptionOnFailure()
+        {
+            // Arrange
+            var statusCode = 400;
+            var content = new ThirdwebHttpContent("Error Content");
+            var isSuccessStatusCode = false;
+            var responseMessage = new ThirdwebHttpResponseMessage(statusCode, content, isSuccessStatusCode);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() => Task.FromResult(responseMessage.EnsureSuccessStatusCode()));
+            var contentString = await content.ReadAsStringAsync();
+            Assert.Equal($"Request failed with status code {statusCode} and content: {contentString}", exception.Message);
+        }
+
+        [Fact]
+        public void StatusCode_ShouldSetAndGet()
+        {
+            // Arrange
+            var responseMessage = new ThirdwebHttpResponseMessage(200, new ThirdwebHttpContent("Test Content"), true);
+
+            // Act
+            responseMessage.StatusCode = 404;
+
+            // Assert
+            Assert.Equal(404, responseMessage.StatusCode);
+        }
+
+        [Fact]
+        public void Content_ShouldSetAndGet()
+        {
+            // Arrange
+            var initialContent = new ThirdwebHttpContent("Initial Content");
+            var newContent = new ThirdwebHttpContent("New Content");
+            var responseMessage = new ThirdwebHttpResponseMessage(200, initialContent, true);
+
+            // Act
+            responseMessage.Content = newContent;
+
+            // Assert
+            Assert.Equal(newContent, responseMessage.Content);
+        }
+
+        [Fact]
+        public void IsSuccessStatusCode_ShouldSetAndGet()
+        {
+            // Arrange
+            var responseMessage = new ThirdwebHttpResponseMessage(200, new ThirdwebHttpContent("Test Content"), true);
+
+            // Act
+            responseMessage.IsSuccessStatusCode = false;
+
+            // Assert
+            Assert.False(responseMessage.IsSuccessStatusCode);
+        }
+
+        #endregion
     }
 }
