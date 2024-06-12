@@ -110,7 +110,7 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
-        public virtual async Task<string> SignTransaction(ThirdwebTransactionInput transaction, BigInteger chainId)
+        public virtual async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
         {
             if (transaction == null)
             {
@@ -137,7 +137,16 @@ namespace Thirdweb
             {
                 var gasPrice = transaction.GasPrice;
                 var legacySigner = new LegacyTransactionSigner();
-                signedTransaction = legacySigner.SignTransaction(_ecKey.GetPrivateKey(), chainId, transaction.To, value.Value, nonce, gasPrice.Value, gasLimit.Value, transaction.Data);
+                signedTransaction = legacySigner.SignTransaction(
+                    _ecKey.GetPrivateKey(),
+                    transaction.ChainId.Value,
+                    transaction.To,
+                    value.Value,
+                    nonce,
+                    gasPrice.Value,
+                    gasLimit.Value,
+                    transaction.Data
+                );
             }
             else
             {
@@ -147,7 +156,7 @@ namespace Thirdweb
                 }
                 var maxPriorityFeePerGas = transaction.MaxPriorityFeePerGas.Value;
                 var maxFeePerGas = transaction.MaxFeePerGas.Value;
-                var transaction1559 = new Transaction1559(chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, transaction.To, value, transaction.Data, null);
+                var transaction1559 = new Transaction1559(transaction.ChainId.Value, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, transaction.To, value, transaction.Data, null);
 
                 var signer = new Transaction1559Signer();
                 signer.SignTransaction(_ecKey, transaction1559);
@@ -168,7 +177,13 @@ namespace Thirdweb
             return Task.CompletedTask;
         }
 
-        public virtual async Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", HttpClient httpClient = null)
+        public virtual async Task<string> Authenticate(
+            string domain,
+            BigInteger chainId,
+            string authPayloadPath = "/auth/payload",
+            string authLoginPath = "/auth/login",
+            IThirdwebHttpClient httpClientOverride = null
+        )
         {
             var payloadURL = domain + authPayloadPath;
             var loginURL = domain + authLoginPath;
@@ -176,11 +191,10 @@ namespace Thirdweb
             var payloadBodyRaw = new { address = await GetAddress(), chainId = chainId.ToString() };
             var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
 
-            httpClient ??= new HttpClient();
+            using var httpClient = httpClientOverride ?? _client.HttpClient;
 
-            using var payloadRequest = new HttpRequestMessage(HttpMethod.Post, payloadURL);
-            payloadRequest.Content = new StringContent(payloadBody, Encoding.UTF8, "application/json");
-            var payloadResponse = await httpClient.SendAsync(payloadRequest);
+            var payloadContent = new StringContent(payloadBody, Encoding.UTF8, "application/json");
+            var payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);
             _ = payloadResponse.EnsureSuccessStatusCode();
             var payloadString = await payloadResponse.Content.ReadAsStringAsync();
 
@@ -190,12 +204,16 @@ namespace Thirdweb
             loginBodyRaw.signature = await PersonalSign(payloadToSign);
             var loginBody = JsonConvert.SerializeObject(new { payload = loginBodyRaw });
 
-            using var loginRequest = new HttpRequestMessage(HttpMethod.Post, loginURL);
-            loginRequest.Content = new StringContent(loginBody, Encoding.UTF8, "application/json");
-            var loginResponse = await httpClient.SendAsync(loginRequest);
+            var loginContent = new StringContent(loginBody, Encoding.UTF8, "application/json");
+            var loginResponse = await httpClient.PostAsync(loginURL, loginContent);
             _ = loginResponse.EnsureSuccessStatusCode();
             var responseString = await loginResponse.Content.ReadAsStringAsync();
             return responseString;
+        }
+
+        public Task<string> SendTransaction(ThirdwebTransactionInput transaction)
+        {
+            throw new InvalidOperationException("SendTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");
         }
     }
 }

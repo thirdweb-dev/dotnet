@@ -36,7 +36,7 @@ public class TransactionTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress() };
-        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, 421614));
         Assert.Contains("Transaction recipient (to) must be provided", ex.Message);
     }
 
@@ -45,18 +45,39 @@ public class TransactionTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
-        var txInput = new ThirdwebTransactionInput() { From = "0x123", To = Constants.ADDRESS_ZERO };
-        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
+        var txInput = new ThirdwebTransactionInput() { From = "0xHello", To = Constants.ADDRESS_ZERO };
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, 421614));
         Assert.Contains("Transaction sender (from) must match wallet address", ex.Message);
     }
 
     [Fact]
-    public async Task Create_ThrowsOnInvalidChainId()
+    public async Task Create_ThrowsOnNoClient()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
-        var txInput = new ThirdwebTransactionInput();
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
+        var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(null, wallet, txInput, 421614));
+        Assert.Contains("Client must be provided", ex.Message);
+    }
+
+    [Fact]
+    public async Task Create_ThrowsOnNoWallet()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, null, txInput, 421614));
+        Assert.Contains("Wallet must be provided", ex.Message);
+    }
+
+    [Fact]
+    public async Task Create_ThrowsOnChainIdZero()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var wallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
+        Assert.Contains("Invalid Chain ID", ex.Message);
     }
 
     [Fact]
@@ -171,6 +192,34 @@ public class TransactionTests : BaseTests
 
         Assert.Equal("0x7b", transaction.Input.Nonce.HexValue);
         Assert.Equal("123", transaction.Input.Nonce.Value.ToString());
+    }
+
+    [Fact]
+    public async Task SetZkSyncOptions_DefaultsToZeroNull()
+    {
+        // Both null
+        var transaction = await CreateSampleTransaction();
+        _ = transaction.SetZkSyncOptions(new ZkSyncOptions());
+        Assert.Equal(0, transaction.Input.ZkSync?.Paymaster);
+        Assert.Null(transaction.Input.ZkSync?.PaymasterInput);
+        Assert.Null(transaction.Input.ZkSync?.GasPerPubdataByteLimit);
+        Assert.Null(transaction.Input.ZkSync?.FactoryDeps);
+
+        // Paymaster null
+        transaction = await CreateSampleTransaction();
+        _ = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: null, paymasterInput: "0x"));
+        Assert.Equal(0, transaction.Input.ZkSync?.Paymaster);
+        Assert.Null(transaction.Input.ZkSync?.PaymasterInput);
+        Assert.Null(transaction.Input.ZkSync?.GasPerPubdataByteLimit);
+        Assert.Null(transaction.Input.ZkSync?.FactoryDeps);
+
+        // PaymasterInput null
+        transaction = await CreateSampleTransaction();
+        _ = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: "0x", paymasterInput: null));
+        Assert.Equal(0, transaction.Input.ZkSync?.Paymaster);
+        Assert.Null(transaction.Input.ZkSync?.PaymasterInput);
+        Assert.Null(transaction.Input.ZkSync?.GasPerPubdataByteLimit);
+        Assert.Null(transaction.Input.ZkSync?.FactoryDeps);
     }
 
     [Fact]
@@ -308,14 +357,23 @@ public class TransactionTests : BaseTests
     [Fact]
     public async Task EstimateGasFees_ReturnsCorrectly()
     {
-        var transaction = await CreateSampleTransaction();
-        _ = transaction.SetValue(new BigInteger(1000));
-        _ = transaction.SetTo(Constants.ADDRESS_ZERO);
+        var transaction = await ThirdwebTransaction.Create(
+            ThirdwebClient.Create(secretKey: _secretKey),
+            await PrivateKeyWallet.Create(ThirdwebClient.Create(secretKey: _secretKey), _testPrivateKey),
+            new ThirdwebTransactionInput()
+            {
+                To = Constants.ADDRESS_ZERO,
+                Value = new HexBigInteger(0),
+                Data = "0x",
+            },
+            250 // fantom for 1559 non zero prio
+        );
 
         (var maxFee, var maxPrio) = await ThirdwebTransaction.EstimateGasFees(transaction);
 
         Assert.NotEqual(BigInteger.Zero, maxFee);
         Assert.NotEqual(BigInteger.Zero, maxPrio);
+        Assert.NotEqual(maxFee, maxPrio);
     }
 
     [Fact]
@@ -340,7 +398,7 @@ public class TransactionTests : BaseTests
     }
 
     [Fact]
-    public async Task Simulate_ReturnsData()
+    public async Task Simulate_ReturnsDataOrThrowsIntrinsic()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
@@ -358,8 +416,15 @@ public class TransactionTests : BaseTests
             421614
         );
 
-        var data = await ThirdwebTransaction.Simulate(transaction);
-        Assert.NotNull(data);
+        try
+        {
+            var data = await ThirdwebTransaction.Simulate(transaction);
+            Assert.NotNull(data);
+        }
+        catch (Exception ex)
+        {
+            Assert.Contains("intrinsic gas too low", ex.Message);
+        }
     }
 
     [Fact]

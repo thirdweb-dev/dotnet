@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -34,6 +33,7 @@ Global
 		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.Release|x64.Build.0 = Release|Any CPU
 		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.Release|x86.ActiveCfg = Release|Any CPU
 		{98BA8071-A8BF-44A5-9DDC-7BBDE4E732E8}.Release|x86.Build.0 = Release|Any CPU
+
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -46,6 +46,7 @@ Global
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Release|x64.Build.0 = Release|Any CPU
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Release|x86.ActiveCfg = Release|Any CPU
 		{D78B4271-7DE9-4C54-BB97-31FBBD25A093}.Release|x86.Build.0 = Release|Any CPU
+
 		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7CEBE316-4F2E-433B-8B1D-CBE8F8EE328F}.Debug|x64.ActiveCfg = Debug|Any CPU

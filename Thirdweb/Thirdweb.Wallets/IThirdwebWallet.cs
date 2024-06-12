@@ -17,14 +17,22 @@ namespace Thirdweb
         public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
             where TDomain : IDomain;
         public Task<bool> IsConnected();
-        public Task<string> SignTransaction(ThirdwebTransactionInput transaction, BigInteger chainId);
-        public Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", HttpClient httpClient = null);
+        public Task<string> SignTransaction(ThirdwebTransactionInput transaction);
+        public Task<string> SendTransaction(ThirdwebTransactionInput transaction);
+        public Task<string> Authenticate(
+            string domain,
+            BigInteger chainId,
+            string authPayloadPath = "/auth/payload",
+            string authLoginPath = "/auth/login",
+            IThirdwebHttpClient httpClientOverride = null
+        );
     }
 
     public enum ThirdwebAccountType
     {
         PrivateKeyAccount,
-        SmartAccount
+        SmartAccount,
+        ExternalAccount
     }
 
     [Serializable]

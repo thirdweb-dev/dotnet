@@ -13,17 +13,7 @@ namespace Thirdweb
 
             uri = uri.ReplaceIPFS($"https://{client.ClientId}.ipfscdn.io/ipfs/");
 
-            using var httpClient = new HttpClient();
-
-            var isThirdwebRequest = new Uri(uri).Host.EndsWith(".ipfscdn.io");
-            if (isThirdwebRequest)
-            {
-                var headers = Utils.GetThirdwebHeaders(client);
-                foreach (var header in headers)
-                {
-                    httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
-                }
-            }
+            var httpClient = client.HttpClient;
 
             requestTimeout ??= client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage);
 
@@ -31,7 +21,7 @@ namespace Thirdweb
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Failed to download {uri}: {response.StatusCode} | {response.ReasonPhrase} | {await response.Content.ReadAsStringAsync()}");
+                throw new Exception($"Failed to download {uri}: {response.StatusCode} | {await response.Content.ReadAsStringAsync()}");
             }
 
             var content = await response.Content.ReadAsStringAsync();
@@ -46,20 +36,15 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(path));
             }
 
-            using var httpClient = new HttpClient();
             using var form = new MultipartFormDataContent { { new ByteArrayContent(File.ReadAllBytes(path)), "file", Path.GetFileName(path) } };
 
-            var headers = Utils.GetThirdwebHeaders(client);
-            foreach (var header in headers)
-            {
-                httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
-            }
+            var httpClient = client.HttpClient;
 
             var response = await httpClient.PostAsync(Constants.PIN_URI, form);
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Failed to upload {path}: {response.StatusCode} | {response.ReasonPhrase} | {await response.Content.ReadAsStringAsync()}");
+                throw new Exception($"Failed to upload {path}: {response.StatusCode} | {await response.Content.ReadAsStringAsync()}");
             }
 
             var result = await response.Content.ReadAsStringAsync();
