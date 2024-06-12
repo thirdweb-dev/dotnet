@@ -45,7 +45,8 @@ namespace Thirdweb.Tests
             _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC20_TransferFrom(null, null, null, BigInteger.Zero));
             _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_TransferFrom(wallet, null, null, BigInteger.Zero));
             _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_TransferFrom(wallet, string.Empty, null, BigInteger.Zero));
-            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_TransferFrom(wallet, null, string.Empty, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_TransferFrom(wallet, Constants.ADDRESS_ZERO, null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC20_TransferFrom(wallet, Constants.ADDRESS_ZERO, string.Empty, BigInteger.Zero));
 
             contract = null;
 
