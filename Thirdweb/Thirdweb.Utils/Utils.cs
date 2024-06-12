@@ -88,40 +88,6 @@ namespace Thirdweb
             return !string.IsNullOrEmpty(uri) && uri.StartsWith("ipfs://") ? uri.Replace("ipfs://", gateway) : uri;
         }
 
-        public static Dictionary<string, string> GetThirdwebHeaders(ThirdwebClient client)
-        {
-            var headers = new Dictionary<string, string>
-            {
-                { "x-sdk-name", "Thirdweb.NET" },
-                { "x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription },
-                { "x-sdk-platform", "dotnet" },
-                { "x-sdk-version", Constants.VERSION }
-            };
-
-            if (!string.IsNullOrEmpty(client.ClientId))
-            {
-                headers.Add("x-client-id", client.ClientId);
-            }
-
-            if (!string.IsNullOrEmpty(client.SecretKey))
-            {
-                headers.Add("x-secret-key", client.SecretKey);
-            }
-
-            if (!string.IsNullOrEmpty(client.BundleId))
-            {
-                headers.Add("x-bundle-id", client.BundleId);
-            }
-
-            return headers;
-        }
-
-        public static bool IsThirdwebRequest(string uri)
-        {
-            var host = new Uri(uri).Host;
-            return host.EndsWith(".ipfscdn.io") || host.EndsWith(".thirdweb.com");
-        }
-
         public static string ToWei(this string eth)
         {
             if (!double.TryParse(eth, NumberStyles.Number, CultureInfo.InvariantCulture, out var ethDouble))
