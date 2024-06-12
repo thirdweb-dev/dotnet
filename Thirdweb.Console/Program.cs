@@ -18,7 +18,7 @@ var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 60000));
 
 var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
-var readResult = await ThirdwebContract.Read<string>(contract, "name");
+var readResult = await contract.ERC20_Name();
 Console.WriteLine($"Contract read result: {readResult}");
 
 // Create wallets (this is an advanced use case, typically one wallet is plenty)
@@ -91,13 +91,11 @@ var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyH
 // var txHash = await ThirdwebTransaction.Send(transaction: tx);
 // Console.WriteLine($"Transaction hash: {txHash}");
 
-var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 302, gasless: true);
-Console.WriteLine($"Smart wallet address: {await zkSmartWallet.GetAddress()}");
-var zkAaTx = await ThirdwebTransaction.Create(client, zkSmartWallet, new ThirdwebTransactionInput() { From = await zkSmartWallet.GetAddress(), To = await zkSmartWallet.GetAddress(), }, 302);
-var zkSyncSignatureBasedAaTxHash = await ThirdwebTransaction.Send(zkAaTx);
-Console.WriteLine($"Transaction hash: {zkSyncSignatureBasedAaTxHash}");
-
-
+// var zkSmartWallet = await SmartWallet.Create(client: client, personalWallet: privateKeyWallet, chainId: 302, gasless: true);
+// Console.WriteLine($"Smart wallet address: {await zkSmartWallet.GetAddress()}");
+// var zkAaTx = await ThirdwebTransaction.Create(client, zkSmartWallet, new ThirdwebTransactionInput() { From = await zkSmartWallet.GetAddress(), To = await zkSmartWallet.GetAddress(), }, 302);
+// var zkSyncSignatureBasedAaTxHash = await ThirdwebTransaction.Send(zkAaTx);
+// Console.WriteLine($"Transaction hash: {zkSyncSignatureBasedAaTxHash}");
 
 // Create smart wallet with InAppWallet signer
 // var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);

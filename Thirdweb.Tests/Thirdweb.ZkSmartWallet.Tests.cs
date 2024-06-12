@@ -25,6 +25,48 @@ public class ZkSmartWalletTests : BaseTests
     }
 
     [Fact]
+    public async Task PersonalSign_Success()
+    {
+        var account = await GetSmartAccount(zkChainId: 302);
+        var message = "Hello, World!";
+        var signature = await account.PersonalSign(message);
+        Assert.NotNull(signature);
+        Assert.True(signature.Length > 0);
+    }
+
+    [Fact]
+    public async Task CreateSessionKey_Throws()
+    {
+        var account = await GetSmartAccount();
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () =>
+                await account.CreateSessionKey(
+                    signerAddress: await account.GetAddress(),
+                    approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
+                    nativeTokenLimitPerTransactionInWei: "0",
+                    permissionStartTimestamp: "0",
+                    permissionEndTimestamp: (Utils.GetUnixTimeStampNow() + 86400).ToString(),
+                    reqValidityStartTimestamp: "0",
+                    reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
+                )
+        );
+    }
+
+    [Fact]
+    public async Task AddAdmin_Throws()
+    {
+        var account = await GetSmartAccount();
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => await account.AddAdmin(Constants.ADDRESS_ZERO));
+    }
+
+    [Fact]
+    public async Task RemoveAdmin_Throws()
+    {
+        var account = await GetSmartAccount();
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => await account.RemoveAdmin(Constants.ADDRESS_ZERO));
+    }
+
+    [Fact]
     public async Task IsDeployed_ReturnsTrue()
     {
         var account = await GetSmartAccount();
