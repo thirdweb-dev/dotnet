@@ -361,4 +361,18 @@ public class PrivateKeyWalletTests : BaseTests
         await account.Disconnect();
         Assert.False(await account.IsConnected());
     }
+
+    [Fact]
+    public async Task SendTransaction_InvalidOperation()
+    {
+        var account = await GetAccount();
+        var transaction = new ThirdwebTransactionInput
+        {
+            From = await account.GetAddress(),
+            To = Constants.ADDRESS_ZERO,
+            Value = new HexBigInteger(0),
+            Data = "0x",
+        };
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SendTransaction(transaction));
+    }
 }
