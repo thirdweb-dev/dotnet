@@ -63,7 +63,9 @@ namespace Thirdweb.Tests
             _ = await Assert.ThrowsAsync<ArgumentException>(
                 async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, Constants.ADDRESS_ZERO, Constants.ADDRESS_ZERO, null, new BigInteger[] { }, null)
             );
-            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, Constants.ADDRESS_ZERO, string.Empty, new BigInteger[] { }, null, null));
+            _ = await Assert.ThrowsAsync<ArgumentException>(
+                async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, Constants.ADDRESS_ZERO, Constants.ADDRESS_ZERO, new BigInteger[] { }, null, null)
+            );
 
             contract = null;
 
