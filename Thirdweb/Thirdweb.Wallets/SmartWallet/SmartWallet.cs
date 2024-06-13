@@ -352,7 +352,7 @@ namespace Thirdweb
 
         public async Task<string> GetAddress()
         {
-            return Utils.IsZkSync(_chainId) ? await _personalAccount.GetAddress() : _accountContract.Address;
+            return Utils.IsZkSync(_chainId) ? await _personalAccount.GetAddress() : _accountContract.Address.ToChecksumAddress();
         }
 
         public Task<string> EthSign(byte[] rawMessage)

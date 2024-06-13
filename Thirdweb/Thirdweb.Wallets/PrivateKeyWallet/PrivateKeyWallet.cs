@@ -39,7 +39,7 @@ namespace Thirdweb
 
         public virtual Task<string> GetAddress()
         {
-            return Task.FromResult(_ecKey.GetPublicAddress());
+            return Task.FromResult(_ecKey.GetPublicAddress().ToChecksumAddress());
         }
 
         public virtual Task<string> EthSign(byte[] rawMessage)
