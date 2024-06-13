@@ -1,10 +1,32 @@
 using System.Numerics;
+using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb
 {
     public static class ThirdwebContractExtensions
     {
+        #region Common
+
+        public static async Task<BigInteger> GetBalance(this ThirdwebContract contract, ThirdwebClient client)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
+            var rpc = ThirdwebRPC.GetRpcInstance(client, contract.Chain);
+            var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", contract.Address, "latest");
+            return new HexBigInteger(balanceHex).Value;
+        }
+
+        #endregion
+
         #region ERC20
 
         // Check the balance of a specific address
