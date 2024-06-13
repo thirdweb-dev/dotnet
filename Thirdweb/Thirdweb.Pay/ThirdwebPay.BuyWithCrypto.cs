@@ -23,9 +23,9 @@ namespace Thirdweb.Pay
                 From = buyWithCryptoQuote.TransactionRequest.From,
                 To = buyWithCryptoQuote.TransactionRequest.To,
                 Data = buyWithCryptoQuote.TransactionRequest.Data,
-                Value = new HexBigInteger(buyWithCryptoQuote.TransactionRequest.Value),
-                Gas = new HexBigInteger(buyWithCryptoQuote.TransactionRequest.GasLimit),
-                GasPrice = new HexBigInteger(buyWithCryptoQuote.TransactionRequest.GasPrice),
+                Value = new HexBigInteger(BigInteger.Parse(buyWithCryptoQuote.TransactionRequest.Value)),
+                Gas = new HexBigInteger(BigInteger.Parse(buyWithCryptoQuote.TransactionRequest.GasLimit)),
+                GasPrice = new HexBigInteger(BigInteger.Parse(buyWithCryptoQuote.TransactionRequest.GasPrice)),
             };
 
             var tx = await ThirdwebTransaction.Create(client, wallet, txInput, buyWithCryptoQuote.TransactionRequest.ChainId);
