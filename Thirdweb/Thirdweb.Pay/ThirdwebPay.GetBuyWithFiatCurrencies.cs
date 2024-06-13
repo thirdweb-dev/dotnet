@@ -4,7 +4,7 @@ namespace Thirdweb.Pay
 {
     public partial class ThirdwebPay
     {
-        public async Task<List<string>> GetBuyWithFiatCurrencies(ThirdwebClient client)
+        public static async Task<List<string>> GetBuyWithFiatCurrencies(ThirdwebClient client)
         {
             var url = $"{Constants.THIRDWEB_PAY_FIAT_CURRENCIES_ENDPOINT}";
 

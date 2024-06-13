@@ -4,7 +4,7 @@ namespace Thirdweb.Pay
 {
     public partial class ThirdwebPay
     {
-        public async Task<BuyWithFiatStatusResult> GetBuyWithFiatStatus(ThirdwebClient client, string intentId)
+        public static async Task<BuyWithFiatStatusResult> GetBuyWithFiatStatus(ThirdwebClient client, string intentId)
         {
             if (string.IsNullOrEmpty(intentId))
             {
