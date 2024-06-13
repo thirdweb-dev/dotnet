@@ -42,7 +42,8 @@ namespace Thirdweb.Tests
 
             _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC1155_IsApprovedForAll(null, null));
             _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC1155_IsApprovedForAll(string.Empty, null));
-            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC1155_IsApprovedForAll(null, string.Empty));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC1155_IsApprovedForAll(Constants.ADDRESS_ZERO, null));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC1155_IsApprovedForAll(Constants.ADDRESS_ZERO, string.Empty));
 
             _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_SafeTransferFrom(null, null, null, BigInteger.Zero, BigInteger.Zero, null));
             _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC1155_SafeTransferFrom(wallet, null, null, BigInteger.Zero, BigInteger.Zero, null));
@@ -59,6 +60,10 @@ namespace Thirdweb.Tests
             _ = await Assert.ThrowsAsync<ArgumentException>(
                 async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, Constants.ADDRESS_ZERO, string.Empty, new BigInteger[] { }, new BigInteger[] { }, null)
             );
+            _ = await Assert.ThrowsAsync<ArgumentException>(
+                async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, Constants.ADDRESS_ZERO, Constants.ADDRESS_ZERO, null, new BigInteger[] { }, null)
+            );
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, Constants.ADDRESS_ZERO, string.Empty, new BigInteger[] { }, null, null));
 
             contract = null;
 
