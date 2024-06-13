@@ -1,2 +1,3 @@
 ignore:
   - "Thirdweb/Thirdweb.Wallets/InAppWallet"
+  - "Thirdweb/Thirdweb.Pay"

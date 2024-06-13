@@ -386,4 +386,12 @@ public class UtilsTests : BaseTests
         };
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
+
+    [Fact]
+    public void ToChecksumAddress_ReturnsCorrectValue()
+    {
+        var address = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed".ToLower();
+        var checksumAddress = Utils.ToChecksumAddress(address);
+        Assert.Equal("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", checksumAddress);
+    }
 }

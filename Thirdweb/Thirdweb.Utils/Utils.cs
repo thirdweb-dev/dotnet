@@ -173,5 +173,10 @@ namespace Thirdweb
         {
             return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302);
         }
+
+        public static string ToChecksumAddress(this string address)
+        {
+            return new AddressUtil().ConvertToChecksumAddress(address);
+        }
     }
 }
