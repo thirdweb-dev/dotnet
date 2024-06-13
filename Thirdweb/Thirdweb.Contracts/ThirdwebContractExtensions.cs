@@ -347,5 +347,167 @@ namespace Thirdweb
         }
 
         #endregion
+
+        #region ERC1155
+
+        // Check the balance of a specific token for a specific address
+        public static async Task<BigInteger> ERC1155_BalanceOf(this ThirdwebContract contract, string ownerAddress, BigInteger tokenId)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (string.IsNullOrEmpty(ownerAddress))
+            {
+                throw new ArgumentException("Owner address must be provided");
+            }
+
+            return await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress, tokenId);
+        }
+
+        // Check the balance of multiple tokens for multiple addresses
+        public static async Task<List<BigInteger>> ERC1155_BalanceOfBatch(this ThirdwebContract contract, string[] ownerAddresses, BigInteger[] tokenIds)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (ownerAddresses == null || tokenIds == null)
+            {
+                throw new ArgumentException("Owner addresses and token IDs must be provided");
+            }
+
+            return await ThirdwebContract.Read<List<BigInteger>>(contract, "balanceOfBatch", ownerAddresses, tokenIds);
+        }
+
+        // Approve a specific address to transfer specific tokens
+        public static async Task<TransactionReceipt> ERC1155_SetApprovalForAll(this ThirdwebContract contract, IThirdwebWallet wallet, string operatorAddress, bool approved)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (string.IsNullOrEmpty(operatorAddress))
+            {
+                throw new ArgumentException("Operator address must be provided");
+            }
+
+            return await ThirdwebContract.Write(wallet, contract, "setApprovalForAll", 0, operatorAddress, approved);
+        }
+
+        // Check if an address is approved to transfer specific tokens
+        public static async Task<bool> ERC1155_IsApprovedForAll(this ThirdwebContract contract, string ownerAddress, string operatorAddress)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (string.IsNullOrEmpty(ownerAddress))
+            {
+                throw new ArgumentException("Owner address must be provided");
+            }
+
+            if (string.IsNullOrEmpty(operatorAddress))
+            {
+                throw new ArgumentException("Operator address must be provided");
+            }
+
+            return await ThirdwebContract.Read<bool>(contract, "isApprovedForAll", ownerAddress, operatorAddress);
+        }
+
+        // Transfer specific tokens from one address to another
+        public static async Task<TransactionReceipt> ERC1155_SafeTransferFrom(
+            this ThirdwebContract contract,
+            IThirdwebWallet wallet,
+            string fromAddress,
+            string toAddress,
+            BigInteger tokenId,
+            BigInteger amount,
+            byte[] data
+        )
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (string.IsNullOrEmpty(fromAddress))
+            {
+                throw new ArgumentException("Sender address must be provided");
+            }
+
+            if (string.IsNullOrEmpty(toAddress))
+            {
+                throw new ArgumentException("Recipient address must be provided");
+            }
+
+            return await ThirdwebContract.Write(wallet, contract, "safeTransferFrom", 0, fromAddress, toAddress, tokenId, amount, data);
+        }
+
+        // Transfer multiple tokens from one address to another
+        public static async Task<TransactionReceipt> ERC1155_SafeBatchTransferFrom(
+            this ThirdwebContract contract,
+            IThirdwebWallet wallet,
+            string fromAddress,
+            string toAddress,
+            BigInteger[] tokenIds,
+            BigInteger[] amounts,
+            byte[] data
+        )
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (string.IsNullOrEmpty(fromAddress))
+            {
+                throw new ArgumentException("Sender address must be provided");
+            }
+
+            if (string.IsNullOrEmpty(toAddress))
+            {
+                throw new ArgumentException("Recipient address must be provided");
+            }
+
+            if (tokenIds == null || amounts == null)
+            {
+                throw new ArgumentException("Token IDs and amounts must be provided");
+            }
+
+            return await ThirdwebContract.Write(wallet, contract, "safeBatchTransferFrom", 0, fromAddress, toAddress, tokenIds, amounts, data);
+        }
+
+        // Get the URI for a specific token
+        public static async Task<string> ERC1155_URI(this ThirdwebContract contract, BigInteger tokenId)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            return await ThirdwebContract.Read<string>(contract, "uri", tokenId);
+        }
+
+        #endregion
     }
 }
