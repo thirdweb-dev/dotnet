@@ -180,6 +180,7 @@ namespace Thirdweb.Tests
             Assert.True(receipt.TransactionHash.Length == 66);
         }
 
+        // TODO: Update when mint implemented
         // [Fact]
         // public async Task ERC721_Approve()
         // {
@@ -195,6 +196,7 @@ namespace Thirdweb.Tests
         //     Assert.True(receipt.TransactionHash.Length == 66);
         // }
 
+        // TODO: Update when mint implemented
         // [Fact]
         // public async Task ERC721_TransferFrom()
         // {
@@ -210,6 +212,7 @@ namespace Thirdweb.Tests
         //     Assert.True(receipt.TransactionHash.Length == 66);
         // }
 
+        // TODO: Update when mint implemented
         // [Fact]
         // public async Task ERC721_SafeTransferFrom()
         // {
