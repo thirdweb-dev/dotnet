@@ -166,6 +166,20 @@ namespace Thirdweb.Tests
             Assert.True(isApproved || !isApproved);
         }
 
+        [Fact]
+        public async Task ERC721_SetApprovalForAll()
+        {
+            var client = ThirdwebClient.Create(secretKey: _secretKey);
+            var contract = await ThirdwebContract.Create(client, _erc721ContractAddress, _chainId);
+            var wallet = await GetWallet();
+            var operatorAddress = contract.Address;
+            var approved = true;
+
+            var receipt = await contract.ERC721_SetApprovalForAll(wallet, operatorAddress, approved);
+
+            Assert.True(receipt.TransactionHash.Length == 66);
+        }
+
         // [Fact]
         // public async Task ERC721_Approve()
         // {
@@ -177,20 +191,6 @@ namespace Thirdweb.Tests
         //     var tokenId = BigInteger.Parse("1");
 
         //     var receipt = await contract.ERC721_Approve(wallet, toAddress, tokenId);
-
-        //     Assert.True(receipt.TransactionHash.Length == 66);
-        // }
-
-        // [Fact]
-        // public async Task ERC721_SetApprovalForAll()
-        // {
-        //     var client = ThirdwebClient.Create(secretKey: _secretKey);
-        //     var contract = await ThirdwebContract.Create(client, _erc721ContractAddress, _chainId);
-        //     var wallet = await GetWallet();
-        //     var operatorAddress = contract.Address;
-        //     var approved = true;
-
-        //     var receipt = await contract.ERC721_SetApprovalForAll(wallet, operatorAddress, approved);
 
         //     Assert.True(receipt.TransactionHash.Length == 66);
         // }
