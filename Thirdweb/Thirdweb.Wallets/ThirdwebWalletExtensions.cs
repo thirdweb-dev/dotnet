@@ -26,5 +26,7 @@ namespace Thirdweb
             var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", await wallet.GetAddress(), "latest");
             return new HexBigInteger(balanceHex).Value;
         }
+
+        // TODO: Tx Listener?
     }
 }
