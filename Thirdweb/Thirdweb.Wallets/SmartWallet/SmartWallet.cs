@@ -582,7 +582,30 @@ namespace Thirdweb
             IThirdwebHttpClient httpClientOverride = null
         )
         {
-            return await _personalAccount.Authenticate(domain, chainId, authPayloadPath, authLoginPath, httpClientOverride);
+            var payloadURL = domain + authPayloadPath;
+            var loginURL = domain + authLoginPath;
+
+            var payloadBodyRaw = new { address = await GetAddress(), chainId = chainId.ToString() };
+            var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
+
+            using var httpClient = httpClientOverride ?? _client.HttpClient;
+
+            var payloadContent = new StringContent(payloadBody, Encoding.UTF8, "application/json");
+            var payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);
+            _ = payloadResponse.EnsureSuccessStatusCode();
+            var payloadString = await payloadResponse.Content.ReadAsStringAsync();
+
+            var loginBodyRaw = JsonConvert.DeserializeObject<LoginPayload>(payloadString);
+            var payloadToSign = Utils.GenerateSIWE(loginBodyRaw.payload);
+
+            loginBodyRaw.signature = await PersonalSign(payloadToSign);
+            var loginBody = JsonConvert.SerializeObject(new { payload = loginBodyRaw });
+
+            var loginContent = new StringContent(loginBody, Encoding.UTF8, "application/json");
+            var loginResponse = await httpClient.PostAsync(loginURL, loginContent);
+            _ = loginResponse.EnsureSuccessStatusCode();
+            var responseString = await loginResponse.Content.ReadAsStringAsync();
+            return responseString;
         }
     }
 }
