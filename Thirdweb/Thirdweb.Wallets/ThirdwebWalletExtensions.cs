@@ -40,6 +40,11 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(client));
             }
 
+            if (chainId <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(chainId), "Chain ID must be greater than 0.");
+            }
+
             if (string.IsNullOrEmpty(toAddress))
             {
                 throw new ArgumentException(nameof(toAddress), "Recipient address cannot be null or empty.");
@@ -48,11 +53,6 @@ namespace Thirdweb
             if (weiAmount < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(weiAmount), "Amount must be 0 or greater.");
-            }
-
-            if (chainId <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(chainId), "Chain ID must be greater than 0.");
             }
 
             var txInput = new ThirdwebTransactionInput()

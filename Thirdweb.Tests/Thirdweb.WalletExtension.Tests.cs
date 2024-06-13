@@ -28,8 +28,8 @@ namespace Thirdweb.Tests
             _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await wallet.GetBalance(client, -1));
 
             _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await wallet.Transfer(null, BigInteger.Zero, null, BigInteger.Zero));
-            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await wallet.Transfer(client, BigInteger.Zero, null, BigInteger.Zero));
-            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await wallet.Transfer(client, -1, string.Empty, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await wallet.Transfer(client, BigInteger.Zero, null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await wallet.Transfer(client, -1, string.Empty, BigInteger.Zero));
             _ = await Assert.ThrowsAsync<ArgumentException>(async () => await wallet.Transfer(client, _chainId, null, BigInteger.Zero));
             _ = await Assert.ThrowsAsync<ArgumentException>(async () => await wallet.Transfer(client, _chainId, string.Empty, BigInteger.Zero));
             _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await wallet.Transfer(client, _chainId, Constants.ADDRESS_ZERO, -1));
