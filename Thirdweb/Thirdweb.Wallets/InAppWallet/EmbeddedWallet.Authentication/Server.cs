@@ -461,7 +461,7 @@ namespace Thirdweb.EWS
 
         #region Misc
 
-        private Task<ThirdwebHttpResponseMessage> SendHttpWithAuthAsync(HttpRequestMessage httpRequestMessage, string authToken)
+        private async Task<ThirdwebHttpResponseMessage> SendHttpWithAuthAsync(HttpRequestMessage httpRequestMessage, string authToken)
         {
             httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{authToken}");
 
@@ -469,19 +469,19 @@ namespace Thirdweb.EWS
             {
                 if (httpRequestMessage.Method == HttpMethod.Get)
                 {
-                    return httpClient.GetAsync(httpRequestMessage.RequestUri.ToString());
+                    return await httpClient.GetAsync(httpRequestMessage.RequestUri.ToString());
                 }
                 else if (httpRequestMessage.Method == HttpMethod.Post)
                 {
-                    return httpClient.PostAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content);
+                    return await httpClient.PostAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content);
                 }
                 else if (httpRequestMessage.Method == HttpMethod.Put)
                 {
-                    return httpClient.PutAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content);
+                    return await httpClient.PutAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content);
                 }
                 else if (httpRequestMessage.Method == HttpMethod.Delete)
                 {
-                    return httpClient.DeleteAsync(httpRequestMessage.RequestUri.ToString());
+                    return await httpClient.DeleteAsync(httpRequestMessage.RequestUri.ToString());
                 }
                 else
                 {
@@ -494,10 +494,10 @@ namespace Thirdweb.EWS
             }
         }
 
-        private Task<ThirdwebHttpResponseMessage> SendHttpWithAuthAsync(Uri uri, string authToken)
+        private async Task<ThirdwebHttpResponseMessage> SendHttpWithAuthAsync(Uri uri, string authToken)
         {
             HttpRequestMessage httpRequestMessage = new(HttpMethod.Get, uri);
-            return SendHttpWithAuthAsync(httpRequestMessage, authToken);
+            return await SendHttpWithAuthAsync(httpRequestMessage, authToken);
         }
 
         private static async Task CheckStatusCodeAsync(ThirdwebHttpResponseMessage response)
