@@ -54,7 +54,6 @@ namespace Thirdweb.EWS
             }
             catch (VerificationException ex)
             {
-                Console.WriteLine("VerifyOtpAsync Error: " + ex.Message);
                 return new VerifyResult(ex.CanRetry);
             }
         }

@@ -62,7 +62,6 @@ namespace Thirdweb
                 httpListener.Start();
                 _ = httpListener.BeginGetContext(IncomingHttpRequest, httpListener);
 
-                Console.WriteLine($"Opening browser with URL: {loginUrl}");
                 browserOpenAction.Invoke(loginUrl);
 
                 var completedTask = await Task.WhenAny(_taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30), cancellationToken));

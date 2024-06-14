@@ -358,8 +358,6 @@ namespace Thirdweb
 
         public static async Task<AccountAbstraction.ZkSyncAATransaction> ConvertToZkSyncTransaction(ThirdwebTransaction transaction)
         {
-            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
-            Console.WriteLine("Current TX: " + JsonConvert.SerializeObject(transaction.Input));
             return new AccountAbstraction.ZkSyncAATransaction
             {
                 TxType = 0x71,

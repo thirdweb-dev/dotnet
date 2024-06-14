@@ -25,11 +25,4 @@ public class BaseTests
     {
         Assert.NotNull(_secretKey);
     }
-
-    [Fact]
-    public void TestOutput()
-    {
-        _output.WriteLine("This is a test output.");
-        Console.WriteLine("This is a test output.");
-    }
 }

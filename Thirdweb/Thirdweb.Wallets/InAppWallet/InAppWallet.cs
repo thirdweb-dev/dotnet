@@ -64,7 +64,6 @@ namespace Thirdweb
             }
             catch
             {
-                Console.WriteLine("User not found. Please call InAppWallet.SendOTP() or InAppWallet.LoginWithOauth to initialize the login process.");
                 ecKey = null;
             }
             return new InAppWallet(client, email, phoneNumber, authproviderStr, embeddedWallet, ecKey);
@@ -153,8 +152,6 @@ namespace Thirdweb
                 {
                     throw new Exception("Email or Phone Number must be provided to login.");
                 }
-
-                Console.WriteLine("OTP sent to user. Please call InAppWallet.SubmitOTP to login.");
             }
             catch (Exception e)
             {
@@ -177,16 +174,7 @@ namespace Thirdweb
             var res = _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp, null) : await _embeddedWallet.VerifyOtpAsync(_email, otp, null);
             if (res.User == null)
             {
-                var canRetry = res.CanRetry;
-                if (canRetry)
-                {
-                    Console.WriteLine("Invalid OTP. Please try again.");
-                }
-                else
-                {
-                    Console.WriteLine("Invalid OTP. Please request a new OTP.");
-                }
-                return (null, canRetry);
+                return (null, res.CanRetry);
             }
             else
             {

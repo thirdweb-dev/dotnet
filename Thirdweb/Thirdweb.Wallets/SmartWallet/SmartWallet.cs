@@ -258,7 +258,6 @@ namespace Thirdweb
                 txHash = userOpReceipt?.receipt?.TransactionHash;
                 await Task.Delay(1000);
             }
-            Console.WriteLine($"Transaction hash: {txHash} | UserOp hash: {userOpHash}");
             return txHash;
         }
 
@@ -379,7 +378,6 @@ namespace Thirdweb
 
             if (!await IsDeployed())
             {
-                Console.WriteLine("SmartWallet not deployed, deploying before signing...");
                 await ForceDeploy();
             }
             if (await IsDeployed())
@@ -416,9 +414,8 @@ namespace Thirdweb
                 var magicValue = await ThirdwebContract.Read<byte[]>(_accountContract, "isValidSignature", message.HashPrefixedMessage().HexToByteArray(), signature.HexToByteArray());
                 return magicValue.ToHex(true) == new byte[] { 0x16, 0x26, 0xba, 0x7e }.ToHex(true);
             }
-            catch (Exception e)
+            catch
             {
-                Console.WriteLine(e.Message);
                 return false;
             }
         }

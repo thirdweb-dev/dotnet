@@ -81,9 +81,8 @@ namespace Thirdweb.EWS
                 var responseContent = await DeserializeAsync<RecoveryShareManagementResponse>(response);
                 return responseContent.Value ?? "AWS_MANAGED";
             }
-            catch (System.Exception e)
+            catch
             {
-                Console.WriteLine("Could not fetch recovery share management type, defaulting to managed: " + e.Message);
                 return "AWS_MANAGED";
             }
         }

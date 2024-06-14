@@ -33,7 +33,6 @@ namespace Thirdweb.EWS
             }
             catch (VerificationException ex)
             {
-                Console.WriteLine("VerifyPhoneOtpAsync Error: " + ex.Message);
                 return new VerifyResult(ex.CanRetry);
             }
         }
