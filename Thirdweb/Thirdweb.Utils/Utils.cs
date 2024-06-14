@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
 using Nethereum.Util;
@@ -177,6 +178,12 @@ namespace Thirdweb
         public static string ToChecksumAddress(this string address)
         {
             return new AddressUtil().ConvertToChecksumAddress(address);
+        }
+
+        public static List<EventLog<TEventDTO>> DecodeAllEvents<TEventDTO>(this ThirdwebTransactionReceipt transactionReceipt)
+            where TEventDTO : new()
+        {
+            return transactionReceipt.Logs.DecodeAllEvents<TEventDTO>();
         }
     }
 }

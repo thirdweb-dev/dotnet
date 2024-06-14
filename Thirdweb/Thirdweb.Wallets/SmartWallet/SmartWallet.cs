@@ -420,7 +420,7 @@ namespace Thirdweb
             }
         }
 
-        public async Task<TransactionReceipt> CreateSessionKey(
+        public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
             string signerAddress,
             List<string> approvedTargets,
             string nativeTokenLimitPerTransactionInWei,
@@ -461,7 +461,7 @@ namespace Thirdweb
             return await ThirdwebTransaction.WaitForTransactionReceipt(_client, _chainId, txHash);
         }
 
-        public async Task<TransactionReceipt> AddAdmin(string admin)
+        public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
         {
             if (Utils.IsZkSync(_chainId))
             {
@@ -494,7 +494,7 @@ namespace Thirdweb
             return await ThirdwebTransaction.WaitForTransactionReceipt(_client, _chainId, txHash);
         }
 
-        public async Task<TransactionReceipt> RemoveAdmin(string admin)
+        public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
         {
             if (Utils.IsZkSync(_chainId))
             {

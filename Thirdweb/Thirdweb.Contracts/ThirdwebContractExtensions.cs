@@ -111,7 +111,7 @@ namespace Thirdweb
         }
 
         // Approve a spender to spend a specific amount of tokens
-        public static async Task<TransactionReceipt> ERC20_Approve(this ThirdwebContract contract, IThirdwebWallet wallet, string spenderAddress, BigInteger amount)
+        public static async Task<ThirdwebTransactionReceipt> ERC20_Approve(this ThirdwebContract contract, IThirdwebWallet wallet, string spenderAddress, BigInteger amount)
         {
             if (contract == null)
             {
@@ -132,7 +132,7 @@ namespace Thirdweb
         }
 
         // Transfer tokens to a specific address
-        public static async Task<TransactionReceipt> ERC20_Transfer(this ThirdwebContract contract, IThirdwebWallet wallet, string toAddress, BigInteger amount)
+        public static async Task<ThirdwebTransactionReceipt> ERC20_Transfer(this ThirdwebContract contract, IThirdwebWallet wallet, string toAddress, BigInteger amount)
         {
             if (contract == null)
             {
@@ -153,7 +153,7 @@ namespace Thirdweb
         }
 
         // Transfer tokens from one address to another
-        public static async Task<TransactionReceipt> ERC20_TransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger amount)
+        public static async Task<ThirdwebTransactionReceipt> ERC20_TransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger amount)
         {
             if (contract == null)
             {
@@ -243,7 +243,7 @@ namespace Thirdweb
         }
 
         // Approve a specific address to transfer a specific token
-        public static async Task<TransactionReceipt> ERC721_Approve(this ThirdwebContract contract, IThirdwebWallet wallet, string toAddress, BigInteger tokenId)
+        public static async Task<ThirdwebTransactionReceipt> ERC721_Approve(this ThirdwebContract contract, IThirdwebWallet wallet, string toAddress, BigInteger tokenId)
         {
             if (contract == null)
             {
@@ -296,7 +296,7 @@ namespace Thirdweb
         }
 
         // Set or unset an operator for an owner
-        public static async Task<TransactionReceipt> ERC721_SetApprovalForAll(this ThirdwebContract contract, IThirdwebWallet wallet, string operatorAddress, bool approved)
+        public static async Task<ThirdwebTransactionReceipt> ERC721_SetApprovalForAll(this ThirdwebContract contract, IThirdwebWallet wallet, string operatorAddress, bool approved)
         {
             if (contract == null)
             {
@@ -317,7 +317,7 @@ namespace Thirdweb
         }
 
         // Transfer a specific token from one address to another
-        public static async Task<TransactionReceipt> ERC721_TransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger tokenId)
+        public static async Task<ThirdwebTransactionReceipt> ERC721_TransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger tokenId)
         {
             if (contract == null)
             {
@@ -343,7 +343,7 @@ namespace Thirdweb
         }
 
         // Safe transfer a specific token from one address to another
-        public static async Task<TransactionReceipt> ERC721_SafeTransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger tokenId)
+        public static async Task<ThirdwebTransactionReceipt> ERC721_SafeTransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger tokenId)
         {
             if (contract == null)
             {
@@ -405,7 +405,7 @@ namespace Thirdweb
         }
 
         // Approve a specific address to transfer specific tokens
-        public static async Task<TransactionReceipt> ERC1155_SetApprovalForAll(this ThirdwebContract contract, IThirdwebWallet wallet, string operatorAddress, bool approved)
+        public static async Task<ThirdwebTransactionReceipt> ERC1155_SetApprovalForAll(this ThirdwebContract contract, IThirdwebWallet wallet, string operatorAddress, bool approved)
         {
             if (contract == null)
             {
@@ -447,7 +447,7 @@ namespace Thirdweb
         }
 
         // Transfer specific tokens from one address to another
-        public static async Task<TransactionReceipt> ERC1155_SafeTransferFrom(
+        public static async Task<ThirdwebTransactionReceipt> ERC1155_SafeTransferFrom(
             this ThirdwebContract contract,
             IThirdwebWallet wallet,
             string fromAddress,
@@ -481,7 +481,7 @@ namespace Thirdweb
         }
 
         // Transfer multiple tokens from one address to another
-        public static async Task<TransactionReceipt> ERC1155_SafeBatchTransferFrom(
+        public static async Task<ThirdwebTransactionReceipt> ERC1155_SafeBatchTransferFrom(
             this ThirdwebContract contract,
             IThirdwebWallet wallet,
             string fromAddress,

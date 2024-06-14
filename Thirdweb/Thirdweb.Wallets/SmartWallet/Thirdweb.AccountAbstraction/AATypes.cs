@@ -78,7 +78,7 @@ namespace Thirdweb.AccountAbstraction
 
     public class EthGetUserOperationReceiptResponse
     {
-        public TransactionReceipt receipt { get; set; }
+        public ThirdwebTransactionReceipt receipt { get; set; }
     }
 
     public class EntryPointWrapper

@@ -86,7 +86,7 @@ namespace Thirdweb
             return await ThirdwebTransaction.Create(contract.Client, wallet, transaction, contract.Chain);
         }
 
-        public static async Task<TransactionReceipt> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
+        public static async Task<ThirdwebTransactionReceipt> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
         {
             var thirdwebTx = await Prepare(wallet, contract, method, weiValue, parameters);
             return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(thirdwebTx);
