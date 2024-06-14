@@ -10,8 +10,8 @@ namespace Thirdweb
         Google,
         Apple,
         Facebook,
-        // JWT,
-        // AuthEndpoint
+        JWT,
+        AuthEndpoint
     }
 
     public class InAppWallet : PrivateKeyWallet
@@ -48,6 +48,8 @@ namespace Thirdweb
                 AuthProvider.Google => "Google",
                 AuthProvider.Apple => "Apple",
                 AuthProvider.Facebook => "Facebook",
+                AuthProvider.JWT => "JWT",
+                AuthProvider.AuthEndpoint => "AuthEndpoint",
                 AuthProvider.Default => string.IsNullOrEmpty(email) ? "PhoneOTP" : "EmailOTP",
                 _ => throw new ArgumentException("Invalid AuthProvider"),
             };
@@ -201,6 +203,62 @@ namespace Thirdweb
         public Task<string> GetPhoneNumber()
         {
             return Task.FromResult(_phoneNumber);
+        }
+
+        #endregion
+
+        #region JWT Flow
+
+        public async Task<string> LoginWithJWT(string jwt, string encryptionKey, string recoveryCode = null)
+        {
+            if (string.IsNullOrEmpty(jwt))
+            {
+                throw new ArgumentException(nameof(jwt), "JWT cannot be null or empty.");
+            }
+
+            if (string.IsNullOrEmpty(encryptionKey))
+            {
+                throw new ArgumentException(nameof(encryptionKey), "Encryption key cannot be null or empty.");
+            }
+
+            var res = await _embeddedWallet.SignInWithJwtAsync(jwt, encryptionKey, recoveryCode);
+
+            if (res.User == null)
+            {
+                throw new Exception("Failed to login with JWT");
+            }
+
+            _ecKey = new EthECKey(res.User.Account.PrivateKey);
+
+            return await GetAddress();
+        }
+
+        #endregion
+
+        #region Auth Endpoint Flow
+
+        public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey, string recoveryCode = null)
+        {
+            if (string.IsNullOrEmpty(payload))
+            {
+                throw new ArgumentException(nameof(payload), "Payload cannot be null or empty.");
+            }
+
+            if (string.IsNullOrEmpty(encryptionKey))
+            {
+                throw new ArgumentException(nameof(encryptionKey), "Encryption key cannot be null or empty.");
+            }
+
+            var res = await _embeddedWallet.SignInWithAuthEndpointAsync(payload, encryptionKey, recoveryCode);
+
+            if (res.User == null)
+            {
+                throw new Exception("Failed to login with Auth Endpoint");
+            }
+
+            _ecKey = new EthECKey(res.User.Account.PrivateKey);
+
+            return await GetAddress();
         }
 
         #endregion
