@@ -28,7 +28,7 @@ namespace Thirdweb
             return new HexBigInteger(balanceHex).Value;
         }
 
-        public static async Task<TransactionReceipt> Transfer(this IThirdwebWallet wallet, ThirdwebClient client, BigInteger chainId, string toAddress, BigInteger weiAmount)
+        public static async Task<ThirdwebTransactionReceipt> Transfer(this IThirdwebWallet wallet, ThirdwebClient client, BigInteger chainId, string toAddress, BigInteger weiAmount)
         {
             if (wallet == null)
             {

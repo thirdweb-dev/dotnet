@@ -307,16 +307,16 @@ namespace Thirdweb
             return hash;
         }
 
-        public static async Task<TransactionReceipt> SendAndWaitForTransactionReceipt(ThirdwebTransaction transaction)
+        public static async Task<ThirdwebTransactionReceipt> SendAndWaitForTransactionReceipt(ThirdwebTransaction transaction)
         {
             var txHash = await Send(transaction);
             return await WaitForTransactionReceipt(transaction._client, transaction.Input.ChainId.Value, txHash);
         }
 
-        public static async Task<TransactionReceipt> WaitForTransactionReceipt(ThirdwebClient client, BigInteger chainId, string txHash, CancellationToken cancellationToken = default)
+        public static async Task<ThirdwebTransactionReceipt> WaitForTransactionReceipt(ThirdwebClient client, BigInteger chainId, string txHash, CancellationToken cancellationToken = default)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
-            var receipt = await rpc.SendRequestAsync<TransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
+            var receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
             while (receipt == null)
             {
                 if (cancellationToken != CancellationToken.None)
@@ -329,16 +329,16 @@ namespace Thirdweb
                     await Task.Delay(1000, CancellationToken.None).ConfigureAwait(false);
                 }
 
-                receipt = await rpc.SendRequestAsync<TransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
+                receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
             }
 
-            if (receipt.Failed())
+            if (receipt.Status != null && receipt.Status.Value == 0)
             {
                 throw new Exception($"Transaction {txHash} execution reverted.");
             }
 
             var userOpEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationEventEventDTO>();
-            if (userOpEvent != null && userOpEvent.Count > 0 && userOpEvent[0].Event.Success == false)
+            if (userOpEvent != null && userOpEvent.Count > 0 && !userOpEvent[0].Event.Success)
             {
                 var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
                 if (revertReasonEvent != null && revertReasonEvent.Count > 0)
