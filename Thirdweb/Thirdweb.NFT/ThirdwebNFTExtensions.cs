@@ -29,6 +29,7 @@ namespace Thirdweb
 
             var uri = await contract.ERC721_TokenURI(tokenId);
             var metadata = await ThirdwebStorage.Download<NFTMetadata>(contract.Client, uri);
+            metadata.Id = tokenId.ToString();
             var owner = await contract.ERC721_OwnerOf(tokenId);
             var supply = -BigInteger.MinusOne;
             try
@@ -125,6 +126,7 @@ namespace Thirdweb
 
             var uri = await contract.ERC1155_URI(tokenId);
             var metadata = await ThirdwebStorage.Download<NFTMetadata>(contract.Client, uri);
+            metadata.Id = tokenId.ToString();
             var owner = string.Empty;
             var supply = BigInteger.MinusOne;
             try
