@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
+using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
-using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb
 {
@@ -62,8 +62,8 @@ namespace Thirdweb
         {
             var rpc = ThirdwebRPC.GetRpcInstance(contract.Client, contract.Chain);
 
-            var service = new Nethereum.Contracts.Contract(null, contract.Abi, contract.Address);
-            var function = service.GetFunction(method);
+            var contractRaw = new Contract(null, contract.Abi, contract.Address);
+            var function = GetFunctionMatchSignature(contractRaw, method, parameters);
             var data = function.GetData(parameters);
 
             var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data = data, }, "latest");
@@ -72,8 +72,8 @@ namespace Thirdweb
 
         public static async Task<ThirdwebTransaction> Prepare(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
         {
-            var service = new Nethereum.Contracts.Contract(null, contract.Abi, contract.Address);
-            var function = service.GetFunction(method);
+            var contractRaw = new Contract(null, contract.Abi, contract.Address);
+            var function = GetFunctionMatchSignature(contractRaw, method, parameters);
             var data = function.GetData(parameters);
             var transaction = new ThirdwebTransactionInput
             {
@@ -90,6 +90,22 @@ namespace Thirdweb
         {
             var thirdwebTx = await Prepare(wallet, contract, method, weiValue, parameters);
             return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(thirdwebTx);
+        }
+
+        private static Function GetFunctionMatchSignature(Contract contract, string functionName, params object[] args)
+        {
+            var abi = contract.ContractBuilder.ContractABI;
+            var functions = abi.Functions;
+            var paramsCount = args?.Length ?? 0;
+            foreach (var function in functions)
+            {
+                if (function.Name == functionName && function.InputParameters.Length == paramsCount)
+                {
+                    var sha = function.Sha3Signature;
+                    return contract.GetFunctionBySignature(sha);
+                }
+            }
+            return null;
         }
     }
 }
