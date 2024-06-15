@@ -23,9 +23,6 @@ namespace Thirdweb.Tests
             var client = ThirdwebClient.Create(secretKey: _secretKey);
             var contract = await GetContract();
 
-            client = null;
-            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.GetBalance());
-
             contract = null;
             _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.GetBalance());
         }

@@ -16,12 +16,6 @@ namespace Thirdweb
             }
 
             var client = contract.Client;
-
-            if (client == null)
-            {
-                throw new ArgumentException("Client must be provided");
-            }
-
             var rpc = ThirdwebRPC.GetRpcInstance(client, contract.Chain);
             var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", contract.Address, "latest");
             return new HexBigInteger(balanceHex).Value;
