@@ -24,9 +24,19 @@ namespace Thirdweb
                 throw new Exception($"Failed to download {uri}: {response.StatusCode} | {await response.Content.ReadAsStringAsync()}");
             }
 
-            var content = await response.Content.ReadAsStringAsync();
-
-            return typeof(T) == typeof(string) ? (T)(object)content : JsonConvert.DeserializeObject<T>(content);
+            if (typeof(T) == typeof(byte[]))
+            {
+                return (T)(object)await response.Content.ReadAsByteArrayAsync();
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                return (T)(object)await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                var content = await response.Content.ReadAsByteArrayAsync();
+                return JsonConvert.DeserializeObject<T>(System.Text.Encoding.UTF8.GetString(content));
+            }
         }
 
         public static async Task<IPFSUploadResult> Upload(ThirdwebClient client, string path)
