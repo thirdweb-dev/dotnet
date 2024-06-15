@@ -47,6 +47,15 @@ public class StorageTests : BaseTests
     }
 
     [Fact]
+    public async Task DownloadTest_Bytes()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var res = await ThirdwebStorage.Download<byte[]>(client, "https://1.rpc.thirdweb.com/providers");
+        Assert.NotNull(res);
+        Assert.NotEmpty(res);
+    }
+
+    [Fact]
     public async Task DownloadTest_400()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
