@@ -57,6 +57,9 @@ namespace Thirdweb.Tests
             _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC721_SetApprovalForAll(wallet, null, false));
             _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC721_SetApprovalForAll(wallet, string.Empty, false));
 
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC721_TokenOfOwnerByIndex(null, BigInteger.Zero));
+            _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC721_TokenOfOwnerByIndex(string.Empty, BigInteger.Zero));
+
             contract = null;
 
             _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC721_BalanceOf(Constants.ADDRESS_ZERO));
@@ -80,6 +83,10 @@ namespace Thirdweb.Tests
             _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC721_SafeTransferFrom(null, null, null, BigInteger.Zero));
 
             _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC721_Approve(null, null, BigInteger.Zero));
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC721_TotalSupply());
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC721_TokenOfOwnerByIndex(Constants.ADDRESS_ZERO, BigInteger.Zero));
         }
 
         [Fact]
@@ -164,6 +171,30 @@ namespace Thirdweb.Tests
             var isApproved = await contract.ERC721_IsApprovedForAll(ownerAddress, operatorAddress);
 
             Assert.True(isApproved || !isApproved);
+        }
+
+        [Fact]
+        public async Task ERC721_TotalSupply()
+        {
+            var client = ThirdwebClient.Create(secretKey: _secretKey);
+            var contract = await ThirdwebContract.Create(client, _erc721ContractAddress, _chainId);
+
+            var totalSupply = await contract.ERC721_TotalSupply();
+
+            Assert.True(totalSupply >= 0);
+        }
+
+        [Fact]
+        public async Task ERC721_TokenOfOwnerByIndex()
+        {
+            var client = ThirdwebClient.Create(secretKey: _secretKey);
+            var contract = await ThirdwebContract.Create(client, _erc721ContractAddress, _chainId);
+            var ownerAddress = "0xE33653ce510Ee767d8824b5EcDeD27125D49889D";
+            var index = BigInteger.Zero;
+
+            var tokenId = await contract.ERC721_TokenOfOwnerByIndex(ownerAddress, index);
+
+            Assert.True(tokenId >= 0);
         }
 
         [Fact]

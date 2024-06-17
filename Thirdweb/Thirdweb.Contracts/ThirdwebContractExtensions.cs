@@ -8,18 +8,14 @@ namespace Thirdweb
     {
         #region Common
 
-        public static async Task<BigInteger> GetBalance(this ThirdwebContract contract, ThirdwebClient client)
+        public static async Task<BigInteger> GetBalance(this ThirdwebContract contract)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            if (client == null)
-            {
-                throw new ArgumentNullException(nameof(client));
-            }
-
+            var client = contract.Client;
             var rpc = ThirdwebRPC.GetRpcInstance(client, contract.Chain);
             var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", contract.Address, "latest");
             return new HexBigInteger(balanceHex).Value;
@@ -176,6 +172,44 @@ namespace Thirdweb
             }
 
             return await ThirdwebContract.Write(wallet, contract, "transferFrom", 0, fromAddress, toAddress, amount);
+        }
+
+        // Total supply of the token
+        public static async Task<BigInteger> ERC721_TotalSupply(this ThirdwebContract contract)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            return await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
+        }
+
+        // Get the token ID of a specific owner by index
+        public static async Task<BigInteger> ERC721_TokenOfOwnerByIndex(this ThirdwebContract contract, string ownerAddress, BigInteger index)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (string.IsNullOrEmpty(ownerAddress))
+            {
+                throw new ArgumentException("Owner address must be provided");
+            }
+
+            return await ThirdwebContract.Read<BigInteger>(contract, "tokenOfOwnerByIndex", ownerAddress, index);
+        }
+
+        // Get the token ID of a specific owner by index
+        public static async Task<BigInteger> ERC721_TokenByIndex(this ThirdwebContract contract, BigInteger index)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            return await ThirdwebContract.Read<BigInteger>(contract, "tokenByIndex", index);
         }
 
         #endregion
@@ -528,6 +562,35 @@ namespace Thirdweb
             }
 
             return await ThirdwebContract.Read<string>(contract, "uri", tokenId);
+        }
+
+        // Total Supply of id
+        public static async Task<BigInteger> ERC1155_TotalSupply(this ThirdwebContract contract, BigInteger tokenId)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            return await ThirdwebContract.Read<BigInteger>(contract, "totalSupply", tokenId);
+        }
+
+        // Total Supply
+        public static async Task<BigInteger> ERC1155_TotalSupply(this ThirdwebContract contract)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            try
+            {
+                return await ThirdwebContract.Read<BigInteger>(contract, "nextTokenIdToMint");
+            }
+            catch (Exception)
+            {
+                return await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
+            }
         }
 
         #endregion
