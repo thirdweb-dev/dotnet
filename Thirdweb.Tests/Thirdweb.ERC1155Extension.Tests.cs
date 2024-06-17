@@ -79,6 +79,10 @@ namespace Thirdweb.Tests
 
             _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_IsApprovedForAll(null, null));
 
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_TotalSupply());
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_TotalSupply(BigInteger.Zero));
+
             _ = await Assert.ThrowsAsync<ArgumentNullException>(
                 async () => await contract.ERC1155_SafeTransferFrom(wallet, Constants.ADDRESS_ZERO, Constants.ADDRESS_ZERO, BigInteger.Zero, BigInteger.Zero, null)
             );
@@ -153,6 +157,29 @@ namespace Thirdweb.Tests
             var receipt = await contract.ERC1155_SetApprovalForAll(wallet, operatorAddress, approved);
 
             Assert.True(receipt.TransactionHash.Length == 66);
+        }
+
+        [Fact]
+        public async Task ERC1155_TotalSupply()
+        {
+            var client = ThirdwebClient.Create(secretKey: _secretKey);
+            var contract = await ThirdwebContract.Create(client, _erc1155ContractAddress, _chainId);
+
+            var totalSupply = await contract.ERC1155_TotalSupply();
+
+            Assert.True(totalSupply >= 0);
+        }
+
+        [Fact]
+        public async Task ERC1155_TotalSupply_WithTokenId()
+        {
+            var client = ThirdwebClient.Create(secretKey: _secretKey);
+            var contract = await ThirdwebContract.Create(client, _erc1155ContractAddress, _chainId);
+            var tokenId = BigInteger.Parse("1");
+
+            var totalSupply = await contract.ERC1155_TotalSupply(tokenId);
+
+            Assert.True(totalSupply >= 0);
         }
 
         // TODO: Update when mint implemented

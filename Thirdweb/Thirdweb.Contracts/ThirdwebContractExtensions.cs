@@ -593,17 +593,6 @@ namespace Thirdweb
             }
         }
 
-        // Exists
-        public static async Task<bool> ERC1155_Exists(this ThirdwebContract contract, BigInteger tokenId)
-        {
-            if (contract == null)
-            {
-                throw new ArgumentNullException(nameof(contract));
-            }
-
-            return await ThirdwebContract.Read<bool>(contract, "exists", tokenId);
-        }
-
         #endregion
     }
 }

@@ -18,6 +18,7 @@ namespace Thirdweb
         private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new Dictionary<int, TaskCompletionSource<object>>();
         private readonly object _batchLock = new object();
         private readonly object _responseLock = new object();
+        private readonly object _cacheLock = new object();
 
         private int _requestIdCounter = 1;
 
@@ -55,10 +56,13 @@ namespace Thirdweb
 
         public async Task<TResponse> SendRequestAsync<TResponse>(string method, params object[] parameters)
         {
-            var cacheKey = GetCacheKey(method, parameters);
-            if (_cache.TryGetValue(cacheKey, out var cachedItem) && (DateTime.Now - cachedItem.Timestamp) < _cacheDuration)
+            lock (_cacheLock)
             {
-                return (TResponse)cachedItem.Response;
+                var cacheKey = GetCacheKey(method, parameters);
+                if (_cache.TryGetValue(cacheKey, out var cachedItem) && (DateTime.Now - cachedItem.Timestamp) < _cacheDuration)
+                {
+                    return (TResponse)cachedItem.Response;
+                }
             }
 
             var tcs = new TaskCompletionSource<object>();
@@ -89,7 +93,11 @@ namespace Thirdweb
             var result = await tcs.Task;
             if (result is TResponse response)
             {
-                _cache[cacheKey] = (response, DateTime.Now);
+                lock (_cacheLock)
+                {
+                    var cacheKey = GetCacheKey(method, parameters);
+                    _cache[cacheKey] = (response, DateTime.Now);
+                }
                 return response;
             }
             else
@@ -97,7 +105,11 @@ namespace Thirdweb
                 try
                 {
                     var deserializedResponse = JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(result));
-                    _cache[cacheKey] = (deserializedResponse, DateTime.Now);
+                    lock (_cacheLock)
+                    {
+                        var cacheKey = GetCacheKey(method, parameters);
+                        _cache[cacheKey] = (deserializedResponse, DateTime.Now);
+                    }
                     return deserializedResponse;
                 }
                 catch (Exception ex)
