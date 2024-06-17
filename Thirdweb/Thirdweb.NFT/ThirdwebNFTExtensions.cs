@@ -8,11 +8,6 @@ namespace Thirdweb
 
         public static async Task<byte[]> GetNFTImageBytes(this NFT nft, ThirdwebClient client)
         {
-            if (client == null)
-            {
-                throw new ArgumentNullException(nameof(client));
-            }
-
             return await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image);
         }
 
@@ -30,7 +25,17 @@ namespace Thirdweb
             var uri = await contract.ERC721_TokenURI(tokenId);
             var metadata = await ThirdwebStorage.Download<NFTMetadata>(contract.Client, uri);
             metadata.Id = tokenId.ToString();
-            var owner = await contract.ERC721_OwnerOf(tokenId);
+
+            var owner = Constants.ADDRESS_ZERO;
+            try
+            {
+                owner = await contract.ERC721_OwnerOf(tokenId);
+            }
+            catch (Exception)
+            {
+                owner = Constants.ADDRESS_ZERO;
+            }
+
             var supply = -BigInteger.MinusOne;
             try
             {
@@ -40,6 +45,7 @@ namespace Thirdweb
             {
                 supply = -1;
             }
+
             var quantityOwned = -1;
 
             return new NFT
