@@ -11,10 +11,14 @@ namespace Thirdweb
         private readonly Uri _rpcUrl;
         private readonly TimeSpan _rpcTimeout;
         private readonly Timer _batchSendTimer;
-        private readonly TimeSpan _batchSendInterval;
+        private readonly TimeSpan _batchSendInterval = TimeSpan.FromMilliseconds(100);
+        private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new Dictionary<string, (object Response, DateTime Timestamp)>();
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(500);
+        private readonly List<RpcRequest> _pendingBatch = new List<RpcRequest>();
+        private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new Dictionary<int, TaskCompletionSource<object>>();
+        private readonly object _batchLock = new object();
+        private readonly object _responseLock = new object();
 
-        private List<RpcRequest> _pendingBatch = new List<RpcRequest>();
-        private Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new Dictionary<int, TaskCompletionSource<object>>();
         private int _requestIdCounter = 1;
 
         private static readonly Dictionary<string, ThirdwebRPC> _rpcs = new Dictionary<string, ThirdwebRPC>();
@@ -51,10 +55,16 @@ namespace Thirdweb
 
         public async Task<TResponse> SendRequestAsync<TResponse>(string method, params object[] parameters)
         {
+            var cacheKey = GetCacheKey(method, parameters);
+            if (_cache.TryGetValue(cacheKey, out var cachedItem) && (DateTime.Now - cachedItem.Timestamp) < _cacheDuration)
+            {
+                return (TResponse)cachedItem.Response;
+            }
+
             var tcs = new TaskCompletionSource<object>();
             int requestId;
 
-            lock (_pendingBatch)
+            lock (_batchLock)
             {
                 requestId = _requestIdCounter++;
                 _pendingBatch.Add(
@@ -65,7 +75,10 @@ namespace Thirdweb
                         Id = requestId
                     }
                 );
-                _responseCompletionSources.Add(requestId, tcs);
+                lock (_responseLock)
+                {
+                    _responseCompletionSources.Add(requestId, tcs);
+                }
 
                 if (_pendingBatch.Count >= _batchSizeLimit)
                 {
@@ -76,13 +89,16 @@ namespace Thirdweb
             var result = await tcs.Task;
             if (result is TResponse response)
             {
+                _cache[cacheKey] = (response, DateTime.Now);
                 return response;
             }
             else
             {
                 try
                 {
-                    return JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(result));
+                    var deserializedResponse = JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(result));
+                    _cache[cacheKey] = (deserializedResponse, DateTime.Now);
+                    return deserializedResponse;
                 }
                 catch (Exception ex)
                 {
@@ -96,20 +112,19 @@ namespace Thirdweb
             _httpClient = client.HttpClient;
             _rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb.com/");
             _rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
-            _batchSendInterval = TimeSpan.FromMilliseconds(100);
             _batchSendTimer = new Timer(_ => SendBatchNow(), null, _batchSendInterval, _batchSendInterval);
         }
 
         private void SendBatchNow()
         {
-            if (_pendingBatch.Count == 0)
-            {
-                return;
-            }
-
             List<RpcRequest> batchToSend;
-            lock (_pendingBatch)
+            lock (_batchLock)
             {
+                if (_pendingBatch.Count == 0)
+                {
+                    return;
+                }
+
                 batchToSend = new List<RpcRequest>(_pendingBatch);
                 _pendingBatch.Clear();
             }
@@ -138,28 +153,33 @@ namespace Thirdweb
 
                 foreach (var rpcResponse in responses)
                 {
-                    if (_responseCompletionSources.TryGetValue(rpcResponse.Id, out var tcs))
+                    lock (_responseLock)
                     {
-                        if (rpcResponse.Error != null)
+                        if (_responseCompletionSources.TryGetValue(rpcResponse.Id, out var tcs))
                         {
-                            var revertMsg = "";
-                            if (rpcResponse.Error.Data != null)
+                            if (rpcResponse.Error != null)
                             {
-                                try
+                                var revertMsg = "";
+                                if (rpcResponse.Error.Data != null)
                                 {
-                                    revertMsg = new Nethereum.ABI.FunctionEncoding.FunctionCallDecoder().DecodeFunctionErrorMessage(rpcResponse.Error.Data);
-                                    revertMsg = string.IsNullOrWhiteSpace(revertMsg) ? rpcResponse.Error.Data : revertMsg;
+                                    try
+                                    {
+                                        revertMsg = new Nethereum.ABI.FunctionEncoding.FunctionCallDecoder().DecodeFunctionErrorMessage(rpcResponse.Error.Data);
+                                        revertMsg = string.IsNullOrWhiteSpace(revertMsg) ? rpcResponse.Error.Data : revertMsg;
+                                    }
+                                    catch
+                                    {
+                                        revertMsg = rpcResponse.Error.Data;
+                                    }
                                 }
-                                catch
-                                {
-                                    revertMsg = rpcResponse.Error.Data;
-                                }
+                                tcs.SetException(new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message} {revertMsg}"));
                             }
-                            tcs.SetException(new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message} {revertMsg}"));
-                        }
-                        else
-                        {
-                            tcs.SetResult(rpcResponse.Result);
+                            else
+                            {
+                                tcs.SetResult(rpcResponse.Result);
+                            }
+
+                            _responseCompletionSources.Remove(rpcResponse.Id);
                         }
                     }
                 }
@@ -171,9 +191,13 @@ namespace Thirdweb
 
                 foreach (var requestId in batch.Select(b => b.Id))
                 {
-                    if (_responseCompletionSources.TryGetValue(requestId, out var tcs))
+                    lock (_responseLock)
                     {
-                        tcs.TrySetException(timeoutException);
+                        if (_responseCompletionSources.TryGetValue(requestId, out var tcs))
+                        {
+                            _ = tcs.TrySetException(timeoutException);
+                            _responseCompletionSources.Remove(requestId);
+                        }
                     }
                 }
 
@@ -181,11 +205,28 @@ namespace Thirdweb
             }
             catch (Exception ex)
             {
-                foreach (var kvp in _responseCompletionSources)
+                lock (_responseLock)
                 {
-                    kvp.Value.TrySetException(ex);
+                    foreach (var kvp in _responseCompletionSources)
+                    {
+                        _ = kvp.Value.TrySetException(ex);
+                    }
                 }
             }
+        }
+
+        private string GetCacheKey(string method, params object[] parameters)
+        {
+            var keyBuilder = new StringBuilder();
+
+            _ = keyBuilder.Append(method);
+
+            foreach (var param in parameters)
+            {
+                _ = keyBuilder.Append(param?.ToString());
+            }
+
+            return keyBuilder.ToString();
         }
     }
 }
