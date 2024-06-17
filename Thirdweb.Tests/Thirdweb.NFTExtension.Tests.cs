@@ -83,6 +83,16 @@ namespace Thirdweb.Tests
         }
 
         [Fact]
+        public async Task GetAllNFTs_721_WithRange()
+        {
+            var contract = await Get721Contract();
+            var nfts = await contract.ERC721_GetAllNFTs(1, 2);
+            Assert.NotNull(nfts);
+            Assert.NotEmpty(nfts);
+            Assert.True(nfts.Count == 1);
+        }
+
+        [Fact]
         public async Task GetOwnedNFTs_721()
         {
             var contract = await Get721Contract();
@@ -107,6 +117,16 @@ namespace Thirdweb.Tests
             var nfts = await contract.ERC1155_GetAllNFTs();
             Assert.NotNull(nfts);
             Assert.NotEmpty(nfts);
+        }
+
+        [Fact]
+        public async Task GetAllNFTs_1155_WithRange()
+        {
+            var contract = await Get1155Contract();
+            var nfts = await contract.ERC1155_GetAllNFTs(1, 2);
+            Assert.NotNull(nfts);
+            Assert.NotEmpty(nfts);
+            Assert.True(nfts.Count == 1);
         }
 
         [Fact]

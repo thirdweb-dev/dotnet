@@ -58,17 +58,27 @@ namespace Thirdweb
             };
         }
 
-        public static async Task<List<NFT>> ERC721_GetAllNFTs(this ThirdwebContract contract)
+        public static async Task<List<NFT>> ERC721_GetAllNFTs(this ThirdwebContract contract, BigInteger? startTokenIdIncluded = null, BigInteger? endTokenIdExcluded = null)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            var totalSupply = await contract.ERC721_TotalSupply();
             var nfts = new List<NFT>();
 
-            for (var i = 0; i < totalSupply; i++)
+            if (startTokenIdIncluded == null)
+            {
+                startTokenIdIncluded = 0;
+            }
+
+            if (endTokenIdExcluded == null)
+            {
+                var totalSupply = await contract.ERC721_TotalSupply();
+                endTokenIdExcluded = totalSupply;
+            }
+
+            for (var i = startTokenIdIncluded.Value; i < endTokenIdExcluded.Value; i++)
             {
                 var nft = await contract.ERC721_GetNFT(i);
                 nfts.Add(nft);
@@ -155,17 +165,27 @@ namespace Thirdweb
             };
         }
 
-        public static async Task<List<NFT>> ERC1155_GetAllNFTs(this ThirdwebContract contract)
+        public static async Task<List<NFT>> ERC1155_GetAllNFTs(this ThirdwebContract contract, BigInteger? startTokenIdIncluded = null, BigInteger? endTokenIdExcluded = null)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            var totalSupply = await contract.ERC1155_TotalSupply();
             var nfts = new List<NFT>();
 
-            for (var i = 0; i < totalSupply; i++)
+            if (startTokenIdIncluded == null)
+            {
+                startTokenIdIncluded = 0;
+            }
+
+            if (endTokenIdExcluded == null)
+            {
+                var totalSupply = await contract.ERC1155_TotalSupply();
+                endTokenIdExcluded = totalSupply;
+            }
+
+            for (var i = startTokenIdIncluded.Value; i < endTokenIdExcluded.Value; i++)
             {
                 var nft = await contract.ERC1155_GetNFT(i);
                 nfts.Add(nft);
