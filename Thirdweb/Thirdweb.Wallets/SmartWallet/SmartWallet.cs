@@ -68,6 +68,7 @@ namespace Thirdweb
             bundlerUrl ??= $"https://{chainId}.bundler.thirdweb.com";
             paymasterUrl ??= $"https://{chainId}.bundler.thirdweb.com";
             entryPoint ??= Constants.DEFAULT_ENTRYPOINT_ADDRESS;
+            factoryAddress ??= Constants.DEFAULT_FACTORY_ADDRESS;
 
             ThirdwebContract entryPointContract = null;
             ThirdwebContract factoryContract = null;
