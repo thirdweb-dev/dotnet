@@ -6,9 +6,14 @@ namespace Thirdweb
     {
         #region  Common
 
-        public static Task<byte[]> GetNFTImageBytes(this NFT nft, ThirdwebClient client)
+        public static async Task<byte[]> GetNFTImageBytes(this NFT nft, ThirdwebClient client)
         {
-            return ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image);
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
+            return string.IsNullOrEmpty(nft.Metadata.Image) ? new byte[] { } : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image);
         }
 
         #endregion
