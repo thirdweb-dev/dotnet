@@ -38,7 +38,7 @@ namespace Thirdweb
                 throw new ArgumentException("Chain must be provided");
             }
 
-            abi ??= await FetchAbi(client, address, chain);
+            abi ??= await FetchAbi(client, address, chain).ConfigureAwait(false);
             return new ThirdwebContract(client, address, chain, abi);
         }
 
@@ -53,7 +53,7 @@ namespace Thirdweb
             var httpClient = client.HttpClient;
             var response = await httpClient.GetAsync(url).ConfigureAwait(false);
             _ = response.EnsureSuccessStatusCode();
-            var abi = await response.Content.ReadAsStringAsync();
+            var abi = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             _contractAbiCache[$"{address}:{chainId}"] = abi;
             return abi;
         }
@@ -66,7 +66,7 @@ namespace Thirdweb
             var function = GetFunctionMatchSignature(contractRaw, method, parameters);
             var data = function.GetData(parameters);
 
-            var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data = data, }, "latest");
+            var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data = data, }, "latest").ConfigureAwait(false);
             return function.DecodeTypeOutput<T>(resultData);
         }
 
@@ -77,19 +77,19 @@ namespace Thirdweb
             var data = function.GetData(parameters);
             var transaction = new ThirdwebTransactionInput
             {
-                From = await wallet.GetAddress(),
+                From = await wallet.GetAddress().ConfigureAwait(false),
                 To = contract.Address,
                 Data = data,
                 Value = new HexBigInteger(weiValue),
             };
 
-            return await ThirdwebTransaction.Create(contract.Client, wallet, transaction, contract.Chain);
+            return await ThirdwebTransaction.Create(contract.Client, wallet, transaction, contract.Chain).ConfigureAwait(false);
         }
 
         public static async Task<ThirdwebTransactionReceipt> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
         {
-            var thirdwebTx = await Prepare(wallet, contract, method, weiValue, parameters);
-            return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(thirdwebTx);
+            var thirdwebTx = await Prepare(wallet, contract, method, weiValue, parameters).ConfigureAwait(false);
+            return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(thirdwebTx).ConfigureAwait(false);
         }
 
         private static Function GetFunctionMatchSignature(Contract contract, string functionName, params object[] args)

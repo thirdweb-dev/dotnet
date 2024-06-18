@@ -28,7 +28,7 @@ namespace Thirdweb.EWS
             AmazonCognitoIdentityProviderClient provider = new(new AnonymousAWSCredentials(), awsRegion);
             CognitoUserPool userPool = new(cognitoUserPoolId, cognitoAppClientId, provider);
             Dictionary<string, string> userAttributes = new() { { "email", emailAddress }, };
-            await userPool.SignUpAsync(userName, Secrets.Random(12), userAttributes, new Dictionary<string, string>());
+            await userPool.SignUpAsync(userName, Secrets.Random(12), userAttributes, new Dictionary<string, string>()).ConfigureAwait(false);
         }
 
         internal static async Task<string> StartCognitoUserAuth(string userName)
@@ -45,7 +45,7 @@ namespace Thirdweb.EWS
                 };
             try
             {
-                AuthFlowResponse authResponse = await user.StartWithCustomAuthAsync(customRequest);
+                AuthFlowResponse authResponse = await user.StartWithCustomAuthAsync(customRequest).ConfigureAwait(false);
                 return authResponse.SessionID;
             }
             catch (UserNotFoundException)
@@ -68,7 +68,7 @@ namespace Thirdweb.EWS
                 };
             try
             {
-                AuthFlowResponse authResponse = await user.RespondToCustomAuthAsync(challengeRequest);
+                AuthFlowResponse authResponse = await user.RespondToCustomAuthAsync(challengeRequest).ConfigureAwait(false);
                 AuthenticationResultType result = authResponse.AuthenticationResult ?? throw new VerificationException("The OTP is incorrect", true);
                 return new TokenCollection(result.AccessToken, result.IdToken, result.RefreshToken);
             }
@@ -89,7 +89,7 @@ namespace Thirdweb.EWS
             string providerName = $"cognito-idp.{awsRegion.SystemName}.amazonaws.com/{cognitoUserPoolId}";
             credentials.AddLogin(providerName, idToken);
             AmazonLambdaClient client = new(credentials, awsRegion);
-            InvokeResponse lambdaResponse = await client.InvokeAsync(request);
+            InvokeResponse lambdaResponse = await client.InvokeAsync(request).ConfigureAwait(false);
             return lambdaResponse.Payload;
         }
     }

@@ -7,18 +7,18 @@ namespace Thirdweb.EWS
     {
         public async Task<(bool isNewUser, bool isNewDevice, bool needsPassword)> SendOtpEmailAsync(string emailAddress)
         {
-            Server.UserWallet userWallet = await server.FetchUserDetailsAsync(emailAddress, null);
+            Server.UserWallet userWallet = await server.FetchUserDetailsAsync(emailAddress, null).ConfigureAwait(false);
             bool isKmsWallet = userWallet.RecoveryShareManagement != "USER_MANAGED";
             string sessionId = "";
             if (isKmsWallet)
             {
-                sessionId = await server.SendKmsOtpEmailAsync(emailAddress);
+                sessionId = await server.SendKmsOtpEmailAsync(emailAddress).ConfigureAwait(false);
             }
             else
             {
                 await server.SendUserOtpEmailAsync(emailAddress);
             }
-            await localStorage.SaveSessionAsync(sessionId, isKmsWallet);
+            await localStorage.SaveSessionAsync(sessionId, isKmsWallet).ConfigureAwait(false);
             bool isNewDevice = userWallet.IsNewUser || localStorage.Data?.WalletUserId != userWallet.WalletUserId;
             return (userWallet.IsNewUser, isNewDevice, !isKmsWallet);
         }
@@ -37,9 +37,9 @@ namespace Thirdweb.EWS
                     {
                         throw new VerificationException("Invalid OTP", true);
                     }
-                    Server.VerifyResult result = await server.VerifyKmsOtpAsync(emailAddress, otp, localStorage.Session.Id);
-                    await localStorage.RemoveSessionAsync();
-                    return await PostAuthSetup(result, recoveryCode, null, "EmailOTP");
+                    Server.VerifyResult result = await server.VerifyKmsOtpAsync(emailAddress, otp, localStorage.Session.Id).ConfigureAwait(false);
+                    await localStorage.RemoveSessionAsync().ConfigureAwait(false);
+                    return await PostAuthSetup(result, recoveryCode, null, "EmailOTP").ConfigureAwait(false);
                 }
                 else
                 {
@@ -47,9 +47,9 @@ namespace Thirdweb.EWS
                     {
                         throw new VerificationException("Invalid OTP", true);
                     }
-                    Server.VerifyResult result = await server.VerifyUserOtpAsync(emailAddress, otp);
-                    await localStorage.RemoveSessionAsync();
-                    return await PostAuthSetup(result, recoveryCode, null, "EmailOTP");
+                    Server.VerifyResult result = await server.VerifyUserOtpAsync(emailAddress, otp).ConfigureAwait(false);
+                    await localStorage.RemoveSessionAsync().ConfigureAwait(false);
+                    return await PostAuthSetup(result, recoveryCode, null, "EmailOTP").ConfigureAwait(false);
                 }
             }
             catch (VerificationException ex)

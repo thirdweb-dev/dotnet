@@ -17,7 +17,7 @@ namespace Thirdweb
 
             var client = contract.Client;
             var rpc = ThirdwebRPC.GetRpcInstance(client, contract.Chain);
-            var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", contract.Address, "latest");
+            var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", contract.Address, "latest").ConfigureAwait(false);
             return new HexBigInteger(balanceHex).Value;
         }
 
@@ -26,7 +26,7 @@ namespace Thirdweb
         #region ERC20
 
         // Check the balance of a specific address
-        public static async Task<BigInteger> ERC20_BalanceOf(this ThirdwebContract contract, string ownerAddress)
+        public static Task<BigInteger> ERC20_BalanceOf(this ThirdwebContract contract, string ownerAddress)
         {
             if (contract == null)
             {
@@ -38,55 +38,55 @@ namespace Thirdweb
                 throw new ArgumentException("Owner address must be provided");
             }
 
-            return await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress);
+            return ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress);
         }
 
         // Get the total supply of the token
-        public static async Task<BigInteger> ERC20_TotalSupply(this ThirdwebContract contract)
+        public static Task<BigInteger> ERC20_TotalSupply(this ThirdwebContract contract)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
+            return ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
         }
 
         // Get the number of decimals used by the token
-        public static async Task<int> ERC20_Decimals(this ThirdwebContract contract)
+        public static Task<int> ERC20_Decimals(this ThirdwebContract contract)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<int>(contract, "decimals");
+            return ThirdwebContract.Read<int>(contract, "decimals");
         }
 
         // Get the symbol of the token
-        public static async Task<string> ERC20_Symbol(this ThirdwebContract contract)
+        public static Task<string> ERC20_Symbol(this ThirdwebContract contract)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<string>(contract, "symbol");
+            return ThirdwebContract.Read<string>(contract, "symbol");
         }
 
         // Get the name of the token
-        public static async Task<string> ERC20_Name(this ThirdwebContract contract)
+        public static Task<string> ERC20_Name(this ThirdwebContract contract)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<string>(contract, "name");
+            return ThirdwebContract.Read<string>(contract, "name");
         }
 
         // Get the allowance of a spender for a specific owner
-        public static async Task<BigInteger> ERC20_Allowance(this ThirdwebContract contract, string ownerAddress, string spenderAddress)
+        public static Task<BigInteger> ERC20_Allowance(this ThirdwebContract contract, string ownerAddress, string spenderAddress)
         {
             if (contract == null)
             {
@@ -103,11 +103,11 @@ namespace Thirdweb
                 throw new ArgumentException("Spender address must be provided");
             }
 
-            return await ThirdwebContract.Read<BigInteger>(contract, "allowance", ownerAddress, spenderAddress);
+            return ThirdwebContract.Read<BigInteger>(contract, "allowance", ownerAddress, spenderAddress);
         }
 
         // Approve a spender to spend a specific amount of tokens
-        public static async Task<ThirdwebTransactionReceipt> ERC20_Approve(this ThirdwebContract contract, IThirdwebWallet wallet, string spenderAddress, BigInteger amount)
+        public static Task<ThirdwebTransactionReceipt> ERC20_Approve(this ThirdwebContract contract, IThirdwebWallet wallet, string spenderAddress, BigInteger amount)
         {
             if (contract == null)
             {
@@ -124,11 +124,11 @@ namespace Thirdweb
                 throw new ArgumentException("Spender address must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "approve", 0, spenderAddress, amount);
+            return ThirdwebContract.Write(wallet, contract, "approve", 0, spenderAddress, amount);
         }
 
         // Transfer tokens to a specific address
-        public static async Task<ThirdwebTransactionReceipt> ERC20_Transfer(this ThirdwebContract contract, IThirdwebWallet wallet, string toAddress, BigInteger amount)
+        public static Task<ThirdwebTransactionReceipt> ERC20_Transfer(this ThirdwebContract contract, IThirdwebWallet wallet, string toAddress, BigInteger amount)
         {
             if (contract == null)
             {
@@ -145,11 +145,11 @@ namespace Thirdweb
                 throw new ArgumentException("Recipient address must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "transfer", 0, toAddress, amount);
+            return ThirdwebContract.Write(wallet, contract, "transfer", 0, toAddress, amount);
         }
 
         // Transfer tokens from one address to another
-        public static async Task<ThirdwebTransactionReceipt> ERC20_TransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger amount)
+        public static Task<ThirdwebTransactionReceipt> ERC20_TransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger amount)
         {
             if (contract == null)
             {
@@ -171,22 +171,22 @@ namespace Thirdweb
                 throw new ArgumentException("Recipient address must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "transferFrom", 0, fromAddress, toAddress, amount);
+            return ThirdwebContract.Write(wallet, contract, "transferFrom", 0, fromAddress, toAddress, amount);
         }
 
         // Total supply of the token
-        public static async Task<BigInteger> ERC721_TotalSupply(this ThirdwebContract contract)
+        public static Task<BigInteger> ERC721_TotalSupply(this ThirdwebContract contract)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
+            return ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
         }
 
         // Get the token ID of a specific owner by index
-        public static async Task<BigInteger> ERC721_TokenOfOwnerByIndex(this ThirdwebContract contract, string ownerAddress, BigInteger index)
+        public static Task<BigInteger> ERC721_TokenOfOwnerByIndex(this ThirdwebContract contract, string ownerAddress, BigInteger index)
         {
             if (contract == null)
             {
@@ -198,18 +198,18 @@ namespace Thirdweb
                 throw new ArgumentException("Owner address must be provided");
             }
 
-            return await ThirdwebContract.Read<BigInteger>(contract, "tokenOfOwnerByIndex", ownerAddress, index);
+            return ThirdwebContract.Read<BigInteger>(contract, "tokenOfOwnerByIndex", ownerAddress, index);
         }
 
         // Get the token ID of a specific owner by index
-        public static async Task<BigInteger> ERC721_TokenByIndex(this ThirdwebContract contract, BigInteger index)
+        public static Task<BigInteger> ERC721_TokenByIndex(this ThirdwebContract contract, BigInteger index)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<BigInteger>(contract, "tokenByIndex", index);
+            return ThirdwebContract.Read<BigInteger>(contract, "tokenByIndex", index);
         }
 
         #endregion
@@ -217,7 +217,7 @@ namespace Thirdweb
         #region ERC721
 
         // Check the balance of a specific address
-        public static async Task<BigInteger> ERC721_BalanceOf(this ThirdwebContract contract, string ownerAddress)
+        public static Task<BigInteger> ERC721_BalanceOf(this ThirdwebContract contract, string ownerAddress)
         {
             if (contract == null)
             {
@@ -229,55 +229,55 @@ namespace Thirdweb
                 throw new ArgumentException("Owner address must be provided");
             }
 
-            return await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress);
+            return ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress);
         }
 
         // Get the owner of a specific token
-        public static async Task<string> ERC721_OwnerOf(this ThirdwebContract contract, BigInteger tokenId)
+        public static Task<string> ERC721_OwnerOf(this ThirdwebContract contract, BigInteger tokenId)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<string>(contract, "ownerOf", tokenId);
+            return ThirdwebContract.Read<string>(contract, "ownerOf", tokenId);
         }
 
         // Get the name of the token
-        public static async Task<string> ERC721_Name(this ThirdwebContract contract)
+        public static Task<string> ERC721_Name(this ThirdwebContract contract)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<string>(contract, "name");
+            return ThirdwebContract.Read<string>(contract, "name");
         }
 
         // Get the symbol of the token
-        public static async Task<string> ERC721_Symbol(this ThirdwebContract contract)
+        public static Task<string> ERC721_Symbol(this ThirdwebContract contract)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<string>(contract, "symbol");
+            return ThirdwebContract.Read<string>(contract, "symbol");
         }
 
         // Get the URI of a specific token
-        public static async Task<string> ERC721_TokenURI(this ThirdwebContract contract, BigInteger tokenId)
+        public static Task<string> ERC721_TokenURI(this ThirdwebContract contract, BigInteger tokenId)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<string>(contract, "tokenURI", tokenId);
+            return ThirdwebContract.Read<string>(contract, "tokenURI", tokenId);
         }
 
         // Approve a specific address to transfer a specific token
-        public static async Task<ThirdwebTransactionReceipt> ERC721_Approve(this ThirdwebContract contract, IThirdwebWallet wallet, string toAddress, BigInteger tokenId)
+        public static Task<ThirdwebTransactionReceipt> ERC721_Approve(this ThirdwebContract contract, IThirdwebWallet wallet, string toAddress, BigInteger tokenId)
         {
             if (contract == null)
             {
@@ -294,22 +294,22 @@ namespace Thirdweb
                 throw new ArgumentException("Recipient address must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "approve", 0, toAddress, tokenId);
+            return ThirdwebContract.Write(wallet, contract, "approve", 0, toAddress, tokenId);
         }
 
         // Get the approved address for a specific token
-        public static async Task<string> ERC721_GetApproved(this ThirdwebContract contract, BigInteger tokenId)
+        public static Task<string> ERC721_GetApproved(this ThirdwebContract contract, BigInteger tokenId)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<string>(contract, "getApproved", tokenId);
+            return ThirdwebContract.Read<string>(contract, "getApproved", tokenId);
         }
 
         // Check if an address is an operator for another address
-        public static async Task<bool> ERC721_IsApprovedForAll(this ThirdwebContract contract, string ownerAddress, string operatorAddress)
+        public static Task<bool> ERC721_IsApprovedForAll(this ThirdwebContract contract, string ownerAddress, string operatorAddress)
         {
             if (contract == null)
             {
@@ -326,11 +326,11 @@ namespace Thirdweb
                 throw new ArgumentException("Operator address must be provided");
             }
 
-            return await ThirdwebContract.Read<bool>(contract, "isApprovedForAll", ownerAddress, operatorAddress);
+            return ThirdwebContract.Read<bool>(contract, "isApprovedForAll", ownerAddress, operatorAddress);
         }
 
         // Set or unset an operator for an owner
-        public static async Task<ThirdwebTransactionReceipt> ERC721_SetApprovalForAll(this ThirdwebContract contract, IThirdwebWallet wallet, string operatorAddress, bool approved)
+        public static Task<ThirdwebTransactionReceipt> ERC721_SetApprovalForAll(this ThirdwebContract contract, IThirdwebWallet wallet, string operatorAddress, bool approved)
         {
             if (contract == null)
             {
@@ -347,11 +347,11 @@ namespace Thirdweb
                 throw new ArgumentException("Operator address must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "setApprovalForAll", 0, operatorAddress, approved);
+            return ThirdwebContract.Write(wallet, contract, "setApprovalForAll", 0, operatorAddress, approved);
         }
 
         // Transfer a specific token from one address to another
-        public static async Task<ThirdwebTransactionReceipt> ERC721_TransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger tokenId)
+        public static Task<ThirdwebTransactionReceipt> ERC721_TransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger tokenId)
         {
             if (contract == null)
             {
@@ -373,11 +373,11 @@ namespace Thirdweb
                 throw new ArgumentException("Recipient address must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "transferFrom", 0, fromAddress, toAddress, tokenId);
+            return ThirdwebContract.Write(wallet, contract, "transferFrom", 0, fromAddress, toAddress, tokenId);
         }
 
         // Safe transfer a specific token from one address to another
-        public static async Task<ThirdwebTransactionReceipt> ERC721_SafeTransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger tokenId)
+        public static Task<ThirdwebTransactionReceipt> ERC721_SafeTransferFrom(this ThirdwebContract contract, IThirdwebWallet wallet, string fromAddress, string toAddress, BigInteger tokenId)
         {
             if (contract == null)
             {
@@ -399,7 +399,7 @@ namespace Thirdweb
                 throw new ArgumentException("Recipient address must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "safeTransferFrom", 0, fromAddress, toAddress, tokenId);
+            return ThirdwebContract.Write(wallet, contract, "safeTransferFrom", 0, fromAddress, toAddress, tokenId);
         }
 
         #endregion
@@ -407,7 +407,7 @@ namespace Thirdweb
         #region ERC1155
 
         // Check the balance of a specific token for a specific address
-        public static async Task<BigInteger> ERC1155_BalanceOf(this ThirdwebContract contract, string ownerAddress, BigInteger tokenId)
+        public static Task<BigInteger> ERC1155_BalanceOf(this ThirdwebContract contract, string ownerAddress, BigInteger tokenId)
         {
             if (contract == null)
             {
@@ -419,11 +419,11 @@ namespace Thirdweb
                 throw new ArgumentException("Owner address must be provided");
             }
 
-            return await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress, tokenId);
+            return ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress, tokenId);
         }
 
         // Check the balance of multiple tokens for multiple addresses
-        public static async Task<List<BigInteger>> ERC1155_BalanceOfBatch(this ThirdwebContract contract, string[] ownerAddresses, BigInteger[] tokenIds)
+        public static Task<List<BigInteger>> ERC1155_BalanceOfBatch(this ThirdwebContract contract, string[] ownerAddresses, BigInteger[] tokenIds)
         {
             if (contract == null)
             {
@@ -435,11 +435,11 @@ namespace Thirdweb
                 throw new ArgumentException("Owner addresses and token IDs must be provided");
             }
 
-            return await ThirdwebContract.Read<List<BigInteger>>(contract, "balanceOfBatch", ownerAddresses, tokenIds);
+            return ThirdwebContract.Read<List<BigInteger>>(contract, "balanceOfBatch", ownerAddresses, tokenIds);
         }
 
         // Approve a specific address to transfer specific tokens
-        public static async Task<ThirdwebTransactionReceipt> ERC1155_SetApprovalForAll(this ThirdwebContract contract, IThirdwebWallet wallet, string operatorAddress, bool approved)
+        public static Task<ThirdwebTransactionReceipt> ERC1155_SetApprovalForAll(this ThirdwebContract contract, IThirdwebWallet wallet, string operatorAddress, bool approved)
         {
             if (contract == null)
             {
@@ -456,11 +456,11 @@ namespace Thirdweb
                 throw new ArgumentException("Operator address must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "setApprovalForAll", 0, operatorAddress, approved);
+            return ThirdwebContract.Write(wallet, contract, "setApprovalForAll", 0, operatorAddress, approved);
         }
 
         // Check if an address is approved to transfer specific tokens
-        public static async Task<bool> ERC1155_IsApprovedForAll(this ThirdwebContract contract, string ownerAddress, string operatorAddress)
+        public static Task<bool> ERC1155_IsApprovedForAll(this ThirdwebContract contract, string ownerAddress, string operatorAddress)
         {
             if (contract == null)
             {
@@ -477,11 +477,11 @@ namespace Thirdweb
                 throw new ArgumentException("Operator address must be provided");
             }
 
-            return await ThirdwebContract.Read<bool>(contract, "isApprovedForAll", ownerAddress, operatorAddress);
+            return ThirdwebContract.Read<bool>(contract, "isApprovedForAll", ownerAddress, operatorAddress);
         }
 
         // Transfer specific tokens from one address to another
-        public static async Task<ThirdwebTransactionReceipt> ERC1155_SafeTransferFrom(
+        public static Task<ThirdwebTransactionReceipt> ERC1155_SafeTransferFrom(
             this ThirdwebContract contract,
             IThirdwebWallet wallet,
             string fromAddress,
@@ -511,11 +511,11 @@ namespace Thirdweb
                 throw new ArgumentException("Recipient address must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "safeTransferFrom", 0, fromAddress, toAddress, tokenId, amount, data);
+            return ThirdwebContract.Write(wallet, contract, "safeTransferFrom", 0, fromAddress, toAddress, tokenId, amount, data);
         }
 
         // Transfer multiple tokens from one address to another
-        public static async Task<ThirdwebTransactionReceipt> ERC1155_SafeBatchTransferFrom(
+        public static Task<ThirdwebTransactionReceipt> ERC1155_SafeBatchTransferFrom(
             this ThirdwebContract contract,
             IThirdwebWallet wallet,
             string fromAddress,
@@ -550,33 +550,33 @@ namespace Thirdweb
                 throw new ArgumentException("Token IDs and amounts must be provided");
             }
 
-            return await ThirdwebContract.Write(wallet, contract, "safeBatchTransferFrom", 0, fromAddress, toAddress, tokenIds, amounts, data);
+            return ThirdwebContract.Write(wallet, contract, "safeBatchTransferFrom", 0, fromAddress, toAddress, tokenIds, amounts, data);
         }
 
         // Get the URI for a specific token
-        public static async Task<string> ERC1155_URI(this ThirdwebContract contract, BigInteger tokenId)
+        public static Task<string> ERC1155_URI(this ThirdwebContract contract, BigInteger tokenId)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<string>(contract, "uri", tokenId);
+            return ThirdwebContract.Read<string>(contract, "uri", tokenId);
         }
 
         // Total Supply of id
-        public static async Task<BigInteger> ERC1155_TotalSupply(this ThirdwebContract contract, BigInteger tokenId)
+        public static Task<BigInteger> ERC1155_TotalSupply(this ThirdwebContract contract, BigInteger tokenId)
         {
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            return await ThirdwebContract.Read<BigInteger>(contract, "totalSupply", tokenId);
+            return ThirdwebContract.Read<BigInteger>(contract, "totalSupply", tokenId);
         }
 
         // Total Supply
-        public static async Task<BigInteger> ERC1155_TotalSupply(this ThirdwebContract contract)
+        public static Task<BigInteger> ERC1155_TotalSupply(this ThirdwebContract contract)
         {
             if (contract == null)
             {
@@ -585,11 +585,11 @@ namespace Thirdweb
 
             try
             {
-                return await ThirdwebContract.Read<BigInteger>(contract, "nextTokenIdToMint");
+                return ThirdwebContract.Read<BigInteger>(contract, "nextTokenIdToMint");
             }
             catch (Exception)
             {
-                return await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
+                return ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
             }
         }
 
