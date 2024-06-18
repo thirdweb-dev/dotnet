@@ -25,6 +25,15 @@ public class SmartWalletTests : BaseTests
     }
 
     [Fact]
+    public async Task Initialization_WithoutFactory_Success()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
+        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, chainId: 421614);
+        Assert.NotNull(await smartAccount.GetAddress());
+    }
+
+    [Fact]
     public async Task Initialization_Fail()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
