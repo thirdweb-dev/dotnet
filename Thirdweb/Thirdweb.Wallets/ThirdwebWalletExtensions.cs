@@ -6,7 +6,7 @@ namespace Thirdweb
 {
     public static class ThirdwebWalletExtensions
     {
-        public static async Task<BigInteger> GetBalance(this IThirdwebWallet wallet, ThirdwebClient client, BigInteger chainId)
+        public static async Task<BigInteger> GetBalance(this IThirdwebWallet wallet, ThirdwebClient client, BigInteger chainId, string erc20ContractAddress = null)
         {
             if (wallet == null)
             {
@@ -21,6 +21,12 @@ namespace Thirdweb
             if (chainId <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(chainId), "Chain ID must be greater than 0.");
+            }
+
+            if (erc20ContractAddress != null)
+            {
+                var erc20Contract = await ThirdwebContract.Create(client, erc20ContractAddress, chainId);
+                return await erc20Contract.ERC20_BalanceOf(await wallet.GetAddress());
             }
 
             var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);

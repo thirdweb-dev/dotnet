@@ -54,6 +54,15 @@ namespace Thirdweb.Tests
         }
 
         [Fact]
+        public async Task GetBalance_WithERC20()
+        {
+            var client = ThirdwebClient.Create(secretKey: _secretKey);
+            var wallet = await GetWallet();
+            var balance = await wallet.GetBalance(client, _chainId, "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e");
+            Assert.True(balance >= 0);
+        }
+
+        [Fact]
         public async Task Transfer()
         {
             var client = ThirdwebClient.Create(secretKey: _secretKey);
