@@ -69,8 +69,8 @@ namespace Thirdweb.Tests
             Assert.NotNull(nft.Owner);
             Assert.NotEmpty(nft.Owner);
             Assert.Equal(NFTType.ERC721, nft.Type);
-            Assert.True(nft.Supply == -1 || nft.Supply > 0);
-            Assert.True(nft.QuantityOwned == -1);
+            Assert.True(nft.Supply == 1);
+            Assert.Null(nft.QuantityOwned);
         }
 
         [Fact]

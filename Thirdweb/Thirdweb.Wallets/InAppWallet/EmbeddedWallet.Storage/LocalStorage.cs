@@ -60,7 +60,7 @@ namespace Thirdweb.EWS
                 DataContractJsonSerializer serializer = new(typeof(Storage));
                 MemoryStream fout = new();
                 serializer.WriteObject(fout, storage);
-                await File.WriteAllBytesAsync(filePath, fout.ToArray());
+                await File.WriteAllBytesAsync(filePath, fout.ToArray()).ConfigureAwait(false);
                 return true;
             }
             return false;

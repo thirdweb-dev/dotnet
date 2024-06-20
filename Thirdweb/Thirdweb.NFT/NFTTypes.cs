@@ -16,7 +16,7 @@ namespace Thirdweb
         public NFTMetadata Metadata { get; set; }
         public string Owner { get; set; }
         public NFTType Type { get; set; }
-        public BigInteger Supply { get; set; }
+        public BigInteger? Supply { get; set; }
         public BigInteger? QuantityOwned { get; set; }
     }
 

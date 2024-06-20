@@ -8,7 +8,12 @@ namespace Thirdweb
 
         public static async Task<byte[]> GetNFTImageBytes(this NFT nft, ThirdwebClient client)
         {
-            return await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image);
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
+            return string.IsNullOrEmpty(nft.Metadata.Image) ? new byte[] { } : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image);
         }
 
         #endregion
@@ -22,39 +27,26 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            var uri = await contract.ERC721_TokenURI(tokenId);
-            var metadata = await ThirdwebStorage.Download<NFTMetadata>(contract.Client, uri);
+            var uri = await contract.ERC721_TokenURI(tokenId).ConfigureAwait(false);
+            var metadata = await ThirdwebStorage.Download<NFTMetadata>(contract.Client, uri).ConfigureAwait(false);
             metadata.Id = tokenId.ToString();
 
             var owner = Constants.ADDRESS_ZERO;
             try
             {
-                owner = await contract.ERC721_OwnerOf(tokenId);
+                owner = await contract.ERC721_OwnerOf(tokenId).ConfigureAwait(false);
             }
             catch (Exception)
             {
                 owner = Constants.ADDRESS_ZERO;
             }
 
-            var supply = -BigInteger.MinusOne;
-            try
-            {
-                supply = await contract.ERC721_TotalSupply();
-            }
-            catch (Exception)
-            {
-                supply = -1;
-            }
-
-            var quantityOwned = -1;
-
             return new NFT
             {
                 Metadata = metadata,
                 Owner = owner,
                 Type = NFTType.ERC721,
-                Supply = supply,
-                QuantityOwned = quantityOwned
+                Supply = 1,
             };
         }
 
@@ -65,8 +57,6 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            var nfts = new List<NFT>();
-
             if (startTokenIdIncluded == null)
             {
                 startTokenIdIncluded = 0;
@@ -74,17 +64,18 @@ namespace Thirdweb
 
             if (endTokenIdExcluded == null)
             {
-                var totalSupply = await contract.ERC721_TotalSupply();
+                var totalSupply = await contract.ERC721_TotalSupply().ConfigureAwait(false);
                 endTokenIdExcluded = totalSupply;
             }
 
+            var nftTasks = new List<Task<NFT>>();
             for (var i = startTokenIdIncluded.Value; i < endTokenIdExcluded.Value; i++)
             {
-                var nft = await contract.ERC721_GetNFT(i);
-                nfts.Add(nft);
+                nftTasks.Add(contract.ERC721_GetNFT(i));
             }
 
-            return nfts;
+            var allNfts = await Task.WhenAll(nftTasks).ConfigureAwait(false);
+            return allNfts.ToList();
         }
 
         public static async Task<List<NFT>> ERC721_GetOwnedNFTs(this ThirdwebContract contract, string owner)
@@ -99,34 +90,31 @@ namespace Thirdweb
                 throw new ArgumentException("Owner must be provided");
             }
 
-            var nfts = new List<NFT>();
-
-            var totalSupply = await contract.ERC721_TotalSupply();
-
             try
             {
-                var balanceOfOwner = await contract.ERC721_BalanceOf(owner);
+                var balanceOfOwner = await contract.ERC721_BalanceOf(owner).ConfigureAwait(false);
+                var ownedNftTasks = new List<Task<NFT>>();
                 for (var i = 0; i < balanceOfOwner; i++)
                 {
-                    var tokenOfOwnerByIndex = await contract.ERC721_TokenOfOwnerByIndex(owner, i);
-                    var nft = await contract.ERC721_GetNFT(tokenOfOwnerByIndex);
-                    nfts.Add(nft);
+                    var tokenOfOwnerByIndex = await contract.ERC721_TokenOfOwnerByIndex(owner, i).ConfigureAwait(false);
+                    ownedNftTasks.Add(contract.ERC721_GetNFT(tokenOfOwnerByIndex));
                 }
+                var ownedNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
+                return ownedNfts.ToList();
             }
             catch (Exception)
             {
-                nfts = new List<NFT>();
-                for (var i = 0; i < totalSupply; i++)
+                var allNfts = await contract.ERC721_GetAllNFTs().ConfigureAwait(false);
+                var ownedNfts = new List<NFT>();
+                foreach (var nft in allNfts)
                 {
-                    var nft = await contract.ERC721_GetNFT(i);
                     if (nft.Owner == owner)
                     {
-                        nfts.Add(nft);
+                        ownedNfts.Add(nft);
                     }
                 }
+                return ownedNfts.ToList();
             }
-
-            return nfts;
         }
 
         #endregion
@@ -140,20 +128,19 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            var uri = await contract.ERC1155_URI(tokenId);
-            var metadata = await ThirdwebStorage.Download<NFTMetadata>(contract.Client, uri);
+            var uri = await contract.ERC1155_URI(tokenId).ConfigureAwait(false);
+            var metadata = await ThirdwebStorage.Download<NFTMetadata>(contract.Client, uri).ConfigureAwait(false);
             metadata.Id = tokenId.ToString();
             var owner = string.Empty;
             var supply = BigInteger.MinusOne;
             try
             {
-                supply = await contract.ERC1155_TotalSupply(tokenId);
+                supply = await contract.ERC1155_TotalSupply(tokenId).ConfigureAwait(false);
             }
             catch (Exception)
             {
                 supply = BigInteger.MinusOne;
             }
-            var quantityOwned = BigInteger.MinusOne;
 
             return new NFT
             {
@@ -161,7 +148,6 @@ namespace Thirdweb
                 Owner = owner,
                 Type = NFTType.ERC1155,
                 Supply = supply,
-                QuantityOwned = quantityOwned
             };
         }
 
@@ -172,8 +158,6 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(contract));
             }
 
-            var nfts = new List<NFT>();
-
             if (startTokenIdIncluded == null)
             {
                 startTokenIdIncluded = 0;
@@ -181,17 +165,18 @@ namespace Thirdweb
 
             if (endTokenIdExcluded == null)
             {
-                var totalSupply = await contract.ERC1155_TotalSupply();
+                var totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
                 endTokenIdExcluded = totalSupply;
             }
 
+            var nftTasks = new List<Task<NFT>>();
             for (var i = startTokenIdIncluded.Value; i < endTokenIdExcluded.Value; i++)
             {
-                var nft = await contract.ERC1155_GetNFT(i);
-                nfts.Add(nft);
+                nftTasks.Add(contract.ERC1155_GetNFT(i));
             }
 
-            return nfts;
+            var allNfts = await Task.WhenAll(nftTasks).ConfigureAwait(false);
+            return allNfts.ToList();
         }
 
         public static async Task<List<NFT>> ERC1155_GetOwnedNFTs(this ThirdwebContract contract, string owner)
@@ -206,15 +191,15 @@ namespace Thirdweb
                 throw new ArgumentException("Owner must be provided");
             }
 
-            var totalSupply = await contract.ERC1155_TotalSupply();
+            var totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
 
             var nfts = new List<NFT>();
             for (var i = 0; i < totalSupply; i++)
             {
-                var balanceOfOwner = await contract.ERC1155_BalanceOf(owner, i);
+                var balanceOfOwner = await contract.ERC1155_BalanceOf(owner, i).ConfigureAwait(false);
                 if (balanceOfOwner > 0)
                 {
-                    var nft = await contract.ERC1155_GetNFT(i);
+                    var nft = await contract.ERC1155_GetNFT(i).ConfigureAwait(false);
                     nft.QuantityOwned = balanceOfOwner;
                     nfts.Add(nft);
                 }

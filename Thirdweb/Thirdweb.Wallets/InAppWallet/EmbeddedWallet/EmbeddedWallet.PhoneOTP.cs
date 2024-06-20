@@ -7,9 +7,9 @@ namespace Thirdweb.EWS
     {
         public async Task<(bool isNewUser, bool isNewDevice, bool needsPassword)> SendOtpPhoneAsync(string phoneNumber)
         {
-            string sessionId = await server.SendKmsPhoneOtpAsync(phoneNumber);
+            string sessionId = await server.SendKmsPhoneOtpAsync(phoneNumber).ConfigureAwait(false);
             bool isKmsWallet = true;
-            await localStorage.SaveSessionAsync(sessionId, isKmsWallet);
+            await localStorage.SaveSessionAsync(sessionId, isKmsWallet).ConfigureAwait(false);
             bool isNewUser = true;
             bool isNewDevice = true;
             return (isNewUser, isNewDevice, !isKmsWallet);
@@ -27,9 +27,9 @@ namespace Thirdweb.EWS
                 // {
                 //     throw new VerificationException("Invalid OTP", true);
                 // }
-                Server.VerifyResult result = await server.VerifyKmsPhoneOtpAsync(phoneNumber, otp, localStorage.Session.Id);
-                await localStorage.RemoveSessionAsync();
-                return await PostAuthSetup(result, recoveryCode, null, "PhoneOTP");
+                Server.VerifyResult result = await server.VerifyKmsPhoneOtpAsync(phoneNumber, otp, localStorage.Session.Id).ConfigureAwait(false);
+                await localStorage.RemoveSessionAsync().ConfigureAwait(false);
+                return await PostAuthSetup(result, recoveryCode, null, "PhoneOTP").ConfigureAwait(false);
             }
             catch (VerificationException ex)
             {

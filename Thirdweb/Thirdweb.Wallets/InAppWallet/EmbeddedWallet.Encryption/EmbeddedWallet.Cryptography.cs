@@ -73,7 +73,7 @@ namespace Thirdweb.EWS
             byte[] encodedShare = Encoding.ASCII.GetBytes(share);
             const int ivSize = 12;
             var iv = new byte[ivSize];
-            await ivGenerator.ComputeIvAsync(iv);
+            await ivGenerator.ComputeIvAsync(iv).ConfigureAwait(false);
             byte[] encryptedShare;
             try
             {

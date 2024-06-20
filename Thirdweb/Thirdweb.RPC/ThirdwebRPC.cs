@@ -7,22 +7,22 @@ namespace Thirdweb
     public class ThirdwebRPC
     {
         private const int _batchSizeLimit = 100;
+        private readonly TimeSpan _batchInterval = TimeSpan.FromMilliseconds(100);
 
         private readonly Uri _rpcUrl;
         private readonly TimeSpan _rpcTimeout;
-        private readonly Timer _batchSendTimer;
-        private readonly TimeSpan _batchSendInterval = TimeSpan.FromMilliseconds(100);
-        private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new Dictionary<string, (object Response, DateTime Timestamp)>();
+        private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new();
         private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(500);
-        private readonly List<RpcRequest> _pendingBatch = new List<RpcRequest>();
-        private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new Dictionary<int, TaskCompletionSource<object>>();
-        private readonly object _batchLock = new object();
-        private readonly object _responseLock = new object();
-        private readonly object _cacheLock = new object();
+        private readonly List<RpcRequest> _pendingBatch = new();
+        private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new();
+        private readonly object _batchLock = new();
+        private readonly object _responseLock = new();
+        private readonly object _cacheLock = new();
+        private readonly ThirdwebRPCTimer _batchTimer;
 
         private int _requestIdCounter = 1;
 
-        private static readonly Dictionary<string, ThirdwebRPC> _rpcs = new Dictionary<string, ThirdwebRPC>();
+        private static readonly Dictionary<string, ThirdwebRPC> _rpcs = new();
 
         private readonly IThirdwebHttpClient _httpClient;
 
@@ -90,7 +90,7 @@ namespace Thirdweb
                 }
             }
 
-            var result = await tcs.Task;
+            var result = await tcs.Task.ConfigureAwait(false);
             if (result is TResponse response)
             {
                 lock (_cacheLock)
@@ -124,7 +124,9 @@ namespace Thirdweb
             _httpClient = client.HttpClient;
             _rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb.com/");
             _rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
-            _batchSendTimer = new Timer(_ => SendBatchNow(), null, _batchSendInterval, _batchSendInterval);
+            _batchTimer = new ThirdwebRPCTimer(_batchInterval);
+            _batchTimer.Elapsed += SendBatchNow;
+            _batchTimer.Start();
         }
 
         private void SendBatchNow()
@@ -160,7 +162,7 @@ namespace Thirdweb
                     throw new HttpRequestException(errorDetail);
                 }
 
-                var responseJson = await response.Content.ReadAsStringAsync();
+                var responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 var responses = JsonConvert.DeserializeObject<List<RpcResponse<object>>>(responseJson);
 
                 foreach (var rpcResponse in responses)
