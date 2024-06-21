@@ -33,8 +33,6 @@
     <PackageReference Include="Nethereum.Signer" />
     <PackageReference Include="Portable.BouncyCastle" />
     <PackageReference Include="Nethereum.Signer.EIP712" />
-    <PackageReference Include="Amazon.Extensions.CognitoAuthentication" />
-    <PackageReference Include="AWSSDK.Lambda" />
     <PackageReference Include="Nethereum.HdWallet" />
   </ItemGroup>
 
