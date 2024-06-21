@@ -1,110 +1,201 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Amazon;
+﻿using System.Text;
 using Amazon.CognitoIdentity;
-using Amazon.CognitoIdentityProvider;
-using Amazon.CognitoIdentityProvider.Model;
-using Amazon.Extensions.CognitoAuthentication;
 using Amazon.Lambda;
 using Amazon.Lambda.Model;
-using Amazon.Runtime;
+using Newtonsoft.Json;
 
 namespace Thirdweb.EWS
 {
     internal class AWS
     {
-        private static readonly RegionEndpoint awsRegion = RegionEndpoint.USWest2;
+        private static readonly string awsRegion = "us-west-2";
         private const string cognitoAppClientId = "2e02ha2ce6du13ldk8pai4h3d0";
-        private static readonly string cognitoIdentityPoolId = $"{awsRegion.SystemName}:2ad7ab1e-f48b-48a6-adfa-ac1090689c26";
-        private static readonly string cognitoUserPoolId = $"{awsRegion.SystemName}_UFwLcZIpq";
-        private static readonly string recoverySharePasswordLambdaFunctionName =
-            $"arn:aws:lambda:{awsRegion.SystemName}:324457261097:function:recovery-share-password-GenerateRecoverySharePassw-bbE5ZbVAToil";
+        private static readonly string cognitoIdentityPoolId = $"{awsRegion}:2ad7ab1e-f48b-48a6-adfa-ac1090689c26";
+        private static readonly string cognitoUserPoolId = $"{awsRegion}_UFwLcZIpq";
+        private static readonly string recoverySharePasswordLambdaFunctionName = "arn:aws:lambda:us-west-2:324457261097:function:recovery-share-password-GenerateRecoverySharePassw-bbE5ZbVAToil";
 
         internal static async Task SignUpCognitoUserAsync(string emailAddress, string userName)
         {
             emailAddress ??= "cognito@thirdweb.com";
-            AmazonCognitoIdentityProviderClient provider = new(new AnonymousAWSCredentials(), awsRegion);
-            CognitoUserPool userPool = new(cognitoUserPoolId, cognitoAppClientId, provider);
-            Dictionary<string, string> userAttributes = new() { { "email", emailAddress }, };
-            await userPool.SignUpAsync(userName, Secrets.Random(12), userAttributes, new Dictionary<string, string>()).ConfigureAwait(false);
+
+            using var client = new HttpClient();
+            var endpoint = $"https://cognito-idp.{awsRegion}.amazonaws.com/";
+            var payload = new
+            {
+                ClientId = cognitoAppClientId,
+                Username = userName,
+                Password = Secrets.Random(12),
+                UserAttributes = new[] { new { Name = "email", Value = emailAddress } }
+            };
+
+            var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/x-amz-json-1.1");
+
+            var request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = content };
+
+            request.Headers.Add("X-Amz-Target", "AWSCognitoIdentityProviderService.SignUp");
+
+            var response = await client.SendAsync(request).ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                throw new Exception($"Sign-up failed: {responseBody}");
+            }
         }
 
         internal static async Task<string> StartCognitoUserAuth(string userName)
         {
-            // https://stackoverflow.com/questions/66258459/how-to-get-aws-cognito-access-token-with-username-and-password-in-net-core-3-1
-            AmazonCognitoIdentityProviderClient provider = new(new AnonymousAWSCredentials(), awsRegion);
-            CognitoUserPool userPool = new(cognitoUserPoolId, cognitoAppClientId, provider);
-            CognitoUser user = new(userName, cognitoAppClientId, userPool, provider);
-            InitiateCustomAuthRequest customRequest =
-                new()
+            using var client = new HttpClient();
+            var endpoint = $"https://cognito-idp.{awsRegion}.amazonaws.com/";
+            var payload = new
+            {
+                AuthFlow = "CUSTOM_AUTH",
+                ClientId = cognitoAppClientId,
+                AuthParameters = new Dictionary<string, string> { { "USERNAME", userName } },
+                ClientMetadata = new Dictionary<string, string>()
+            };
+
+            var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/x-amz-json-1.1");
+
+            var request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = content };
+
+            request.Headers.Add("X-Amz-Target", "AWSCognitoIdentityProviderService.InitiateAuth");
+
+            var response = await client.SendAsync(request).ConfigureAwait(false);
+
+            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(responseContent);
+                if (errorResponse.Type == "UserNotFoundException")
                 {
-                    AuthParameters = new Dictionary<string, string>() { { "USERNAME", userName }, },
-                    ClientMetadata = new Dictionary<string, string>(),
-                };
-            try
-            {
-                AuthFlowResponse authResponse = await user.StartWithCustomAuthAsync(customRequest).ConfigureAwait(false);
-                return authResponse.SessionID;
+                    return null;
+                }
+                throw new Exception($"Authentication initiation failed: {responseContent}");
             }
-            catch (UserNotFoundException)
-            {
-                return null;
-            }
+
+            var jsonResponse = JsonConvert.DeserializeObject<StartAuthResponse>(responseContent);
+            return jsonResponse.Session;
         }
 
         internal static async Task<TokenCollection> FinishCognitoUserAuth(string userName, string otp, string sessionId)
         {
-            AmazonCognitoIdentityProviderClient provider = new(new AnonymousAWSCredentials(), awsRegion);
-            CognitoUserPool userPool = new(cognitoUserPoolId, cognitoAppClientId, provider);
-            CognitoUser user = new(userName, cognitoAppClientId, userPool, provider);
-            RespondToCustomChallengeRequest challengeRequest =
-                new()
+            using var client = new HttpClient();
+            var endpoint = $"https://cognito-idp.{awsRegion}.amazonaws.com/";
+            var payload = new
+            {
+                ChallengeName = "CUSTOM_CHALLENGE",
+                ClientId = cognitoAppClientId,
+                ChallengeResponses = new Dictionary<string, string> { { "USERNAME", userName }, { "ANSWER", otp } },
+                Session = sessionId
+            };
+
+            var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/x-amz-json-1.1");
+
+            var request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = content };
+
+            request.Headers.Add("X-Amz-Target", "AWSCognitoIdentityProviderService.RespondToAuthChallenge");
+
+            var response = await client.SendAsync(request).ConfigureAwait(false);
+            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(responseContent);
+                if (errorResponse.Type == "NotAuthorizedException")
                 {
-                    ChallengeParameters = new Dictionary<string, string>() { { "USERNAME", userName }, { "ANSWER", otp }, },
-                    ClientMetadata = new Dictionary<string, string>(),
-                    SessionID = sessionId,
-                };
-            try
-            {
-                AuthFlowResponse authResponse = await user.RespondToCustomAuthAsync(challengeRequest).ConfigureAwait(false);
-                AuthenticationResultType result = authResponse.AuthenticationResult ?? throw new VerificationException("The OTP is incorrect", true);
-                return new TokenCollection(result.AccessToken, result.IdToken, result.RefreshToken);
+                    throw new VerificationException("The session expired", false);
+                }
+                if (errorResponse.Type == "UserNotFoundException")
+                {
+                    throw new InvalidOperationException("The user was not found");
+                }
+                throw new Exception($"Challenge response failed: {responseContent}");
             }
-            catch (NotAuthorizedException)
-            {
-                throw new VerificationException("The session expired", false);
-            }
-            catch (UserNotFoundException)
-            {
-                throw new InvalidOperationException("The user was not found");
-            }
+
+            var jsonResponse = JsonConvert.DeserializeObject<FinishAuthResponse>(responseContent);
+            var result = jsonResponse.AuthenticationResult ?? throw new VerificationException("The OTP is incorrect", true);
+            return new TokenCollection(result.AccessToken.ToString(), result.IdToken.ToString(), result.RefreshToken.ToString());
         }
 
         internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaAsync(string idToken, string invokePayload)
         {
-            InvokeRequest request = new() { FunctionName = recoverySharePasswordLambdaFunctionName, Payload = invokePayload, };
-            CognitoAWSCredentials credentials = new(cognitoIdentityPoolId, awsRegion);
-            string providerName = $"cognito-idp.{awsRegion.SystemName}.amazonaws.com/{cognitoUserPoolId}";
+            var region = Amazon.RegionEndpoint.USWest2;
+            var request = new InvokeRequest() { FunctionName = recoverySharePasswordLambdaFunctionName, Payload = invokePayload, };
+            var credentials = new CognitoAWSCredentials(cognitoIdentityPoolId, region);
+            var providerName = $"cognito-idp.{awsRegion}.amazonaws.com/{cognitoUserPoolId}";
             credentials.AddLogin(providerName, idToken);
-            AmazonLambdaClient client = new(credentials, awsRegion);
-            InvokeResponse lambdaResponse = await client.InvokeAsync(request).ConfigureAwait(false);
+            var client = new AmazonLambdaClient(credentials, region);
+            var lambdaResponse = await client.InvokeAsync(request).ConfigureAwait(false);
             return lambdaResponse.Payload;
         }
-    }
 
-    internal class TokenCollection
-    {
-        internal TokenCollection(string accessToken, string idToken, string refreshToken)
+        internal class CredentialsResponse
         {
-            AccessToken = accessToken;
-            IdToken = idToken;
-            RefreshToken = refreshToken;
+            public Credentials Credentials { get; set; }
         }
 
-        public string AccessToken { get; }
-        public string IdToken { get; }
-        public string RefreshToken { get; }
+        internal class StartAuthResponse
+        {
+            public string Session { get; set; }
+        }
+
+        internal class FinishAuthResponse
+        {
+            public AuthenticationResult AuthenticationResult { get; set; }
+        }
+
+        internal class AuthenticationResult
+        {
+            public string AccessToken { get; set; }
+            public string IdToken { get; set; }
+            public string RefreshToken { get; set; }
+        }
+
+        internal class ErrorResponse
+        {
+            [JsonProperty("__type")]
+            public string Type { get; set; }
+            public string Message { get; set; }
+        }
+
+        internal class TokenCollection
+        {
+            internal TokenCollection(string accessToken, string idToken, string refreshToken)
+            {
+                AccessToken = accessToken;
+                IdToken = idToken;
+                RefreshToken = refreshToken;
+            }
+
+            public string AccessToken { get; }
+            public string IdToken { get; }
+            public string RefreshToken { get; }
+        }
+
+        internal class GetIdResponse
+        {
+            public string IdentityId { get; set; }
+        }
+
+        internal class GetCredentialsForIdentityResponse
+        {
+            public Credentials Credentials { get; set; }
+        }
+
+        internal class Credentials
+        {
+            public string AccessKeyId { get; set; }
+            public string SecretKey { get; set; }
+            public string SessionToken { get; set; }
+        }
+
+        internal class AwsCredentials
+        {
+            public string AccessKeyId { get; set; }
+            public string SecretAccessKey { get; set; }
+            public string SessionToken { get; set; }
+        }
     }
 }
