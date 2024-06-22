@@ -229,7 +229,7 @@ namespace Thirdweb
         public static async Task<BigInteger> GetNonce(ThirdwebTransaction transaction)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
-            return new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest").ConfigureAwait(false)).Value;
+            return new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "pending").ConfigureAwait(false)).Value;
         }
 
         private static async Task<BigInteger> GetGasPerPubData(ThirdwebTransaction transaction)
