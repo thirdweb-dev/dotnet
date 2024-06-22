@@ -10,6 +10,7 @@ namespace Thirdweb
         internal string ClientId { get; }
         internal string BundleId { get; }
         internal ITimeoutOptions FetchTimeoutOptions { get; }
+        internal string RpcUrl { get; }
 
         private ThirdwebClient(
             string clientId = null,
@@ -17,7 +18,8 @@ namespace Thirdweb
             string bundleId = null,
             ITimeoutOptions fetchTimeoutOptions = null,
             IThirdwebHttpClient httpClient = null,
-            Dictionary<string, string> headers = null
+            Dictionary<string, string> headers = null,
+            string rpcUrl = null
         )
         {
             if (string.IsNullOrEmpty(clientId) && string.IsNullOrEmpty(secretKey))
@@ -40,19 +42,32 @@ namespace Thirdweb
             FetchTimeoutOptions = fetchTimeoutOptions ?? new TimeoutOptions();
 
             HttpClient = httpClient ?? new ThirdwebHttpClient();
-            HttpClient.SetHeaders(
-                headers
-                    ?? new Dictionary<string, string>
-                    {
-                        { "x-sdk-name", "Thirdweb.NET" },
-                        { "x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription },
-                        { "x-sdk-platform", "dotnet" },
-                        { "x-sdk-version", Constants.VERSION },
-                        { "x-client-id", ClientId },
-                        { "x-secret-key", SecretKey },
-                        { "x-bundle-id", BundleId }
-                    }
-            );
+
+            if (!string.IsNullOrEmpty(rpcUrl))
+            {
+                RpcUrl = rpcUrl;
+                if (headers != null)
+                {
+                    HttpClient.SetHeaders(headers);
+                }
+            }
+            else
+            {
+                RpcUrl = null;
+                HttpClient.SetHeaders(
+                    headers
+                        ?? new Dictionary<string, string>
+                        {
+                            { "x-sdk-name", "Thirdweb.NET" },
+                            { "x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription },
+                            { "x-sdk-platform", "dotnet" },
+                            { "x-sdk-version", Constants.VERSION },
+                            { "x-client-id", ClientId },
+                            { "x-secret-key", SecretKey },
+                            { "x-bundle-id", BundleId }
+                        }
+                );
+            }
         }
 
         public static ThirdwebClient Create(
@@ -61,10 +76,11 @@ namespace Thirdweb
             string bundleId = null,
             ITimeoutOptions fetchTimeoutOptions = null,
             IThirdwebHttpClient httpClient = null,
-            Dictionary<string, string> headers = null
+            Dictionary<string, string> headers = null,
+            string rpcOverride = null
         )
         {
-            return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient, headers);
+            return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient, headers, rpcOverride);
         }
     }
 }

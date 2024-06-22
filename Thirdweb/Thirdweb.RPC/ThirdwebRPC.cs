@@ -122,7 +122,7 @@ namespace Thirdweb
         private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
         {
             _httpClient = client.HttpClient;
-            _rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb.com/");
+            _rpcUrl = new Uri(client.RpcUrl ?? $"https://{chainId}.rpc.thirdweb.com/");
             _rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
             _batchTimer = new ThirdwebRPCTimer(_batchInterval);
             _batchTimer.Elapsed += SendBatchNow;
