@@ -33,10 +33,10 @@ namespace Thirdweb.EWS
             {
                 if (localStorage.Session.IsKmsWallet)
                 {
-                    if (!await server.CheckIsEmailKmsOtpValidAsync(emailAddress, otp))
-                    {
-                        throw new VerificationException("Invalid OTP", true);
-                    }
+                    // if (!await server.CheckIsEmailKmsOtpValidAsync(emailAddress, otp))
+                    // {
+                    //     throw new VerificationException("Invalid OTP", true);
+                    // }
                     Server.VerifyResult result = await server.VerifyKmsOtpAsync(emailAddress, otp, localStorage.Session.Id).ConfigureAwait(false);
                     await localStorage.RemoveSessionAsync().ConfigureAwait(false);
                     return await PostAuthSetup(result, recoveryCode, null, "EmailOTP").ConfigureAwait(false);

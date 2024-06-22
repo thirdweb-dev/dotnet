@@ -52,10 +52,14 @@ namespace Thirdweb.EWS
 
         private readonly string clientId;
 
+        private static Type thirdwebHttpClientType = typeof(ThirdwebHttpClient);
+
         internal Server(ThirdwebClient client, IThirdwebHttpClient httpClient)
         {
             this.clientId = client.ClientId;
             this.httpClient = httpClient;
+
+            thirdwebHttpClientType = httpClient.GetType();
         }
 
         // embedded-wallet/verify-thirdweb-client-id
@@ -291,14 +295,14 @@ namespace Thirdweb.EWS
         internal override async Task<string> SendKmsOtpEmailAsync(string emailAddress)
         {
             var userName = MakeCognitoUserName(emailAddress, "email");
-            var sessionId = await AWS.StartCognitoUserAuth(userName).ConfigureAwait(false);
+            var sessionId = await AWS.StartCognitoUserAuth(userName, thirdwebHttpClientType).ConfigureAwait(false);
             if (sessionId == null)
             {
-                await AWS.SignUpCognitoUserAsync(emailAddress, userName).ConfigureAwait(false);
+                await AWS.SignUpCognitoUserAsync(emailAddress, userName, thirdwebHttpClientType).ConfigureAwait(false);
                 for (var i = 0; i < 3; ++i)
                 {
                     await Task.Delay(3333 * i).ConfigureAwait(false);
-                    sessionId = await AWS.StartCognitoUserAuth(userName).ConfigureAwait(false);
+                    sessionId = await AWS.StartCognitoUserAuth(userName, thirdwebHttpClientType).ConfigureAwait(false);
                     if (sessionId != null)
                     {
                         break;
@@ -316,7 +320,7 @@ namespace Thirdweb.EWS
         internal override async Task<VerifyResult> VerifyKmsOtpAsync(string emailAddress, string otp, string sessionId)
         {
             var userName = MakeCognitoUserName(emailAddress, "email");
-            var tokens = await AWS.FinishCognitoUserAuth(userName, otp, sessionId).ConfigureAwait(false);
+            var tokens = await AWS.FinishCognitoUserAuth(userName, otp, sessionId, thirdwebHttpClientType).ConfigureAwait(false);
             var uri = MakeUri("/embedded-wallet/validate-cognito-email-otp");
             ByteArrayContent content = MakeHttpContent(
                 new
@@ -337,7 +341,7 @@ namespace Thirdweb.EWS
             var idTokenResponse = await FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
             var idToken = idTokenResponse.IdToken;
             var invokePayload = Serialize(new { accessToken = idTokenResponse.AccessToken, idToken = idTokenResponse.IdToken });
-            var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idToken, invokePayload).ConfigureAwait(false);
+            var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idToken, invokePayload, thirdwebHttpClientType).ConfigureAwait(false);
             JsonSerializer jsonSerializer = new();
             var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));
             payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StringReader(payload.Body)));
@@ -347,14 +351,14 @@ namespace Thirdweb.EWS
         internal override async Task<string> SendKmsPhoneOtpAsync(string phoneNumber)
         {
             var userName = MakeCognitoUserName(phoneNumber, "sms");
-            var sessionId = await AWS.StartCognitoUserAuth(userName).ConfigureAwait(false);
+            var sessionId = await AWS.StartCognitoUserAuth(userName, thirdwebHttpClientType).ConfigureAwait(false);
             if (sessionId == null)
             {
-                await AWS.SignUpCognitoUserAsync(null, userName).ConfigureAwait(false);
+                await AWS.SignUpCognitoUserAsync(null, userName, thirdwebHttpClientType).ConfigureAwait(false);
                 for (var i = 0; i < 3; ++i)
                 {
                     await Task.Delay(3333 * i).ConfigureAwait(false);
-                    sessionId = await AWS.StartCognitoUserAuth(userName).ConfigureAwait(false);
+                    sessionId = await AWS.StartCognitoUserAuth(userName, thirdwebHttpClientType).ConfigureAwait(false);
                     if (sessionId != null)
                     {
                         break;
@@ -372,7 +376,7 @@ namespace Thirdweb.EWS
         internal override async Task<VerifyResult> VerifyKmsPhoneOtpAsync(string phoneNumber, string otp, string sessionId)
         {
             var userName = MakeCognitoUserName(phoneNumber, "sms");
-            var tokens = await AWS.FinishCognitoUserAuth(userName, otp, sessionId).ConfigureAwait(false);
+            var tokens = await AWS.FinishCognitoUserAuth(userName, otp, sessionId, thirdwebHttpClientType).ConfigureAwait(false);
             var uri = MakeUri("/embedded-wallet/validate-cognito-email-otp");
             ByteArrayContent content = MakeHttpContent(
                 new
@@ -393,7 +397,7 @@ namespace Thirdweb.EWS
             var idTokenResponse = await FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
             var idToken = idTokenResponse.IdToken;
             var invokePayload = Serialize(new { accessToken = idTokenResponse.AccessToken, idToken = idTokenResponse.IdToken });
-            var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idToken, invokePayload).ConfigureAwait(false);
+            var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idToken, invokePayload, thirdwebHttpClientType).ConfigureAwait(false);
             JsonSerializer jsonSerializer = new();
             var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));
             payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StringReader(payload.Body)));
@@ -447,7 +451,7 @@ namespace Thirdweb.EWS
                 var idTokenResponse = await FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
                 var idToken = idTokenResponse.IdToken;
                 var invokePayload = Serialize(new { accessToken = idTokenResponse.AccessToken, idToken = idTokenResponse.IdToken });
-                var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idToken, invokePayload).ConfigureAwait(false);
+                var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idToken, invokePayload, thirdwebHttpClientType).ConfigureAwait(false);
                 JsonSerializer jsonSerializer = new();
                 var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));
                 payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StringReader(payload.Body)));
