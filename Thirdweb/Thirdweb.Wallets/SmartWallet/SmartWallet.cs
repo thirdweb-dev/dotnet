@@ -24,6 +24,7 @@ namespace Thirdweb
         protected BigInteger _chainId;
         protected string _bundlerUrl;
         protected string _paymasterUrl;
+        protected bool _isDeploying;
 
         protected SmartWallet(
             ThirdwebClient client,
@@ -190,6 +191,21 @@ namespace Thirdweb
         {
             requestId ??= 1;
 
+            // Wait until deployed to avoid double initCode
+
+            // TODO: Thread Safety
+            if (_isDeploying)
+            {
+                while (!await IsDeployed())
+                {
+                    await Task.Delay(1000);
+                }
+                _isDeploying = false;
+            }
+
+            var initCode = await GetInitCode();
+            _isDeploying = initCode.Length > 0;
+
             // Create the user operation and its safe (hexified) version
 
             var executeFn = new ExecuteFunction
@@ -209,7 +225,7 @@ namespace Thirdweb
             {
                 Sender = _accountContract.Address,
                 Nonce = await GetNonce(),
-                InitCode = await GetInitCode(),
+                InitCode = initCode,
                 CallData = executeInput.Data.HexToByteArray(),
                 CallGasLimit = 0,
                 VerificationGasLimit = 0,
