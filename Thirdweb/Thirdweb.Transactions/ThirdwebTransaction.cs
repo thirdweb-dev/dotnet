@@ -222,7 +222,7 @@ namespace Thirdweb
             else
             {
                 var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest").ConfigureAwait(false);
-                return new HexBigInteger(hex).Value;
+                return new HexBigInteger(hex).Value * 10 / 8;
             }
         }
 
