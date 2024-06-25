@@ -19,15 +19,15 @@ namespace Thirdweb.EWS
         {
             // Define necessary variables from the result.
             Account account;
-            string walletUserId = result.WalletUserId;
-            string authToken = result.AuthToken;
-            string emailAddress = result.Email;
-            string deviceShare = localStorage.Data?.DeviceShare;
+            var walletUserId = result.WalletUserId;
+            var authToken = result.AuthToken;
+            var emailAddress = result.Email;
+            var deviceShare = localStorage.Data?.DeviceShare;
 
             // Fetch user details from the server.
-            Server.UserWallet userDetails = await server.FetchUserDetailsAsync(emailAddress, authToken).ConfigureAwait(false);
-            bool isUserManaged = userDetails.RecoveryShareManagement == "USER_MANAGED";
-            bool isNewUser = userDetails.IsNewUser;
+            var userDetails = await server.FetchUserDetailsAsync(emailAddress, authToken).ConfigureAwait(false);
+            var isUserManaged = userDetails.RecoveryShareManagement == "USER_MANAGED";
+            var isNewUser = userDetails.IsNewUser;
             User user;
 
             // Initialize variables related to recovery codes and email status.
@@ -84,7 +84,7 @@ namespace Thirdweb.EWS
                         throw new ArgumentNullException(nameof(userRecoveryCode));
 
                     // Fetch the auth share and create an account from shares.
-                    string authShare = await server.FetchAuthShareAsync(authToken).ConfigureAwait(false);
+                    var authShare = await server.FetchAuthShareAsync(authToken).ConfigureAwait(false);
                     account = MakeAccountFromShares(authShare, deviceShare);
                 }
                 else
@@ -122,7 +122,7 @@ namespace Thirdweb.EWS
                 throw new InvalidOperationException("User is not signed in");
             }
 
-            Server.UserWallet userWallet = await server.FetchUserDetailsAsync(null, localStorage.Data.AuthToken).ConfigureAwait(false);
+            var userWallet = await server.FetchUserDetailsAsync(null, localStorage.Data.AuthToken).ConfigureAwait(false);
             switch (userWallet.Status)
             {
                 case "Logged Out":
@@ -138,8 +138,8 @@ namespace Thirdweb.EWS
                         throw new InvalidOperationException("User is logged in but wallet is uninitialized");
                     }
 
-                    string authShare = await server.FetchAuthShareAsync(localStorage.Data.AuthToken).ConfigureAwait(false);
-                    string emailAddress = userWallet.StoredToken?.AuthDetails.Email;
+                    var authShare = await server.FetchAuthShareAsync(localStorage.Data.AuthToken).ConfigureAwait(false);
+                    var emailAddress = userWallet.StoredToken?.AuthDetails.Email;
 
                     if (email != null && email != emailAddress)
                     {
@@ -171,18 +171,18 @@ namespace Thirdweb.EWS
 
         private async Task<(Account account, string deviceShare)> CreateAccountAsync(string authToken, string recoveryCode, string[] backupRecoveryCodes = null)
         {
-            string secret = Secrets.Random(KEY_SIZE);
-            (string deviceShare, string recoveryShare, string authShare) = CreateShares(secret);
-            string encryptedRecoveryShare = await EncryptShareAsync(recoveryShare, recoveryCode).ConfigureAwait(false);
+            var secret = Secrets.Random(KEY_SIZE);
+            (var deviceShare, var recoveryShare, var authShare) = CreateShares(secret);
+            var encryptedRecoveryShare = await EncryptShareAsync(recoveryShare, recoveryCode);
             Account account = new(secret);
 
             string[] backupRecoveryShares = null;
             if (backupRecoveryCodes != null)
             {
                 backupRecoveryShares = new string[backupRecoveryCodes.Length];
-                for (int i = 0; i < backupRecoveryCodes.Length; i++)
+                for (var i = 0; i < backupRecoveryCodes.Length; i++)
                 {
-                    backupRecoveryShares[i] = await EncryptShareAsync(recoveryShare, backupRecoveryCodes[i]).ConfigureAwait(false);
+                    backupRecoveryShares[i] = await EncryptShareAsync(recoveryShare, backupRecoveryCodes[i]);
                 }
             }
             await server.StoreAddressAndSharesAsync(account.Address, authShare, encryptedRecoveryShare, authToken, backupRecoveryShares).ConfigureAwait(false);
@@ -191,12 +191,11 @@ namespace Thirdweb.EWS
 
         private async Task<(Account account, string deviceShare)> RecoverAccountAsync(string authToken, string recoveryCode)
         {
-            (string authShare, string encryptedRecoveryShare) = await server.FetchAuthAndRecoverySharesAsync(authToken).ConfigureAwait(false);
-            // make below async
-            string recoveryShare = await Task.Run(() => DecryptShare(encryptedRecoveryShare, recoveryCode)).ConfigureAwait(false);
-            Account account = MakeAccountFromShares(authShare, recoveryShare);
+            (var authShare, var encryptedRecoveryShare) = await server.FetchAuthAndRecoverySharesAsync(authToken).ConfigureAwait(false);
+            var recoveryShare = await Task.Run(() => DecryptShare(encryptedRecoveryShare, recoveryCode));
+            var account = MakeAccountFromShares(authShare, recoveryShare);
             Secrets secrets = new();
-            string deviceShare = secrets.NewShare(DEVICE_SHARE_ID, new[] { authShare, recoveryShare });
+            var deviceShare = secrets.NewShare(DEVICE_SHARE_ID, new[] { authShare, recoveryShare });
             return (account, deviceShare);
         }
 

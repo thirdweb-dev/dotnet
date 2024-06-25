@@ -22,14 +22,16 @@ namespace Thirdweb
                 throw new ArgumentOutOfRangeException(nameof(chainId), "Chain ID must be greater than 0.");
             }
 
+            var address = await wallet.GetAddress().ConfigureAwait(false);
+
             if (erc20ContractAddress != null)
             {
-                var erc20Contract = await ThirdwebContract.Create(client, erc20ContractAddress, chainId);
-                return await erc20Contract.ERC20_BalanceOf(await wallet.GetAddress());
+                var erc20Contract = await ThirdwebContract.Create(client, erc20ContractAddress, chainId).ConfigureAwait(false);
+                return await erc20Contract.ERC20_BalanceOf(address).ConfigureAwait(false);
             }
 
             var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
-            var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", await wallet.GetAddress(), "latest");
+            var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", address, "latest").ConfigureAwait(false);
             return new HexBigInteger(balanceHex).Value;
         }
 
@@ -62,12 +64,12 @@ namespace Thirdweb
 
             var txInput = new ThirdwebTransactionInput()
             {
-                From = await wallet.GetAddress(),
+                From = await wallet.GetAddress().ConfigureAwait(false),
                 To = toAddress,
                 Value = new HexBigInteger(weiAmount)
             };
-            var tx = await ThirdwebTransaction.Create(client, wallet, txInput, chainId);
-            return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx);
+            var tx = await ThirdwebTransaction.Create(client, wallet, txInput, chainId).ConfigureAwait(false);
+            return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx).ConfigureAwait(false);
         }
 
         // TODO: Tx Listener?

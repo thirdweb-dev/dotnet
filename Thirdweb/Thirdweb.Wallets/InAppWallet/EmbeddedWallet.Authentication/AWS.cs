@@ -114,8 +114,8 @@ namespace Thirdweb.EWS
 
         internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaAsync(string idToken, string invokePayload, Type thirdwebHttpClientType)
         {
-            var credentials = await GetTemporaryCredentialsAsync(idToken, thirdwebHttpClientType);
-            return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, thirdwebHttpClientType);
+            var credentials = await GetTemporaryCredentialsAsync(idToken, thirdwebHttpClientType).ConfigureAwait(false);
+            return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, thirdwebHttpClientType).ConfigureAwait(false);
         }
 
         private static async Task<AwsCredentials> GetTemporaryCredentialsAsync(string idToken, Type thirdwebHttpClientType)

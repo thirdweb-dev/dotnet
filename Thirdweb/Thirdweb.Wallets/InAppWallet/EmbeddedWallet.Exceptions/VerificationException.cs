@@ -3,7 +3,6 @@ using System.Runtime.Serialization;
 
 namespace Thirdweb.EWS
 {
-    [Serializable]
     internal class VerificationException : Exception
     {
         internal bool CanRetry { get; }
@@ -13,8 +12,5 @@ namespace Thirdweb.EWS
         {
             CanRetry = canRetry;
         }
-
-        protected VerificationException(SerializationInfo info, StreamingContext context)
-            : base(info, context) { }
     }
 }

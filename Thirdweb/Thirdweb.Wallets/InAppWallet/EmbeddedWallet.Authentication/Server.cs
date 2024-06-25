@@ -81,7 +81,7 @@ namespace Thirdweb.EWS
             {
                 Dictionary<string, string> queryParams = new() { { "clientId", clientId }, };
                 var uri = MakeUri("/embedded-wallet/developer-wallet-settings", queryParams);
-                ThirdwebHttpResponseMessage response = await httpClient.GetAsync(uri.ToString()).ConfigureAwait(false);
+                var response = await httpClient.GetAsync(uri.ToString()).ConfigureAwait(false);
                 var responseContent = await DeserializeAsync<RecoveryShareManagementResponse>(response).ConfigureAwait(false);
                 return responseContent.Value ?? "AWS_MANAGED";
             }
@@ -189,7 +189,7 @@ namespace Thirdweb.EWS
                 }
             );
 
-            ThirdwebHttpResponseMessage response = await httpClient.GetAsync(uri.ToString()).ConfigureAwait(false);
+            var response = await httpClient.GetAsync(uri.ToString()).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
             var rv = await DeserializeAsync<HeadlessOauthLoginLinkResponse>(response).ConfigureAwait(false);
             return rv.PlatformLoginLink;
@@ -207,7 +207,7 @@ namespace Thirdweb.EWS
                     { "clientId", clientId }
                 }
             );
-            ThirdwebHttpResponseMessage response = await httpClient.GetAsync(uri.ToString()).ConfigureAwait(false);
+            var response = await httpClient.GetAsync(uri.ToString()).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
             var result = await DeserializeAsync<IsEmailKmsOtpValidResponse>(response).ConfigureAwait(false);
             return result.IsOtpValid;
@@ -225,7 +225,7 @@ namespace Thirdweb.EWS
                     clientId,
                 }
             );
-            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
             var result = await DeserializeAsync<IsEmailUserOtpValidResponse>(response).ConfigureAwait(false);
             return result.IsValid;
@@ -236,7 +236,7 @@ namespace Thirdweb.EWS
         {
             var uri = MakeUri("/embedded-wallet/send-user-managed-email-otp");
             var content = MakeHttpContent(new { clientId, email = emailAddress });
-            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
         }
 
@@ -279,7 +279,7 @@ namespace Thirdweb.EWS
                     otp
                 }
             );
-            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response).ConfigureAwait(false);
             return new VerifyResult(
@@ -332,7 +332,7 @@ namespace Thirdweb.EWS
                     otpMethod = "email",
                 }
             );
-            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response).ConfigureAwait(false);
             var isNewUser = authVerifiedToken.VerifiedToken.IsNewUser;
@@ -388,7 +388,7 @@ namespace Thirdweb.EWS
                     otpMethod = "email",
                 }
             );
-            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response).ConfigureAwait(false);
             var isNewUser = authVerifiedToken.VerifiedToken.IsNewUser;
@@ -410,7 +410,7 @@ namespace Thirdweb.EWS
             var requestContent = new { jwt = jwtToken, developerClientId = clientId };
             var content = MakeHttpContent(requestContent);
             var uri = MakeUri("/embedded-wallet/validate-custom-jwt");
-            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response).ConfigureAwait(false);
             var isNewUser = authVerifiedToken.VerifiedToken.IsNewUser;
@@ -427,7 +427,7 @@ namespace Thirdweb.EWS
             var requestContent = new { payload, developerClientId = clientId };
             var content = MakeHttpContent(requestContent);
             var uri = MakeUri("/embedded-wallet/validate-custom-auth-endpoint");
-            ThirdwebHttpResponseMessage response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
             var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response).ConfigureAwait(false);
             var isNewUser = authVerifiedToken.VerifiedToken.IsNewUser;

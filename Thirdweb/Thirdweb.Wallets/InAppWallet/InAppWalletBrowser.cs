@@ -5,6 +5,7 @@ namespace Thirdweb
     public class InAppWalletBrowser : IThirdwebBrowser
     {
         private TaskCompletionSource<BrowserResult> _taskCompletionSource;
+        private static readonly HttpListener httpListener = new();
 
         private readonly string closePageResponse =
             @"
@@ -44,38 +45,63 @@ namespace Thirdweb
             </body>
             </html>";
 
-        public async Task<BrowserResult> Login(string loginUrl, string redirectUrl, Action<string> browserOpenAction, CancellationToken cancellationToken = default)
+        public async Task<BrowserResult> Login(ThirdwebClient client, string loginUrl, string redirectUrl, Action<string> browserOpenAction, CancellationToken cancellationToken = default)
         {
             _taskCompletionSource = new TaskCompletionSource<BrowserResult>();
 
             cancellationToken.Register(() =>
             {
                 _taskCompletionSource?.TrySetCanceled();
+                StopHttpListener();
             });
-
-            using var httpListener = new HttpListener();
 
             try
             {
                 redirectUrl = AddForwardSlashIfNecessary(redirectUrl);
-                httpListener.Prefixes.Add(redirectUrl);
+                if (httpListener.Prefixes.Count == 0 || !httpListener.Prefixes.Contains(redirectUrl))
+                {
+                    httpListener.Prefixes.Clear();
+                    httpListener.Prefixes.Add(redirectUrl);
+                }
                 httpListener.Start();
                 _ = httpListener.BeginGetContext(IncomingHttpRequest, httpListener);
 
                 browserOpenAction.Invoke(loginUrl);
 
-                var completedTask = await Task.WhenAny(_taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(30), cancellationToken));
+                var completedTask = await Task.WhenAny(_taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(60), cancellationToken));
                 return completedTask == _taskCompletionSource.Task ? await _taskCompletionSource.Task : new BrowserResult(BrowserStatus.Timeout, null, "The operation timed out.");
+            }
+            catch (TaskCanceledException)
+            {
+                return new BrowserResult(BrowserStatus.UserCanceled, null, "The operation was cancelled.");
+            }
+            catch (Exception ex)
+            {
+                return new BrowserResult(BrowserStatus.UnknownError, null, $"An error occurred: {ex.Message}");
             }
             finally
             {
+                StopHttpListener();
+            }
+        }
+
+        private void StopHttpListener()
+        {
+            if (httpListener != null && httpListener.IsListening)
+            {
                 httpListener.Stop();
+                httpListener.Close();
             }
         }
 
         private void IncomingHttpRequest(IAsyncResult result)
         {
             var httpListener = (HttpListener)result.AsyncState;
+            if (!httpListener.IsListening)
+            {
+                return;
+            }
+
             var httpContext = httpListener.EndGetContext(result);
             var httpRequest = httpContext.Request;
             var httpResponse = httpContext.Response;

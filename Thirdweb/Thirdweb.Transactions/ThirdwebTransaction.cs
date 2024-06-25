@@ -314,21 +314,18 @@ namespace Thirdweb
 
         public static async Task<ThirdwebTransactionReceipt> WaitForTransactionReceipt(ThirdwebClient client, BigInteger chainId, string txHash, CancellationToken cancellationToken = default)
         {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+
             var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
             var receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
             while (receipt == null)
             {
-                if (cancellationToken != CancellationToken.None)
+                receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash, cts.Token).ConfigureAwait(false);
+                if (receipt == null)
                 {
-                    await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
-                    cancellationToken.ThrowIfCancellationRequested();
+                    await Task.Delay(1000, cts.Token).ConfigureAwait(false);
                 }
-                else
-                {
-                    await Task.Delay(1000, CancellationToken.None).ConfigureAwait(false);
-                }
-
-                receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
             }
 
             if (receipt.Status != null && receipt.Status.Value == 0)

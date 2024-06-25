@@ -12,7 +12,7 @@ namespace Thirdweb
         private readonly Uri _rpcUrl;
         private readonly TimeSpan _rpcTimeout;
         private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new();
-        private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(500);
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(250);
         private readonly List<RpcRequest> _pendingBatch = new();
         private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new();
         private readonly object _batchLock = new();
@@ -122,7 +122,7 @@ namespace Thirdweb
         private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
         {
             _httpClient = client.HttpClient;
-            _rpcUrl = new Uri(client.RpcUrl ?? $"https://{chainId}.rpc.thirdweb.com/");
+            _rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb.com/");
             _rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
             _batchTimer = new ThirdwebRPCTimer(_batchInterval);
             _batchTimer.Elapsed += SendBatchNow;

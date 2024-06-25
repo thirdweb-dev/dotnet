@@ -42,7 +42,7 @@ namespace Thirdweb.EWS
             RandomNumberGenerator.Fill(iv);
             prbsValue = ComputeNextPrbsValue(prbsValue);
             await File.WriteAllTextAsync(ivFilePath, prbsValue.ToString()).ConfigureAwait(false);
-            byte[] prbsBytes = Enumerable.Range(0, nPrbsBits / 8).Select((i) => (byte)(prbsValue >> (8 * i))).ToArray();
+            var prbsBytes = Enumerable.Range(0, nPrbsBits / 8).Select((i) => (byte)(prbsValue >> (8 * i))).ToArray();
             Array.Copy(prbsBytes, iv, prbsBytes.Length);
         }
 

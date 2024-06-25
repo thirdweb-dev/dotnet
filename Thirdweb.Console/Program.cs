@@ -24,7 +24,7 @@ Console.WriteLine($"Contract read result: {readResult}");
 // Create wallets (this is an advanced use case, typically one wallet is plenty)
 var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
 
-// var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+awsless5@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
+// var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+awsless@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
 
 var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
 
@@ -52,13 +52,13 @@ if (!await inAppWallet.IsConnected())
 
 // await inAppWallet.SendOTP();
 // Console.WriteLine("Please submit the OTP.");
+// retry:
 // var otp = Console.ReadLine();
 // (var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
 // if (inAppWalletAddress == null && canRetry)
 // {
 //     Console.WriteLine("Please submit the OTP again.");
-//     otp = Console.ReadLine();
-//     (inAppWalletAddress, _) = await inAppWallet.SubmitOTP(otp);
+//     goto retry;
 // }
 // if (inAppWalletAddress == null)
 // {

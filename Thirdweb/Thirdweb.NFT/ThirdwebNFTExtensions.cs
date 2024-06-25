@@ -13,7 +13,7 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(client));
             }
 
-            return string.IsNullOrEmpty(nft.Metadata.Image) ? new byte[] { } : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image);
+            return string.IsNullOrEmpty(nft.Metadata.Image) ? new byte[] { } : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image).ConfigureAwait(false);
         }
 
         #endregion
