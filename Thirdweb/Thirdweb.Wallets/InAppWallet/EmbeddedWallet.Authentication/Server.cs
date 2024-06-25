@@ -18,7 +18,7 @@ namespace Thirdweb.EWS
 
         internal abstract Task<(string authShare, string recoveryShare)> FetchAuthAndRecoverySharesAsync(string authToken);
         internal abstract Task<string> FetchAuthShareAsync(string authToken);
-        internal abstract Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider);
+        internal abstract Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform);
 
         internal abstract Task<bool> CheckIsEmailKmsOtpValidAsync(string userName, string otp);
         internal abstract Task<bool> CheckIsEmailUserOtpValidAsync(string emailAddress, string otp);
@@ -177,13 +177,13 @@ namespace Thirdweb.EWS
         }
 
         // embedded-wallet/headless-oauth-login-link
-        internal override async Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider)
+        internal override async Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform)
         {
             var uri = MakeUri(
                 "/embedded-wallet/headless-oauth-login-link",
                 new Dictionary<string, string>
                 {
-                    { "platform", "unity" },
+                    { "platform", platform },
                     { "authProvider", authProvider },
                     { "baseUrl", "https://embedded-wallet.thirdweb.com" }
                 }

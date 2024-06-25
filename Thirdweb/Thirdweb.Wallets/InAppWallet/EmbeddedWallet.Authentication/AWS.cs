@@ -10,7 +10,7 @@ namespace Thirdweb.EWS
         private const string cognitoAppClientId = "2e02ha2ce6du13ldk8pai4h3d0";
         private static readonly string cognitoIdentityPoolId = $"{awsRegion}:2ad7ab1e-f48b-48a6-adfa-ac1090689c26";
         private static readonly string cognitoUserPoolId = $"{awsRegion}_UFwLcZIpq";
-        private static readonly string recoverySharePasswordLambdaFunctionName = "arn:aws:lambda:us-west-2:324457261097:function:recovery-share-password-GenerateRecoverySharePassw-bbE5ZbVAToil";
+        private static readonly string recoverySharePasswordLambdaFunctionName = $"arn:aws:lambda:{awsRegion}:324457261097:function:recovery-share-password-GenerateRecoverySharePassw-bbE5ZbVAToil";
 
         internal static async Task SignUpCognitoUserAsync(string emailAddress, string userName, Type thirdwebHttpClientType)
         {

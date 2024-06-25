@@ -90,10 +90,9 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(mobileRedirectScheme), "Mobile redirect scheme cannot be null or empty on this platform.");
             }
 
-            // TODO: Use this for login link when it's ready in backend
-            var platform = "unity";
+            var platform = _client.HttpClient?.Headers["x-sdk-platform"] ?? "dotnet";
             var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
-            var loginUrl = await _embeddedWallet.FetchHeadlessOauthLoginLinkAsync(_authProvider);
+            var loginUrl = await _embeddedWallet.FetchHeadlessOauthLoginLinkAsync(_authProvider, platform);
             loginUrl = $"{loginUrl}?platform={platform}&redirectUrl={redirectUrl}&developerClientId={_client.ClientId}&authOption={_authProvider}";
 
             browser ??= new InAppWalletBrowser();
