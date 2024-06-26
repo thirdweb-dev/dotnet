@@ -1,6 +1,4 @@
-using System.Numerics;
 using Nethereum.Hex.HexTypes;
-using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb.Tests;
 

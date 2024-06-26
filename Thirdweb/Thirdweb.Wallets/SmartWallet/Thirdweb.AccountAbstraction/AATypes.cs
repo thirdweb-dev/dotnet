@@ -1,7 +1,6 @@
 using System.Numerics;
 using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
-using Nethereum.RPC.Eth.DTOs;
 
 namespace Thirdweb.AccountAbstraction
 {

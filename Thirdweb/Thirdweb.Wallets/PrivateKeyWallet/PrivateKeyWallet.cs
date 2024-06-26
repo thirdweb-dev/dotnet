@@ -4,8 +4,6 @@ using Nethereum.ABI.EIP712;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Model;
-using Nethereum.RPC.Eth.DTOs;
-using Nethereum.RPC.Eth.Mappers;
 using Nethereum.Signer;
 using Nethereum.Signer.EIP712;
 using Newtonsoft.Json;

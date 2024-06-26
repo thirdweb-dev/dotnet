@@ -1,6 +1,5 @@
 using System.Numerics;
 using Nethereum.ABI.EIP712;
-using Nethereum.RPC.Eth.DTOs;
 using Newtonsoft.Json;
 
 namespace Thirdweb

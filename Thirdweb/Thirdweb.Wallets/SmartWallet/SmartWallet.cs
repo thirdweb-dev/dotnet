@@ -5,7 +5,6 @@ using Nethereum.ABI.EIP712;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
-using Nethereum.RPC.Eth.DTOs;
 using Newtonsoft.Json;
 using Thirdweb.AccountAbstraction;
 

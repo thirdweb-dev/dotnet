@@ -185,5 +185,21 @@ namespace Thirdweb
         {
             return transactionReceipt.Logs.DecodeAllEvents<TEventDTO>();
         }
+
+        public static BigInteger AdjustDecimals(this BigInteger value, int fromDecimals, int toDecimals)
+        {
+            var differenceInDecimals = fromDecimals - toDecimals;
+
+            if (differenceInDecimals > 0)
+            {
+                return value / BigInteger.Pow(10, differenceInDecimals);
+            }
+            else if (differenceInDecimals < 0)
+            {
+                return value * BigInteger.Pow(10, -differenceInDecimals);
+            }
+
+            return value;
+        }
     }
 }

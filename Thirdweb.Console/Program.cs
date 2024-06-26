@@ -1,9 +1,5 @@
-﻿using System.Numerics;
-using Thirdweb;
+﻿using Thirdweb;
 using dotenv.net;
-using Newtonsoft.Json;
-using Nethereum.RPC.Eth.DTOs;
-using Nethereum.Hex.HexTypes;
 using System.Diagnostics;
 
 DotEnv.Load();

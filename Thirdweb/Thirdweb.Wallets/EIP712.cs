@@ -1,15 +1,9 @@
 using System.Numerics;
 using Nethereum.ABI.EIP712;
-using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Hex.HexTypes;
 using Nethereum.Model;
 using Nethereum.RLP;
 using Nethereum.Signer;
-using Nethereum.Signer.Crypto;
-using Nethereum.Signer.EIP712;
-using Nethereum.Util;
-using Newtonsoft.Json;
 
 namespace Thirdweb
 {
@@ -63,7 +57,7 @@ namespace Thirdweb
             string version,
             BigInteger chainId,
             string verifyingContract,
-            Contracts.Forwarder.ForwardRequest forwardRequest,
+            Forwarder_ForwardRequest forwardRequest,
             IThirdwebWallet signer
         )
         {
@@ -76,7 +70,7 @@ namespace Thirdweb
             string version,
             BigInteger chainId,
             string verifyingContract,
-            Contracts.TokenERC20.MintRequest mintRequest,
+            TokenERC20_MintRequest mintRequest,
             IThirdwebWallet signer
         )
         {
@@ -89,7 +83,7 @@ namespace Thirdweb
             string version,
             BigInteger chainId,
             string verifyingContract,
-            Contracts.TokenERC721.MintRequest mintRequest,
+            TokenERC721_MintRequest mintRequest,
             IThirdwebWallet signer
         )
         {
@@ -102,7 +96,7 @@ namespace Thirdweb
             string version,
             BigInteger chainId,
             string verifyingContract,
-            Contracts.TokenERC1155.MintRequest mintRequest,
+            TokenERC1155_MintRequest mintRequest,
             IThirdwebWallet signer
         )
         {
@@ -172,8 +166,8 @@ namespace Thirdweb
                     ChainId = chainId,
                     VerifyingContract = verifyingContract,
                 },
-                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Contracts.TokenERC20.MintRequest)),
-                PrimaryType = nameof(Contracts.TokenERC20.MintRequest),
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(TokenERC20_MintRequest)),
+                PrimaryType = nameof(TokenERC20_MintRequest),
             };
         }
 
@@ -188,8 +182,8 @@ namespace Thirdweb
                     ChainId = chainId,
                     VerifyingContract = verifyingContract,
                 },
-                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Contracts.TokenERC721.MintRequest)),
-                PrimaryType = nameof(Contracts.TokenERC721.MintRequest),
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(TokenERC721_MintRequest)),
+                PrimaryType = nameof(TokenERC721_MintRequest),
             };
         }
 
@@ -204,8 +198,8 @@ namespace Thirdweb
                     ChainId = chainId,
                     VerifyingContract = verifyingContract,
                 },
-                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Contracts.TokenERC1155.MintRequest)),
-                PrimaryType = nameof(Contracts.TokenERC1155.MintRequest),
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(TokenERC1155_MintRequest)),
+                PrimaryType = nameof(TokenERC1155_MintRequest),
             };
         }
 
@@ -220,8 +214,8 @@ namespace Thirdweb
                     ChainId = chainId,
                     VerifyingContract = verifyingContract,
                 },
-                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Contracts.Forwarder.ForwardRequest)),
-                PrimaryType = nameof(Contracts.Forwarder.ForwardRequest),
+                Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Forwarder_ForwardRequest)),
+                PrimaryType = nameof(Forwarder_ForwardRequest),
             };
         }
 
