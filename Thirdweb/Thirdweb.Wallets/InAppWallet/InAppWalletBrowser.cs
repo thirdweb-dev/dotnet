@@ -90,7 +90,6 @@ namespace Thirdweb
             if (httpListener != null && httpListener.IsListening)
             {
                 httpListener.Stop();
-                httpListener.Close();
             }
         }
 
