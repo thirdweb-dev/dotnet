@@ -100,9 +100,9 @@ namespace Thirdweb
 
     #endregion
 
-    #region DropERC20
+    #region Drop
 
-    public class DropERC20_ClaimCondition
+    public class Drop_ClaimCondition
     {
         [Parameter("uint256", "startTimestamp", 1)]
         [JsonProperty("startTimestamp")]

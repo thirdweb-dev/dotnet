@@ -940,12 +940,12 @@ namespace Thirdweb
             return await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId");
         }
 
-        public static async Task<DropERC20_ClaimCondition> DropERC20_GetClaimConditionById(this ThirdwebContract contract, BigInteger claimConditionId)
+        public static async Task<Drop_ClaimCondition> DropERC20_GetClaimConditionById(this ThirdwebContract contract, BigInteger claimConditionId)
         {
-            return await ThirdwebContract.Read<DropERC20_ClaimCondition>(contract, "getClaimConditionById", claimConditionId);
+            return await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", claimConditionId);
         }
 
-        public static async Task<DropERC20_ClaimCondition> GetActiveClaimCondition(this ThirdwebContract contract)
+        public static async Task<Drop_ClaimCondition> GetActiveClaimCondition(this ThirdwebContract contract)
         {
             var activeClaimConditionId = await contract.DropERC20_GetActiveClaimConditionId();
             return await contract.DropERC20_GetClaimConditionById(activeClaimConditionId);
