@@ -19,6 +19,16 @@ namespace Thirdweb
             return await ThirdwebStorage.Download<ContractMetadata>(contract.Client, contractUri);
         }
 
+        public static async Task<byte[]> GetNFTImageBytes(this NFT nft, ThirdwebClient client)
+        {
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
+            return string.IsNullOrEmpty(nft.Metadata.Image) ? new byte[] { } : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image).ConfigureAwait(false);
+        }
+
         public static async Task<string> GetPrimarySaleRecipient(this ThirdwebContract contract)
         {
             if (contract == null)
@@ -29,27 +39,42 @@ namespace Thirdweb
             return await ThirdwebContract.Read<string>(contract, "primarySaleRecipient");
         }
 
-        public static async Task<BigInteger> GetBalance(this ThirdwebContract contract)
-        {
-            if (contract == null)
-            {
-                throw new ArgumentNullException(nameof(contract));
-            }
-
-            var client = contract.Client;
-            var rpc = ThirdwebRPC.GetRpcInstance(client, contract.Chain);
-            var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", contract.Address, "latest").ConfigureAwait(false);
-            return new HexBigInteger(balanceHex).Value;
-        }
-
-        public static async Task<byte[]> GetNFTImageBytes(this NFT nft, ThirdwebClient client)
+        public static async Task<BigInteger> GetBalanceRaw(ThirdwebClient client, BigInteger chainId, string address, string erc20ContractAddress = null)
         {
             if (client == null)
             {
                 throw new ArgumentNullException(nameof(client));
             }
 
-            return string.IsNullOrEmpty(nft.Metadata.Image) ? new byte[] { } : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image).ConfigureAwait(false);
+            if (chainId <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(chainId), "Chain ID must be greater than 0.");
+            }
+
+            if (string.IsNullOrEmpty(address))
+            {
+                throw new ArgumentException("Address must be provided");
+            }
+
+            if (erc20ContractAddress != null)
+            {
+                var erc20Contract = await ThirdwebContract.Create(client, erc20ContractAddress, chainId).ConfigureAwait(false);
+                return await erc20Contract.ERC20_BalanceOf(address).ConfigureAwait(false);
+            }
+
+            var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+            var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", address, "latest").ConfigureAwait(false);
+            return new HexBigInteger(balanceHex).Value;
+        }
+
+        public static async Task<BigInteger> GetBalance(this ThirdwebContract contract, string erc20ContractAddress = null)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            return await GetBalanceRaw(contract.Client, contract.Chain, contract.Address, erc20ContractAddress).ConfigureAwait(false);
         }
 
         public static async Task<BigInteger> GetBalance(this IThirdwebWallet wallet, ThirdwebClient client, BigInteger chainId, string erc20ContractAddress = null)
@@ -71,15 +96,7 @@ namespace Thirdweb
 
             var address = await wallet.GetAddress().ConfigureAwait(false);
 
-            if (erc20ContractAddress != null)
-            {
-                var erc20Contract = await ThirdwebContract.Create(client, erc20ContractAddress, chainId).ConfigureAwait(false);
-                return await erc20Contract.ERC20_BalanceOf(address).ConfigureAwait(false);
-            }
-
-            var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
-            var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", address, "latest").ConfigureAwait(false);
-            return new HexBigInteger(balanceHex).Value;
+            return await GetBalanceRaw(client, chainId, address, erc20ContractAddress).ConfigureAwait(false);
         }
 
         public static async Task<ThirdwebTransactionReceipt> Transfer(this IThirdwebWallet wallet, ThirdwebClient client, BigInteger chainId, string toAddress, BigInteger weiAmount)
@@ -693,7 +710,7 @@ namespace Thirdweb
 
         #endregion
 
-        #region NFT - ERC721
+        #region NFT
 
         public static async Task<NFT> ERC721_GetNFT(this ThirdwebContract contract, BigInteger tokenId)
         {
@@ -791,10 +808,6 @@ namespace Thirdweb
                 return ownedNfts.ToList();
             }
         }
-
-        #endregion
-
-        #region NFT - ERC1155
 
         public static async Task<NFT> ERC1155_GetNFT(this ThirdwebContract contract, BigInteger tokenId)
         {
