@@ -1,10 +1,11 @@
 namespace Thirdweb
 {
-    public class ThirdwebRPCTimer
+    public class ThirdwebRPCTimer : IDisposable
     {
         private readonly TimeSpan _interval;
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isRunning;
+        private readonly object _lock = new object();
 
         public event Action Elapsed;
 
@@ -16,25 +17,31 @@ namespace Thirdweb
 
         public void Start()
         {
-            if (_isRunning)
+            lock (_lock)
             {
-                return;
-            }
+                if (_isRunning)
+                {
+                    return;
+                }
 
-            _isRunning = true;
-            _cancellationTokenSource = new CancellationTokenSource();
-            RunTimer(_cancellationTokenSource.Token);
+                _isRunning = true;
+                _cancellationTokenSource = new CancellationTokenSource();
+                RunTimer(_cancellationTokenSource.Token);
+            }
         }
 
         public void Stop()
         {
-            if (!_isRunning)
+            lock (_lock)
             {
-                return;
-            }
+                if (!_isRunning)
+                {
+                    return;
+                }
 
-            _isRunning = false;
-            _cancellationTokenSource.Cancel();
+                _isRunning = false;
+                _cancellationTokenSource.Cancel();
+            }
         }
 
         private async void RunTimer(CancellationToken cancellationToken)
@@ -53,6 +60,11 @@ namespace Thirdweb
                 }
                 Elapsed?.Invoke();
             }
+        }
+
+        public void Dispose()
+        {
+            _cancellationTokenSource?.Dispose();
         }
     }
 }

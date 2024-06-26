@@ -198,10 +198,10 @@ namespace Thirdweb
             }
         }
 
-        public static Task<string> Simulate(ThirdwebTransaction transaction)
+        public static async Task<string> Simulate(ThirdwebTransaction transaction)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
-            return rpc.SendRequestAsync<string>("eth_call", transaction.Input, "latest");
+            return await rpc.SendRequestAsync<string>("eth_call", transaction.Input, "latest");
         }
 
         public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction)
@@ -222,14 +222,14 @@ namespace Thirdweb
             else
             {
                 var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest").ConfigureAwait(false);
-                return new HexBigInteger(hex).Value;
+                return new HexBigInteger(hex).Value * 10 / 8;
             }
         }
 
         public static async Task<BigInteger> GetNonce(ThirdwebTransaction transaction)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
-            return new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "latest").ConfigureAwait(false)).Value;
+            return new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "pending").ConfigureAwait(false)).Value;
         }
 
         private static async Task<BigInteger> GetGasPerPubData(ThirdwebTransaction transaction)
@@ -240,9 +240,9 @@ namespace Thirdweb
             return finalGasPerPubData < 10000 ? 10000 : finalGasPerPubData;
         }
 
-        public static Task<string> Sign(ThirdwebTransaction transaction)
+        public static async Task<string> Sign(ThirdwebTransaction transaction)
         {
-            return transaction._wallet.SignTransaction(transaction.Input);
+            return await transaction._wallet.SignTransaction(transaction.Input);
         }
 
         public static async Task<string> Send(ThirdwebTransaction transaction)
@@ -314,21 +314,18 @@ namespace Thirdweb
 
         public static async Task<ThirdwebTransactionReceipt> WaitForTransactionReceipt(ThirdwebClient client, BigInteger chainId, string txHash, CancellationToken cancellationToken = default)
         {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+
             var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
             var receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
             while (receipt == null)
             {
-                if (cancellationToken != CancellationToken.None)
-                {
-                    await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
-                    cancellationToken.ThrowIfCancellationRequested();
-                }
-                else
-                {
-                    await Task.Delay(1000, CancellationToken.None).ConfigureAwait(false);
-                }
-
                 receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
+                if (receipt == null)
+                {
+                    await Task.Delay(1000, cts.Token).ConfigureAwait(false);
+                }
             }
 
             if (receipt.Status != null && receipt.Status.Value == 0)

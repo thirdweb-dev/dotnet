@@ -1,6 +1,3 @@
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Nethereum.JsonRpc.Client.RpcMessages;
 using Newtonsoft.Json;
 
@@ -78,13 +75,23 @@ namespace Thirdweb.AccountAbstraction
 
         private static async Task<RpcResponseMessage> BundlerRequest(ThirdwebClient client, string url, object requestId, string method, params object[] args)
         {
+            using var cts = new CancellationTokenSource(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+
             var httpClient = client.HttpClient;
             var requestMessage = new RpcRequestMessage(requestId, method, args);
             var requestMessageJson = JsonConvert.SerializeObject(requestMessage);
 
             var httpContent = new StringContent(requestMessageJson, System.Text.Encoding.UTF8, "application/json");
 
-            var httpResponse = await httpClient.PostAsync(url, httpContent);
+            ThirdwebHttpResponseMessage httpResponse;
+            try
+            {
+                httpResponse = await httpClient.PostAsync(url, httpContent, cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                throw new TimeoutException("The request timed out.");
+            }
 
             if (!httpResponse.IsSuccessStatusCode)
             {

@@ -12,9 +12,9 @@ namespace Thirdweb.EWS
             return await PostAuthSetup(result, recoveryCode, null, authProvider).ConfigureAwait(false);
         }
 
-        public async Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider)
+        public async Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform)
         {
-            return await server.FetchHeadlessOauthLoginLinkAsync(authProvider).ConfigureAwait(false);
+            return await server.FetchHeadlessOauthLoginLinkAsync(authProvider, platform).ConfigureAwait(false);
         }
 
         public async Task<bool> IsRecoveryCodeNeededAsync(string authResultStr)

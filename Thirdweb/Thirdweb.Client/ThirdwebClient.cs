@@ -5,9 +5,9 @@ namespace Thirdweb
     public class ThirdwebClient
     {
         public IThirdwebHttpClient HttpClient { get; }
+        public string ClientId { get; }
 
         internal string SecretKey { get; }
-        internal string ClientId { get; }
         internal string BundleId { get; }
         internal ITimeoutOptions FetchTimeoutOptions { get; }
 
@@ -40,6 +40,7 @@ namespace Thirdweb
             FetchTimeoutOptions = fetchTimeoutOptions ?? new TimeoutOptions();
 
             HttpClient = httpClient ?? new ThirdwebHttpClient();
+
             HttpClient.SetHeaders(
                 headers
                     ?? new Dictionary<string, string>

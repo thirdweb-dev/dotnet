@@ -38,7 +38,7 @@ namespace Thirdweb.EWS
         /// <returns>A byte array.</returns>
         public static byte[] GetBytes(string s)
         {
-            byte[] bytes = Enumerable.Range(0, s.Length / 2).Select((i) => byte.Parse(s.Substring(i * 2, 2), NumberStyles.HexNumber)).ToArray();
+            var bytes = Enumerable.Range(0, s.Length / 2).Select((i) => byte.Parse(s.Substring(i * 2, 2), NumberStyles.HexNumber)).ToArray();
             return bytes;
         }
 
@@ -76,7 +76,7 @@ namespace Thirdweb.EWS
             {
                 throw new ArgumentException($"{nameof(shares)} cannot be empty.", nameof(shares));
             }
-            ShareComponents share = ExtractShareComponents(shares[0]);
+            var share = ExtractShareComponents(shares[0]);
             return ConstructPublicShareString(share.nBits, Convert.ToString(shareId, Defaults.radix), Combine(shares, shareId));
         }
 
@@ -96,7 +96,7 @@ namespace Thirdweb.EWS
             }
             var bytes = new byte[nBytes];
             RandomNumberGenerator.Fill(bytes);
-            string rv = GetHexString(bytes);
+            var rv = GetHexString(bytes);
             return rv;
         }
 
@@ -164,19 +164,19 @@ namespace Thirdweb.EWS
 
             // Create the shares.  For additional security, pad in multiples of 128 bits by default.  This is a small trade-off in larger
             // share size to help prevent leakage of information about small secrets and increase the difficulty of attacking them.
-            List<int> l = SplitNumStringToIntArray(secret, paddingMultiple);
+            var l = SplitNumStringToIntArray(secret, paddingMultiple);
             var x = new string[nShares];
             var y = new string[nShares];
-            foreach (int value in l)
+            foreach (var value in l)
             {
                 var subShares = GetShares(value, nShares, threshold);
-                for (int i = 0; i < nShares; ++i)
+                for (var i = 0; i < nShares; ++i)
                 {
                     x[i] = Convert.ToString(subShares[i].x, Defaults.radix);
                     y[i] = PadLeft(Convert.ToString(subShares[i].y, 2), config.nBits) + (y[i] ?? "");
                 }
             }
-            for (int i = 0; i < nShares; ++i)
+            for (var i = 0; i < nShares; ++i)
             {
                 x[i] = ConstructPublicShareString(config.nBits, x[i], Bin2hex(y[i]));
             }
@@ -187,9 +187,9 @@ namespace Thirdweb.EWS
         {
             value = PadLeft(value, nHexDigitBits);
             StringBuilder sb = new();
-            for (int i = 0; i < value.Length; i += nHexDigitBits)
+            for (var i = 0; i < value.Length; i += nHexDigitBits)
             {
-                int num = Convert.ToInt32(value.Substring(i, nHexDigitBits), 2);
+                var num = Convert.ToInt32(value.Substring(i, nHexDigitBits), 2);
                 sb.Append(Convert.ToString(num, 16));
             }
             return sb.ToString();
@@ -207,10 +207,10 @@ namespace Thirdweb.EWS
             //   [ 29, 139, 249 ],
             //   [ 177, 127, 206 ],
             //   [ 196, 149, 81 ] ]
-            int nBits = 0;
+            var nBits = 0;
             List<int> x = new();
             List<List<int>> y = new();
-            foreach (ShareComponents share in shares.Select((s) => ExtractShareComponents(s)))
+            foreach (var share in shares.Select((s) => ExtractShareComponents(s)))
             {
                 // All shares must have the same bits settings.
                 if (nBits == 0)
@@ -232,7 +232,7 @@ namespace Thirdweb.EWS
                 if (x.IndexOf(share.id) == -1)
                 {
                     x.Add(share.id);
-                    List<int> splitShare = SplitNumStringToIntArray(Hex2bin(share.data));
+                    var splitShare = SplitNumStringToIntArray(Hex2bin(share.data));
                     for (int i = 0, n = splitShare.Count; i < n; ++i)
                     {
                         if (i >= y.Count)
@@ -246,11 +246,11 @@ namespace Thirdweb.EWS
 
             // Extract the secret from the zipped share data.
             StringBuilder sb = new();
-            foreach (List<int> y_ in y)
+            foreach (var y_ in y)
             {
                 sb.Insert(0, PadLeft(Convert.ToString(Lagrange(shareId, x, y_), 2), nBits));
             }
-            string result = sb.ToString();
+            var result = sb.ToString();
 
             // If `shareId` is not zero, NewShare invoked Combine.  In this case, return the new share data directly.  Otherwise, find
             // the first '1' which was added in the Share method as a padding marker and return only the data after the padding and the
@@ -260,45 +260,45 @@ namespace Thirdweb.EWS
 
         private static string ConstructPublicShareString(int nBits, string shareId, string data)
         {
-            int id = Convert.ToInt32(shareId, Defaults.radix);
-            string base36Bits = char.ConvertFromUtf32(nBits > 9 ? nBits - 10 + 'A' : nBits + '0');
-            int idMax = (1 << nBits) - 1;
-            int paddingMultiple = Convert.ToString(idMax, Defaults.radix).Length;
-            string hexId = PadLeft(Convert.ToString(id, Defaults.radix), paddingMultiple);
+            var id = Convert.ToInt32(shareId, Defaults.radix);
+            var base36Bits = char.ConvertFromUtf32(nBits > 9 ? nBits - 10 + 'A' : nBits + '0');
+            var idMax = (1 << nBits) - 1;
+            var paddingMultiple = Convert.ToString(idMax, Defaults.radix).Length;
+            var hexId = PadLeft(Convert.ToString(id, Defaults.radix), paddingMultiple);
             if (id < 1 || id > idMax)
             {
                 throw new ArgumentOutOfRangeException(nameof(shareId), $"{nameof(shareId)} must be in the range [1, {idMax}].");
             }
-            string share = base36Bits + hexId + data;
+            var share = base36Bits + hexId + data;
             return share;
         }
 
         private static ShareComponents ExtractShareComponents(string share)
         {
             // Extract the first character which represents the number of bits in base 36.
-            int nBits = GetLargeBaseValue(share[0]);
+            var nBits = GetLargeBaseValue(share[0]);
             if (nBits < Defaults.minnBits || nBits > Defaults.maxnBits)
             {
                 throw new ArgumentException($"Unexpected {nBits}-bit share outside of the range [{Defaults.minnBits}, {Defaults.maxnBits}].", nameof(share));
             }
 
             // Calculate the maximum number of shares allowed for the given number of bits.
-            int maxnShares = (1 << nBits) - 1;
+            var maxnShares = (1 << nBits) - 1;
 
             // Derive the identifier length from the bit count.
-            int idLength = Convert.ToString(maxnShares, Defaults.radix).Length;
+            var idLength = Convert.ToString(maxnShares, Defaults.radix).Length;
 
             // Extract all the parts now that the segment sizes are known.
             var rx = new Regex("^([3-9A-Ka-k]{1})([0-9A-Fa-f]{" + idLength + "})([0-9A-Fa-f]+)$");
-            MatchCollection shareComponents = rx.Matches(share);
-            GroupCollection groups = shareComponents.FirstOrDefault()?.Groups;
+            var shareComponents = rx.Matches(share);
+            var groups = shareComponents.FirstOrDefault()?.Groups;
             if (groups == null || groups.Count != 4)
             {
                 throw new ArgumentException("Malformed share", nameof(share));
             }
 
             // Convert the identifier from a string of hexadecimal digits into an integer.
-            int id = Convert.ToInt32(groups[2].Value, Defaults.radix);
+            var id = Convert.ToInt32(groups[2].Value, Defaults.radix);
 
             // Return the components of the share.
             ShareComponents rv = new(nBits, id, groups[3].Value);
@@ -307,7 +307,7 @@ namespace Thirdweb.EWS
 
         private static int GetLargeBaseValue(char ch)
         {
-            int rv =
+            var rv =
                 ch >= 'a'
                     ? ch - 'a' + 10
                     : ch >= 'A'
@@ -318,7 +318,7 @@ namespace Thirdweb.EWS
 
         private (int x, int y)[] GetShares(int secret, int nShares, int threshold)
         {
-            int[] coefficients = Enumerable.Range(0, threshold - 1).Select((i) => GetRandomInt32(config.nBits)).Concat(new[] { secret }).ToArray();
+            var coefficients = Enumerable.Range(0, threshold - 1).Select((i) => GetRandomInt32(config.nBits)).Concat(new[] { secret }).ToArray();
             var shares = Enumerable.Range(1, nShares).Select((i) => (i, Horner(i, coefficients))).ToArray();
             return shares;
         }
@@ -326,7 +326,7 @@ namespace Thirdweb.EWS
         private static string Hex2bin(string value)
         {
             StringBuilder sb = new();
-            foreach (char ch in value)
+            foreach (var ch in value)
             {
                 sb.Append(nybbles[GetLargeBaseValue(ch)]);
             }
@@ -338,9 +338,9 @@ namespace Thirdweb.EWS
         // since using the exponential or logarithmic form will result in an incorrect value.
         private int Horner(int x, IEnumerable<int> coefficients)
         {
-            int logx = config.logarithms[x];
-            int fx = 0;
-            foreach (int coefficient in coefficients)
+            var logx = config.logarithms[x];
+            var fx = 0;
+            foreach (var coefficient in coefficients)
             {
                 fx = fx == 0 ? coefficient : config.exponents[(logx + config.logarithms[fx]) % config.maxnShares] ^ coefficient;
             }
@@ -351,13 +351,13 @@ namespace Thirdweb.EWS
         // corresponding elements constituting points on the polynomial.
         private int Lagrange(int shareId, IReadOnlyList<int> x, IReadOnlyList<int> y)
         {
-            int sum = 0;
-            foreach (int i in Enumerable.Range(0, x.Count))
+            var sum = 0;
+            foreach (var i in Enumerable.Range(0, x.Count))
             {
                 if (i < y.Count && y[i] != 0)
                 {
-                    int product = config.logarithms[y[i]];
-                    foreach (int j in Enumerable.Range(0, x.Count).Where((j) => i != j))
+                    var product = config.logarithms[y[i]];
+                    foreach (var j in Enumerable.Range(0, x.Count).Where((j) => i != j))
                     {
                         if (shareId == x[j])
                         {
@@ -387,10 +387,10 @@ namespace Thirdweb.EWS
             }
             if (value.Any())
             {
-                int extra = value.Length % paddingMultiple;
+                var extra = value.Length % paddingMultiple;
                 if (extra > 0)
                 {
-                    string s = padding + value;
+                    var s = padding + value;
                     value = s[^(paddingMultiple - extra + value.Length)..];
                 }
             }
@@ -424,11 +424,11 @@ namespace Thirdweb.EWS
             {
                 // Set the scalar values.
                 this.nBits = nBits;
-                int size = 1 << nBits;
+                var size = 1 << nBits;
                 maxnShares = size - 1;
 
                 // Construct the exponent and logarithm tables for multiplication.
-                int primitive = Defaults.primitivePolynomialCoefficients[nBits];
+                var primitive = Defaults.primitivePolynomialCoefficients[nBits];
                 exponents = new int[size];
                 logarithms = new int[size];
                 for (int x = 1, i = 0; i < size; ++i)

@@ -12,7 +12,7 @@ namespace Thirdweb.Tests
         private async Task<IThirdwebWallet> GetWallet()
         {
             var client = ThirdwebClient.Create(secretKey: _secretKey);
-            var privateKeyWallet = await PrivateKeyWallet.Create(client, _testPrivateKey);
+            var privateKeyWallet = await PrivateKeyWallet.Generate(client);
             var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
             return smartAccount;
         }

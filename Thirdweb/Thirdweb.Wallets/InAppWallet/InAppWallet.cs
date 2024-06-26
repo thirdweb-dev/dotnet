@@ -90,14 +90,25 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(mobileRedirectScheme), "Mobile redirect scheme cannot be null or empty on this platform.");
             }
 
-            // TODO: Use this for login link when it's ready in backend
-            var platform = "unity";
+            var platform = _client.HttpClient?.Headers?["x-sdk-name"] == "UnitySDK_WebGL" ? "web" : "dotnet";
             var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
-            var loginUrl = await _embeddedWallet.FetchHeadlessOauthLoginLinkAsync(_authProvider);
-            loginUrl = $"{loginUrl}?platform={platform}&redirectUrl={redirectUrl}&developerClientId={_client.ClientId}&authOption={_authProvider}";
+            var loginUrl = await _embeddedWallet.FetchHeadlessOauthLoginLinkAsync(_authProvider, platform);
+            loginUrl = platform == "web" ? loginUrl : $"{loginUrl}?platform={platform}&redirectUrl={redirectUrl}&developerClientId={_client.ClientId}&authOption={_authProvider}";
 
             browser ??= new InAppWalletBrowser();
-            var browserResult = await browser.Login(loginUrl, redirectUrl, browserOpenAction, cancellationToken);
+            var browserResult = await browser.Login(_client, loginUrl, redirectUrl, browserOpenAction, cancellationToken);
+            switch (browserResult.status)
+            {
+                case BrowserStatus.Success:
+                    break;
+                case BrowserStatus.UserCanceled:
+                    throw new TaskCanceledException(browserResult.error ?? "LoginWithOauth was cancelled.");
+                case BrowserStatus.Timeout:
+                    throw new TimeoutException(browserResult.error ?? "LoginWithOauth timed out.");
+                case BrowserStatus.UnknownError:
+                default:
+                    throw new Exception($"Failed to login with {_authProvider}: {browserResult.status} | {browserResult.error}");
+            }
             var callbackUrl =
                 browserResult.status != BrowserStatus.Success
                     ? throw new Exception($"Failed to login with {_authProvider}: {browserResult.status} | {browserResult.error}")
@@ -112,11 +123,15 @@ namespace Thirdweb
                 await Task.Delay(100, cancellationToken);
             }
 
-            var decodedUrl = HttpUtility.UrlDecode(callbackUrl);
-            Uri uri = new(decodedUrl);
-            var queryString = uri.Query;
-            var queryDict = HttpUtility.ParseQueryString(queryString);
-            var authResultJson = queryDict["authResult"];
+            var authResultJson = callbackUrl;
+            if (!authResultJson.StartsWith("{"))
+            {
+                var decodedUrl = HttpUtility.UrlDecode(callbackUrl);
+                Uri uri = new(decodedUrl);
+                var queryString = uri.Query;
+                var queryDict = HttpUtility.ParseQueryString(queryString);
+                authResultJson = queryDict["authResult"];
+            }
 
             var res = await _embeddedWallet.SignInWithOauthAsync(_authProvider, authResultJson, null);
             if (res.User == null)
