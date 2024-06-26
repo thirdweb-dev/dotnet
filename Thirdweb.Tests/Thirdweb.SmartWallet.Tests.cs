@@ -12,7 +12,7 @@ public class SmartWalletTests : BaseTests
     private async Task<SmartWallet> GetSmartAccount()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
     }
@@ -59,6 +59,7 @@ public class SmartWalletTests : BaseTests
     public async Task IsDeployed_True()
     {
         var account = await GetSmartAccount();
+        await account.ForceDeploy();
         Assert.True(await account.IsDeployed());
     }
 

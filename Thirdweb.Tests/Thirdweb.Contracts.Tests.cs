@@ -109,7 +109,7 @@ public class ContractsTests : BaseTests
     public async Task WriteTest_PrivateKeyAccount()
     {
         var contract = await GetContract();
-        var privateKeyAccount = await PrivateKeyWallet.Create(contract.Client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(contract.Client);
         var receiver = await privateKeyAccount.GetAddress();
         var quantity = BigInteger.One;
         var currency = Constants.NATIVE_TOKEN_ADDRESS;
@@ -211,7 +211,7 @@ public class ContractsTests : BaseTests
     private async Task<SmartWallet> GetAccount()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Create(client, _testPrivateKey);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
     }

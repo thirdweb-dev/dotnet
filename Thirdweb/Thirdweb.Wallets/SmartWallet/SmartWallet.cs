@@ -15,16 +15,16 @@ namespace Thirdweb
     {
         public ThirdwebAccountType AccountType => ThirdwebAccountType.SmartAccount;
 
-        protected ThirdwebClient _client;
-        protected IThirdwebWallet _personalAccount;
-        protected bool _gasless;
-        protected ThirdwebContract _factoryContract;
-        protected ThirdwebContract _accountContract;
-        protected ThirdwebContract _entryPointContract;
-        protected BigInteger _chainId;
-        protected string _bundlerUrl;
-        protected string _paymasterUrl;
-        protected bool _isDeploying;
+        private ThirdwebClient _client;
+        private IThirdwebWallet _personalAccount;
+        private bool _gasless;
+        private ThirdwebContract _factoryContract;
+        private ThirdwebContract _accountContract;
+        private ThirdwebContract _entryPointContract;
+        private BigInteger _chainId;
+        private string _bundlerUrl;
+        private string _paymasterUrl;
+        private bool _isDeploying;
 
         protected SmartWallet(
             ThirdwebClient client,
@@ -177,7 +177,7 @@ namespace Thirdweb
 
         private async Task<byte[]> GetInitCode()
         {
-            if (await IsDeployed())
+            if (_isDeploying || await IsDeployed())
             {
                 return new byte[0];
             }
@@ -187,24 +187,24 @@ namespace Thirdweb
             return data.HexToByteArray();
         }
 
-        private async Task<UserOperation> SignUserOp(ThirdwebTransactionInput transactionInput, int? requestId = null)
+        private async Task<UserOperation> SignUserOp(ThirdwebTransactionInput transactionInput, int? requestId = null, bool simulation = false)
         {
             requestId ??= 1;
 
             // Wait until deployed to avoid double initCode
-
-            // TODO: Thread Safety
-            if (_isDeploying)
+            if (!simulation)
             {
-                while (!await IsDeployed())
+                while (_isDeploying)
                 {
-                    await Task.Delay(1000);
+                    await Task.Delay(1000); // Wait for the deployment to finish
                 }
-                _isDeploying = false;
             }
 
             var initCode = await GetInitCode();
-            _isDeploying = initCode.Length > 0;
+            if (!simulation)
+            {
+                _isDeploying = initCode.Length > 0;
+            }
 
             // Create the user operation and its safe (hexified) version
 
@@ -275,6 +275,7 @@ namespace Thirdweb
                 txHash = userOpReceipt?.receipt?.TransactionHash;
                 await Task.Delay(1000);
             }
+            _isDeploying = false;
             return txHash;
         }
 
@@ -349,6 +350,16 @@ namespace Thirdweb
             if (Utils.IsZkSync(_chainId))
             {
                 return;
+            }
+
+            if (await IsDeployed())
+            {
+                return;
+            }
+
+            if (_isDeploying)
+            {
+                throw new InvalidOperationException("SmartAccount.ForceDeploy: Account is already deploying.");
             }
 
             var input = new ThirdwebTransactionInput()
@@ -562,7 +573,7 @@ namespace Thirdweb
                 throw new Exception("User Operations are not supported in ZkSync");
             }
 
-            var signedOp = await SignUserOp(transaction);
+            var signedOp = await SignUserOp(transaction, null, simulation: true);
             var cost = signedOp.CallGasLimit + signedOp.VerificationGasLimit + signedOp.PreVerificationGas;
             return cost;
         }

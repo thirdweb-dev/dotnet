@@ -13,11 +13,11 @@ namespace Thirdweb
 
             uri = uri.ReplaceIPFS($"https://{client.ClientId}.ipfscdn.io/ipfs/");
 
+            using var cts = new CancellationTokenSource(requestTimeout ?? client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage));
+
             var httpClient = client.HttpClient;
 
-            requestTimeout ??= client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage);
-
-            var response = await httpClient.GetAsync(uri, new CancellationTokenSource(requestTimeout.Value).Token).ConfigureAwait(false);
+            var response = await httpClient.GetAsync(uri, cts.Token).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
