@@ -57,6 +57,11 @@ namespace Thirdweb
 
         public async Task<TResponse> SendRequestAsync<TResponse>(string method, params object[] parameters)
         {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(ThirdwebRPC));
+            }
+
             lock (_cacheLock)
             {
                 var cacheKey = GetCacheKey(method, parameters);
