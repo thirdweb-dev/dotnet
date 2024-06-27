@@ -75,7 +75,7 @@ namespace Thirdweb.AccountAbstraction
 
         private static async Task<RpcResponseMessage> BundlerRequest(ThirdwebClient client, string url, object requestId, string method, params object[] args)
         {
-            using var cts = new CancellationTokenSource(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+            var cts = new CancellationTokenSource(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
 
             var httpClient = client.HttpClient;
             var requestMessage = new RpcRequestMessage(requestId, method, args);

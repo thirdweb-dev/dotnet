@@ -1,8 +1,6 @@
 using System.Numerics;
 using Nethereum.Hex.HexTypes;
-using Nethereum.RPC.Eth.DTOs;
 using Newtonsoft.Json;
-using Nethereum.Contracts;
 using Nethereum.ABI.FunctionEncoding;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json.Linq;
@@ -17,26 +15,19 @@ namespace Thirdweb
 
     public class ThirdwebTransaction
     {
-        public ThirdwebTransactionInput Input { get; private set; }
+        internal ThirdwebTransactionInput Input { get; }
 
-        private readonly ThirdwebClient _client;
         private readonly IThirdwebWallet _wallet;
 
-        private ThirdwebTransaction(ThirdwebClient client, IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
+        private ThirdwebTransaction(IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
         {
             Input = txInput;
-            _client = client;
             _wallet = wallet;
             Input.ChainId = chainId.ToHexBigInteger();
         }
 
-        public static async Task<ThirdwebTransaction> Create(ThirdwebClient client, IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
+        public static async Task<ThirdwebTransaction> Create(IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
         {
-            if (client == null)
-            {
-                throw new ArgumentException("Client must be provided", nameof(client));
-            }
-
             if (wallet == null)
             {
                 throw new ArgumentException("Wallet must be provided", nameof(wallet));
@@ -61,7 +52,7 @@ namespace Thirdweb
                 throw new ArgumentException("Transaction sender (from) must match wallet address", nameof(txInput));
             }
 
-            return new ThirdwebTransaction(client, wallet, txInput, chainId);
+            return new ThirdwebTransaction(wallet, txInput, chainId);
         }
 
         public override string ToString()
@@ -146,14 +137,14 @@ namespace Thirdweb
 
         public static async Task<BigInteger> EstimateGasPrice(ThirdwebTransaction transaction, bool withBump = true)
         {
-            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
             var hex = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice").ConfigureAwait(false));
             return withBump ? hex.Value * 10 / 9 : hex.Value;
         }
 
         public static async Task<(BigInteger, BigInteger)> EstimateGasFees(ThirdwebTransaction transaction, bool withBump = true)
         {
-            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
             var chainId = transaction.Input.ChainId.Value;
 
             if (Utils.IsZkSync(transaction.Input.ChainId.Value))
@@ -200,13 +191,13 @@ namespace Thirdweb
 
         public static async Task<string> Simulate(ThirdwebTransaction transaction)
         {
-            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
             return await rpc.SendRequestAsync<string>("eth_call", transaction.Input, "latest");
         }
 
         public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction)
         {
-            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
 
             if (Utils.IsZkSync(transaction.Input.ChainId.Value))
             {
@@ -222,19 +213,19 @@ namespace Thirdweb
             else
             {
                 var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest").ConfigureAwait(false);
-                return new HexBigInteger(hex).Value * 10 / 8;
+                return new HexBigInteger(hex).Value * 10 / 7;
             }
         }
 
         public static async Task<BigInteger> GetNonce(ThirdwebTransaction transaction)
         {
-            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
             return new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "pending").ConfigureAwait(false)).Value;
         }
 
         private static async Task<BigInteger> GetGasPerPubData(ThirdwebTransaction transaction)
         {
-            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
             var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input, "latest").ConfigureAwait(false))["gas_per_pubdata_limit"].ToString();
             var finalGasPerPubData = new HexBigInteger(hex).Value * 10 / 5;
             return finalGasPerPubData < 10000 ? 10000 : finalGasPerPubData;
@@ -273,7 +264,7 @@ namespace Thirdweb
                 transaction.Input.MaxPriorityFeePerGas = null;
             }
 
-            var rpc = ThirdwebRPC.GetRpcInstance(transaction._client, transaction.Input.ChainId.Value);
+            var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
             string hash;
             if (
                 Utils.IsZkSync(transaction.Input.ChainId.Value)
@@ -309,7 +300,7 @@ namespace Thirdweb
         public static async Task<ThirdwebTransactionReceipt> SendAndWaitForTransactionReceipt(ThirdwebTransaction transaction)
         {
             var txHash = await Send(transaction).ConfigureAwait(false);
-            return await WaitForTransactionReceipt(transaction._client, transaction.Input.ChainId.Value, txHash).ConfigureAwait(false);
+            return await WaitForTransactionReceipt(transaction._wallet.Client, transaction.Input.ChainId.Value, txHash).ConfigureAwait(false);
         }
 
         public static async Task<ThirdwebTransactionReceipt> WaitForTransactionReceipt(ThirdwebClient client, BigInteger chainId, string txHash, CancellationToken cancellationToken = default)
@@ -318,35 +309,48 @@ namespace Thirdweb
             cts.CancelAfter(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
 
             var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
-            var receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
-            while (receipt == null)
+            ThirdwebTransactionReceipt receipt = null;
+
+            try
             {
-                receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
+                do
+                {
+                    receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
+                    if (receipt == null)
+                    {
+                        await Task.Delay(1000, cts.Token).ConfigureAwait(false);
+                    }
+                } while (receipt == null && !cts.Token.IsCancellationRequested);
+
                 if (receipt == null)
                 {
-                    await Task.Delay(1000, cts.Token).ConfigureAwait(false);
+                    throw new Exception($"Transaction {txHash} not found within the timeout period.");
+                }
+
+                if (receipt.Status != null && receipt.Status.Value == 0)
+                {
+                    throw new Exception($"Transaction {txHash} execution reverted.");
+                }
+
+                var userOpEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationEventEventDTO>();
+                if (userOpEvent != null && userOpEvent.Count > 0 && !userOpEvent[0].Event.Success)
+                {
+                    var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
+                    if (revertReasonEvent != null && revertReasonEvent.Count > 0)
+                    {
+                        var revertReason = revertReasonEvent[0].Event.RevertReason;
+                        var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
+                        throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
+                    }
+                    else
+                    {
+                        throw new Exception($"Transaction {txHash} execution silently reverted with no reason string");
+                    }
                 }
             }
-
-            if (receipt.Status != null && receipt.Status.Value == 0)
+            catch (OperationCanceledException)
             {
-                throw new Exception($"Transaction {txHash} execution reverted.");
-            }
-
-            var userOpEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationEventEventDTO>();
-            if (userOpEvent != null && userOpEvent.Count > 0 && !userOpEvent[0].Event.Success)
-            {
-                var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
-                if (revertReasonEvent != null && revertReasonEvent.Count > 0)
-                {
-                    var revertReason = revertReasonEvent[0].Event.RevertReason;
-                    var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
-                    throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
-                }
-                else
-                {
-                    throw new Exception($"Transaction {txHash} execution silently reverted with no reason string");
-                }
+                throw new Exception($"Transaction receipt polling for hash {txHash} was cancelled.");
             }
 
             return receipt;

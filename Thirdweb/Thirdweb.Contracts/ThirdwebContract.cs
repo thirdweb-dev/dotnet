@@ -12,6 +12,7 @@ namespace Thirdweb
         internal string Abi { get; private set; }
 
         private static Dictionary<string, string> _contractAbiCache = new();
+        private static readonly object _cacheLock = new object();
 
         private ThirdwebContract(ThirdwebClient client, string address, BigInteger chain, string abi)
         {
@@ -44,9 +45,14 @@ namespace Thirdweb
 
         public static async Task<string> FetchAbi(ThirdwebClient client, string address, BigInteger chainId)
         {
-            if (_contractAbiCache.TryGetValue($"{address}:{chainId}", out var cachedAbi))
+            var cacheKey = $"{address}:{chainId}";
+
+            lock (_cacheLock)
             {
-                return cachedAbi;
+                if (_contractAbiCache.TryGetValue(cacheKey, out var cachedAbi))
+                {
+                    return cachedAbi;
+                }
             }
 
             var url = $"https://contract.thirdweb.com/abi/{chainId}/{address}";
@@ -54,7 +60,12 @@ namespace Thirdweb
             var response = await httpClient.GetAsync(url).ConfigureAwait(false);
             _ = response.EnsureSuccessStatusCode();
             var abi = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            _contractAbiCache[$"{address}:{chainId}"] = abi;
+
+            lock (_cacheLock)
+            {
+                _contractAbiCache[cacheKey] = abi;
+            }
+
             return abi;
         }
 
@@ -66,7 +77,8 @@ namespace Thirdweb
             var function = GetFunctionMatchSignature(contractRaw, method, parameters);
             var data = function.GetData(parameters);
 
-            var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data = data, }, "latest").ConfigureAwait(false);
+            var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data = data }, "latest").ConfigureAwait(false);
+
             return function.DecodeTypeOutput<T>(resultData);
         }
 
@@ -83,7 +95,7 @@ namespace Thirdweb
                 Value = new HexBigInteger(weiValue),
             };
 
-            return await ThirdwebTransaction.Create(contract.Client, wallet, transaction, contract.Chain).ConfigureAwait(false);
+            return await ThirdwebTransaction.Create(wallet, transaction, contract.Chain).ConfigureAwait(false);
         }
 
         public static async Task<ThirdwebTransactionReceipt> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)

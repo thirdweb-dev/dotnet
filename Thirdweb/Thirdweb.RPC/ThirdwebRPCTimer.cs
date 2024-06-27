@@ -3,7 +3,6 @@ namespace Thirdweb
     public class ThirdwebRPCTimer : IDisposable
     {
         private readonly TimeSpan _interval;
-        private CancellationTokenSource _cancellationTokenSource;
         private bool _isRunning;
         private readonly object _lock = new object();
 
@@ -25,8 +24,7 @@ namespace Thirdweb
                 }
 
                 _isRunning = true;
-                _cancellationTokenSource = new CancellationTokenSource();
-                RunTimer(_cancellationTokenSource.Token);
+                RunTimer();
             }
         }
 
@@ -40,23 +38,22 @@ namespace Thirdweb
                 }
 
                 _isRunning = false;
-                _cancellationTokenSource.Cancel();
             }
         }
 
-        private async void RunTimer(CancellationToken cancellationToken)
+        private async void RunTimer()
         {
             while (_isRunning)
             {
                 var startTime = DateTime.UtcNow;
                 while ((DateTime.UtcNow - startTime) < _interval)
                 {
-                    if (cancellationToken.IsCancellationRequested)
+                    if (!_isRunning)
                     {
                         return;
                     }
 
-                    await Task.Yield();
+                    await Task.Delay(10).ConfigureAwait(false);
                 }
                 Elapsed?.Invoke();
             }
@@ -64,7 +61,7 @@ namespace Thirdweb
 
         public void Dispose()
         {
-            _cancellationTokenSource?.Dispose();
+            _isRunning = false;
         }
     }
 }

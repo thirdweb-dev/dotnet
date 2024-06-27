@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Nethereum.Web3.Accounts;
 
 namespace Thirdweb.EWS

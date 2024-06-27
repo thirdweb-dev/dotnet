@@ -90,13 +90,13 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(mobileRedirectScheme), "Mobile redirect scheme cannot be null or empty on this platform.");
             }
 
-            var platform = _client.HttpClient?.Headers?["x-sdk-name"] == "UnitySDK_WebGL" ? "web" : "dotnet";
+            var platform = Client.HttpClient?.Headers?["x-sdk-name"] == "UnitySDK_WebGL" ? "web" : "dotnet";
             var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
             var loginUrl = await _embeddedWallet.FetchHeadlessOauthLoginLinkAsync(_authProvider, platform);
-            loginUrl = platform == "web" ? loginUrl : $"{loginUrl}?platform={platform}&redirectUrl={redirectUrl}&developerClientId={_client.ClientId}&authOption={_authProvider}";
+            loginUrl = platform == "web" ? loginUrl : $"{loginUrl}?platform={platform}&redirectUrl={redirectUrl}&developerClientId={Client.ClientId}&authOption={_authProvider}";
 
             browser ??= new InAppWalletBrowser();
-            var browserResult = await browser.Login(_client, loginUrl, redirectUrl, browserOpenAction, cancellationToken);
+            var browserResult = await browser.Login(Client, loginUrl, redirectUrl, browserOpenAction, cancellationToken);
             switch (browserResult.status)
             {
                 case BrowserStatus.Success:

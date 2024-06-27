@@ -13,7 +13,7 @@ public class ZkSmartWalletTests : BaseTests
     private async Task<SmartWallet> GetSmartAccount(int zkChainId = 300, bool gasless = true)
     {
         var privateKeyAccount = await PrivateKeyWallet.Generate(_zkClient);
-        var smartAccount = await SmartWallet.Create(_zkClient, personalWallet: privateKeyAccount, gasless: gasless, chainId: zkChainId);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, gasless: gasless, chainId: zkChainId);
         return smartAccount;
     }
 

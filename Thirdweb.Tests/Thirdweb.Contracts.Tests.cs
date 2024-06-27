@@ -141,7 +141,7 @@ public class ContractsTests : BaseTests
         var randomContractAddress = "0xD04F98C88cE1054c90022EE34d566B9237a1203C";
 
         // GenerateSignature_MinimalForwarder
-        var forwardRequest = new Contracts.Forwarder.ForwardRequest
+        var forwardRequest = new Forwarder_ForwardRequest
         {
             From = "0x123",
             To = "0x456",
@@ -154,7 +154,7 @@ public class ContractsTests : BaseTests
         Assert.NotNull(signature);
         Assert.StartsWith("0x", signature);
         // GenerateSignature_TokenERC20
-        var mintRequest20 = new Contracts.TokenERC20.MintRequest
+        var mintRequest20 = new TokenERC20_MintRequest
         {
             To = await signer.GetAddress(),
             PrimarySaleRecipient = await signer.GetAddress(),
@@ -170,7 +170,7 @@ public class ContractsTests : BaseTests
         Assert.StartsWith("0x", signature20);
 
         // GenerateSignature_TokenERC721
-        var mintRequest721 = new Contracts.TokenERC721.MintRequest
+        var mintRequest721 = new TokenERC721_MintRequest
         {
             To = await signer.GetAddress(),
             RoyaltyRecipient = await signer.GetAddress(),
@@ -188,7 +188,7 @@ public class ContractsTests : BaseTests
         Assert.StartsWith("0x", signature721);
 
         // GenerateSignature_TokenERC1155
-        var mintRequest1155 = new Contracts.TokenERC1155.MintRequest
+        var mintRequest1155 = new TokenERC1155_MintRequest
         {
             To = await signer.GetAddress(),
             RoyaltyRecipient = await signer.GetAddress(),
@@ -212,7 +212,7 @@ public class ContractsTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
-        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
     }
 

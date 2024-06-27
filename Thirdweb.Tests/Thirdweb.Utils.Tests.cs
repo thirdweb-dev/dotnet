@@ -394,4 +394,38 @@ public class UtilsTests : BaseTests
         var checksumAddress = Utils.ToChecksumAddress(address);
         Assert.Equal("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", checksumAddress);
     }
+
+    [Fact]
+    public void AdjustDecimals_ReturnsCorrectValue()
+    {
+        var value = new BigInteger(1500000000000000000); // 1.5 ETH
+        var adjustedValue = value.AdjustDecimals(18, 0);
+        Assert.Equal(new BigInteger(1), adjustedValue);
+    }
+
+    [Fact]
+    public void AdjustDecimals_ReturnsCorrectValue2()
+    {
+        var value = new BigInteger(1500000000000000000); // 1.5 ETH
+        // Not having 18 decimals is a sin
+        var adjustedValue = value.AdjustDecimals(18, 2);
+        Assert.Equal(new BigInteger(150), adjustedValue);
+    }
+
+    [Fact]
+    public void AdjustDecimals_ReturnsCorrectValue3()
+    {
+        var value = new BigInteger(1500000000000000000); // 1.5 ETH
+        var adjustedValue = value.AdjustDecimals(18, 18);
+        Assert.Equal(new BigInteger(1500000000000000000), adjustedValue);
+    }
+
+    [Fact]
+    public void AdjustDecimals_ReturnsCorrectValue4()
+    {
+        var value = new BigInteger(1500000000000000000); // 1.5 ETH
+        // In some fictional world where ETH equivalent has 19 decimals
+        var adjustedValue = value.AdjustDecimals(18, 19);
+        Assert.Equal(new BigInteger(15000000000000000000), adjustedValue);
+    }
 }

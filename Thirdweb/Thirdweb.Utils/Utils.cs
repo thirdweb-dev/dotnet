@@ -52,22 +52,22 @@ namespace Thirdweb
             return Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(message)).ToHex(true);
         }
 
-        public static string BytesToHex(byte[] bytes)
+        public static string BytesToHex(this byte[] bytes)
         {
             return bytes.ToHex(true);
         }
 
-        public static byte[] HexToBytes(string hex)
+        public static byte[] HexToBytes(this string hex)
         {
             return hex.HexToByteArray();
         }
 
-        public static string StringToHex(string str)
+        public static string StringToHex(this string str)
         {
             return "0x" + Encoding.UTF8.GetBytes(str).ToHex();
         }
 
-        public static string HexToString(string hex)
+        public static string HexToString(this string hex)
         {
             var array = HexToBytes(hex);
             return Encoding.UTF8.GetString(array, 0, array.Length);
@@ -184,6 +184,22 @@ namespace Thirdweb
             where TEventDTO : new()
         {
             return transactionReceipt.Logs.DecodeAllEvents<TEventDTO>();
+        }
+
+        public static BigInteger AdjustDecimals(this BigInteger value, int fromDecimals, int toDecimals)
+        {
+            var differenceInDecimals = fromDecimals - toDecimals;
+
+            if (differenceInDecimals > 0)
+            {
+                return value / BigInteger.Pow(10, differenceInDecimals);
+            }
+            else if (differenceInDecimals < 0)
+            {
+                return value * BigInteger.Pow(10, -differenceInDecimals);
+            }
+
+            return value;
         }
     }
 }

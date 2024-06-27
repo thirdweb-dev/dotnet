@@ -110,4 +110,20 @@ public class StorageTests : BaseTests
         Assert.Contains("Failed to upload", exception.Message);
         Assert.Contains("401", exception.Message);
     }
+
+    [Fact]
+    public async Task UploadTest_RawBytes_Null()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebStorage.UploadRaw(client, null));
+        Assert.Equal("rawBytes", exception.ParamName);
+    }
+
+    [Fact]
+    public async Task UploadTest_RawBytes_Empty()
+    {
+        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebStorage.UploadRaw(client, new byte[0]));
+        Assert.Equal("rawBytes", exception.ParamName);
+    }
 }
