@@ -12,7 +12,7 @@ public class SmartWalletTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
-        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
     }
 
@@ -28,7 +28,7 @@ public class SmartWalletTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
-        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, chainId: 421614);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, chainId: 421614);
         Assert.NotNull(await smartAccount.GetAddress());
     }
 
@@ -39,7 +39,7 @@ public class SmartWalletTests : BaseTests
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         await privateKeyAccount.Disconnect();
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614)
+            async () => await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614)
         );
         Assert.Equal("SmartAccount.Connect: Personal account must be connected.", ex.Message);
     }
@@ -49,7 +49,7 @@ public class SmartWalletTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
-        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         await smartAccount.ForceDeploy();
         Assert.True(await smartAccount.IsDeployed());
     }
@@ -68,7 +68,6 @@ public class SmartWalletTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(
-            client,
             personalWallet: privateKeyAccount,
             factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
             gasless: true,
@@ -98,7 +97,7 @@ public class SmartWalletTests : BaseTests
     {
         var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
-        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         var tx = await smartAccount.SendTransaction(
             new ThirdwebTransactionInput()
             {
@@ -141,7 +140,6 @@ public class SmartWalletTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(
-            client,
             personalWallet: privateKeyAccount,
             factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052",
             gasless: true,

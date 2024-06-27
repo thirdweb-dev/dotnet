@@ -24,7 +24,7 @@ namespace Thirdweb.Tests
         private async Task<IThirdwebWallet> GetSmartWallet()
         {
             var privateKeyWallet = await PrivateKeyWallet.Generate(_client);
-            return await SmartWallet.Create(_client, personalWallet: privateKeyWallet, chainId: 421614);
+            return await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614);
         }
 
         private async Task<ThirdwebContract> GetTokenERC20Contract()
@@ -150,7 +150,7 @@ namespace Thirdweb.Tests
         {
             var client = ThirdwebClient.Create(secretKey: _secretKey);
             var wallet = await GetSmartWallet();
-            var balance = await wallet.GetBalance(client, _chainId);
+            var balance = await wallet.GetBalance(_chainId);
             Assert.True(balance >= 0);
         }
 
@@ -159,7 +159,7 @@ namespace Thirdweb.Tests
         {
             var client = ThirdwebClient.Create(secretKey: _secretKey);
             var wallet = await GetSmartWallet();
-            var balance = await wallet.GetBalance(client, _chainId, _tokenErc20ContractAddress);
+            var balance = await wallet.GetBalance(_chainId, _tokenErc20ContractAddress);
             Assert.True(balance >= 0);
         }
 
@@ -169,7 +169,7 @@ namespace Thirdweb.Tests
             var client = ThirdwebClient.Create(secretKey: _secretKey);
             var wallet = await GetSmartWallet();
             var toAddress = await wallet.GetAddress();
-            var receipt = await wallet.Transfer(client, _chainId, toAddress, BigInteger.Zero);
+            var receipt = await wallet.Transfer(_chainId, toAddress, BigInteger.Zero);
             Assert.NotNull(receipt);
             Assert.True(receipt.TransactionHash.Length == 66);
         }

@@ -91,16 +91,11 @@ namespace Thirdweb
             return await GetBalanceRaw(contract.Client, contract.Chain, contract.Address, erc20ContractAddress).ConfigureAwait(false);
         }
 
-        public static async Task<BigInteger> GetBalance(this IThirdwebWallet wallet, ThirdwebClient client, BigInteger chainId, string erc20ContractAddress = null)
+        public static async Task<BigInteger> GetBalance(this IThirdwebWallet wallet, BigInteger chainId, string erc20ContractAddress = null)
         {
             if (wallet == null)
             {
                 throw new ArgumentNullException(nameof(wallet));
-            }
-
-            if (client == null)
-            {
-                throw new ArgumentNullException(nameof(client));
             }
 
             if (chainId <= 0)
@@ -110,19 +105,14 @@ namespace Thirdweb
 
             var address = await wallet.GetAddress().ConfigureAwait(false);
 
-            return await GetBalanceRaw(client, chainId, address, erc20ContractAddress).ConfigureAwait(false);
+            return await GetBalanceRaw(wallet.Client, chainId, address, erc20ContractAddress).ConfigureAwait(false);
         }
 
-        public static async Task<ThirdwebTransactionReceipt> Transfer(this IThirdwebWallet wallet, ThirdwebClient client, BigInteger chainId, string toAddress, BigInteger weiAmount)
+        public static async Task<ThirdwebTransactionReceipt> Transfer(this IThirdwebWallet wallet, BigInteger chainId, string toAddress, BigInteger weiAmount)
         {
             if (wallet == null)
             {
                 throw new ArgumentNullException(nameof(wallet));
-            }
-
-            if (client == null)
-            {
-                throw new ArgumentNullException(nameof(client));
             }
 
             if (chainId <= 0)
@@ -146,7 +136,7 @@ namespace Thirdweb
                 To = toAddress,
                 Value = new HexBigInteger(weiAmount)
             };
-            var tx = await ThirdwebTransaction.Create(client, wallet, txInput, chainId).ConfigureAwait(false);
+            var tx = await ThirdwebTransaction.Create(wallet, txInput, chainId).ConfigureAwait(false);
             return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx).ConfigureAwait(false);
         }
 

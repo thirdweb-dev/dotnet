@@ -6,6 +6,7 @@ namespace Thirdweb
 {
     public interface IThirdwebWallet
     {
+        public ThirdwebClient Client { get; }
         public ThirdwebAccountType AccountType { get; }
         public Task<string> GetAddress();
         public Task<string> EthSign(byte[] rawMessage);

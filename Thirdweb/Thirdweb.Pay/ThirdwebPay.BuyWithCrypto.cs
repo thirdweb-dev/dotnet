@@ -5,11 +5,11 @@ namespace Thirdweb.Pay
 {
     public partial class ThirdwebPay
     {
-        public static async Task<string> BuyWithCrypto(ThirdwebClient client, IThirdwebWallet wallet, BuyWithCryptoQuoteResult buyWithCryptoQuote)
+        public static async Task<string> BuyWithCrypto(IThirdwebWallet wallet, BuyWithCryptoQuoteResult buyWithCryptoQuote)
         {
             if (buyWithCryptoQuote.Approval != null)
             {
-                var erc20ToApprove = await ThirdwebContract.Create(client, buyWithCryptoQuote.Approval.TokenAddress, buyWithCryptoQuote.Approval.ChainId);
+                var erc20ToApprove = await ThirdwebContract.Create(wallet.Client, buyWithCryptoQuote.Approval.TokenAddress, buyWithCryptoQuote.Approval.ChainId);
                 var currentAllowance = await erc20ToApprove.ERC20_Allowance(await wallet.GetAddress(), buyWithCryptoQuote.Approval.SpenderAddress);
                 if (currentAllowance < BigInteger.Parse(buyWithCryptoQuote.Approval.AmountWei))
                 {
@@ -27,7 +27,7 @@ namespace Thirdweb.Pay
                 GasPrice = new HexBigInteger(BigInteger.Parse(buyWithCryptoQuote.TransactionRequest.GasPrice)),
             };
 
-            var tx = await ThirdwebTransaction.Create(client, wallet, txInput, buyWithCryptoQuote.TransactionRequest.ChainId);
+            var tx = await ThirdwebTransaction.Create(wallet, txInput, buyWithCryptoQuote.TransactionRequest.ChainId);
 
             var hash = await ThirdwebTransaction.Send(tx);
 

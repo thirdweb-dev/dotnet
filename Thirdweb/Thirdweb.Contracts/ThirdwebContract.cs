@@ -84,7 +84,7 @@ namespace Thirdweb
                 Value = new HexBigInteger(weiValue),
             };
 
-            return await ThirdwebTransaction.Create(contract.Client, wallet, transaction, contract.Chain).ConfigureAwait(false);
+            return await ThirdwebTransaction.Create(wallet, transaction, contract.Chain).ConfigureAwait(false);
         }
 
         public static async Task<ThirdwebTransactionReceipt> Write(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)

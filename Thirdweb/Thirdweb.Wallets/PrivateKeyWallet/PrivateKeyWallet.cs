@@ -12,14 +12,15 @@ namespace Thirdweb
 {
     public class PrivateKeyWallet : IThirdwebWallet
     {
+        public ThirdwebClient Client { get; }
+
         public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
 
-        protected ThirdwebClient _client;
         protected EthECKey _ecKey;
 
         protected PrivateKeyWallet(ThirdwebClient client, EthECKey key)
         {
-            _client = client;
+            Client = client;
             _ecKey = key;
         }
 
@@ -194,7 +195,7 @@ namespace Thirdweb
             var payloadBodyRaw = new { address = await GetAddress(), chainId = chainId.ToString() };
             var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
 
-            using var httpClient = httpClientOverride ?? _client.HttpClient;
+            using var httpClient = httpClientOverride ?? Client.HttpClient;
 
             var payloadContent = new StringContent(payloadBody, Encoding.UTF8, "application/json");
             var payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);

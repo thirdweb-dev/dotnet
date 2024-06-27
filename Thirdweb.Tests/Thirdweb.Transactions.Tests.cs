@@ -14,7 +14,7 @@ public class TransactionTests : BaseTests
         var wallet = await PrivateKeyWallet.Generate(client);
         var chainId = new BigInteger(421614);
 
-        var transaction = await ThirdwebTransaction.Create(client, wallet, new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = await wallet.GetAddress(), }, chainId);
+        var transaction = await ThirdwebTransaction.Create(wallet, new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = await wallet.GetAddress(), }, chainId);
         return transaction;
     }
 
@@ -25,7 +25,7 @@ public class TransactionTests : BaseTests
         var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
         var chainId = new BigInteger(421614);
-        var transaction = await ThirdwebTransaction.Create(client, wallet, txInput, chainId);
+        var transaction = await ThirdwebTransaction.Create(wallet, txInput, chainId);
         Assert.NotNull(transaction);
     }
 
@@ -35,7 +35,7 @@ public class TransactionTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress() };
-        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, 421614));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(wallet, txInput, 421614));
         Assert.Contains("Transaction recipient (to) must be provided", ex.Message);
     }
 
@@ -45,18 +45,8 @@ public class TransactionTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = "0xHello", To = Constants.ADDRESS_ZERO };
-        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, 421614));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(wallet, txInput, 421614));
         Assert.Contains("Transaction sender (from) must match wallet address", ex.Message);
-    }
-
-    [Fact]
-    public async Task Create_ThrowsOnNoClient()
-    {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await PrivateKeyWallet.Generate(client);
-        var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
-        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(null, wallet, txInput, 421614));
-        Assert.Contains("Client must be provided", ex.Message);
     }
 
     [Fact]
@@ -65,7 +55,7 @@ public class TransactionTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
-        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, null, txInput, 421614));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(null, txInput, 421614));
         Assert.Contains("Wallet must be provided", ex.Message);
     }
 
@@ -75,7 +65,7 @@ public class TransactionTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var wallet = await PrivateKeyWallet.Generate(client);
         var txInput = new ThirdwebTransactionInput() { From = await wallet.GetAddress(), To = Constants.ADDRESS_ZERO };
-        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(client, wallet, txInput, BigInteger.Zero));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebTransaction.Create(wallet, txInput, BigInteger.Zero));
         Assert.Contains("Invalid Chain ID", ex.Message);
     }
 
@@ -158,9 +148,8 @@ public class TransactionTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
-        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         var transaction = await ThirdwebTransaction.Create(
-            client,
             smartAccount,
             new ThirdwebTransactionInput()
             {
@@ -357,7 +346,6 @@ public class TransactionTests : BaseTests
     public async Task EstimateGasFees_ReturnsCorrectly()
     {
         var transaction = await ThirdwebTransaction.Create(
-            ThirdwebClient.Create(secretKey: _secretKey),
             await PrivateKeyWallet.Generate(ThirdwebClient.Create(secretKey: _secretKey)),
             new ThirdwebTransactionInput()
             {
@@ -401,9 +389,8 @@ public class TransactionTests : BaseTests
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
-        var smartAccount = await SmartWallet.Create(client, personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         var transaction = await ThirdwebTransaction.Create(
-            client,
             smartAccount,
             new ThirdwebTransactionInput()
             {
