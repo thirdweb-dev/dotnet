@@ -707,9 +707,13 @@ namespace Thirdweb.Tests
         {
             var contract = await GetDrop20Contract();
             var wallet = await GetSmartWallet();
-            var receipt = await contract.DropERC20_Claim(wallet, await wallet.GetAddress(), "1.5");
+            var receiverAddress = await wallet.GetAddress();
+            var balanceBefore = await contract.ERC20_BalanceOf(receiverAddress);
+            var receipt = await contract.DropERC20_Claim(wallet, receiverAddress, "1.5");
+            var balanceAfter = await contract.ERC20_BalanceOf(receiverAddress);
             Assert.NotNull(receipt);
             Assert.True(receipt.TransactionHash.Length == 66);
+            Assert.True(balanceAfter == balanceBefore + BigInteger.Parse("1.5".ToWei()));
         }
 
         [Fact]
@@ -748,13 +752,102 @@ namespace Thirdweb.Tests
 
         #region DropERC721
 
-        // TODO
+        [Fact]
+        public async Task DropERC721_Claim_ShouldThrowTokens()
+        {
+            var contract = await GetDrop721Contract();
+            var wallet = await GetSmartWallet();
+            var ex = await Assert.ThrowsAsync<Exception>(async () => await contract.DropERC721_Claim(wallet, await wallet.GetAddress(), 1));
+            Assert.Contains("!Tokens", ex.Message);
+        }
+
+        [Fact]
+        public async Task DropERC721_GetActiveClaimConditionId()
+        {
+            var contract = await GetDrop721Contract();
+            var conditionId = await contract.DropERC721_GetActiveClaimConditionId();
+            Assert.True(conditionId >= 0);
+        }
+
+        [Fact]
+        public async Task DropERC721_GetClaimConditionById()
+        {
+            var contract = await GetDrop721Contract();
+            var conditionId = await contract.DropERC721_GetActiveClaimConditionId();
+            var condition = await contract.DropERC721_GetClaimConditionById(conditionId);
+            Assert.NotNull(condition);
+            Assert.True(condition.Currency.Length == 42);
+        }
+
+        [Fact]
+        public async Task DropERC721_GetActiveClaimCondition()
+        {
+            var contract = await GetDrop721Contract();
+            var condition = await contract.DropERC721_GetActiveClaimCondition();
+            Assert.NotNull(condition);
+            Assert.True(condition.Currency.Length == 42);
+
+            // Compare to raw GetClaimConditionById
+            var conditionId = await contract.DropERC721_GetActiveClaimConditionId();
+            var conditionById = await contract.DropERC721_GetClaimConditionById(conditionId);
+            Assert.Equal(condition.Currency, conditionById.Currency);
+        }
 
         #endregion
 
         #region DropERC1155
 
-        // TODO
+        [Fact]
+        public async Task DropERC1155_Claim()
+        {
+            var contract = await GetDrop1155Contract();
+            var wallet = await GetSmartWallet();
+            var tokenId = 0;
+            var quantity = 10;
+            var receiverAddress = await wallet.GetAddress();
+
+            var balanceBefore = await contract.ERC1155_BalanceOf(receiverAddress, tokenId);
+            var receipt = await contract.DropERC1155_Claim(wallet, receiverAddress, tokenId, quantity);
+            var balanceAfter = await contract.ERC1155_BalanceOf(receiverAddress, tokenId);
+            Assert.NotNull(receipt);
+            Assert.True(receipt.TransactionHash.Length == 66);
+            Assert.True(balanceAfter == balanceBefore + quantity);
+        }
+
+        [Fact]
+        public async Task DropERC1155_GetActiveClaimConditionId()
+        {
+            var contract = await GetDrop1155Contract();
+            var tokenId = 0;
+            var conditionId = await contract.DropERC1155_GetActiveClaimConditionId(tokenId);
+            Assert.True(conditionId >= 0);
+        }
+
+        [Fact]
+        public async Task DropERC1155_GetClaimConditionById()
+        {
+            var contract = await GetDrop1155Contract();
+            var tokenId = 0;
+            var conditionId = await contract.DropERC1155_GetActiveClaimConditionId(tokenId);
+            var condition = await contract.DropERC1155_GetClaimConditionById(tokenId, conditionId);
+            Assert.NotNull(condition);
+            Assert.True(condition.Currency.Length == 42);
+        }
+
+        [Fact]
+        public async Task DropERC1155_GetActiveClaimCondition()
+        {
+            var contract = await GetDrop1155Contract();
+            var tokenId = 0;
+            var condition = await contract.DropERC1155_GetActiveClaimCondition(tokenId);
+            Assert.NotNull(condition);
+            Assert.True(condition.Currency.Length == 42);
+
+            // Compare to raw GetClaimConditionById
+            var conditionId = await contract.DropERC1155_GetActiveClaimConditionId(tokenId);
+            var conditionById = await contract.DropERC1155_GetClaimConditionById(tokenId, conditionId);
+            Assert.Equal(condition.Currency, conditionById.Currency);
+        }
 
         #endregion
 

@@ -972,6 +972,144 @@ namespace Thirdweb
 
         #endregion
 
+        #region DropERC721
+
+        public static async Task<ThirdwebTransactionReceipt> DropERC721_Claim(this ThirdwebContract contract, IThirdwebWallet wallet, string receiverAddress, BigInteger quantity)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (string.IsNullOrEmpty(receiverAddress))
+            {
+                throw new ArgumentException("Receiver address must be provided");
+            }
+
+            if (quantity <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than 0");
+            }
+
+            // TODO: Task.WhenAll
+
+            var activeClaimCondition = await contract.DropERC721_GetActiveClaimCondition();
+
+            var isNativeToken = activeClaimCondition.Currency == Constants.NATIVE_TOKEN_ADDRESS;
+
+            var payableAmount = isNativeToken ? quantity * activeClaimCondition.PricePerToken : BigInteger.Zero;
+
+            // TODO: Merkle
+            var allowlistProof = new object[] { new byte[] { }, BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+
+            var fnArgs = new object[]
+            {
+                receiverAddress, // receiver
+                quantity, // quantity
+                activeClaimCondition.Currency, // currency
+                activeClaimCondition.PricePerToken, // pricePerToken
+                allowlistProof, // allowlistProof
+                new byte[] { } // data
+            };
+
+            return await ThirdwebContract.Write(wallet, contract, "claim", payableAmount, fnArgs);
+        }
+
+        public static async Task<BigInteger> DropERC721_GetActiveClaimConditionId(this ThirdwebContract contract)
+        {
+            return await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId");
+        }
+
+        public static async Task<Drop_ClaimCondition> DropERC721_GetClaimConditionById(this ThirdwebContract contract, BigInteger claimConditionId)
+        {
+            return await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", claimConditionId);
+        }
+
+        public static async Task<Drop_ClaimCondition> DropERC721_GetActiveClaimCondition(this ThirdwebContract contract)
+        {
+            var activeClaimConditionId = await contract.DropERC721_GetActiveClaimConditionId();
+            return await contract.DropERC20_GetClaimConditionById(activeClaimConditionId);
+        }
+
+        #endregion
+
+        #region DropERC1155
+
+        public static async Task<ThirdwebTransactionReceipt> DropERC1155_Claim(this ThirdwebContract contract, IThirdwebWallet wallet, string receiverAddress, BigInteger tokenId, BigInteger quantity)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (string.IsNullOrEmpty(receiverAddress))
+            {
+                throw new ArgumentException("Receiver address must be provided");
+            }
+
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
+            if (quantity <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than 0");
+            }
+
+            // TODO: Task.WhenAll
+
+            var activeClaimCondition = await contract.DropERC1155_GetActiveClaimCondition(tokenId);
+
+            var isNativeToken = activeClaimCondition.Currency == Constants.NATIVE_TOKEN_ADDRESS;
+
+            var payableAmount = isNativeToken ? quantity * activeClaimCondition.PricePerToken : BigInteger.Zero;
+
+            // TODO: Merkle
+            var allowlistProof = new object[] { new byte[] { }, BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+
+            var fnArgs = new object[]
+            {
+                receiverAddress, // receiver
+                tokenId, // tokenId
+                quantity, // quantity
+                activeClaimCondition.Currency, // currency
+                activeClaimCondition.PricePerToken, // pricePerToken
+                allowlistProof, // allowlistProof
+                new byte[] { } // data
+            };
+
+            return await ThirdwebContract.Write(wallet, contract, "claim", payableAmount, fnArgs);
+        }
+
+        public static async Task<BigInteger> DropERC1155_GetActiveClaimConditionId(this ThirdwebContract contract, BigInteger tokenId)
+        {
+            return await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId", tokenId);
+        }
+
+        public static async Task<Drop_ClaimCondition> DropERC1155_GetClaimConditionById(this ThirdwebContract contract, BigInteger tokenId, BigInteger claimConditionId)
+        {
+            return await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", tokenId, claimConditionId);
+        }
+
+        public static async Task<Drop_ClaimCondition> DropERC1155_GetActiveClaimCondition(this ThirdwebContract contract, BigInteger tokenId)
+        {
+            var activeClaimConditionId = await contract.DropERC1155_GetActiveClaimConditionId(tokenId);
+            return await contract.DropERC1155_GetClaimConditionById(tokenId, activeClaimConditionId);
+        }
+
+        #endregion
+
         #region TokenERC20
 
         public static async Task<ThirdwebTransactionReceipt> TokenERC20_MintTo(this ThirdwebContract contract, IThirdwebWallet wallet, string receiverAddress, string amount)
