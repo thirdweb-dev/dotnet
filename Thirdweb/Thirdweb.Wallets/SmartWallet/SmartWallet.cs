@@ -612,7 +612,7 @@ namespace Thirdweb
             var payloadBodyRaw = new { address = await GetAddress(), chainId = chainId.ToString() };
             var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
 
-            using var httpClient = httpClientOverride ?? Client.HttpClient;
+            var httpClient = httpClientOverride ?? Client.HttpClient;
 
             var payloadContent = new StringContent(payloadBody, Encoding.UTF8, "application/json");
             var payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);

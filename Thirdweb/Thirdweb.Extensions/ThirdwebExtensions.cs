@@ -359,6 +359,11 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(contract));
             }
 
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
             return await ThirdwebContract.Read<string>(contract, "ownerOf", tokenId);
         }
 
@@ -392,6 +397,11 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(contract));
             }
 
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
             return await ThirdwebContract.Read<string>(contract, "tokenURI", tokenId);
         }
 
@@ -422,6 +432,11 @@ namespace Thirdweb
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
             }
 
             return await ThirdwebContract.Read<string>(contract, "getApproved", tokenId);
@@ -538,6 +553,11 @@ namespace Thirdweb
                 throw new ArgumentException("Owner address must be provided");
             }
 
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
             return await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress, tokenId);
         }
 
@@ -630,6 +650,11 @@ namespace Thirdweb
                 throw new ArgumentException("Recipient address must be provided");
             }
 
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
             return await ThirdwebContract.Write(wallet, contract, "safeTransferFrom", 0, fromAddress, toAddress, tokenId, amount, data);
         }
 
@@ -680,6 +705,11 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(contract));
             }
 
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
             return await ThirdwebContract.Read<string>(contract, "uri", tokenId);
         }
 
@@ -689,6 +719,11 @@ namespace Thirdweb
             if (contract == null)
             {
                 throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
             }
 
             return await ThirdwebContract.Read<BigInteger>(contract, "totalSupply", tokenId);
@@ -956,16 +991,36 @@ namespace Thirdweb
 
         public static async Task<BigInteger> DropERC20_GetActiveClaimConditionId(this ThirdwebContract contract)
         {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
             return await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId");
         }
 
         public static async Task<Drop_ClaimCondition> DropERC20_GetClaimConditionById(this ThirdwebContract contract, BigInteger claimConditionId)
         {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (claimConditionId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(claimConditionId), "Claim condition ID must be equal or greater than 0");
+            }
+
             return await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", claimConditionId);
         }
 
         public static async Task<Drop_ClaimCondition> DropERC20_GetActiveClaimCondition(this ThirdwebContract contract)
         {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
             var activeClaimConditionId = await contract.DropERC20_GetActiveClaimConditionId();
             return await contract.DropERC20_GetClaimConditionById(activeClaimConditionId);
         }
@@ -1022,16 +1077,36 @@ namespace Thirdweb
 
         public static async Task<BigInteger> DropERC721_GetActiveClaimConditionId(this ThirdwebContract contract)
         {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
             return await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId");
         }
 
         public static async Task<Drop_ClaimCondition> DropERC721_GetClaimConditionById(this ThirdwebContract contract, BigInteger claimConditionId)
         {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (claimConditionId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(claimConditionId), "Claim condition ID must be equal or greater than 0");
+            }
+
             return await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", claimConditionId);
         }
 
         public static async Task<Drop_ClaimCondition> DropERC721_GetActiveClaimCondition(this ThirdwebContract contract)
         {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
             var activeClaimConditionId = await contract.DropERC721_GetActiveClaimConditionId();
             return await contract.DropERC20_GetClaimConditionById(activeClaimConditionId);
         }
@@ -1094,16 +1169,51 @@ namespace Thirdweb
 
         public static async Task<BigInteger> DropERC1155_GetActiveClaimConditionId(this ThirdwebContract contract, BigInteger tokenId)
         {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
             return await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId", tokenId);
         }
 
         public static async Task<Drop_ClaimCondition> DropERC1155_GetClaimConditionById(this ThirdwebContract contract, BigInteger tokenId, BigInteger claimConditionId)
         {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
+            if (claimConditionId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(claimConditionId), "Claim condition ID must be equal or greater than 0");
+            }
+
             return await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", tokenId, claimConditionId);
         }
 
         public static async Task<Drop_ClaimCondition> DropERC1155_GetActiveClaimCondition(this ThirdwebContract contract, BigInteger tokenId)
         {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
             var activeClaimConditionId = await contract.DropERC1155_GetActiveClaimConditionId(tokenId);
             return await contract.DropERC1155_GetClaimConditionById(tokenId, activeClaimConditionId);
         }
