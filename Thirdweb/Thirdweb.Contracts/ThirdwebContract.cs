@@ -67,6 +67,7 @@ namespace Thirdweb
             var data = function.GetData(parameters);
 
             var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data = data, }, "latest").ConfigureAwait(false);
+
             return function.DecodeTypeOutput<T>(resultData);
         }
 

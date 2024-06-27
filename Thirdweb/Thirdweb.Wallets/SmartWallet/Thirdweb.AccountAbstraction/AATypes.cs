@@ -137,6 +137,7 @@ namespace Thirdweb.AccountAbstraction
         public virtual byte[] RevertReason { get; set; }
     }
 
+    [Struct("SignerPermissionRequest")]
     public class SignerPermissionRequest
     {
         [Parameter("address", "signer", 1)]
@@ -167,6 +168,7 @@ namespace Thirdweb.AccountAbstraction
         public virtual byte[] Uid { get; set; }
     }
 
+    [Struct("AccountMessage")]
     public class AccountMessage
     {
         [Parameter("bytes", "message", 1)]

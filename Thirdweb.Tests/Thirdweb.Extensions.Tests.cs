@@ -702,7 +702,47 @@ namespace Thirdweb.Tests
 
         #region DropERC20
 
-        // TODO
+        [Fact]
+        public async Task DropERC20_Claim()
+        {
+            var contract = await GetDrop20Contract();
+            var wallet = await GetSmartWallet();
+            var receipt = await contract.DropERC20_Claim(wallet, await wallet.GetAddress(), "1.5");
+            Assert.NotNull(receipt);
+            Assert.True(receipt.TransactionHash.Length == 66);
+        }
+
+        [Fact]
+        public async Task DropERC20_GetActiveClaimConditionId()
+        {
+            var contract = await GetDrop20Contract();
+            var conditionId = await contract.DropERC20_GetActiveClaimConditionId();
+            Assert.True(conditionId >= 0);
+        }
+
+        [Fact]
+        public async Task DropERC20_GetClaimConditionById()
+        {
+            var contract = await GetDrop20Contract();
+            var conditionId = await contract.DropERC20_GetActiveClaimConditionId();
+            var condition = await contract.DropERC20_GetClaimConditionById(conditionId);
+            Assert.NotNull(condition);
+            Assert.True(condition.Currency.Length == 42);
+        }
+
+        [Fact]
+        public async Task DropERC20_GetActiveClaimCondition()
+        {
+            var contract = await GetDrop20Contract();
+            var condition = await contract.DropERC20_GetActiveClaimCondition();
+            Assert.NotNull(condition);
+            Assert.True(condition.Currency.Length == 42);
+
+            // Compare to raw GetClaimConditionById
+            var conditionId = await contract.DropERC20_GetActiveClaimConditionId();
+            var conditionById = await contract.DropERC20_GetClaimConditionById(conditionId);
+            Assert.Equal(condition.Currency, conditionById.Currency);
+        }
 
         #endregion
 
@@ -720,7 +760,43 @@ namespace Thirdweb.Tests
 
         #region TokenERC20
 
-        // TODO
+        // TODO: MintTo
+
+        // TODO: MintWithSignature
+
+        [Fact]
+        public async Task TokenERC20_GenerateMintSignature_WithVerify()
+        {
+            var contract = await GetTokenERC20Contract();
+            var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
+            var randomReceiver = await PrivateKeyWallet.Generate(_client);
+            var mintRequest = new TokenERC20_MintRequest { To = await randomReceiver.GetAddress(), Quantity = BigInteger.Parse("1.5".ToWei()), };
+
+            (var payload, var signature) = await contract.TokenERC20_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
+
+            // returned payload should be filled with defaults
+            Assert.NotNull(payload);
+            Assert.NotNull(payload.To);
+            Assert.True(payload.To.Length == 42);
+            Assert.True(payload.To == await randomReceiver.GetAddress());
+            Assert.NotNull(payload.PrimarySaleRecipient);
+            Assert.True(payload.PrimarySaleRecipient.Length == 42);
+            Assert.True(payload.Quantity != BigInteger.Zero);
+            Assert.True(payload.Price >= 0);
+            Assert.NotNull(payload.Currency);
+            Assert.True(payload.Currency.Length == 42);
+            Assert.True(payload.ValidityStartTimestamp >= 0);
+            Assert.True(payload.ValidityEndTimestamp >= 0);
+            Assert.NotNull(payload.Uid);
+            Assert.True(payload.Uid.Length == 32); // bytes32
+
+            // signature should not be valid
+            Assert.NotNull(signature);
+            Assert.NotEmpty(signature);
+            var verifyResult = await contract.TokenERC20_VerifyMintSignature(payload, signature);
+            Assert.False(verifyResult.IsValid);
+            Assert.Equal(await fakeAuthorizedSigner.GetAddress(), verifyResult.Signer);
+        }
 
         #endregion
 

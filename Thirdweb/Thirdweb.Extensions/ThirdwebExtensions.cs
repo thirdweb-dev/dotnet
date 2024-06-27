@@ -1,5 +1,9 @@
 using System.Numerics;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
+using Nethereum.Util;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Thirdweb
 {
@@ -922,7 +926,9 @@ namespace Thirdweb
                 throw new ArgumentException("Amount must be provided");
             }
 
-            var activeClaimCondition = await contract.GetActiveClaimCondition();
+            // TODO: Task.WhenAll
+
+            var activeClaimCondition = await contract.DropERC20_GetActiveClaimCondition();
 
             var erc20Decimals = await contract.ERC20_Decimals();
 
@@ -958,7 +964,7 @@ namespace Thirdweb
             return await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", claimConditionId);
         }
 
-        public static async Task<Drop_ClaimCondition> GetActiveClaimCondition(this ThirdwebContract contract)
+        public static async Task<Drop_ClaimCondition> DropERC20_GetActiveClaimCondition(this ThirdwebContract contract)
         {
             var activeClaimConditionId = await contract.DropERC20_GetActiveClaimConditionId();
             return await contract.DropERC20_GetClaimConditionById(activeClaimConditionId);
@@ -1019,18 +1025,6 @@ namespace Thirdweb
                 throw new ArgumentException("Signature must be provided");
             }
 
-            mintRequest = new TokenERC20_MintRequest
-            {
-                To = mintRequest.To ?? throw new ArgumentNullException(nameof(mintRequest.To)),
-                PrimarySaleRecipient = mintRequest.PrimarySaleRecipient ?? await contract.GetPrimarySaleRecipient(),
-                Quantity = mintRequest.Quantity > 0 ? mintRequest.Quantity : 1,
-                Price = mintRequest.Price,
-                Currency = mintRequest.Currency ?? Constants.NATIVE_TOKEN_ADDRESS,
-                ValidityStartTimestamp = mintRequest.ValidityStartTimestamp,
-                ValidityEndTimestamp = mintRequest.ValidityEndTimestamp > 0 ? mintRequest.ValidityEndTimestamp : Utils.GetUnixTimeStampIn10Years(),
-                Uid = mintRequest.Uid ?? Guid.NewGuid().ToByteArray()
-            };
-
             var isNativeToken = mintRequest.Currency == Constants.NATIVE_TOKEN_ADDRESS;
 
             var payableAmount = isNativeToken ? mintRequest.Quantity * mintRequest.Price : BigInteger.Zero;
@@ -1055,6 +1049,18 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(mintRequest));
             }
 
+            mintRequest = new TokenERC20_MintRequest
+            {
+                To = mintRequest.To ?? throw new ArgumentNullException(nameof(mintRequest.To)),
+                PrimarySaleRecipient = mintRequest.PrimarySaleRecipient ?? await contract.GetPrimarySaleRecipient(),
+                Quantity = mintRequest.Quantity > 0 ? mintRequest.Quantity : 1,
+                Price = mintRequest.Price,
+                Currency = mintRequest.Currency ?? Constants.NATIVE_TOKEN_ADDRESS,
+                ValidityStartTimestamp = mintRequest.ValidityStartTimestamp,
+                ValidityEndTimestamp = mintRequest.ValidityEndTimestamp > 0 ? mintRequest.ValidityEndTimestamp : Utils.GetUnixTimeStampIn10Years(),
+                Uid = mintRequest.Uid ?? Guid.NewGuid().ToByteArray().PadTo32Bytes()
+            };
+
             var contractMetadata = await contract.GetMetadata();
 
             var signature = await EIP712.GenerateSignature_TokenERC20(
@@ -1067,6 +1073,26 @@ namespace Thirdweb
             );
 
             return (mintRequest, signature);
+        }
+
+        public static async Task<VerifyResult> TokenERC20_VerifyMintSignature(this ThirdwebContract contract, TokenERC20_MintRequest mintRequest, string signature)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (mintRequest == null)
+            {
+                throw new ArgumentNullException(nameof(mintRequest));
+            }
+
+            if (string.IsNullOrEmpty(signature))
+            {
+                throw new ArgumentException("Signature must be provided");
+            }
+
+            return await ThirdwebContract.Read<VerifyResult>(contract, "verify", mintRequest, signature.HexToBytes());
         }
 
         #endregion

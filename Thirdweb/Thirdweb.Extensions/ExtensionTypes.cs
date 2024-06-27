@@ -6,6 +6,18 @@ namespace Thirdweb
 {
     #region Common
 
+    [FunctionOutput]
+    public class VerifyResult
+    {
+        [Parameter("bool", "", 1)]
+        [JsonProperty("isValid")]
+        public virtual bool IsValid { get; set; }
+
+        [Parameter("address", "", 2)]
+        [JsonProperty("signer")]
+        public virtual string Signer { get; set; }
+    }
+
     public class ContractMetadata
     {
         [JsonProperty("name")]
@@ -25,6 +37,7 @@ namespace Thirdweb
 
     #region Forwarder
 
+    [Struct("ForwardRequest")]
     public class Forwarder_ForwardRequest
     {
         [Parameter("address", "from", 1)]
@@ -141,6 +154,7 @@ namespace Thirdweb
 
     #region TokenERC20
 
+    [Struct("MintRequest")]
     public class TokenERC20_MintRequest
     {
         [Parameter("address", "to", 1)]
@@ -180,6 +194,7 @@ namespace Thirdweb
 
     #region TokenERC721
 
+    [Struct("MintRequest")]
     public class TokenERC721_MintRequest
     {
         [Parameter("address", "to", 1)]
@@ -227,6 +242,7 @@ namespace Thirdweb
 
     #region TokenERC1155
 
+    [Struct("MintRequest")]
     public class TokenERC1155_MintRequest
     {
         [Parameter("address", "to", 1)]

@@ -120,7 +120,7 @@ namespace Thirdweb
                     VerifyingContract = verifyingContract,
                 },
                 Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(AccountAbstraction.SignerPermissionRequest)),
-                PrimaryType = nameof(AccountAbstraction.SignerPermissionRequest),
+                PrimaryType = "SignerPermissionRequest",
             };
         }
 
@@ -136,7 +136,7 @@ namespace Thirdweb
                     VerifyingContract = verifyingContract,
                 },
                 Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(AccountAbstraction.AccountMessage)),
-                PrimaryType = nameof(AccountAbstraction.AccountMessage),
+                PrimaryType = "AccountMessage",
             };
         }
 
@@ -167,7 +167,7 @@ namespace Thirdweb
                     VerifyingContract = verifyingContract,
                 },
                 Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(TokenERC20_MintRequest)),
-                PrimaryType = nameof(TokenERC20_MintRequest),
+                PrimaryType = "MintRequest",
             };
         }
 
@@ -183,7 +183,7 @@ namespace Thirdweb
                     VerifyingContract = verifyingContract,
                 },
                 Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(TokenERC721_MintRequest)),
-                PrimaryType = nameof(TokenERC721_MintRequest),
+                PrimaryType = "MintRequest",
             };
         }
 
@@ -199,7 +199,7 @@ namespace Thirdweb
                     VerifyingContract = verifyingContract,
                 },
                 Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(TokenERC1155_MintRequest)),
-                PrimaryType = nameof(TokenERC1155_MintRequest),
+                PrimaryType = "MintRequest",
             };
         }
 
@@ -215,7 +215,7 @@ namespace Thirdweb
                     VerifyingContract = verifyingContract,
                 },
                 Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Forwarder_ForwardRequest)),
-                PrimaryType = nameof(Forwarder_ForwardRequest),
+                PrimaryType = "ForwardRequest",
             };
         }
 
