@@ -686,7 +686,6 @@ namespace Thirdweb.Tests
             var client = ThirdwebClient.Create(secretKey: _secretKey);
             var contract721 = await GetTokenERC721Contract();
             var contract1155 = await GetTokenERC1155Contract();
-            var validAddress = "0x0000000000000000000000000000000000000000";
 
             // ERC721 Null Checks
             _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await ThirdwebExtensions.ERC721_GetNFT(null, BigInteger.Zero));
@@ -1179,7 +1178,7 @@ namespace Thirdweb.Tests
             var validTokenId = BigInteger.One;
             var invalidTokenId = BigInteger.MinusOne;
             var validUri = "ipfs://validUri";
-            var invalidUri = (string)null;
+            var invalidUri = null as string;
             var validSignature = "0x123";
             var invalidSignature = string.Empty;
 

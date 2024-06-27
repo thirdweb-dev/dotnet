@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Thirdweb
 {
-    public class ThirdwebRPC : IDisposable
+    public class ThirdwebRPC
     {
         private const int _batchSizeLimit = 100;
         private readonly TimeSpan _batchInterval = TimeSpan.FromMilliseconds(100);
@@ -21,7 +21,6 @@ namespace Thirdweb
         private readonly ThirdwebRPCTimer _batchTimer;
 
         private int _requestIdCounter = 1;
-        private bool _disposed;
 
         private static readonly Dictionary<string, ThirdwebRPC> _rpcs = new();
 
@@ -57,11 +56,6 @@ namespace Thirdweb
 
         public async Task<TResponse> SendRequestAsync<TResponse>(string method, params object[] parameters)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ThirdwebRPC));
-            }
-
             lock (_cacheLock)
             {
                 var cacheKey = GetCacheKey(method, parameters);
@@ -247,30 +241,6 @@ namespace Thirdweb
             }
 
             return keyBuilder.ToString();
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                    _batchTimer?.Dispose();
-                }
-
-                _disposed = true;
-            }
-        }
-
-        ~ThirdwebRPC()
-        {
-            Dispose(false);
         }
     }
 }

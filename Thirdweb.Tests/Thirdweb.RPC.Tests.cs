@@ -90,15 +90,6 @@ public class RpcTests : BaseTests
     }
 
     [Fact]
-    public async Task TestDispose()
-    {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
-        rpc.Dispose();
-        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => rpc.SendRequestAsync<string>("eth_blockNumber"));
-    }
-
-    [Fact]
     public async Task TestCache()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
