@@ -991,6 +991,93 @@ namespace Thirdweb.Tests
 
         // TODO: MintWithSignature
 
+        [Fact]
+        public async Task TokenERC1155_GenerateMintSignature_WithUri_WithVerify()
+        {
+            var contract = await GetTokenERC1155Contract();
+            var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
+            var randomReceiver = await PrivateKeyWallet.Generate(_client);
+            var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress(), Uri = "", };
+
+            (var payload, var signature) = await contract.TokenERC1155_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
+
+            // returned payload should be filled with defaults
+            Assert.NotNull(payload);
+            Assert.NotNull(payload.To);
+            Assert.True(payload.To.Length == 42);
+            Assert.True(payload.To == await randomReceiver.GetAddress());
+            Assert.True(payload.RoyaltyRecipient.Length == 42);
+            Assert.True(payload.RoyaltyBps >= 0);
+            Assert.NotNull(payload.PrimarySaleRecipient);
+            Assert.True(payload.PrimarySaleRecipient.Length == 42);
+            Assert.True(payload.PricePerToken >= 0);
+            Assert.NotNull(payload.Currency);
+            Assert.True(payload.Currency.Length == 42);
+            Assert.True(payload.ValidityStartTimestamp >= 0);
+            Assert.True(payload.ValidityEndTimestamp >= 0);
+            Assert.NotNull(payload.Uid);
+            Assert.True(payload.Uid.Length == 32); // bytes32
+            Assert.NotNull(payload.TokenId);
+            Assert.True(payload.TokenId >= 0);
+
+            // signature should not be valid
+            Assert.NotNull(signature);
+            Assert.NotEmpty(signature);
+            var verifyResult = await contract.TokenERC1155_VerifyMintSignature(payload, signature);
+            Assert.False(verifyResult.IsValid);
+            Assert.Equal(await fakeAuthorizedSigner.GetAddress(), verifyResult.Signer);
+        }
+
+        [Fact]
+        public async Task TokenERC1155_GenerateMintSignature_WithNFTMetadata_WithVerify()
+        {
+            var contract = await GetTokenERC1155Contract();
+            var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
+            var randomReceiver = await PrivateKeyWallet.Generate(_client);
+            var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress() };
+
+            (var payload, var signature) = await contract.TokenERC1155_GenerateMintSignature(
+                fakeAuthorizedSigner,
+                mintRequest,
+                new NFTMetadata
+                {
+                    Name = "Test",
+                    Description = "Test",
+                    Image = "Test",
+                    ExternalUrl = "Test",
+                    Attributes = new Dictionary<string, string> { { "Test", "Test" } },
+                }
+            );
+
+            // returned payload should be filled with defaults
+            Assert.NotNull(payload);
+            Assert.NotNull(payload.To);
+            Assert.True(payload.To.Length == 42);
+            Assert.True(payload.To == await randomReceiver.GetAddress());
+            Assert.True(payload.RoyaltyRecipient.Length == 42);
+            Assert.True(payload.RoyaltyBps >= 0);
+            Assert.NotNull(payload.PrimarySaleRecipient);
+            Assert.True(payload.PrimarySaleRecipient.Length == 42);
+            Assert.True(payload.PricePerToken >= 0);
+            Assert.NotNull(payload.Currency);
+            Assert.True(payload.Currency.Length == 42);
+            Assert.True(payload.ValidityStartTimestamp >= 0);
+            Assert.True(payload.ValidityEndTimestamp >= 0);
+            Assert.NotNull(payload.Uid);
+            Assert.True(payload.Uid.Length == 32); // bytes32
+            Assert.NotNull(payload.TokenId);
+            Assert.True(payload.TokenId >= 0);
+            Assert.NotNull(payload.Uri);
+            Assert.True(payload.Uri.Length > 0);
+
+            // signature should not be valid
+            Assert.NotNull(signature);
+            Assert.NotEmpty(signature);
+            var verifyResult = await contract.TokenERC1155_VerifyMintSignature(payload, signature);
+            Assert.False(verifyResult.IsValid);
+            Assert.Equal(await fakeAuthorizedSigner.GetAddress(), verifyResult.Signer);
+        }
+
         #endregion
     }
 }

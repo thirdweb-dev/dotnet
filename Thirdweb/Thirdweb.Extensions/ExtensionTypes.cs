@@ -275,7 +275,7 @@ namespace Thirdweb
 
         [Parameter("uint256", "tokenId", 5)]
         [JsonProperty("tokenId")]
-        public BigInteger TokenId { get; set; }
+        public BigInteger? TokenId { get; set; }
 
         [Parameter("string", "uri", 6)]
         [JsonProperty("uri")]
