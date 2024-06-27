@@ -33,6 +33,16 @@ namespace Thirdweb
             return string.IsNullOrEmpty(nft.Metadata.Image) ? new byte[] { } : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image).ConfigureAwait(false);
         }
 
+        public static async Task<RoyaltyInfoResult> GetDefaultRoyaltyInfo(this ThirdwebContract contract)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            return await ThirdwebContract.Read<RoyaltyInfoResult>(contract, "getDefaultRoyaltyInfo");
+        }
+
         public static async Task<string> GetPrimarySaleRecipient(this ThirdwebContract contract)
         {
             if (contract == null)
@@ -1232,6 +1242,207 @@ namespace Thirdweb
 
             return await ThirdwebContract.Read<VerifyResult>(contract, "verify", mintRequest, signature.HexToBytes());
         }
+
+        #endregion
+
+        #region TokenERC721
+
+        public static async Task<ThirdwebTransactionReceipt> TokenERC721_MintTo(this ThirdwebContract contract, IThirdwebWallet wallet, string receiverAddress, BigInteger tokenId, string uri)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (string.IsNullOrEmpty(receiverAddress))
+            {
+                throw new ArgumentException("Receiver address must be provided");
+            }
+
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
+            if (string.IsNullOrEmpty(uri))
+            {
+                throw new ArgumentException("URI must be provided");
+            }
+
+            return await ThirdwebContract.Write(wallet, contract, "mintTo", 0, receiverAddress, tokenId, uri);
+        }
+
+        public static async Task<ThirdwebTransactionReceipt> TokenERC721_MintTo(
+            this ThirdwebContract contract,
+            IThirdwebWallet wallet,
+            string receiverAddress,
+            BigInteger tokenId,
+            NFTMetadata metadata
+        )
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (string.IsNullOrEmpty(receiverAddress))
+            {
+                throw new ArgumentException("Receiver address must be provided");
+            }
+
+            if (tokenId < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+            }
+
+            var json = JsonConvert.SerializeObject(metadata);
+
+            var jsonBytes = System.Text.Encoding.UTF8.GetBytes(json);
+
+            var ipfsResult = await ThirdwebStorage.UploadRaw(contract.Client, jsonBytes);
+
+            return await ThirdwebContract.Write(wallet, contract, "mintTo", 0, receiverAddress, tokenId, $"ipfs://{ipfsResult.IpfsHash}");
+        }
+
+        public static async Task<ThirdwebTransactionReceipt> TokenERC721_MintWithSignature(
+            this ThirdwebContract contract,
+            IThirdwebWallet wallet,
+            TokenERC721_MintRequest mintRequest,
+            string signature
+        )
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (mintRequest == null)
+            {
+                throw new ArgumentNullException(nameof(mintRequest));
+            }
+
+            if (string.IsNullOrEmpty(signature))
+            {
+                throw new ArgumentException("Signature must be provided");
+            }
+
+            var isNativeToken = mintRequest.Currency == Constants.NATIVE_TOKEN_ADDRESS;
+
+            var payableAmount = isNativeToken ? mintRequest.Price : BigInteger.Zero;
+
+            return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature);
+        }
+
+        public static async Task<(TokenERC721_MintRequest, string)> TokenERC721_GenerateMintSignature(
+            this ThirdwebContract contract,
+            IThirdwebWallet wallet,
+            TokenERC721_MintRequest mintRequest,
+            NFTMetadata? metadataOverride = null
+        )
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (wallet == null)
+            {
+                throw new ArgumentNullException(nameof(wallet));
+            }
+
+            if (mintRequest == null)
+            {
+                throw new ArgumentNullException(nameof(mintRequest));
+            }
+
+            var finalUri = mintRequest.Uri;
+
+            if (finalUri == null) // allow empty string uri
+            {
+                if (metadataOverride != null)
+                {
+                    var json = JsonConvert.SerializeObject(metadataOverride);
+
+                    var jsonBytes = System.Text.Encoding.UTF8.GetBytes(json);
+
+                    var ipfsResult = await ThirdwebStorage.UploadRaw(contract.Client, jsonBytes);
+
+                    finalUri = $"ipfs://{ipfsResult.IpfsHash}";
+                }
+                else
+                {
+                    throw new ArgumentException("MintRequest URI or NFTMetadata override must be provided");
+                }
+            }
+
+            var defaultRoyaltyInfo = await contract.GetDefaultRoyaltyInfo();
+
+            mintRequest = new TokenERC721_MintRequest
+            {
+                To = mintRequest.To ?? throw new ArgumentNullException(nameof(mintRequest.To)),
+                RoyaltyRecipient = defaultRoyaltyInfo.Recipient,
+                RoyaltyBps = defaultRoyaltyInfo.Bps,
+                PrimarySaleRecipient = mintRequest.PrimarySaleRecipient ?? await contract.GetPrimarySaleRecipient(),
+                Uri = finalUri,
+                Price = mintRequest.Price,
+                Currency = mintRequest.Currency ?? Constants.NATIVE_TOKEN_ADDRESS,
+                ValidityStartTimestamp = mintRequest.ValidityStartTimestamp,
+                ValidityEndTimestamp = mintRequest.ValidityEndTimestamp > 0 ? mintRequest.ValidityEndTimestamp : Utils.GetUnixTimeStampIn10Years(),
+                Uid = mintRequest.Uid ?? Guid.NewGuid().ToByteArray().PadTo32Bytes()
+            };
+
+            var signature = await EIP712.GenerateSignature_TokenERC721(
+                domainName: "TokenERC721",
+                version: "1",
+                chainId: contract.Chain,
+                verifyingContract: contract.Address,
+                mintRequest: mintRequest,
+                signer: wallet
+            );
+
+            return (mintRequest, signature);
+        }
+
+        public static async Task<VerifyResult> TokenERC721_VerifyMintSignature(this ThirdwebContract contract, TokenERC721_MintRequest mintRequest, string signature)
+        {
+            if (contract == null)
+            {
+                throw new ArgumentNullException(nameof(contract));
+            }
+
+            if (mintRequest == null)
+            {
+                throw new ArgumentNullException(nameof(mintRequest));
+            }
+
+            if (string.IsNullOrEmpty(signature))
+            {
+                throw new ArgumentException("Signature must be provided");
+            }
+
+            return await ThirdwebContract.Read<VerifyResult>(contract, "verify", mintRequest, signature.HexToBytes());
+        }
+
+        #endregion
+
+        #region TokenERC1155
+
+
 
         #endregion
     }

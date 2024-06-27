@@ -11,11 +11,23 @@ namespace Thirdweb
     {
         [Parameter("bool", "", 1)]
         [JsonProperty("isValid")]
-        public virtual bool IsValid { get; set; }
+        public bool IsValid { get; set; }
 
         [Parameter("address", "", 2)]
         [JsonProperty("signer")]
-        public virtual string Signer { get; set; }
+        public string Signer { get; set; }
+    }
+
+    [FunctionOutput]
+    public class RoyaltyInfoResult
+    {
+        [Parameter("address", "", 1)]
+        [JsonProperty("recipient")]
+        public string Recipient { get; set; }
+
+        [Parameter("uint256", "", 2)]
+        [JsonProperty("bps")]
+        public BigInteger Bps { get; set; }
     }
 
     public class ContractMetadata
@@ -105,7 +117,7 @@ namespace Thirdweb
         public string Name { get; set; }
 
         [JsonProperty("external_url")]
-        public string External_url { get; set; }
+        public string ExternalUrl { get; set; }
 
         [JsonProperty("attributes")]
         public object Attributes { get; set; }

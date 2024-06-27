@@ -39,14 +39,14 @@ namespace Thirdweb
             }
         }
 
-        public static async Task<IPFSUploadResult> Upload(ThirdwebClient client, string path)
+        public static async Task<IPFSUploadResult> UploadRaw(ThirdwebClient client, byte[] rawBytes)
         {
-            if (string.IsNullOrEmpty(path))
+            if (rawBytes == null || rawBytes.Length == 0)
             {
-                throw new ArgumentNullException(nameof(path));
+                throw new ArgumentNullException(nameof(rawBytes));
             }
 
-            using var form = new MultipartFormDataContent { { new ByteArrayContent(File.ReadAllBytes(path)), "file", Path.GetFileName(path) } };
+            using var form = new MultipartFormDataContent { { new ByteArrayContent(rawBytes), "file", "file" } };
 
             var httpClient = client.HttpClient;
 
@@ -54,7 +54,7 @@ namespace Thirdweb
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Failed to upload {path}: {response.StatusCode} | {await response.Content.ReadAsStringAsync().ConfigureAwait(false)}");
+                throw new Exception($"Failed to upload raw bytes: {response.StatusCode} | {await response.Content.ReadAsStringAsync().ConfigureAwait(false)}");
             }
 
             var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -62,6 +62,16 @@ namespace Thirdweb
             var res = JsonConvert.DeserializeObject<IPFSUploadResult>(result);
             res.PreviewUrl = $"https://{client.ClientId}.ipfscdn.io/ipfs/{res.IpfsHash}";
             return res;
+        }
+
+        public static async Task<IPFSUploadResult> Upload(ThirdwebClient client, string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            return await UploadRaw(client, File.ReadAllBytes(path)).ConfigureAwait(false);
         }
     }
 }

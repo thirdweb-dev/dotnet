@@ -1,4 +1,5 @@
 using System.Numerics;
+using Nethereum.Contracts.Standards.ERC721;
 
 namespace Thirdweb.Tests
 {
@@ -895,13 +896,100 @@ namespace Thirdweb.Tests
 
         #region TokenERC721
 
-        // TODO
+        // TODO: MintTo
+
+        // TODO: MintWithSignature
+
+        [Fact]
+        public async Task TokenERC721_GenerateMintSignature_WithUri_WithVerify()
+        {
+            var contract = await GetTokenERC721Contract();
+            var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
+            var randomReceiver = await PrivateKeyWallet.Generate(_client);
+            var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress(), Uri = "", };
+
+            (var payload, var signature) = await contract.TokenERC721_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
+
+            // returned payload should be filled with defaults
+            Assert.NotNull(payload);
+            Assert.NotNull(payload.To);
+            Assert.True(payload.To.Length == 42);
+            Assert.True(payload.To == await randomReceiver.GetAddress());
+            Assert.True(payload.RoyaltyRecipient.Length == 42);
+            Assert.True(payload.RoyaltyBps >= 0);
+            Assert.NotNull(payload.PrimarySaleRecipient);
+            Assert.True(payload.PrimarySaleRecipient.Length == 42);
+            Assert.True(payload.Price >= 0);
+            Assert.NotNull(payload.Currency);
+            Assert.True(payload.Currency.Length == 42);
+            Assert.True(payload.ValidityStartTimestamp >= 0);
+            Assert.True(payload.ValidityEndTimestamp >= 0);
+            Assert.NotNull(payload.Uid);
+            Assert.True(payload.Uid.Length == 32); // bytes32
+
+            // signature should not be valid
+            Assert.NotNull(signature);
+            Assert.NotEmpty(signature);
+            var verifyResult = await contract.TokenERC721_VerifyMintSignature(payload, signature);
+            Assert.False(verifyResult.IsValid);
+            Assert.Equal(await fakeAuthorizedSigner.GetAddress(), verifyResult.Signer);
+        }
+
+        [Fact]
+        public async Task TokenERC721_GenerateMintSignature_WithNFTMetadata_WithVerify()
+        {
+            var contract = await GetTokenERC721Contract();
+            var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
+            var randomReceiver = await PrivateKeyWallet.Generate(_client);
+            var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress() };
+
+            (var payload, var signature) = await contract.TokenERC721_GenerateMintSignature(
+                fakeAuthorizedSigner,
+                mintRequest,
+                new NFTMetadata
+                {
+                    Name = "Test",
+                    Description = "Test",
+                    Image = "Test",
+                    ExternalUrl = "Test",
+                    Attributes = new Dictionary<string, string> { { "Test", "Test" } },
+                }
+            );
+
+            // returned payload should be filled with defaults
+            Assert.NotNull(payload);
+            Assert.NotNull(payload.To);
+            Assert.True(payload.To.Length == 42);
+            Assert.True(payload.To == await randomReceiver.GetAddress());
+            Assert.True(payload.RoyaltyRecipient.Length == 42);
+            Assert.True(payload.RoyaltyBps >= 0);
+            Assert.NotNull(payload.PrimarySaleRecipient);
+            Assert.True(payload.PrimarySaleRecipient.Length == 42);
+            Assert.True(payload.Price >= 0);
+            Assert.NotNull(payload.Currency);
+            Assert.True(payload.Currency.Length == 42);
+            Assert.True(payload.ValidityStartTimestamp >= 0);
+            Assert.True(payload.ValidityEndTimestamp >= 0);
+            Assert.NotNull(payload.Uid);
+            Assert.True(payload.Uid.Length == 32); // bytes32
+            Assert.NotNull(payload.Uri);
+            Assert.True(payload.Uri.Length > 0);
+
+            // signature should not be valid
+            Assert.NotNull(signature);
+            Assert.NotEmpty(signature);
+            var verifyResult = await contract.TokenERC721_VerifyMintSignature(payload, signature);
+            Assert.False(verifyResult.IsValid);
+            Assert.Equal(await fakeAuthorizedSigner.GetAddress(), verifyResult.Signer);
+        }
 
         #endregion
 
         #region TokenERC1155
 
-        // TODO
+        // TODO: MintTo
+
+        // TODO: MintWithSignature
 
         #endregion
     }
