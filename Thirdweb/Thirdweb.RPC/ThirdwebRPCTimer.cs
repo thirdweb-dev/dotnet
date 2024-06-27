@@ -56,7 +56,7 @@ namespace Thirdweb
                         return;
                     }
 
-                    await Task.Yield();
+                    await Task.Delay(10, cancellationToken).ConfigureAwait(false);
                 }
                 Elapsed?.Invoke();
             }
@@ -64,6 +64,7 @@ namespace Thirdweb
 
         public void Dispose()
         {
+            _isRunning = false;
             _cancellationTokenSource?.Dispose();
         }
     }

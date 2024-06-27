@@ -309,35 +309,48 @@ namespace Thirdweb
             cts.CancelAfter(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
 
             var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
-            var receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
-            while (receipt == null)
+            ThirdwebTransactionReceipt receipt = null;
+
+            try
             {
-                receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
+                do
+                {
+                    receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
+                    if (receipt == null)
+                    {
+                        await Task.Delay(1000, cts.Token).ConfigureAwait(false);
+                    }
+                } while (receipt == null && !cts.Token.IsCancellationRequested);
+
                 if (receipt == null)
                 {
-                    await Task.Delay(1000, cts.Token).ConfigureAwait(false);
+                    throw new Exception($"Transaction {txHash} not found within the timeout period.");
+                }
+
+                if (receipt.Status != null && receipt.Status.Value == 0)
+                {
+                    throw new Exception($"Transaction {txHash} execution reverted.");
+                }
+
+                var userOpEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationEventEventDTO>();
+                if (userOpEvent != null && userOpEvent.Count > 0 && !userOpEvent[0].Event.Success)
+                {
+                    var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
+                    if (revertReasonEvent != null && revertReasonEvent.Count > 0)
+                    {
+                        var revertReason = revertReasonEvent[0].Event.RevertReason;
+                        var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
+                        throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
+                    }
+                    else
+                    {
+                        throw new Exception($"Transaction {txHash} execution silently reverted with no reason string");
+                    }
                 }
             }
-
-            if (receipt.Status != null && receipt.Status.Value == 0)
+            catch (OperationCanceledException)
             {
-                throw new Exception($"Transaction {txHash} execution reverted.");
-            }
-
-            var userOpEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationEventEventDTO>();
-            if (userOpEvent != null && userOpEvent.Count > 0 && !userOpEvent[0].Event.Success)
-            {
-                var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
-                if (revertReasonEvent != null && revertReasonEvent.Count > 0)
-                {
-                    var revertReason = revertReasonEvent[0].Event.RevertReason;
-                    var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
-                    throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
-                }
-                else
-                {
-                    throw new Exception($"Transaction {txHash} execution silently reverted with no reason string");
-                }
+                throw new Exception($"Transaction receipt polling for hash {txHash} was cancelled.");
             }
 
             return receipt;

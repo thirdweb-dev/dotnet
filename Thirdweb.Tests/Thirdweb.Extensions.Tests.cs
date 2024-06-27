@@ -1340,7 +1340,7 @@ namespace Thirdweb.Tests
             var validQuantity = BigInteger.One;
             var invalidQuantity = BigInteger.Zero;
             var validUri = "ipfs://validUri";
-            var invalidUri = (string)null;
+            var invalidUri = null as string;
             var validSignature = "0x123";
             var invalidSignature = string.Empty;
 
