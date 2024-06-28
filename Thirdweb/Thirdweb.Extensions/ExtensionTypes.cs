@@ -116,8 +116,14 @@ namespace Thirdweb
         [JsonProperty("name")]
         public string Name { get; set; }
 
+        [JsonProperty("animation_url")]
+        public string AnimationUrl { get; set; }
+
         [JsonProperty("external_url")]
         public string ExternalUrl { get; set; }
+
+        [JsonProperty("background_color")]
+        public string BackgroundColor { get; set; }
 
         [JsonProperty("attributes")]
         public object Attributes { get; set; }
