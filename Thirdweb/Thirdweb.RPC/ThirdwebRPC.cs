@@ -4,6 +4,9 @@ using Newtonsoft.Json;
 
 namespace Thirdweb
 {
+    /// <summary>
+    /// Represents the Thirdweb RPC client for sending requests and handling responses.
+    /// </summary>
     public class ThirdwebRPC
     {
         private const int _batchSizeLimit = 100;
@@ -26,6 +29,14 @@ namespace Thirdweb
 
         private readonly IThirdwebHttpClient _httpClient;
 
+        /// <summary>
+        /// Gets an instance of the ThirdwebRPC client for the specified ThirdwebClient and chain ID.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <returns>An instance of the ThirdwebRPC client.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the client is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if the chain ID is invalid.</exception>
         public static ThirdwebRPC GetRpcInstance(ThirdwebClient client, BigInteger chainId)
         {
             if (client == null)
@@ -54,6 +65,14 @@ namespace Thirdweb
             return _rpcs[key];
         }
 
+        /// <summary>
+        /// Sends an RPC request asynchronously and returns the response.
+        /// </summary>
+        /// <typeparam name="TResponse">The type of the response.</typeparam>
+        /// <param name="method">The RPC method name.</param>
+        /// <param name="parameters">The parameters for the RPC request.</param>
+        /// <returns>The RPC response.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the response cannot be deserialized.</exception>
         public async Task<TResponse> SendRequestAsync<TResponse>(string method, params object[] parameters)
         {
             lock (_cacheLock)

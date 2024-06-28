@@ -4,30 +4,108 @@ using Newtonsoft.Json;
 
 namespace Thirdweb
 {
+    /// <summary>
+    /// Interface for a Thirdweb wallet.
+    /// </summary>
     public interface IThirdwebWallet
     {
-        public ThirdwebClient Client { get; }
-        public ThirdwebAccountType AccountType { get; }
-        public Task<string> GetAddress();
-        public Task<string> EthSign(byte[] rawMessage);
-        public Task<string> EthSign(string message);
-        public Task<string> PersonalSign(byte[] rawMessage);
-        public Task<string> PersonalSign(string message);
-        public Task<string> SignTypedDataV4(string json);
-        public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
+        /// <summary>
+        /// Gets the Thirdweb client associated with the wallet.
+        /// </summary>
+        ThirdwebClient Client { get; }
+
+        /// <summary>
+        /// Gets the account type of the wallet.
+        /// </summary>
+        ThirdwebAccountType AccountType { get; }
+
+        /// <summary>
+        /// Gets the address of the wallet.
+        /// </summary>
+        /// <returns>The wallet address.</returns>
+        Task<string> GetAddress();
+
+        /// <summary>
+        /// Signs a raw message using Ethereum's signing method.
+        /// </summary>
+        /// <param name="rawMessage">The raw message to sign.</param>
+        /// <returns>The signed message.</returns>
+        Task<string> EthSign(byte[] rawMessage);
+
+        /// <summary>
+        /// Signs a message using Ethereum's signing method.
+        /// </summary>
+        /// <param name="message">The message to sign.</param>
+        /// <returns>The signed message.</returns>
+        Task<string> EthSign(string message);
+
+        /// <summary>
+        /// Signs a raw message using personal signing.
+        /// </summary>
+        /// <param name="rawMessage">The raw message to sign.</param>
+        /// <returns>The signed message.</returns>
+        Task<string> PersonalSign(byte[] rawMessage);
+
+        /// <summary>
+        /// Signs a message using personal signing.
+        /// </summary>
+        /// <param name="message">The message to sign.</param>
+        /// <returns>The signed message.</returns>
+        Task<string> PersonalSign(string message);
+
+        /// <summary>
+        /// Signs typed data (version 4).
+        /// </summary>
+        /// <param name="json">The JSON representation of the typed data.</param>
+        /// <returns>The signed data.</returns>
+        Task<string> SignTypedDataV4(string json);
+
+        /// <summary>
+        /// Signs typed data (version 4).
+        /// </summary>
+        /// <typeparam name="T">The type of the data.</typeparam>
+        /// <typeparam name="TDomain">The type of the domain.</typeparam>
+        /// <param name="data">The data to sign.</param>
+        /// <param name="typedData">The typed data.</param>
+        /// <returns>The signed data.</returns>
+        Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
             where TDomain : IDomain;
-        public Task<bool> IsConnected();
-        public Task<string> SignTransaction(ThirdwebTransactionInput transaction);
-        public Task<string> SendTransaction(ThirdwebTransactionInput transaction);
-        public Task<string> Authenticate(
-            string domain,
-            BigInteger chainId,
-            string authPayloadPath = "/auth/payload",
-            string authLoginPath = "/auth/login",
-            IThirdwebHttpClient httpClientOverride = null
-        );
+
+        /// <summary>
+        /// Checks if the wallet is connected.
+        /// </summary>
+        /// <returns>True if connected, otherwise false.</returns>
+        Task<bool> IsConnected();
+
+        /// <summary>
+        /// Signs a transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction to sign.</param>
+        /// <returns>The signed transaction.</returns>
+        Task<string> SignTransaction(ThirdwebTransactionInput transaction);
+
+        /// <summary>
+        /// Sends a transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction to send.</param>
+        /// <returns>The transaction hash.</returns>
+        Task<string> SendTransaction(ThirdwebTransactionInput transaction);
+
+        /// <summary>
+        /// Authenticates the wallet.
+        /// </summary>
+        /// <param name="domain">The authentication domain.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="authPayloadPath">The authentication payload path.</param>
+        /// <param name="authLoginPath">The authentication login path.</param>
+        /// <param name="httpClientOverride">The HTTP client override.</param>
+        /// <returns>The authentication result.</returns>
+        Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", IThirdwebHttpClient httpClientOverride = null);
     }
 
+    /// <summary>
+    /// Enum for the types of Thirdweb accounts.
+    /// </summary>
     public enum ThirdwebAccountType
     {
         PrivateKeyAccount,
@@ -35,6 +113,9 @@ namespace Thirdweb
         ExternalAccount
     }
 
+    /// <summary>
+    /// Represents a login payload.
+    /// </summary>
     [Serializable]
     public struct LoginPayload
     {
@@ -42,45 +123,87 @@ namespace Thirdweb
         public string signature;
     }
 
+    /// <summary>
+    /// Represents login payload data.
+    /// </summary>
     [Serializable]
     public class LoginPayloadData
     {
+        /// <summary>
+        /// Gets or sets the type of the login payload.
+        /// </summary>
         [JsonProperty("type")]
         public string Type { get; set; }
 
+        /// <summary>
+        /// Gets or sets the domain of the login payload.
+        /// </summary>
         [JsonProperty("domain")]
         public string Domain { get; set; }
 
+        /// <summary>
+        /// Gets or sets the address of the login payload.
+        /// </summary>
         [JsonProperty("address")]
         public string Address { get; set; }
 
+        /// <summary>
+        /// Gets or sets the statement of the login payload.
+        /// </summary>
         [JsonProperty("statement")]
         public string Statement { get; set; }
 
+        /// <summary>
+        /// Gets or sets the URI of the login payload.
+        /// </summary>
         [JsonProperty("uri", NullValueHandling = NullValueHandling.Ignore)]
         public string Uri { get; set; }
 
+        /// <summary>
+        /// Gets or sets the version of the login payload.
+        /// </summary>
         [JsonProperty("version", NullValueHandling = NullValueHandling.Ignore)]
         public string Version { get; set; }
 
+        /// <summary>
+        /// Gets or sets the chain ID of the login payload.
+        /// </summary>
         [JsonProperty("chain_id", NullValueHandling = NullValueHandling.Ignore)]
         public string ChainId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the nonce of the login payload.
+        /// </summary>
         [JsonProperty("nonce", NullValueHandling = NullValueHandling.Ignore)]
         public string Nonce { get; set; }
 
+        /// <summary>
+        /// Gets or sets the issued at timestamp of the login payload.
+        /// </summary>
         [JsonProperty("issued_at", NullValueHandling = NullValueHandling.Ignore)]
         public string IssuedAt { get; set; }
 
+        /// <summary>
+        /// Gets or sets the expiration time of the login payload.
+        /// </summary>
         [JsonProperty("expiration_time", NullValueHandling = NullValueHandling.Ignore)]
         public string ExpirationTime { get; set; }
 
+        /// <summary>
+        /// Gets or sets the invalid before timestamp of the login payload.
+        /// </summary>
         [JsonProperty("invalid_before", NullValueHandling = NullValueHandling.Ignore)]
         public string InvalidBefore { get; set; }
 
+        /// <summary>
+        /// Gets or sets the resources of the login payload.
+        /// </summary>
         [JsonProperty("resources", NullValueHandling = NullValueHandling.Ignore)]
         public List<string> Resources { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LoginPayloadData"/> class.
+        /// </summary>
         public LoginPayloadData()
         {
             Type = "evm";

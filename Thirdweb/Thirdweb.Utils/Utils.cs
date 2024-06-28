@@ -9,8 +9,16 @@ using Nethereum.Util;
 
 namespace Thirdweb
 {
+    /// <summary>
+    /// Provides utility methods for various operations.
+    /// </summary>
     public static class Utils
     {
+        /// <summary>
+        /// Computes the client ID from the given secret key.
+        /// </summary>
+        /// <param name="secretKey">The secret key.</param>
+        /// <returns>The computed client ID.</returns>
         public static string ComputeClientIdFromSecretKey(string secretKey)
         {
             using var sha256 = SHA256.Create();
@@ -18,6 +26,11 @@ namespace Thirdweb
             return BitConverter.ToString(hash).Replace("-", "").ToLower().Substring(0, 32);
         }
 
+        /// <summary>
+        /// Concatenates the given hex strings.
+        /// </summary>
+        /// <param name="hexStrings">The hex strings to concatenate.</param>
+        /// <returns>The concatenated hex string.</returns>
         public static string HexConcat(params string[] hexStrings)
         {
             var hex = new StringBuilder("0x");
@@ -30,65 +43,124 @@ namespace Thirdweb
             return hex.ToString();
         }
 
+        /// <summary>
+        /// Hashes the given message bytes with a prefixed message.
+        /// </summary>
+        /// <param name="messageBytes">The message bytes to hash.</param>
+        /// <returns>The hashed message bytes.</returns>
         public static byte[] HashPrefixedMessage(this byte[] messageBytes)
         {
             var signer = new EthereumMessageSigner();
             return signer.HashPrefixedMessage(messageBytes);
         }
 
+        /// <summary>
+        /// Hashes the given message with a prefixed message.
+        /// </summary>
+        /// <param name="message">The message to hash.</param>
+        /// <returns>The hashed message.</returns>
         public static string HashPrefixedMessage(this string message)
         {
             var signer = new EthereumMessageSigner();
             return signer.HashPrefixedMessage(Encoding.UTF8.GetBytes(message)).ToHex(true);
         }
 
+        /// <summary>
+        /// Hashes the given message bytes.
+        /// </summary>
+        /// <param name="messageBytes">The message bytes to hash.</param>
+        /// <returns>The hashed message bytes.</returns>
         public static byte[] HashMessage(this byte[] messageBytes)
         {
             return Sha3Keccack.Current.CalculateHash(messageBytes);
         }
 
+        /// <summary>
+        /// Hashes the given message.
+        /// </summary>
+        /// <param name="message">The message to hash.</param>
+        /// <returns>The hashed message.</returns>
         public static string HashMessage(this string message)
         {
             return Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(message)).ToHex(true);
         }
 
+        /// <summary>
+        /// Converts the given bytes to a hex string.
+        /// </summary>
+        /// <param name="bytes">The bytes to convert.</param>
+        /// <returns>The hex string.</returns>
         public static string BytesToHex(this byte[] bytes)
         {
             return bytes.ToHex(true);
         }
 
+        /// <summary>
+        /// Converts the given hex string to bytes.
+        /// </summary>
+        /// <param name="hex">The hex string to convert.</param>
+        /// <returns>The bytes.</returns>
         public static byte[] HexToBytes(this string hex)
         {
             return hex.HexToByteArray();
         }
 
+        /// <summary>
+        /// Converts the given string to a hex string.
+        /// </summary>
+        /// <param name="str">The string to convert.</param>
+        /// <returns>The hex string.</returns>
         public static string StringToHex(this string str)
         {
             return "0x" + Encoding.UTF8.GetBytes(str).ToHex();
         }
 
+        /// <summary>
+        /// Converts the given hex string to a regular string.
+        /// </summary>
+        /// <param name="hex">The hex string to convert.</param>
+        /// <returns>The regular string.</returns>
         public static string HexToString(this string hex)
         {
             var array = HexToBytes(hex);
             return Encoding.UTF8.GetString(array, 0, array.Length);
         }
 
+        /// <summary>
+        /// Gets the current Unix timestamp.
+        /// </summary>
+        /// <returns>The current Unix timestamp.</returns>
         public static long GetUnixTimeStampNow()
         {
             return DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         }
 
+        /// <summary>
+        /// Gets the Unix timestamp for 10 years from now.
+        /// </summary>
+        /// <returns>The Unix timestamp for 10 years from now.</returns>
         public static long GetUnixTimeStampIn10Years()
         {
             return DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 60 * 60 * 24 * 365 * 10;
         }
 
+        /// <summary>
+        /// Replaces the IPFS URI with a specified gateway.
+        /// </summary>
+        /// <param name="uri">The URI to replace.</param>
+        /// <param name="gateway">The gateway to use.</param>
+        /// <returns>The replaced URI.</returns>
         public static string ReplaceIPFS(this string uri, string gateway = null)
         {
             gateway ??= Constants.FALLBACK_IPFS_GATEWAY;
             return !string.IsNullOrEmpty(uri) && uri.StartsWith("ipfs://") ? uri.Replace("ipfs://", gateway) : uri;
         }
 
+        /// <summary>
+        /// Converts the given ether value to wei.
+        /// </summary>
+        /// <param name="eth">The ether value to convert.</param>
+        /// <returns>The wei value.</returns>
         public static string ToWei(this string eth)
         {
             if (!double.TryParse(eth, NumberStyles.Number, CultureInfo.InvariantCulture, out var ethDouble))
@@ -100,11 +172,26 @@ namespace Thirdweb
             return wei.ToString();
         }
 
+        /// <summary>
+        /// Converts the given wei value to ether.
+        /// </summary>
+        /// <param name="wei">The wei value to convert.</param>
+        /// <param name="decimalsToDisplay">The number of decimals to display.</param>
+        /// <param name="addCommas">Whether to add commas to the output.</param>
+        /// <returns>The ether value.</returns>
         public static string ToEth(this string wei, int decimalsToDisplay = 4, bool addCommas = false)
         {
             return FormatERC20(wei, decimalsToDisplay, 18, addCommas);
         }
 
+        /// <summary>
+        /// Formats the given ERC20 token value.
+        /// </summary>
+        /// <param name="wei">The wei value to format.</param>
+        /// <param name="decimalsToDisplay">The number of decimals to display.</param>
+        /// <param name="decimals">The number of decimals of the token.</param>
+        /// <param name="addCommas">Whether to add commas to the output.</param>
+        /// <returns>The formatted token value.</returns>
         public static string FormatERC20(this string wei, int decimalsToDisplay = 4, int decimals = 18, bool addCommas = false)
         {
             if (!BigInteger.TryParse(wei, out var weiBigInt))
@@ -123,6 +210,11 @@ namespace Thirdweb
             return eth.ToString(format);
         }
 
+        /// <summary>
+        /// Generates a Sign-In With Ethereum (SIWE) message.
+        /// </summary>
+        /// <param name="loginPayloadData">The login payload data.</param>
+        /// <returns>The generated SIWE message.</returns>
         public static string GenerateSIWE(LoginPayloadData loginPayloadData)
         {
             if (loginPayloadData == null)
@@ -170,22 +262,45 @@ namespace Thirdweb
             return payloadToSign;
         }
 
+        /// <summary>
+        /// Checks if the chain ID corresponds to zkSync.
+        /// </summary>
+        /// <param name="chainId">The chain ID.</param>
+        /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
         public static bool IsZkSync(BigInteger chainId)
         {
             return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302);
         }
 
+        /// <summary>
+        /// Converts an Ethereum address to its checksum format.
+        /// </summary>
+        /// <param name="address">The Ethereum address.</param>
+        /// <returns>The checksummed Ethereum address.</returns>
         public static string ToChecksumAddress(this string address)
         {
             return new AddressUtil().ConvertToChecksumAddress(address);
         }
 
+        /// <summary>
+        /// Decodes all events of the specified type from the transaction receipt logs.
+        /// </summary>
+        /// <typeparam name="TEventDTO">The event DTO type.</typeparam>
+        /// <param name="transactionReceipt">The transaction receipt.</param>
+        /// <returns>A list of decoded events.</returns>
         public static List<EventLog<TEventDTO>> DecodeAllEvents<TEventDTO>(this ThirdwebTransactionReceipt transactionReceipt)
             where TEventDTO : new()
         {
             return transactionReceipt.Logs.DecodeAllEvents<TEventDTO>();
         }
 
+        /// <summary>
+        /// Adjusts the value's decimals.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="fromDecimals">The original number of decimals.</param>
+        /// <param name="toDecimals">The target number of decimals.</param>
+        /// <returns>The value adjusted to the new decimals.</returns>
         public static BigInteger AdjustDecimals(this BigInteger value, int fromDecimals, int toDecimals)
         {
             var differenceInDecimals = fromDecimals - toDecimals;

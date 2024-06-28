@@ -2,8 +2,19 @@ using Newtonsoft.Json;
 
 namespace Thirdweb.Pay
 {
+    /// <summary>
+    /// Provides methods for processing payments with cryptocurrency and fiat.
+    /// </summary>
     public partial class ThirdwebPay
     {
+        /// <summary>
+        /// Retrieves the status of a fiat purchase using the intent ID.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="intentId">The intent ID to check the status of.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the status result.</returns>
+        /// <exception cref="ArgumentException">Thrown if the intent ID is null or empty.</exception>
+        /// <exception cref="Exception">Thrown if the HTTP response is not successful.</exception>
         public static async Task<BuyWithFiatStatusResult> GetBuyWithFiatStatus(ThirdwebClient client, string intentId)
         {
             if (string.IsNullOrEmpty(intentId))

@@ -2,11 +2,18 @@ using System.Text;
 
 namespace Thirdweb
 {
+    /// <summary>
+    /// Represents HTTP content used in the Thirdweb SDK.
+    /// </summary>
     public class ThirdwebHttpContent
     {
         private readonly byte[] content;
 
-        // Constructor to initialize from a string
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a string.
+        /// </summary>
+        /// <param name="content">The content string.</param>
+        /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
         public ThirdwebHttpContent(string content)
         {
             if (content == null)
@@ -17,7 +24,11 @@ namespace Thirdweb
             this.content = Encoding.UTF8.GetBytes(content);
         }
 
-        // Constructor to initialize from a byte array
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a byte array.
+        /// </summary>
+        /// <param name="content">The content byte array.</param>
+        /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
         public ThirdwebHttpContent(byte[] content)
         {
             if (content == null)
@@ -28,7 +39,11 @@ namespace Thirdweb
             this.content = content;
         }
 
-        // Constructor to initialize from a stream
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a stream.
+        /// </summary>
+        /// <param name="content">The content stream.</param>
+        /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
         public ThirdwebHttpContent(Stream content)
         {
             if (content == null)
@@ -43,19 +58,28 @@ namespace Thirdweb
             }
         }
 
-        // Read the content as a string
+        /// <summary>
+        /// Reads the content as a string.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the content string.</returns>
         public Task<string> ReadAsStringAsync()
         {
             return Task.FromResult(Encoding.UTF8.GetString(content));
         }
 
-        // Read the content as a byte array
+        /// <summary>
+        /// Reads the content as a byte array.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the content byte array.</returns>
         public Task<byte[]> ReadAsByteArrayAsync()
         {
             return Task.FromResult(content);
         }
 
-        // Read the content as a stream
+        /// <summary>
+        /// Reads the content as a stream.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the content stream.</returns>
         public Task<Stream> ReadAsStreamAsync()
         {
             var stream = new MemoryStream(content);

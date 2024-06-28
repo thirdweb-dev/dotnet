@@ -2,8 +2,19 @@ using Newtonsoft.Json;
 
 namespace Thirdweb.Pay
 {
+    /// <summary>
+    /// Provides methods for processing payments with cryptocurrency and fiat.
+    /// </summary>
     public partial class ThirdwebPay
     {
+        /// <summary>
+        /// Retrieves the status of a cryptocurrency purchase using the transaction hash.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="transactionHash">The transaction hash to check the status of.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the status result.</returns>
+        /// <exception cref="ArgumentException">Thrown if the transaction hash is null or empty.</exception>
+        /// <exception cref="Exception">Thrown if the HTTP response is not successful.</exception>
         public static async Task<BuyWithCryptoStatusResult> GetBuyWithCryptoStatus(ThirdwebClient client, string transactionHash)
         {
             if (string.IsNullOrEmpty(transactionHash))

@@ -2,8 +2,21 @@ using Newtonsoft.Json;
 
 namespace Thirdweb
 {
+    /// <summary>
+    /// Provides methods for downloading and uploading data to Thirdweb storage.
+    /// </summary>
     public static class ThirdwebStorage
     {
+        /// <summary>
+        /// Downloads data from the specified URI.
+        /// </summary>
+        /// <typeparam name="T">The type of data to download.</typeparam>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="uri">The URI to download from.</param>
+        /// <param name="requestTimeout">The optional request timeout in milliseconds.</param>
+        /// <returns>The downloaded data.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the URI is null or empty.</exception>
+        /// <exception cref="Exception">Thrown if the download fails.</exception>
         public static async Task<T> Download<T>(ThirdwebClient client, string uri, int? requestTimeout = null)
         {
             if (string.IsNullOrEmpty(uri))
@@ -39,6 +52,14 @@ namespace Thirdweb
             }
         }
 
+        /// <summary>
+        /// Uploads raw byte data to Thirdweb storage.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="rawBytes">The raw byte data to upload.</param>
+        /// <returns>The result of the upload.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the raw byte data is null or empty.</exception>
+        /// <exception cref="Exception">Thrown if the upload fails.</exception>
         public static async Task<IPFSUploadResult> UploadRaw(ThirdwebClient client, byte[] rawBytes)
         {
             if (rawBytes == null || rawBytes.Length == 0)
@@ -64,6 +85,13 @@ namespace Thirdweb
             return res;
         }
 
+        /// <summary>
+        /// Uploads a file to Thirdweb storage from the specified path.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="path">The path to the file.</param>
+        /// <returns>The result of the upload.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the path is null or empty.</exception>
         public static async Task<IPFSUploadResult> Upload(ThirdwebClient client, string path)
         {
             if (string.IsNullOrEmpty(path))

@@ -2,8 +2,17 @@ using Newtonsoft.Json;
 
 namespace Thirdweb.Pay
 {
+    /// <summary>
+    /// Provides methods for processing payments with cryptocurrency and fiat.
+    /// </summary>
     public partial class ThirdwebPay
     {
+        /// <summary>
+        /// Retrieves the list of supported fiat currencies for buying with fiat.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the list of supported fiat currencies.</returns>
+        /// <exception cref="Exception">Thrown if the HTTP response is not successful.</exception>
         public static async Task<List<string>> GetBuyWithFiatCurrencies(ThirdwebClient client)
         {
             var url = $"{Constants.THIRDWEB_PAY_FIAT_CURRENCIES_ENDPOINT}";

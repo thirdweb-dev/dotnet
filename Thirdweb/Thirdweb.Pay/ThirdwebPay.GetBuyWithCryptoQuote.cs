@@ -2,8 +2,18 @@ using Newtonsoft.Json;
 
 namespace Thirdweb.Pay
 {
+    /// <summary>
+    /// Provides methods for processing payments with cryptocurrency and fiat.
+    /// </summary>
     public partial class ThirdwebPay
     {
+        /// <summary>
+        /// Retrieves a quote for buying with cryptocurrency using the provided parameters.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="buyWithCryptoParams">The parameters for the crypto purchase.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the quote result.</returns>
+        /// <exception cref="Exception">Thrown if the HTTP response is not successful.</exception>
         public static async Task<BuyWithCryptoQuoteResult> GetBuyWithCryptoQuote(ThirdwebClient client, BuyWithCryptoQuoteParams buyWithCryptoParams)
         {
             var queryString = new Dictionary<string, string>
