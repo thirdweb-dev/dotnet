@@ -3,8 +3,17 @@ using Nethereum.Hex.HexTypes;
 
 namespace Thirdweb.Pay
 {
+    /// <summary>
+    /// Provides methods for processing payments with cryptocurrency.
+    /// </summary>
     public partial class ThirdwebPay
     {
+        /// <summary>
+        /// Initiates a cryptocurrency purchase using the provided wallet and quote.
+        /// </summary>
+        /// <param name="wallet">The wallet to use for the purchase.</param>
+        /// <param name="buyWithCryptoQuote">The quote result containing transaction details.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the transaction hash.</returns>
         public static async Task<string> BuyWithCrypto(IThirdwebWallet wallet, BuyWithCryptoQuoteResult buyWithCryptoQuote)
         {
             if (buyWithCryptoQuote.Approval != null)

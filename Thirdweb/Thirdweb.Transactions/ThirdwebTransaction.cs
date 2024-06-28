@@ -1,18 +1,31 @@
 using System.Numerics;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 using Nethereum.ABI.FunctionEncoding;
-using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json.Linq;
 
 namespace Thirdweb
 {
+    /// <summary>
+    /// Represents the total costs in ether and wei.
+    /// </summary>
     public struct TotalCosts
     {
+        /// <summary>
+        /// The cost in ether.
+        /// </summary>
         public string ether;
+
+        /// <summary>
+        /// The cost in wei.
+        /// </summary>
         public BigInteger wei;
     }
 
+    /// <summary>
+    /// Represents a Thirdweb transaction.
+    /// </summary>
     public class ThirdwebTransaction
     {
         internal ThirdwebTransactionInput Input { get; }
@@ -26,6 +39,13 @@ namespace Thirdweb
             Input.ChainId = chainId.ToHexBigInteger();
         }
 
+        /// <summary>
+        /// Creates a new Thirdweb transaction.
+        /// </summary>
+        /// <param name="wallet">The wallet to use for the transaction.</param>
+        /// <param name="txInput">The transaction input.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <returns>A new Thirdweb transaction.</returns>
         public static async Task<ThirdwebTransaction> Create(IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
         {
             if (wallet == null)
@@ -55,71 +75,130 @@ namespace Thirdweb
             return new ThirdwebTransaction(wallet, txInput, chainId);
         }
 
+        /// <summary>
+        /// Converts the transaction input to a JSON string.
+        /// </summary>
+        /// <returns>A JSON string representation of the transaction input.</returns>
         public override string ToString()
         {
             return JsonConvert.SerializeObject(Input);
         }
 
+        /// <summary>
+        /// Sets the recipient address of the transaction.
+        /// </summary>
+        /// <param name="to">The recipient address.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetTo(string to)
         {
             Input.To = to;
             return this;
         }
 
+        /// <summary>
+        /// Sets the data for the transaction.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetData(string data)
         {
             Input.Data = data;
             return this;
         }
 
+        /// <summary>
+        /// Sets the value to be transferred in the transaction.
+        /// </summary>
+        /// <param name="weiValue">The value in wei.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetValue(BigInteger weiValue)
         {
             Input.Value = weiValue.ToHexBigInteger();
             return this;
         }
 
+        /// <summary>
+        /// Sets the gas limit for the transaction.
+        /// </summary>
+        /// <param name="gas">The gas limit.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetGasLimit(BigInteger gas)
         {
             Input.Gas = gas.ToHexBigInteger();
             return this;
         }
 
+        /// <summary>
+        /// Sets the gas price for the transaction.
+        /// </summary>
+        /// <param name="gasPrice">The gas price.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetGasPrice(BigInteger gasPrice)
         {
             Input.GasPrice = gasPrice.ToHexBigInteger();
             return this;
         }
 
+        /// <summary>
+        /// Sets the nonce for the transaction.
+        /// </summary>
+        /// <param name="nonce">The nonce.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetNonce(BigInteger nonce)
         {
             Input.Nonce = nonce.ToHexBigInteger();
             return this;
         }
 
+        /// <summary>
+        /// Sets the maximum fee per gas for the transaction.
+        /// </summary>
+        /// <param name="maxFeePerGas">The maximum fee per gas.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetMaxFeePerGas(BigInteger maxFeePerGas)
         {
             Input.MaxFeePerGas = maxFeePerGas.ToHexBigInteger();
             return this;
         }
 
+        /// <summary>
+        /// Sets the maximum priority fee per gas for the transaction.
+        /// </summary>
+        /// <param name="maxPriorityFeePerGas">The maximum priority fee per gas.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetMaxPriorityFeePerGas(BigInteger maxPriorityFeePerGas)
         {
             Input.MaxPriorityFeePerGas = maxPriorityFeePerGas.ToHexBigInteger();
             return this;
         }
 
+        /// <summary>
+        /// Sets the chain ID for the transaction.
+        /// </summary>
+        /// <param name="chainId">The chain ID.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetChainId(BigInteger chainId)
         {
             Input.ChainId = chainId.ToHexBigInteger();
             return this;
         }
 
+        /// <summary>
+        /// Sets the zkSync options for the transaction.
+        /// </summary>
+        /// <param name="zkSyncOptions">The zkSync options.</param>
+        /// <returns>The updated transaction.</returns>
         public ThirdwebTransaction SetZkSyncOptions(ZkSyncOptions zkSyncOptions)
         {
             Input.ZkSync = zkSyncOptions;
             return this;
         }
 
+        /// <summary>
+        /// Estimates the gas costs for the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The estimated gas costs.</returns>
         public static async Task<TotalCosts> EstimateGasCosts(ThirdwebTransaction transaction)
         {
             var gasPrice = transaction.Input.GasPrice?.Value ?? await EstimateGasPrice(transaction).ConfigureAwait(false);
@@ -128,6 +207,11 @@ namespace Thirdweb
             return new TotalCosts { ether = gasCost.ToString().ToEth(18, false), wei = gasCost };
         }
 
+        /// <summary>
+        /// Estimates the total costs for the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The estimated total costs.</returns>
         public static async Task<TotalCosts> EstimateTotalCosts(ThirdwebTransaction transaction)
         {
             var gasCosts = await EstimateGasCosts(transaction).ConfigureAwait(false);
@@ -135,6 +219,12 @@ namespace Thirdweb
             return new TotalCosts { ether = (value + gasCosts.wei).ToString().ToEth(18, false), wei = value + gasCosts.wei };
         }
 
+        /// <summary>
+        /// Estimates the gas price for the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <param name="withBump">Whether to include a bump in the gas price.</param>
+        /// <returns>The estimated gas price.</returns>
         public static async Task<BigInteger> EstimateGasPrice(ThirdwebTransaction transaction, bool withBump = true)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
@@ -142,6 +232,12 @@ namespace Thirdweb
             return withBump ? hex.Value * 10 / 9 : hex.Value;
         }
 
+        /// <summary>
+        /// Estimates the gas fees for the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <param name="withBump">Whether to include a bump in the gas fees.</param>
+        /// <returns>The estimated maximum fee per gas and maximum priority fee per gas.</returns>
         public static async Task<(BigInteger, BigInteger)> EstimateGasFees(ThirdwebTransaction transaction, bool withBump = true)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
@@ -160,18 +256,18 @@ namespace Thirdweb
             // Polygon Mainnet & Amoy
             if (chainId == 137 || chainId == 80002)
             {
-                return new(gasPrice * 3 / 2, gasPrice * 4 / 3);
+                return (gasPrice * 3 / 2, gasPrice * 4 / 3);
             }
 
             // Celo Mainnet, Alfajores & Baklava
             if (chainId == 42220 || chainId == 44787 || chainId == 62320)
             {
-                return new(gasPrice, gasPrice);
+                return (gasPrice, gasPrice);
             }
 
             try
             {
-                var block = await rpc.SendRequestAsync<JObject>(method: "eth_getBlockByNumber", "latest", true).ConfigureAwait(false);
+                var block = await rpc.SendRequestAsync<JObject>("eth_getBlockByNumber", "latest", true).ConfigureAwait(false);
                 var baseBlockFee = block["baseFeePerGas"]?.ToObject<HexBigInteger>();
                 var maxFeePerGas = baseBlockFee.Value * 2;
                 var maxPriorityFeePerGas = ((await rpc.SendRequestAsync<HexBigInteger>("eth_maxPriorityFeePerGas").ConfigureAwait(false))?.Value) ?? maxFeePerGas / 2;
@@ -181,7 +277,7 @@ namespace Thirdweb
                     maxPriorityFeePerGas = maxFeePerGas / 2;
                 }
 
-                return new((maxFeePerGas + maxPriorityFeePerGas) * 10 / 9, maxPriorityFeePerGas * 10 / 9);
+                return (maxFeePerGas + maxPriorityFeePerGas * 10 / 9, maxPriorityFeePerGas * 10 / 9);
             }
             catch
             {
@@ -189,12 +285,22 @@ namespace Thirdweb
             }
         }
 
+        /// <summary>
+        /// Simulates the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The result of the simulation.</returns>
         public static async Task<string> Simulate(ThirdwebTransaction transaction)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
             return await rpc.SendRequestAsync<string>("eth_call", transaction.Input, "latest");
         }
 
+        /// <summary>
+        /// Estimates the gas limit for the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The estimated gas limit.</returns>
         public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
@@ -217,6 +323,11 @@ namespace Thirdweb
             }
         }
 
+        /// <summary>
+        /// Gets the nonce for the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The nonce.</returns>
         public static async Task<BigInteger> GetNonce(ThirdwebTransaction transaction)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
@@ -231,11 +342,21 @@ namespace Thirdweb
             return finalGasPerPubData < 10000 ? 10000 : finalGasPerPubData;
         }
 
+        /// <summary>
+        /// Signs the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The signed transaction.</returns>
         public static async Task<string> Sign(ThirdwebTransaction transaction)
         {
             return await transaction._wallet.SignTransaction(transaction.Input);
         }
 
+        /// <summary>
+        /// Sends the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The transaction hash.</returns>
         public static async Task<string> Send(ThirdwebTransaction transaction)
         {
             if (transaction.Input.To == null)
@@ -297,12 +418,25 @@ namespace Thirdweb
             return hash;
         }
 
+        /// <summary>
+        /// Sends the transaction and waits for the transaction receipt.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The transaction receipt.</returns>
         public static async Task<ThirdwebTransactionReceipt> SendAndWaitForTransactionReceipt(ThirdwebTransaction transaction)
         {
             var txHash = await Send(transaction).ConfigureAwait(false);
             return await WaitForTransactionReceipt(transaction._wallet.Client, transaction.Input.ChainId.Value, txHash).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Waits for the transaction receipt.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="txHash">The transaction hash.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The transaction receipt.</returns>
         public static async Task<ThirdwebTransactionReceipt> WaitForTransactionReceipt(ThirdwebClient client, BigInteger chainId, string txHash, CancellationToken cancellationToken = default)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -356,6 +490,11 @@ namespace Thirdweb
             return receipt;
         }
 
+        /// <summary>
+        /// Converts the transaction to a zkSync transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The zkSync transaction.</returns>
         public static async Task<AccountAbstraction.ZkSyncAATransaction> ConvertToZkSyncTransaction(ThirdwebTransaction transaction)
         {
             return new AccountAbstraction.ZkSyncAATransaction

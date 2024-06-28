@@ -4,6 +4,9 @@ using Thirdweb.EWS;
 
 namespace Thirdweb
 {
+    /// <summary>
+    /// Specifies the authentication providers available for the in-app wallet.
+    /// </summary>
     public enum AuthProvider
     {
         Default,
@@ -14,6 +17,9 @@ namespace Thirdweb
         AuthEndpoint
     }
 
+    /// <summary>
+    /// Represents an in-app wallet that extends the functionality of a private key wallet.
+    /// </summary>
     public class InAppWallet : PrivateKeyWallet
     {
         internal EmbeddedWallet _embeddedWallet;
@@ -30,6 +36,16 @@ namespace Thirdweb
             _authProvider = authProvider;
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="InAppWallet"/> class.
+        /// </summary>
+        /// <param name="client">The Thirdweb client instance.</param>
+        /// <param name="email">The email address for authentication.</param>
+        /// <param name="phoneNumber">The phone number for authentication.</param>
+        /// <param name="authprovider">The authentication provider to use.</param>
+        /// <param name="storageDirectoryPath">The path to the storage directory.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the created in-app wallet.</returns>
+        /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
         public static async Task<InAppWallet> Create(
             ThirdwebClient client,
             string email = null,
@@ -69,6 +85,10 @@ namespace Thirdweb
             return new InAppWallet(client, email, phoneNumber, authproviderStr, embeddedWallet, ecKey);
         }
 
+        /// <summary>
+        /// Disconnects the wallet.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public override async Task Disconnect()
         {
             await base.Disconnect();
@@ -77,6 +97,18 @@ namespace Thirdweb
 
         #region OAuth2 Flow
 
+        /// <summary>
+        /// Logs in with OAuth2.
+        /// </summary>
+        /// <param name="isMobile">Indicates if the login is from a mobile device.</param>
+        /// <param name="browserOpenAction">The action to open the browser.</param>
+        /// <param name="mobileRedirectScheme">The mobile redirect scheme.</param>
+        /// <param name="browser">The browser instance.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A task representing the asynchronous operation. The task result contains the login result.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when required parameters are not provided.</exception>
+        /// <exception cref="TaskCanceledException">Thrown when the operation is canceled.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
         public virtual async Task<string> LoginWithOauth(
             bool isMobile,
             Action<string> browserOpenAction,
@@ -146,6 +178,11 @@ namespace Thirdweb
 
         #region OTP Flow
 
+        /// <summary>
+        /// Sends an OTP to the user's email or phone number.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="Exception">Thrown when email or phone number is not provided.</exception>
         public async Task SendOTP()
         {
             if (string.IsNullOrEmpty(_email) && string.IsNullOrEmpty(_phoneNumber))
@@ -174,6 +211,13 @@ namespace Thirdweb
             }
         }
 
+        /// <summary>
+        /// Submits the OTP for verification.
+        /// </summary>
+        /// <param name="otp">The OTP to submit.</param>
+        /// <returns>A task representing the asynchronous operation. The task result contains the address and a boolean indicating if retry is possible.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when OTP is not provided.</exception>
+        /// <exception cref="Exception">Thrown when email or phone number is not provided.</exception>
         public async Task<(string, bool)> SubmitOTP(string otp)
         {
             if (string.IsNullOrEmpty(otp))
@@ -198,11 +242,19 @@ namespace Thirdweb
             }
         }
 
+        /// <summary>
+        /// Gets the email associated with the in-app wallet.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation. The task result contains the email address.</returns>
         public Task<string> GetEmail()
         {
             return Task.FromResult(_email);
         }
 
+        /// <summary>
+        /// Gets the phone number associated with the in-app wallet.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation. The task result contains the phone number.</returns>
         public Task<string> GetPhoneNumber()
         {
             return Task.FromResult(_phoneNumber);
@@ -212,6 +264,15 @@ namespace Thirdweb
 
         #region JWT Flow
 
+        /// <summary>
+        /// Logs in with a JWT.
+        /// </summary>
+        /// <param name="jwt">The JWT to use for authentication.</param>
+        /// <param name="encryptionKey">The encryption key to use.</param>
+        /// <param name="recoveryCode">The optional recovery code.</param>
+        /// <returns>A task representing the asynchronous operation. The task result contains the login result.</returns>
+        /// <exception cref="ArgumentException">Thrown when JWT or encryption key is not provided.</exception>
+        /// <exception cref="Exception">Thrown when the login fails.</exception>
         public async Task<string> LoginWithJWT(string jwt, string encryptionKey, string recoveryCode = null)
         {
             if (string.IsNullOrEmpty(jwt))
@@ -240,6 +301,15 @@ namespace Thirdweb
 
         #region Auth Endpoint Flow
 
+        /// <summary>
+        /// Logs in with an authentication endpoint.
+        /// </summary>
+        /// <param name="payload">The payload to use for authentication.</param>
+        /// <param name="encryptionKey">The encryption key to use.</param>
+        /// <param name="recoveryCode">The optional recovery code.</param>
+        /// <returns>A task representing the asynchronous operation. The task result contains the login result.</returns>
+        /// <exception cref="ArgumentException">Thrown when payload or encryption key is not provided.</exception>
+        /// <exception cref="Exception">Thrown when the login fails.</exception>
         public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey, string recoveryCode = null)
         {
             if (string.IsNullOrEmpty(payload))

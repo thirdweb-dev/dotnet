@@ -7,10 +7,23 @@ using Nethereum.Signer;
 
 namespace Thirdweb
 {
+    /// <summary>
+    /// Provides methods for generating and signing EIP712 compliant messages and transactions.
+    /// </summary>
     public static class EIP712
     {
         #region Generation
 
+        /// <summary>
+        /// Generates a signature for a smart account permission request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <param name="signerPermissionRequest">The signer permission request.</param>
+        /// <param name="signer">The wallet signer.</param>
+        /// <returns>The generated signature.</returns>
         public static async Task<string> GenerateSignature_SmartAccount(
             string domainName,
             string version,
@@ -24,6 +37,16 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(signerPermissionRequest, typedData);
         }
 
+        /// <summary>
+        /// Generates a signature for a smart account message.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <param name="message">The message to sign.</param>
+        /// <param name="signer">The wallet signer.</param>
+        /// <returns>The generated signature.</returns>
         public static async Task<string> GenerateSignature_SmartAccount_AccountMessage(
             string domainName,
             string version,
@@ -38,6 +61,15 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(accountMessage, typedData);
         }
 
+        /// <summary>
+        /// Generates a signature for a zkSync transaction.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="transaction">The zkSync transaction.</param>
+        /// <param name="signer">The wallet signer.</param>
+        /// <returns>The generated signature.</returns>
         public static async Task<string> GenerateSignature_ZkSyncTransaction(
             string domainName,
             string version,
@@ -52,6 +84,16 @@ namespace Thirdweb
             return SerializeEip712(transaction, signatureRaw, chainId);
         }
 
+        /// <summary>
+        /// Generates a signature for a minimal forwarder request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <param name="forwardRequest">The forward request.</param>
+        /// <param name="signer">The wallet signer.</param>
+        /// <returns>The generated signature.</returns>
         public static async Task<string> GenerateSignature_MinimalForwarder(
             string domainName,
             string version,
@@ -65,6 +107,16 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(forwardRequest, typedData);
         }
 
+        /// <summary>
+        /// Generates a signature for an ERC20 token mint request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <param name="mintRequest">The mint request.</param>
+        /// <param name="signer">The wallet signer.</param>
+        /// <returns>The generated signature.</returns>
         public static async Task<string> GenerateSignature_TokenERC20(
             string domainName,
             string version,
@@ -78,6 +130,16 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(mintRequest, typedData);
         }
 
+        /// <summary>
+        /// Generates a signature for an ERC721 token mint request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <param name="mintRequest">The mint request.</param>
+        /// <param name="signer">The wallet signer.</param>
+        /// <returns>The generated signature.</returns>
         public static async Task<string> GenerateSignature_TokenERC721(
             string domainName,
             string version,
@@ -91,6 +153,16 @@ namespace Thirdweb
             return await signer.SignTypedDataV4(mintRequest, typedData);
         }
 
+        /// <summary>
+        /// Generates a signature for an ERC1155 token mint request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <param name="mintRequest">The mint request.</param>
+        /// <param name="signer">The wallet signer.</param>
+        /// <returns>The generated signature.</returns>
         public static async Task<string> GenerateSignature_TokenERC1155(
             string domainName,
             string version,
@@ -108,6 +180,14 @@ namespace Thirdweb
 
         #region Typed Definitions
 
+        /// <summary>
+        /// Gets the typed data definition for a smart account permission request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <returns>The typed data definition.</returns>
         public static TypedData<Domain> GetTypedDefinition_SmartAccount(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
             return new TypedData<Domain>
@@ -124,6 +204,14 @@ namespace Thirdweb
             };
         }
 
+        /// <summary>
+        /// Gets the typed data definition for a smart account message.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <returns>The typed data definition.</returns>
         public static TypedData<Domain> GetTypedDefinition_SmartAccount_AccountMessage(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
             return new TypedData<Domain>
@@ -140,6 +228,13 @@ namespace Thirdweb
             };
         }
 
+        /// <summary>
+        /// Gets the typed data definition for a zkSync transaction.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <returns>The typed data definition.</returns>
         public static TypedData<DomainWithNameVersionAndChainId> GetTypedDefinition_ZkSyncTransaction(string domainName, string version, BigInteger chainId)
         {
             return new TypedData<DomainWithNameVersionAndChainId>
@@ -155,6 +250,14 @@ namespace Thirdweb
             };
         }
 
+        /// <summary>
+        /// Gets the typed data definition for a TokenERC20 mint request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <returns>The typed data definition.</returns>
         public static TypedData<Domain> GetTypedDefinition_TokenERC20(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
             return new TypedData<Domain>
@@ -171,6 +274,14 @@ namespace Thirdweb
             };
         }
 
+        /// <summary>
+        /// Gets the typed data definition for a TokenERC721 mint request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <returns>The typed data definition.</returns>
         public static TypedData<Domain> GetTypedDefinition_TokenERC721(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
             return new TypedData<Domain>
@@ -187,6 +298,14 @@ namespace Thirdweb
             };
         }
 
+        /// <summary>
+        /// Gets the typed data definition for a TokenERC1155 mint request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <returns>The typed data definition.</returns>
         public static TypedData<Domain> GetTypedDefinition_TokenERC1155(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
             return new TypedData<Domain>
@@ -203,6 +322,14 @@ namespace Thirdweb
             };
         }
 
+        /// <summary>
+        /// Gets the typed data definition for a minimal forwarder request.
+        /// </summary>
+        /// <param name="domainName">The domain name.</param>
+        /// <param name="version">The version.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="verifyingContract">The verifying contract.</param>
+        /// <returns>The typed data definition.</returns>
         public static TypedData<Domain> GetTypedDefinition_MinimalForwarder(string domainName, string version, BigInteger chainId, string verifyingContract)
         {
             return new TypedData<Domain>
@@ -223,6 +350,13 @@ namespace Thirdweb
 
         #region Helpers
 
+        /// <summary>
+        /// Serializes an EIP712 zkSync transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <param name="signature">The ECDSA signature.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <returns>The serialized transaction.</returns>
         private static string SerializeEip712(AccountAbstraction.ZkSyncAATransaction transaction, EthECDSASignature signature, BigInteger chainId)
         {
             if (chainId == 0)

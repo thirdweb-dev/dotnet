@@ -10,20 +10,43 @@ using Newtonsoft.Json;
 
 namespace Thirdweb
 {
+    /// <summary>
+    /// Represents a wallet that uses a private key for signing transactions and messages.
+    /// </summary>
     public class PrivateKeyWallet : IThirdwebWallet
     {
+        /// <summary>
+        /// Gets the Thirdweb client associated with the wallet.
+        /// </summary>
         public ThirdwebClient Client { get; }
 
+        /// <summary>
+        /// Gets the account type of the wallet.
+        /// </summary>
         public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
 
+        /// <summary>
+        /// The Ethereum EC key used by the wallet.
+        /// </summary>
         protected EthECKey _ecKey;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PrivateKeyWallet"/> class.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="key">The Ethereum EC key.</param>
         protected PrivateKeyWallet(ThirdwebClient client, EthECKey key)
         {
             Client = client;
             _ecKey = key;
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="PrivateKeyWallet"/> using the specified private key.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="privateKeyHex">The private key in hexadecimal format.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="PrivateKeyWallet"/>.</returns>
         public static Task<PrivateKeyWallet> Create(ThirdwebClient client, string privateKeyHex)
         {
             return string.IsNullOrEmpty(privateKeyHex)
@@ -31,16 +54,30 @@ namespace Thirdweb
                 : Task.FromResult(new PrivateKeyWallet(client, new EthECKey(privateKeyHex)));
         }
 
+        /// <summary>
+        /// Generates a new instance of <see cref="PrivateKeyWallet"/> with a random private key.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="PrivateKeyWallet"/>.</returns>
         public static Task<PrivateKeyWallet> Generate(ThirdwebClient client)
         {
             return Task.FromResult(new PrivateKeyWallet(client, EthECKey.GenerateKey()));
         }
 
+        /// <summary>
+        /// Gets the address of the wallet.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the address of the wallet.</returns>
         public virtual Task<string> GetAddress()
         {
             return Task.FromResult(_ecKey.GetPublicAddress().ToChecksumAddress());
         }
 
+        /// <summary>
+        /// Signs a message using the wallet's private key.
+        /// </summary>
+        /// <param name="rawMessage">The message to sign.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the signed message.</returns>
         public virtual Task<string> EthSign(byte[] rawMessage)
         {
             if (rawMessage == null)
@@ -53,6 +90,11 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
+        /// <summary>
+        /// Signs a message using the wallet's private key.
+        /// </summary>
+        /// <param name="message">The message to sign.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the signed message.</returns>
         public virtual Task<string> EthSign(string message)
         {
             if (message == null)
@@ -65,6 +107,11 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
+        /// <summary>
+        /// Signs a message using the wallet's private key with personal sign.
+        /// </summary>
+        /// <param name="rawMessage">The message to sign.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the signed message.</returns>
         public virtual Task<string> PersonalSign(byte[] rawMessage)
         {
             if (rawMessage == null)
@@ -77,6 +124,11 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
+        /// <summary>
+        /// Signs a message using the wallet's private key with personal sign.
+        /// </summary>
+        /// <param name="message">The message to sign.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the signed message.</returns>
         public virtual Task<string> PersonalSign(string message)
         {
             if (string.IsNullOrEmpty(message))
@@ -89,6 +141,11 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
+        /// <summary>
+        /// Signs typed data (EIP-712) using the wallet's private key.
+        /// </summary>
+        /// <param name="json">The JSON string representing the typed data.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the signed data.</returns>
         public virtual Task<string> SignTypedDataV4(string json)
         {
             if (string.IsNullOrEmpty(json))
@@ -101,6 +158,14 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
+        /// <summary>
+        /// Signs typed data (EIP-712) using the wallet's private key.
+        /// </summary>
+        /// <typeparam name="T">The type of the data to sign.</typeparam>
+        /// <typeparam name="TDomain">The type of the domain.</typeparam>
+        /// <param name="data">The data to sign.</param>
+        /// <param name="typedData">The typed data.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the signed data.</returns>
         public virtual Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
             where TDomain : IDomain
         {
@@ -114,6 +179,11 @@ namespace Thirdweb
             return Task.FromResult(signature);
         }
 
+        /// <summary>
+        /// Signs a transaction using the wallet's private key.
+        /// </summary>
+        /// <param name="transaction">The transaction to sign.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the signed transaction.</returns>
         public virtual async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
         {
             if (transaction == null)
@@ -170,17 +240,34 @@ namespace Thirdweb
             return "0x" + signedTransaction;
         }
 
+        /// <summary>
+        /// Checks if the wallet is connected.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation. The task result indicates whether the wallet is connected.</returns>
         public virtual Task<bool> IsConnected()
         {
             return Task.FromResult(_ecKey != null);
         }
 
+        /// <summary>
+        /// Disconnects the wallet.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public virtual Task Disconnect()
         {
             _ecKey = null;
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Authenticates the user by signing a message with the wallet's private key.
+        /// </summary>
+        /// <param name="domain">The domain for authentication.</param>
+        /// <param name="chainId">The chain ID.</param>
+        /// <param name="authPayloadPath">The authentication payload path.</param>
+        /// <param name="authLoginPath">The authentication login path.</param>
+        /// <param name="httpClientOverride">Optional HTTP client override.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the authentication response.</returns>
         public virtual async Task<string> Authenticate(
             string domain,
             BigInteger chainId,
@@ -215,6 +302,11 @@ namespace Thirdweb
             return responseString;
         }
 
+        /// <summary>
+        /// Throws an exception because sending transactions is not supported for private key wallets.
+        /// </summary>
+        /// <param name="transaction">The transaction to send.</param>
+        /// <returns>Throws an InvalidOperationException.</returns>
         public Task<string> SendTransaction(ThirdwebTransactionInput transaction)
         {
             throw new InvalidOperationException("SendTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");

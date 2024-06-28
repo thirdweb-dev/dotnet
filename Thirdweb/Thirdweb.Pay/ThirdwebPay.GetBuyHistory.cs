@@ -2,8 +2,22 @@ using Newtonsoft.Json;
 
 namespace Thirdweb.Pay
 {
+    /// <summary>
+    /// Provides methods for processing payments with cryptocurrency and fiat.
+    /// </summary>
     public partial class ThirdwebPay
     {
+        /// <summary>
+        /// Retrieves the buy history for a specified wallet address.
+        /// </summary>
+        /// <param name="client">The Thirdweb client.</param>
+        /// <param name="walletAddress">The wallet address to retrieve history for.</param>
+        /// <param name="start">The start index for the history.</param>
+        /// <param name="count">The number of history records to retrieve.</param>
+        /// <param name="cursor">The cursor for pagination (optional).</param>
+        /// <param name="pageSize">The page size for pagination (optional).</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the buy history result.</returns>
+        /// <exception cref="Exception">Thrown if the HTTP response is not successful.</exception>
         public static async Task<BuyHistoryResult> GetBuyHistory(ThirdwebClient client, string walletAddress, int start, int count, string cursor = null, int? pageSize = null)
         {
             var queryString = new Dictionary<string, string>

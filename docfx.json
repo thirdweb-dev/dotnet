@@ -1,0 +1,36 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "Thirdweb",
+          "files": ["**/*.csproj"]
+        }
+      ],
+      "dest": "docs"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": ["**/*.{md,yml}"],
+        "exclude": ["_site/**"]
+      }
+    ],
+    "resource": [
+      {
+        "files": ["resources/**"]
+      }
+    ],
+    "output": "_site",
+    "template": ["default", "modern"],
+    "globalMetadata": {
+      "_appName": "Thirdweb API Reference",
+      "_appTitle": "Thirdweb API Reference",
+      "_appLogoPath": "resources/favicon.ico",
+      "_appFaviconPath": "resources/favicon.ico",
+      "_enableSearch": true,
+      "pdf": false
+    }
+  }
+}
