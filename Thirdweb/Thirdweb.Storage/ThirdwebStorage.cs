@@ -99,7 +99,7 @@ namespace Thirdweb
                 throw new ArgumentNullException(nameof(path));
             }
 
-            return await UploadRaw(client, File.ReadAllBytes(path)).ConfigureAwait(false);
+            return await UploadRaw(client, await File.ReadAllBytesAsync(path).ConfigureAwait(false)).ConfigureAwait(false);
         }
     }
 }

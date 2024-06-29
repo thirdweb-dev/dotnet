@@ -171,7 +171,7 @@ namespace Thirdweb.EWS
         {
             var secret = Secrets.Random(KEY_SIZE);
             (var deviceShare, var recoveryShare, var authShare) = CreateShares(secret);
-            var encryptedRecoveryShare = await EncryptShareAsync(recoveryShare, recoveryCode);
+            var encryptedRecoveryShare = await EncryptShareAsync(recoveryShare, recoveryCode).ConfigureAwait(false);
             Account account = new(secret);
 
             string[] backupRecoveryShares = null;
@@ -180,7 +180,7 @@ namespace Thirdweb.EWS
                 backupRecoveryShares = new string[backupRecoveryCodes.Length];
                 for (var i = 0; i < backupRecoveryCodes.Length; i++)
                 {
-                    backupRecoveryShares[i] = await EncryptShareAsync(recoveryShare, backupRecoveryCodes[i]);
+                    backupRecoveryShares[i] = await EncryptShareAsync(recoveryShare, backupRecoveryCodes[i]).ConfigureAwait(false);
                 }
             }
             await server.StoreAddressAndSharesAsync(account.Address, authShare, encryptedRecoveryShare, authToken, backupRecoveryShares).ConfigureAwait(false);
@@ -190,7 +190,7 @@ namespace Thirdweb.EWS
         private async Task<(Account account, string deviceShare)> RecoverAccountAsync(string authToken, string recoveryCode)
         {
             (var authShare, var encryptedRecoveryShare) = await server.FetchAuthAndRecoverySharesAsync(authToken).ConfigureAwait(false);
-            var recoveryShare = await Task.Run(() => DecryptShare(encryptedRecoveryShare, recoveryCode));
+            var recoveryShare = await DecryptShareAsync(encryptedRecoveryShare, recoveryCode).ConfigureAwait(false);
             var account = MakeAccountFromShares(authShare, recoveryShare);
             Secrets secrets = new();
             var deviceShare = secrets.NewShare(DEVICE_SHARE_ID, new[] { authShare, recoveryShare });

@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using Nethereum.Web3.Accounts;
-
+using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 
@@ -14,7 +11,7 @@ namespace Thirdweb.EWS
 {
     internal partial class EmbeddedWallet
     {
-        private string DecryptShare(string encryptedShare, string password)
+        private async Task<string> DecryptShareAsync(string encryptedShare, string password)
         {
             var parts = encryptedShare.Split(ENCRYPTION_SEPARATOR);
             var ciphertextWithTag = Convert.FromBase64String(parts[0]);
@@ -31,7 +28,7 @@ namespace Thirdweb.EWS
                 iterationCount = DEPRECATED_ITERATION_COUNT;
             }
 
-            var key = GetEncryptionKey(password, salt, iterationCount);
+            var key = await GetEncryptionKeyAsync(password, salt, iterationCount).ConfigureAwait(false);
 
             byte[] encodedShare;
             try
@@ -74,11 +71,11 @@ namespace Thirdweb.EWS
             const int saltSize = 16;
             var salt = new byte[saltSize];
             RandomNumberGenerator.Fill(salt);
-            var key = GetEncryptionKey(password, salt, CURRENT_ITERATION_COUNT);
+            var key = await GetEncryptionKeyAsync(password, salt, CURRENT_ITERATION_COUNT).ConfigureAwait(false);
             var encodedShare = Encoding.ASCII.GetBytes(share);
             const int ivSize = 12;
             var iv = new byte[ivSize];
-            await ivGenerator.ComputeIvAsync(iv);
+            await ivGenerator.ComputeIvAsync(iv).ConfigureAwait(false);
             byte[] encryptedShare;
             try
             {
@@ -115,11 +112,17 @@ namespace Thirdweb.EWS
             return (shares[0], shares[1], shares[2]);
         }
 
-        private static byte[] GetEncryptionKey(string password, byte[] salt, int iterationCount)
+        private async Task<byte[]> GetEncryptionKeyAsync(string password, byte[] salt, int iterationCount)
         {
-            using Rfc2898DeriveBytes pbkdf2 = new(password, salt, iterationCount, HashAlgorithmName.SHA256);
-            var keyMaterial = pbkdf2.GetBytes(KEY_SIZE);
-            return keyMaterial;
+            return await Task.Run(() =>
+                {
+                    var generator = new Pkcs5S2ParametersGenerator(new Sha256Digest());
+                    var keyLength = 256; // 256 bits key size
+                    generator.Init(Encoding.UTF8.GetBytes(password), salt, iterationCount);
+                    var keyParam = (KeyParameter)generator.GenerateDerivedMacParameters(keyLength);
+                    return keyParam.GetKey();
+                })
+                .ConfigureAwait(false);
         }
 
         private Account MakeAccountFromShares(params string[] shares)

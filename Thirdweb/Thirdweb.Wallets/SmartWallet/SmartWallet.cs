@@ -272,7 +272,7 @@ namespace Thirdweb
             {
                 var userOpReceipt = await BundlerClient.EthGetUserOperationReceipt(Client, _bundlerUrl, requestId, userOpHash);
                 txHash = userOpReceipt?.receipt?.TransactionHash;
-                await Task.Delay(1000);
+                await Task.Delay(1000).ConfigureAwait(false);
             }
             _isDeploying = false;
             return txHash;
