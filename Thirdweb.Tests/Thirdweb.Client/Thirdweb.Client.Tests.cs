@@ -1,17 +1,17 @@
-﻿namespace Thirdweb.Tests;
+﻿namespace Thirdweb.Tests.Client;
 
 public class ClientTests : BaseTests
 {
     public ClientTests(ITestOutputHelper output)
         : base(output) { }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void NoSecretKeyNoClientId()
     {
         Assert.Throws<InvalidOperationException>(() => ThirdwebClient.Create());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void SecretKeyInitialization()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -22,7 +22,7 @@ public class ClientTests : BaseTests
         Assert.Equal(client.SecretKey, _secretKey);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ClientIdInitialization()
     {
         var clientId = "test-client-id";
@@ -33,7 +33,7 @@ public class ClientTests : BaseTests
         Assert.Equal(client.ClientId, clientId);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void BundleIdInitialization()
     {
         var bundleId = "test-bundle-id";
@@ -41,7 +41,7 @@ public class ClientTests : BaseTests
         Assert.Equal("ClientId or SecretKey must be provided", exception.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ClientIdAndSecretKeyInitialization()
     {
         var clientId = "test-client-id";
@@ -54,7 +54,7 @@ public class ClientTests : BaseTests
         Assert.Equal(client.SecretKey, _secretKey);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ClientIdAndBundleIdInitialization()
     {
         var clientId = "test-client-id";
@@ -67,7 +67,7 @@ public class ClientTests : BaseTests
         Assert.Equal(client.BundleId, bundleId);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void SecretKeyAndBundleIdInitialization()
     {
         var bundleId = "test-bundle-id";
@@ -80,7 +80,7 @@ public class ClientTests : BaseTests
         Assert.Equal(client.ClientId, Utils.ComputeClientIdFromSecretKey(client.SecretKey));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void TimeoutOptions()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 30000, other: 30000));
@@ -91,7 +91,7 @@ public class ClientTests : BaseTests
         Assert.Equal(Constants.DEFAULT_FETCH_TIMEOUT, client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other + 1));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void NoTimeoutOptions()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);

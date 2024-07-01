@@ -16,6 +16,8 @@ namespace Thirdweb
 
         public ThirdwebAccountType AccountType => ThirdwebAccountType.SmartAccount;
 
+        public bool IsDeploying { get; private set; }
+
         private IThirdwebWallet _personalAccount;
         private bool _gasless;
         private ThirdwebContract _factoryContract;
@@ -24,7 +26,6 @@ namespace Thirdweb
         private BigInteger _chainId;
         private string _bundlerUrl;
         private string _paymasterUrl;
-        private bool _isDeploying;
 
         protected SmartWallet(
             IThirdwebWallet personalAccount,
@@ -176,7 +177,7 @@ namespace Thirdweb
 
         private async Task<byte[]> GetInitCode()
         {
-            if (_isDeploying || await IsDeployed())
+            if (await IsDeployed())
             {
                 return new byte[0];
             }
@@ -190,19 +191,22 @@ namespace Thirdweb
         {
             requestId ??= 1;
 
+            var initCode = await GetInitCode();
+
             // Wait until deployed to avoid double initCode
             if (!simulation)
             {
-                while (_isDeploying)
+                if (IsDeploying)
+                {
+                    initCode = new byte[] { };
+                }
+
+                while (IsDeploying)
                 {
                     await Task.Delay(1000); // Wait for the deployment to finish
                 }
-            }
 
-            var initCode = await GetInitCode();
-            if (!simulation)
-            {
-                _isDeploying = initCode.Length > 0;
+                IsDeploying = initCode.Length > 0;
             }
 
             // Create the user operation and its safe (hexified) version
@@ -274,7 +278,7 @@ namespace Thirdweb
                 txHash = userOpReceipt?.receipt?.TransactionHash;
                 await Task.Delay(1000).ConfigureAwait(false);
             }
-            _isDeploying = false;
+            IsDeploying = false;
             return txHash;
         }
 
@@ -356,7 +360,7 @@ namespace Thirdweb
                 return;
             }
 
-            if (_isDeploying)
+            if (IsDeploying)
             {
                 throw new InvalidOperationException("SmartAccount.ForceDeploy: Account is already deploying.");
             }
@@ -405,8 +409,13 @@ namespace Thirdweb
 
             if (!await IsDeployed())
             {
+                while (IsDeploying)
+                {
+                    await Task.Delay(1000); // Wait for the deployment to finish
+                }
                 await ForceDeploy();
             }
+
             if (await IsDeployed())
             {
                 var originalMsgHash = System.Text.Encoding.UTF8.GetBytes(message).HashPrefixedMessage();

@@ -15,7 +15,7 @@ namespace Thirdweb
         private readonly Uri _rpcUrl;
         private readonly TimeSpan _rpcTimeout;
         private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new();
-        private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(250);
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(25);
         private readonly List<RpcRequest> _pendingBatch = new();
         private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new();
         private readonly object _batchLock = new();
@@ -80,7 +80,23 @@ namespace Thirdweb
                 var cacheKey = GetCacheKey(method, parameters);
                 if (_cache.TryGetValue(cacheKey, out var cachedItem) && (DateTime.Now - cachedItem.Timestamp) < _cacheDuration)
                 {
-                    return (TResponse)cachedItem.Response;
+                    if (cachedItem.Response is TResponse cachedResponse)
+                    {
+                        return cachedResponse;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var deserializedResponse = JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(cachedItem.Response));
+                            _cache[cacheKey] = (deserializedResponse, DateTime.Now);
+                            return deserializedResponse;
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new InvalidOperationException("Failed to deserialize RPC response.", ex);
+                        }
+                    }
                 }
             }
 

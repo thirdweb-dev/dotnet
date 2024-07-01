@@ -1,6 +1,6 @@
 using Nethereum.Hex.HexTypes;
 
-namespace Thirdweb.Tests;
+namespace Thirdweb.Tests.Wallets;
 
 public class PrivateKeyWalletTests : BaseTests
 {
@@ -14,14 +14,14 @@ public class PrivateKeyWalletTests : BaseTests
         return privateKeyAccount;
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Initialization_Success()
     {
         var account = await GetAccount();
         Assert.NotNull(account);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async void Initialization_NullPrivateKey()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -29,14 +29,14 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Private key cannot be null or empty. (Parameter 'privateKeyHex')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Connect()
     {
         var account = await GetAccount();
         Assert.True(await account.IsConnected());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task GetAddress()
     {
         var account = await GetAccount();
@@ -44,7 +44,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.True(address.Length == 42);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task EthSign_Success()
     {
         var account = await GetAccount();
@@ -53,7 +53,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.True(signature.Length == 132);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task EthSign_NullMessage()
     {
         var account = await GetAccount();
@@ -61,7 +61,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Message to sign cannot be null. (Parameter 'message')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task EthSignRaw_Success()
     {
         var account = await GetAccount();
@@ -70,7 +70,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.True(signature.Length == 132);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task EthSignRaw_NullMessage()
     {
         var account = await GetAccount();
@@ -78,7 +78,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Message to sign cannot be null. (Parameter 'rawMessage')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task PersonalSign_Success()
     {
         var account = await GetAccount();
@@ -87,7 +87,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.True(signature.Length == 132);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task PersonalSign_EmptyMessage()
     {
         var account = await GetAccount();
@@ -95,7 +95,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Message to sign cannot be null. (Parameter 'message')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task PersonalSign_NullyMessage()
     {
         var account = await GetAccount();
@@ -104,7 +104,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Message to sign cannot be null. (Parameter 'message')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task PersonalSignRaw_Success()
     {
         var account = await GetAccount();
@@ -113,7 +113,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.True(signature.Length == 132);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task PersonalSignRaw_NullMessage()
     {
         var account = await GetAccount();
@@ -121,7 +121,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Message to sign cannot be null. (Parameter 'rawMessage')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTypedDataV4_Success()
     {
         var account = await GetAccount();
@@ -131,7 +131,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.True(signature.Length == 132);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTypedDataV4_NullJson()
     {
         var account = await GetAccount();
@@ -139,7 +139,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Json to sign cannot be null. (Parameter 'json')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTypedDataV4_EmptyJson()
     {
         var account = await GetAccount();
@@ -147,7 +147,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Json to sign cannot be null. (Parameter 'json')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTypedDataV4_Typed()
     {
         var account = await GetAccount();
@@ -157,7 +157,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.True(signature.Length == 132);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTypedDataV4_Typed_NullData()
     {
         var account = await GetAccount();
@@ -166,7 +166,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Data to sign cannot be null. (Parameter 'data')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_Success()
     {
         var account = await GetAccount();
@@ -185,7 +185,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.NotNull(signature);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_NoFrom_Success()
     {
         var account = await GetAccount();
@@ -203,7 +203,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.NotNull(signature);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_NullTransaction()
     {
         var account = await GetAccount();
@@ -211,7 +211,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Value cannot be null. (Parameter 'transaction')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_NoNonce()
     {
         var account = await GetAccount();
@@ -227,7 +227,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Transaction nonce has not been set (Parameter 'transaction')", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_WrongFrom()
     {
         var account = await GetAccount();
@@ -245,7 +245,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Transaction 'From' address does not match the wallet address", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_NoGasPrice()
     {
         var account = await GetAccount();
@@ -263,7 +263,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_1559_Success()
     {
         var account = await GetAccount();
@@ -283,7 +283,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.NotNull(signature);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_1559_NoMaxFeePerGas()
     {
         var account = await GetAccount();
@@ -302,7 +302,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_1559_NoMaxPriorityFeePerGas()
     {
         var account = await GetAccount();
@@ -321,14 +321,14 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task IsConnected_True()
     {
         var account = await GetAccount();
         Assert.True(await account.IsConnected());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task IsConnected_False()
     {
         var account = await GetAccount();
@@ -336,7 +336,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.False(await account.IsConnected());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Disconnect()
     {
         var account = await GetAccount();
@@ -344,7 +344,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.False(await account.IsConnected());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Disconnect_NotConnected()
     {
         var account = await GetAccount();
@@ -352,7 +352,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.False(await account.IsConnected());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Disconnect_Connected()
     {
         var account = await GetAccount();
@@ -360,7 +360,7 @@ public class PrivateKeyWalletTests : BaseTests
         Assert.False(await account.IsConnected());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SendTransaction_InvalidOperation()
     {
         var account = await GetAccount();

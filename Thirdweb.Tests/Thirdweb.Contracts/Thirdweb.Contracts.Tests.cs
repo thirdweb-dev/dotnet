@@ -1,14 +1,13 @@
 using System.Numerics;
-using Newtonsoft.Json.Linq;
 
-namespace Thirdweb.Tests;
+namespace Thirdweb.Tests.Contracts;
 
 public class ContractsTests : BaseTests
 {
     public ContractsTests(ITestOutputHelper output)
         : base(output) { }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task FetchAbi()
     {
         var abi = await ThirdwebContract.FetchAbi(client: ThirdwebClient.Create(secretKey: _secretKey), address: "0x1320Cafa93fb53Ed9068E3272cb270adbBEf149C", chainId: 84532);
@@ -16,35 +15,35 @@ public class ContractsTests : BaseTests
         Assert.NotEmpty(abi);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task InitTest_NullClient()
     {
         var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(null, "0x123", 1, "[]"));
         Assert.Contains("Client must be provided", exception.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task InitTest_NullAddress()
     {
         var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: _secretKey), null, 1, "[]"));
         Assert.Contains("Address must be provided", exception.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task InitTest_ZeroChain()
     {
         var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: _secretKey), "0x123", 0, "[]"));
         Assert.Contains("Chain must be provided", exception.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task InitTest_NullAbi()
     {
         var res = await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: _secretKey), "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", 421614, null);
         Assert.NotNull(res);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task ReadTest_String()
     {
         var contract = await GetContract();
@@ -52,7 +51,7 @@ public class ContractsTests : BaseTests
         Assert.Equal("Kitty DropERC20", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task ReadTest_BigInteger()
     {
         var contract = await GetContract();
@@ -70,7 +69,7 @@ public class ContractsTests : BaseTests
         public virtual required ushort ReturnValue2 { get; set; }
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task ReadTest_Tuple()
     {
         var contract = await GetContract();
@@ -87,7 +86,7 @@ public class ContractsTests : BaseTests
         public string Currency { get; set; } = Constants.ADDRESS_ZERO;
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task WriteTest_SmartAccount()
     {
         var contract = await GetContract();
@@ -105,7 +104,7 @@ public class ContractsTests : BaseTests
         Assert.Equal(result.TransactionHash, receipt.TransactionHash);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task WriteTest_PrivateKeyAccount()
     {
         var contract = await GetContract();
@@ -129,7 +128,7 @@ public class ContractsTests : BaseTests
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignatureMint_Generate()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
