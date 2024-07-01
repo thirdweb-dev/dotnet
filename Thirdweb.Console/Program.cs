@@ -1,6 +1,8 @@
 ﻿using Thirdweb;
 using dotenv.net;
 using System.Diagnostics;
+using Thirdweb.Pay;
+using Newtonsoft.Json;
 
 DotEnv.Load();
 
@@ -19,32 +21,96 @@ Console.WriteLine($"Contract read result: {readResult}");
 
 // Create wallets (this is an advanced use case, typically one wallet is plenty)
 var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
+var walletAddress = await privateKeyWallet.GetAddress();
+
+// // Buy with Fiat
+// // Find out more about supported FIAT currencies
+// var supportedCurrencies = await ThirdwebPay.GetBuyWithFiatCurrencies(client);
+// Console.WriteLine($"Supported currencies: {JsonConvert.SerializeObject(supportedCurrencies, Formatting.Indented)}");
+
+// // Get a Buy with Fiat quote
+// var fiatQuoteParams = new BuyWithFiatQuoteParams(
+//     fromCurrencySymbol: "USD",
+//     toAddress: walletAddress,
+//     toChainId: "137",
+//     toTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
+//     toAmount: "20"
+// );
+// var fiatOnrampQuote = await ThirdwebPay.GetBuyWithFiatQuote(client, fiatQuoteParams);
+// Console.WriteLine($"Fiat onramp quote: {JsonConvert.SerializeObject(fiatOnrampQuote, Formatting.Indented)}");
+
+// // Get a Buy with Fiat link
+// var onRampLink = ThirdwebPay.BuyWithFiat(fiatOnrampQuote);
+// Console.WriteLine($"Fiat onramp link: {onRampLink}");
+
+// // Open onramp link to start the process (use your framework's version of this)
+// var psi = new ProcessStartInfo { FileName = onRampLink, UseShellExecute = true };
+// _ = Process.Start(psi);
+
+// // Poll for status
+// var currentOnRampStatus = OnRampStatus.NONE;
+// while (currentOnRampStatus is not OnRampStatus.ON_RAMP_TRANSFER_COMPLETED and not OnRampStatus.ON_RAMP_TRANSFER_FAILED)
+// {
+//     var onRampStatus = await ThirdwebPay.GetBuyWithFiatStatus(client, fiatOnrampQuote.IntentId);
+//     currentOnRampStatus = Enum.Parse<OnRampStatus>(onRampStatus.Status);
+//     Console.WriteLine($"Fiat onramp status: {JsonConvert.SerializeObject(onRampStatus, Formatting.Indented)}");
+//     await Task.Delay(5000);
+// }
+
+// Buy with Crypto
+
+// Swap Polygon MATIC to Base ETH
+var swapQuoteParams = new BuyWithCryptoQuoteParams(
+    fromAddress: walletAddress,
+    fromChainId: 137,
+    fromTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
+    toTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
+    toChainId: 8453,
+    toAmount: "0.1"
+);
+var swapQuote = await ThirdwebPay.GetBuyWithCryptoQuote(client, swapQuoteParams);
+Console.WriteLine($"Swap quote: {JsonConvert.SerializeObject(swapQuote, Formatting.Indented)}");
+
+// Initiate swap
+var txHash = await ThirdwebPay.BuyWithCrypto(wallet: privateKeyWallet, buyWithCryptoQuote: swapQuote);
+Console.WriteLine($"Swap transaction hash: {txHash}");
+
+// Poll for status
+var currentSwapStatus = SwapStatus.NONE;
+while (currentSwapStatus is not SwapStatus.COMPLETED and not SwapStatus.FAILED)
+{
+    var swapStatus = await ThirdwebPay.GetBuyWithCryptoStatus(client, txHash);
+    currentSwapStatus = Enum.Parse<SwapStatus>(swapStatus.Status);
+    Console.WriteLine($"Swap status: {JsonConvert.SerializeObject(swapStatus, Formatting.Indented)}");
+    await Task.Delay(5000);
+}
+
 
 // var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+awsless@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
 
-var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
+// var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
 
-// Reset InAppWallet (optional step for testing login flow)
-if (await inAppWallet.IsConnected())
-{
-    await inAppWallet.Disconnect();
-}
+// // Reset InAppWallet (optional step for testing login flow)
+// if (await inAppWallet.IsConnected())
+// {
+//     await inAppWallet.Disconnect();
+// }
 
-// Relog if InAppWallet not logged in
-if (!await inAppWallet.IsConnected())
-{
-    var address = await inAppWallet.LoginWithOauth(
-        isMobile: false,
-        (url) =>
-        {
-            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-            _ = Process.Start(psi);
-        },
-        "thirdweb://",
-        new InAppWalletBrowser()
-    );
-    Console.WriteLine($"InAppWallet address: {address}");
-}
+// // Relog if InAppWallet not logged in
+// if (!await inAppWallet.IsConnected())
+// {
+//     var address = await inAppWallet.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         "thirdweb://",
+//         new InAppWalletBrowser()
+//     );
+//     Console.WriteLine($"InAppWallet address: {address}");
+// }
 
 // await inAppWallet.SendOTP();
 // Console.WriteLine("Please submit the OTP.");

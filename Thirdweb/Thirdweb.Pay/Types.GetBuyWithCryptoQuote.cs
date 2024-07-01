@@ -63,6 +63,12 @@ namespace Thirdweb.Pay
         public string ToAmountWei { get; set; }
 
         /// <summary>
+        /// The address of the recipient.
+        /// </summary>
+        [JsonProperty("toAddress")]
+        public string ToAddress { get; set; }
+
+        /// <summary>
         /// The maximum slippage in basis points.
         /// </summary>
         [JsonProperty("maxSlippageBPS")]
@@ -87,6 +93,7 @@ namespace Thirdweb.Pay
             BigInteger? toChainId = null,
             string toAmount = null,
             string toAmountWei = null,
+            string toAddress = null,
             double? maxSlippageBPS = null,
             string intentId = null
         )
@@ -100,6 +107,7 @@ namespace Thirdweb.Pay
             ToTokenAddress = toTokenAddress;
             ToAmount = toAmount;
             ToAmountWei = toAmountWei;
+            ToAddress = toAddress;
             MaxSlippageBPS = maxSlippageBPS;
             IntentId = intentId;
         }

@@ -27,6 +27,7 @@ namespace Thirdweb.Pay
                 { "toTokenAddress", buyWithCryptoParams.ToTokenAddress },
                 { "toAmount", buyWithCryptoParams.ToAmount },
                 { "toAmountWei", buyWithCryptoParams.ToAmountWei },
+                { "toAddress", buyWithCryptoParams.ToAddress },
                 { "maxSlippageBPS", buyWithCryptoParams.MaxSlippageBPS?.ToString() },
                 { "intentId", buyWithCryptoParams.IntentId }
             };
