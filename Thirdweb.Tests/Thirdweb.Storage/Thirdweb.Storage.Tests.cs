@@ -1,11 +1,11 @@
-﻿namespace Thirdweb.Tests;
+﻿namespace Thirdweb.Tests.Storage;
 
 public class StorageTests : BaseTests
 {
     public StorageTests(ITestOutputHelper output)
         : base(output) { }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task DownloadTest_SecretKey()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -13,7 +13,7 @@ public class StorageTests : BaseTests
         Assert.NotNull(res);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task DownloadTest_Client_BundleId()
     {
         var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
@@ -21,7 +21,7 @@ public class StorageTests : BaseTests
         Assert.NotNull(res);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task DownloadTest_Deserialization()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -30,7 +30,7 @@ public class StorageTests : BaseTests
         Assert.NotEmpty(res);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task DownloadTest_NullUri()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -38,7 +38,7 @@ public class StorageTests : BaseTests
         Assert.Equal("uri", exception.ParamName);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task DownloadTest_ThirdwebIPFS()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -46,7 +46,7 @@ public class StorageTests : BaseTests
         Assert.NotNull(res);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task DownloadTest_Bytes()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -55,7 +55,7 @@ public class StorageTests : BaseTests
         Assert.NotEmpty(res);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task DownloadTest_400()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -64,7 +64,7 @@ public class StorageTests : BaseTests
         Assert.Contains("400", exception.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task DownloadTest_Timeout()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 0));
@@ -72,7 +72,7 @@ public class StorageTests : BaseTests
         Assert.Contains("A task was canceled", exception.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task UploadTest_SecretKey()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -82,7 +82,7 @@ public class StorageTests : BaseTests
         Assert.StartsWith($"https://{client.ClientId}.ipfscdn.io/ipfs/", res.PreviewUrl);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task UploadTest_Client_BundleId()
     {
         var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
@@ -92,7 +92,7 @@ public class StorageTests : BaseTests
         Assert.StartsWith($"https://{client.ClientId}.ipfscdn.io/ipfs/", res.PreviewUrl);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task UploadTest_NullPath()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -100,7 +100,7 @@ public class StorageTests : BaseTests
         Assert.Equal("path", exception.ParamName);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task UploadTest_401()
     {
         var client = ThirdwebClient.Create(clientId: "invalid", bundleId: "hello");
@@ -111,7 +111,7 @@ public class StorageTests : BaseTests
         Assert.Contains("401", exception.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task UploadTest_RawBytes_Null()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -119,7 +119,7 @@ public class StorageTests : BaseTests
         Assert.Equal("rawBytes", exception.ParamName);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task UploadTest_RawBytes_Empty()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);

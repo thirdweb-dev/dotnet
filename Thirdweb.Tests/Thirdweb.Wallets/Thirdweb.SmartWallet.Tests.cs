@@ -1,7 +1,7 @@
 using System.Numerics;
 using Nethereum.Hex.HexTypes;
 
-namespace Thirdweb.Tests;
+namespace Thirdweb.Tests.Wallets;
 
 public class SmartWalletTests : BaseTests
 {
@@ -16,14 +16,14 @@ public class SmartWalletTests : BaseTests
         return smartAccount;
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Initialization_Success()
     {
         var account = await GetSmartAccount();
         Assert.NotNull(await account.GetAddress());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Initialization_WithoutFactory_Success()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -32,7 +32,7 @@ public class SmartWalletTests : BaseTests
         Assert.NotNull(await smartAccount.GetAddress());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Initialization_Fail()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -44,7 +44,7 @@ public class SmartWalletTests : BaseTests
         Assert.Equal("SmartAccount.Connect: Personal account must be connected.", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task ForceDeploy_Success()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -54,7 +54,7 @@ public class SmartWalletTests : BaseTests
         Assert.True(await smartAccount.IsDeployed());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task IsDeployed_True()
     {
         var account = await GetSmartAccount();
@@ -62,7 +62,7 @@ public class SmartWalletTests : BaseTests
         Assert.True(await account.IsDeployed());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task IsDeployed_False()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -77,7 +77,7 @@ public class SmartWalletTests : BaseTests
         Assert.False(await smartAccount.IsDeployed());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SendTransaction_Success()
     {
         var account = await GetSmartAccount();
@@ -92,7 +92,7 @@ public class SmartWalletTests : BaseTests
         Assert.NotNull(tx);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SendTransaction_ClientBundleId_Success()
     {
         var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
@@ -109,7 +109,7 @@ public class SmartWalletTests : BaseTests
         Assert.NotNull(tx);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SendTransaction_Fail()
     {
         var account = await GetSmartAccount();
@@ -117,7 +117,7 @@ public class SmartWalletTests : BaseTests
         Assert.Equal("SmartAccount.SendTransaction: Transaction input is required.", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task GetAddress()
     {
         var account = await GetSmartAccount();
@@ -125,7 +125,7 @@ public class SmartWalletTests : BaseTests
         Assert.NotNull(address);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task GetPersonalAccount()
     {
         var account = await GetSmartAccount();
@@ -134,7 +134,7 @@ public class SmartWalletTests : BaseTests
         _ = Assert.IsType<PrivateKeyWallet>(personalAccount);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task GetAddress_WithOverride()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -150,7 +150,7 @@ public class SmartWalletTests : BaseTests
         Assert.Equal("0x75A4e181286F5767c38dFBE65fe1Ad4793aCB642", address);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task PersonalSign() // This is the only different signing mechanism for smart wallets, also tests isValidSignature
     {
         var account = await GetSmartAccount();
@@ -158,7 +158,7 @@ public class SmartWalletTests : BaseTests
         Assert.NotNull(sig);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task IsValidSiganture_Invalid()
     {
         var account = await GetSmartAccount();
@@ -169,7 +169,7 @@ public class SmartWalletTests : BaseTests
         Assert.False(res);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task CreateSessionKey()
     {
         var account = await GetSmartAccount();
@@ -186,7 +186,7 @@ public class SmartWalletTests : BaseTests
         Assert.NotNull(receipt.TransactionHash);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task AddAdmin()
     {
         var account = await GetSmartAccount();
@@ -195,7 +195,7 @@ public class SmartWalletTests : BaseTests
         Assert.NotNull(receipt.TransactionHash);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task RemoveAdmin()
     {
         var account = await GetSmartAccount();
@@ -204,7 +204,7 @@ public class SmartWalletTests : BaseTests
         Assert.NotNull(receipt.TransactionHash);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task IsConnected()
     {
         var account = await GetSmartAccount();
@@ -214,7 +214,7 @@ public class SmartWalletTests : BaseTests
         Assert.False(await account.IsConnected());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Disconnect()
     {
         var account = await GetSmartAccount();

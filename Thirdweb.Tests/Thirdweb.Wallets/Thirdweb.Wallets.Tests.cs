@@ -1,6 +1,6 @@
 ﻿using Nethereum.Hex.HexTypes;
 
-namespace Thirdweb.Tests;
+namespace Thirdweb.Tests.Wallets;
 
 public class WalletTests : BaseTests
 {
@@ -15,14 +15,14 @@ public class WalletTests : BaseTests
         return smartAccount;
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task GetAddress()
     {
         var wallet = await GetAccount();
         Assert.Equal(await wallet.GetAddress(), await wallet.GetAddress());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task EthSignRaw()
     {
         var wallet = await GetAccount();
@@ -31,7 +31,7 @@ public class WalletTests : BaseTests
         Assert.NotNull(signature);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task EthSign()
     {
         var wallet = await GetAccount();
@@ -40,7 +40,7 @@ public class WalletTests : BaseTests
         Assert.NotNull(signature);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task PersonalSignRaw()
     {
         var wallet = await GetAccount();
@@ -49,7 +49,7 @@ public class WalletTests : BaseTests
         Assert.NotNull(signature);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task PersonalSign()
     {
         var wallet = await GetAccount();
@@ -58,7 +58,7 @@ public class WalletTests : BaseTests
         Assert.NotNull(signature);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTypedDataV4()
     {
         var wallet = await GetAccount();
@@ -68,7 +68,7 @@ public class WalletTests : BaseTests
         Assert.NotNull(signature);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTypedDataV4_Typed()
     {
         var wallet = await GetAccount();
@@ -108,7 +108,7 @@ public class WalletTests : BaseTests
         Assert.Equal(gen2, signature2);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction()
     {
         var wallet = await GetAccount();

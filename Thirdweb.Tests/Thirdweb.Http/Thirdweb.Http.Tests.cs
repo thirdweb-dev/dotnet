@@ -1,7 +1,6 @@
-﻿using System.Numerics;
-using System.Text;
+﻿using System.Text;
 
-namespace Thirdweb.Tests
+namespace Thirdweb.Tests.Http
 {
     public class HttpTests : BaseTests
     {
@@ -10,7 +9,7 @@ namespace Thirdweb.Tests
 
         #region ThirdwebHttpClient
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task GetAsync_ShouldReturnSuccessResponse()
         {
             // Arrange
@@ -25,7 +24,7 @@ namespace Thirdweb.Tests
             Assert.Equal(200, response.StatusCode);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task PostAsync_ShouldReturnSuccessResponse()
         {
             // Arrange
@@ -41,7 +40,7 @@ namespace Thirdweb.Tests
             Assert.Equal(201, response.StatusCode);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void SetHeaders_ShouldAddHeaders()
         {
             // Arrange
@@ -56,7 +55,7 @@ namespace Thirdweb.Tests
             Assert.Equal("Bearer token", httpClient.Headers["Authorization"]);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void ClearHeaders_ShouldRemoveAllHeaders()
         {
             // Arrange
@@ -71,7 +70,7 @@ namespace Thirdweb.Tests
             Assert.Empty(httpClient.Headers);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void AddHeader_ShouldAddHeader()
         {
             // Arrange
@@ -85,7 +84,7 @@ namespace Thirdweb.Tests
             Assert.Equal("Bearer token", httpClient.Headers["Authorization"]);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void RemoveHeader_ShouldRemoveHeader()
         {
             // Arrange
@@ -99,7 +98,7 @@ namespace Thirdweb.Tests
             Assert.Empty(httpClient.Headers);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task PutAsync_ShouldThrowNotImplementedException()
         {
             // Arrange
@@ -111,7 +110,7 @@ namespace Thirdweb.Tests
             _ = await Assert.ThrowsAsync<NotImplementedException>(() => httpClient.PutAsync(requestUri, content));
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task DeleteAsync_ShouldThrowNotImplementedException()
         {
             // Arrange
@@ -122,7 +121,7 @@ namespace Thirdweb.Tests
             _ = await Assert.ThrowsAsync<NotImplementedException>(() => httpClient.DeleteAsync(requestUri));
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void Dispose_ShouldDisposeHttpClient()
         {
             // Arrange
@@ -141,7 +140,7 @@ namespace Thirdweb.Tests
 
         #region ThirdwebHttpContent
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task Constructor_WithString_ShouldInitializeContent()
         {
             // Arrange
@@ -156,7 +155,7 @@ namespace Thirdweb.Tests
             Assert.Equal(expectedBytes, resultBytes);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task Constructor_WithByteArray_ShouldInitializeContent()
         {
             // Arrange
@@ -170,7 +169,7 @@ namespace Thirdweb.Tests
             Assert.Equal(contentBytes, resultBytes);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task Constructor_WithStream_ShouldInitializeContent()
         {
             // Arrange
@@ -186,7 +185,7 @@ namespace Thirdweb.Tests
             Assert.Equal(expectedBytes, resultBytes);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task ReadAsStringAsync_ShouldReturnContentAsString()
         {
             // Arrange
@@ -200,7 +199,7 @@ namespace Thirdweb.Tests
             Assert.Equal(contentString, resultString);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task ReadAsByteArrayAsync_ShouldReturnContentAsByteArray()
         {
             // Arrange
@@ -214,7 +213,7 @@ namespace Thirdweb.Tests
             Assert.Equal(contentBytes, resultBytes);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task ReadAsStreamAsync_ShouldReturnContentAsStream()
         {
             // Arrange
@@ -237,21 +236,21 @@ namespace Thirdweb.Tests
 
 #nullable disable
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void Constructor_WithNullString_ShouldThrowArgumentNullException()
         {
             // Arrange, Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() => new ThirdwebHttpContent((string)null));
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void Constructor_WithNullByteArray_ShouldThrowArgumentNullException()
         {
             // Arrange, Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() => new ThirdwebHttpContent((byte[])null));
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void Constructor_WithNullStream_ShouldThrowArgumentNullException()
         {
             // Arrange, Act & Assert
@@ -264,7 +263,7 @@ namespace Thirdweb.Tests
 
         #region ThirdwebHttpResponseMessage
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void Constructor_ShouldInitializeProperties()
         {
             // Arrange
@@ -281,7 +280,7 @@ namespace Thirdweb.Tests
             Assert.Equal(isSuccessStatusCode, responseMessage.IsSuccessStatusCode);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void EnsureSuccessStatusCode_ShouldReturnSelfOnSuccess()
         {
             // Arrange
@@ -297,7 +296,7 @@ namespace Thirdweb.Tests
             Assert.Equal(responseMessage, result);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public async Task EnsureSuccessStatusCode_ShouldThrowExceptionOnFailure()
         {
             // Arrange
@@ -312,7 +311,7 @@ namespace Thirdweb.Tests
             Assert.Equal($"Request failed with status code {statusCode} and content: {contentString}", exception.Message);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void StatusCode_ShouldSetAndGet()
         {
             // Arrange
@@ -325,7 +324,7 @@ namespace Thirdweb.Tests
             Assert.Equal(404, responseMessage.StatusCode);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void Content_ShouldSetAndGet()
         {
             // Arrange
@@ -340,7 +339,7 @@ namespace Thirdweb.Tests
             Assert.Equal(newContent, responseMessage.Content);
         }
 
-        [Fact]
+        [Fact(Timeout = 120000)]
         public void IsSuccessStatusCode_ShouldSetAndGet()
         {
             // Arrange

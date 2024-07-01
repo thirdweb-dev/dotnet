@@ -1,26 +1,26 @@
 ﻿using System.Numerics;
 
-namespace Thirdweb.Tests;
+namespace Thirdweb.Tests.Utilities;
 
 public class UtilsTests : BaseTests
 {
     public UtilsTests(ITestOutputHelper output)
         : base(output) { }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ComputeClientIdFromSecretKey()
     {
         Assert.True(Utils.ComputeClientIdFromSecretKey(_secretKey).Length == 32);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void HexConcat()
     {
         var hexStrings = new string[] { "0x1234", "0x5678", "0x90AB" };
         Assert.Equal("0x1234567890AB", Utils.HexConcat(hexStrings));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void HashPrefixedMessage()
     {
         var messageStr = "Hello, World!";
@@ -31,7 +31,7 @@ public class UtilsTests : BaseTests
         Assert.Equal("0xc8ee0d506e864589b799a645ddb88b08f5d39e8049f9f702b3b61fa15e55fc73", hashStr);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void HashMessage()
     {
         var messageStr = "Hello, World!";
@@ -42,14 +42,14 @@ public class UtilsTests : BaseTests
         Assert.Equal("0xacaf3289d7b601cbd114fb36c4d29c85bbfd5e133f14cb355c3fd8d99367964f", hashStr);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void BytesToHex()
     {
         var bytes = new byte[] { 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF };
         Assert.Equal("0x1234567890abcdef", Utils.BytesToHex(bytes));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void HexToBytes()
     {
         var hex = "0x1234567890abcdef";
@@ -57,7 +57,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(new byte[] { 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF }, bytes);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void StringToHex()
     {
         var str = "Hello, World!";
@@ -65,7 +65,7 @@ public class UtilsTests : BaseTests
         Assert.Equal("0x48656c6c6f2c20576f726c6421", hex);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void HexToString()
     {
         var hex = "0x48656c6c6f2c20576f726c6421";
@@ -73,7 +73,7 @@ public class UtilsTests : BaseTests
         Assert.Equal("Hello, World!", str);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GetUnixTimeStampNow()
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -81,7 +81,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(now, now2);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GetUnixTimeStampIn10Years()
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -91,7 +91,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(tenYearsFromNow, tenYearsFromNow2);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ReplaceIPFS()
     {
         var uri = "ipfs://QmXn1b6Q7";
@@ -109,7 +109,7 @@ public class UtilsTests : BaseTests
         Assert.Equal("https://ipfs.io/ipfs/QmXn1b6Q7", replaced);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToWei_ConvertsCorrectly()
     {
         var eth = "1.5";
@@ -117,21 +117,21 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedWei, Utils.ToWei(eth));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToWei_ThrowsOnInvalidInput()
     {
         var invalidEth = "abc";
         _ = Assert.Throws<ArgumentException>(() => Utils.ToWei(invalidEth));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToWei_ThrowsExceptionForInvalidInput()
     {
         var invalidEth = "invalid";
         _ = Assert.Throws<ArgumentException>(() => Utils.ToWei(invalidEth));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToWei_ConvertsNegativeValue()
     {
         var negativeEth = "-1.5";
@@ -139,7 +139,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedWei, Utils.ToWei(negativeEth));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToWei_ConvertsLargeFloat()
     {
         var largeEth = "1234567890.123456789";
@@ -147,7 +147,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedWei, Utils.ToWei(largeEth));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToEth_ConvertsCorrectly()
     {
         var wei = "1500000000000000000";
@@ -155,7 +155,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedEth, Utils.ToEth(wei));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToEth_WithCommas()
     {
         var wei = "1234500000000000000000";
@@ -163,21 +163,21 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedEth, Utils.ToEth(wei, 4, true));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToEth_ConvertsZeroWei()
     {
         var zeroWei = "0";
         Assert.Equal("0.0000", Utils.ToEth(zeroWei));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToEth_ConvertsSmallWei()
     {
         var smallWei = "1234";
         Assert.Equal("0.0000", Utils.ToEth(smallWei));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void FormatERC20_NoDecimalsNoCommas()
     {
         var wei = "1500000000000000000";
@@ -185,7 +185,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedEth, Utils.FormatERC20(wei, 0));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void FormatERC20_LargeNumberWithCommas()
     {
         var wei = "1000000000000000000000000";
@@ -193,28 +193,28 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedEth, Utils.FormatERC20(wei, 0, 18, true));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void FormatERC20_ConvertsZeroWei()
     {
         var zeroWei = "0";
         Assert.Equal("0", Utils.FormatERC20(zeroWei, 0));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void FormatERC20_SmallFractionalWei()
     {
         var fractionalWei = "10";
         Assert.Equal("0.0000", Utils.FormatERC20(fractionalWei, 4));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void FormatERC20_ThrowsOnInvalidWei()
     {
         var invalidWei = "not_a_number";
         Assert.Throws<ArgumentException>(() => Utils.FormatERC20(invalidWei, 4));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_ReturnsCorrectValue()
     {
         var loginPayloadData = new LoginPayloadData
@@ -234,7 +234,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedSIWE, siwe);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_WithAllOptional_ReturnsCorrectValue()
     {
         var loginPayloadData = new LoginPayloadData
@@ -257,7 +257,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedSIWE, siwe);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_WithResources_ReturnsCorrectValue()
     {
         var loginPayloadData = new LoginPayloadData
@@ -278,14 +278,14 @@ public class UtilsTests : BaseTests
         Assert.Equal(expectedSIWE, siwe);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_ThrowsOnNullLoginPayloadData()
     {
         LoginPayloadData? loginPayloadData = null;
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_ThrowsOnNullDomain()
     {
         var loginPayloadData = new LoginPayloadData
@@ -302,7 +302,7 @@ public class UtilsTests : BaseTests
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_ThrowsOnNullAddress()
     {
         var loginPayloadData = new LoginPayloadData
@@ -319,7 +319,7 @@ public class UtilsTests : BaseTests
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_ThrowsOnNullVersion()
     {
         var loginPayloadData = new LoginPayloadData
@@ -336,7 +336,7 @@ public class UtilsTests : BaseTests
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_ThrowsOnNullChainId()
     {
         var loginPayloadData = new LoginPayloadData
@@ -353,7 +353,7 @@ public class UtilsTests : BaseTests
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_ThrowsOnNullNonce()
     {
         var loginPayloadData = new LoginPayloadData
@@ -370,7 +370,7 @@ public class UtilsTests : BaseTests
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void GenerateSIWE_ThrowsOnNullIssuedAt()
     {
         var loginPayloadData = new LoginPayloadData
@@ -387,7 +387,7 @@ public class UtilsTests : BaseTests
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void ToChecksumAddress_ReturnsCorrectValue()
     {
         var address = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed".ToLower();
@@ -395,7 +395,7 @@ public class UtilsTests : BaseTests
         Assert.Equal("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", checksumAddress);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void AdjustDecimals_ReturnsCorrectValue()
     {
         var value = new BigInteger(1500000000000000000); // 1.5 ETH
@@ -403,7 +403,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(new BigInteger(1), adjustedValue);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void AdjustDecimals_ReturnsCorrectValue2()
     {
         var value = new BigInteger(1500000000000000000); // 1.5 ETH
@@ -412,7 +412,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(new BigInteger(150), adjustedValue);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void AdjustDecimals_ReturnsCorrectValue3()
     {
         var value = new BigInteger(1500000000000000000); // 1.5 ETH
@@ -420,7 +420,7 @@ public class UtilsTests : BaseTests
         Assert.Equal(new BigInteger(1500000000000000000), adjustedValue);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void AdjustDecimals_ReturnsCorrectValue4()
     {
         var value = new BigInteger(1500000000000000000); // 1.5 ETH

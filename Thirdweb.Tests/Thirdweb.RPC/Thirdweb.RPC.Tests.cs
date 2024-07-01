@@ -1,14 +1,14 @@
 ﻿using System.Numerics;
 using System.Reflection;
 
-namespace Thirdweb.Tests;
+namespace Thirdweb.Tests.RPC;
 
 public class RpcTests : BaseTests
 {
     public RpcTests(ITestOutputHelper output)
         : base(output) { }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task GetBlockNumber()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 10000));
@@ -18,7 +18,7 @@ public class RpcTests : BaseTests
         Assert.StartsWith("0x", blockNumber);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task TestAuth()
     {
         var client = ThirdwebClient.Create(clientId: "hi", fetchTimeoutOptions: new TimeoutOptions(rpc: 60000));
@@ -26,7 +26,7 @@ public class RpcTests : BaseTests
         _ = await Assert.ThrowsAsync<HttpRequestException>(async () => await rpc.SendRequestAsync<string>("eth_blockNumber"));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task TestTimeout()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 0));
@@ -34,7 +34,7 @@ public class RpcTests : BaseTests
         _ = await Assert.ThrowsAsync<TimeoutException>(async () => await rpc.SendRequestAsync<string>("eth_chainId"));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task TestBatch()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -52,7 +52,7 @@ public class RpcTests : BaseTests
         Assert.All(results, result => Assert.Equal(results[0], result));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task TestDeserialization()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -61,7 +61,7 @@ public class RpcTests : BaseTests
         Assert.Equal("Failed to deserialize RPC response.", exception.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void TestBadInitialization()
     {
         var clientException = Assert.Throws<ArgumentNullException>(() => ThirdwebRPC.GetRpcInstance(null, 0));
@@ -70,7 +70,7 @@ public class RpcTests : BaseTests
         Assert.Equal("Invalid Chain ID", chainIdException.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task TestBundleIdRpc()
     {
         var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
@@ -80,7 +80,7 @@ public class RpcTests : BaseTests
         Assert.StartsWith("0x", blockNumber);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task TestRpcError()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -89,7 +89,7 @@ public class RpcTests : BaseTests
         Assert.Contains("RPC Error for request", exception.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task TestCache()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -100,7 +100,7 @@ public class RpcTests : BaseTests
         Assert.Equal(blockNumber1, blockNumber2);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task TestBatchSizeLimit()
     {
         var client = ThirdwebClient.Create(secretKey: _secretKey);
@@ -115,7 +115,7 @@ public class RpcTests : BaseTests
         Assert.All(results, result => Assert.StartsWith("0x", result));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void Timer_StartsAndStops()
     {
         var timer = new ThirdwebRPCTimer(TimeSpan.FromMilliseconds(100));
@@ -126,7 +126,7 @@ public class RpcTests : BaseTests
         Assert.False(IsTimerRunning(timer));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task Timer_ElapsedEventFires()
     {
         var timer = new ThirdwebRPCTimer(TimeSpan.FromMilliseconds(100));
@@ -141,7 +141,7 @@ public class RpcTests : BaseTests
         timer.Stop();
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public void Timer_DisposeStopsTimer()
     {
         var timer = new ThirdwebRPCTimer(TimeSpan.FromMilliseconds(100));

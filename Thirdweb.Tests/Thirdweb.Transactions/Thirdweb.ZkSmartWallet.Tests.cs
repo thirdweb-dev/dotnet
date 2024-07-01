@@ -1,4 +1,4 @@
-namespace Thirdweb.Tests;
+namespace Thirdweb.Tests.Wallets;
 
 public class ZkSmartWalletTests : BaseTests
 {
@@ -17,14 +17,14 @@ public class ZkSmartWalletTests : BaseTests
         return smartAccount;
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task GetAddress_Success()
     {
         var account = await GetSmartAccount();
         Assert.NotNull(await account.GetAddress());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task PersonalSign_Success()
     {
         var account = await GetSmartAccount(zkChainId: 302);
@@ -34,7 +34,7 @@ public class ZkSmartWalletTests : BaseTests
         Assert.True(signature.Length > 0);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task CreateSessionKey_Throws()
     {
         var account = await GetSmartAccount();
@@ -52,28 +52,28 @@ public class ZkSmartWalletTests : BaseTests
         );
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task AddAdmin_Throws()
     {
         var account = await GetSmartAccount();
         _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => await account.AddAdmin(Constants.ADDRESS_ZERO));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task RemoveAdmin_Throws()
     {
         var account = await GetSmartAccount();
         _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => await account.RemoveAdmin(Constants.ADDRESS_ZERO));
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task IsDeployed_ReturnsTrue()
     {
         var account = await GetSmartAccount();
         Assert.True(await account.IsDeployed());
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SendGaslessZkTx_Success()
     {
         var account = await GetSmartAccount();
@@ -90,7 +90,7 @@ public class ZkSmartWalletTests : BaseTests
         Assert.True(hash.Length == 66);
     }
 
-    [Fact]
+    [Fact(Timeout = 120000)]
     public async Task SendGaslessZkTx_ZkCandy_Success()
     {
         var account = await GetSmartAccount(zkChainId: 302);
