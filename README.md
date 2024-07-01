@@ -7,7 +7,7 @@
 
 ## Overview
 
-The Thirdweb .NET SDK is a comprehensive library that allows developers to interact with the blockchain using the .NET framework. It simplifies the integration of Web3 functionality into your .NET applications with a robust set of methods and classes.
+The Thirdweb .NET SDK is a comprehensive library that allows developers to interact with the blockchain using the .NET framework. It simplifies the integration of Web3 functionality into your .NET applications with a robust set of methods and classes and a minimal amount of dependencies.
 
 
 
@@ -15,13 +15,15 @@ The Thirdweb .NET SDK is a comprehensive library that allows developers to inter
 
 - **Connect to any EVM network:** Easily connect to Ethereum and other EVM-compatible networks.
 - **Query blockchain data:** Use Thirdweb RPC to fetch blockchain data efficiently.
-- **Interact with smart contracts:** Simplified read and write operations for smart contracts.
+- **Interact with smart contracts:** Simplified read and write operations for smart contracts, with various out-of-the-box extensions provided.
 - **In-App Wallets:** Integrate user-friendly wallets within your applications, supporting email, phone, and OAuth login.
 - **Account Abstraction:** Simplify complex account management tasks with smart wallets.
 - **Gasless Transactions:** Enable transactions without requiring users to pay gas fees.
 - **Storage Solutions:** Download and upload files using IPFS.
 - **Transaction Builder:** Easily build and send transactions.
 - **Session Keys:** Advanced control for smart wallets to manage permissions and session durations.
+- **Thirdweb Pay:** Easily integrate fiat onramps and cross-chain crypto purchases.
+- **Unity Compatibility**: This SDK has been tested successfully in Unity 2022.3+ (Standalone, Mobile and WebGL).
 - **Godot Compatibility**: This SDK has been tested successfully in [Godot .NET](https://portal.thirdweb.com/dotnet/godot)
 
 ## Installation
@@ -37,6 +39,8 @@ dotnet add package Thirdweb
 ## Usage
 
 You can access the full documentation at https://portal.thirdweb.com/dotnet
+
+Full API reference also available [here](https://thirdweb-dev.github.io/thirdweb-dotnet/).
 
 ### Getting Started
 
@@ -73,6 +77,25 @@ Console.WriteLine($"Contract read result: {readResult}");
 var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
 Console.WriteLine($"Contract write result: {writeResult}");
 ```
+
+**Using Extensions**
+
+Thirdweb comes with very handy prebuilt extensions so you don't have to rely on dynamic parameters, available for any contract object.
+
+```csharp
+// ERC20 balanceOf
+var balance = await contract.ERC20_BalanceOf(ownerAddress: "0xOwner");
+
+// DropERC20 (Thirdweb Prebuilt Contract) claim
+var claimTx = await contract.DropERC20_Claim(wallet: privateKeyWallet, receiverAddress: "0xReceiver", amount: "1.5");
+
+// Miscellaneous
+var nativeContractBalance = await contract.GetBalance(); // Can also take in ERC20 address
+var nfts = await contract.ERC721_GetAllNFTs(); // Fetches all NFTs of a contract
+var nftImageBytes = await nfts[0].GetNFTImageBytes(client); // NFT type extension to get image bytes
+```
+
+Extensions exist for various common standards, thirdweb-specific prebuilt contracts and much more!
 
 ### Wallet Interactions
 
@@ -176,6 +199,9 @@ Private key wallets allow you to interact with the blockchain using a private ke
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
 Console.WriteLine($"PrivateKey Wallet: {await privateKeyWallet.GetAddress()}");
+
+// or generate a private key wallet
+var generatedPrivateKeyWallet = await PrivateKeyWallet.Generate(client);
 ```
 
 ### Advanced Features
@@ -241,6 +267,77 @@ Console.WriteLine($"Download result: {downloadResult}");
 
 var uploadResult = await ThirdwebStorage.Upload(client: client, path: "path/to/file");
 Console.WriteLine($"Upload result preview: {uploadResult.PreviewUrl}");
+```
+
+### Thirdweb Pay
+
+Easily integrate fiat onramps and cross-chain crypto purchases.
+
+**Buy With Crypto**
+
+```csharp
+// Swap Polygon MATIC to Base ETH
+var swapQuoteParams = new BuyWithCryptoQuoteParams(
+    fromAddress: walletAddress,
+    fromChainId: 137,
+    fromTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
+    toTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
+    toChainId: 8453,
+    toAmount: "0.1"
+);
+var swapQuote = await ThirdwebPay.GetBuyWithCryptoQuote(client, swapQuoteParams);
+Console.WriteLine($"Swap quote: {JsonConvert.SerializeObject(swapQuote, Formatting.Indented)}");
+
+// Initiate swap
+var txHash = await ThirdwebPay.BuyWithCrypto(wallet: privateKeyWallet, buyWithCryptoQuote: swapQuote);
+Console.WriteLine($"Swap transaction hash: {txHash}");
+
+// Poll for status
+var currentSwapStatus = SwapStatus.NONE;
+while (currentSwapStatus is not SwapStatus.COMPLETED and not SwapStatus.FAILED)
+{
+    var swapStatus = await ThirdwebPay.GetBuyWithCryptoStatus(client, txHash);
+    currentSwapStatus = Enum.Parse<SwapStatus>(swapStatus.Status);
+    Console.WriteLine($"Swap status: {JsonConvert.SerializeObject(swapStatus, Formatting.Indented)}");
+    await Task.Delay(5000);
+}
+```
+
+**Buy With Fiat**
+
+```csharp
+// Find out more about supported FIAT currencies
+var supportedCurrencies = await ThirdwebPay.GetBuyWithFiatCurrencies(client);
+Console.WriteLine($"Supported currencies: {JsonConvert.SerializeObject(supportedCurrencies, Formatting.Indented)}");
+
+// Get a Buy with Fiat quote
+var fiatQuoteParams = new BuyWithFiatQuoteParams(
+    fromCurrencySymbol: "USD", 
+    toAddress: walletAddress, 
+    toChainId: "137", 
+    toTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS, 
+    toAmount: "20"
+);
+var fiatOnrampQuote = await ThirdwebPay.GetBuyWithFiatQuote(client, fiatQuoteParams);
+Console.WriteLine($"Fiat onramp quote: {JsonConvert.SerializeObject(fiatOnrampQuote, Formatting.Indented)}");
+
+// Get a Buy with Fiat link
+var onRampLink = ThirdwebPay.BuyWithFiat(fiatOnrampQuote);
+Console.WriteLine($"Fiat onramp link: {onRampLink}");
+
+// Open onramp link to start the process (use your framework's version of this)
+var psi = new ProcessStartInfo { FileName = onRampLink, UseShellExecute = true };
+_ = Process.Start(psi);
+
+// Poll for status
+var currentOnRampStatus = OnRampStatus.NONE;
+while (currentOnRampStatus is not OnRampStatus.ON_RAMP_TRANSFER_COMPLETED and not OnRampStatus.ON_RAMP_TRANSFER_FAILED)
+{
+    var onRampStatus = await ThirdwebPay.GetBuyWithFiatStatus(client, fiatOnrampQuote.IntentId);
+    currentOnRampStatus = Enum.Parse<OnRampStatus>(onRampStatus.Status);
+    Console.WriteLine($"Fiat onramp status: {JsonConvert.SerializeObject(onRampStatus, Formatting.Indented)}");
+    await Task.Delay(5000);
+}
 ```
 
 For more information, please refer to the [official documentation](https://portal.thirdweb.com/dotnet).
