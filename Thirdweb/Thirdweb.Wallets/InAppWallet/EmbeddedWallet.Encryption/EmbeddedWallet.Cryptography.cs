@@ -117,7 +117,7 @@ namespace Thirdweb.EWS
             return await Task.Run(() =>
                 {
                     var generator = new Pkcs5S2ParametersGenerator(new Sha256Digest());
-                    var keyLength = 256; // 256 bits key size
+                    var keyLength = KEY_SIZE * 8; // will be redivided by 8 internally
                     generator.Init(Encoding.UTF8.GetBytes(password), salt, iterationCount);
                     var keyParam = (KeyParameter)generator.GenerateDerivedMacParameters(keyLength);
                     return keyParam.GetKey();
