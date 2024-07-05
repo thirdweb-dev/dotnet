@@ -316,5 +316,32 @@ namespace Thirdweb
 
             return value;
         }
+
+        public static async Task<ThirdwebChainData> FetchThirdwebChainDataAsync(ThirdwebClient client, BigInteger chainId)
+        {
+            var url = $"https://api.thirdweb-dev.com/v1/chains/{chainId}";
+            try
+            {
+                var response = await client.HttpClient.GetAsync(url);
+                var json = await response.Content.ReadAsStringAsync();
+                var deserializedResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<ThirdwebChainDataResponse>(json);
+
+                return deserializedResponse == null || deserializedResponse.Error != null
+                    ? throw new Exception($"Failed to fetch chain data for chain ID {chainId}. Error: {Newtonsoft.Json.JsonConvert.SerializeObject(deserializedResponse?.Error)}")
+                    : deserializedResponse.Data;
+            }
+            catch (HttpRequestException httpEx)
+            {
+                throw new Exception($"HTTP request error while fetching chain data for chain ID {chainId}: {httpEx.Message}", httpEx);
+            }
+            catch (Newtonsoft.Json.JsonException jsonEx)
+            {
+                throw new Exception($"JSON deserialization error while fetching chain data for chain ID {chainId}: {jsonEx.Message}", jsonEx);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error while fetching chain data for chain ID {chainId}: {ex.Message}", ex);
+            }
+        }
     }
 }

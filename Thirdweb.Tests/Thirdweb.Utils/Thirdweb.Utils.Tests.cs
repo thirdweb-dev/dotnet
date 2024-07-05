@@ -1,11 +1,17 @@
 ﻿using System.Numerics;
+using System.Text.Json;
 
 namespace Thirdweb.Tests.Utilities;
 
 public class UtilsTests : BaseTests
 {
+    private readonly ThirdwebClient _client;
+
     public UtilsTests(ITestOutputHelper output)
-        : base(output) { }
+        : base(output)
+    {
+        _client = ThirdwebClient.Create(secretKey: _secretKey);
+    }
 
     [Fact(Timeout = 120000)]
     public void ComputeClientIdFromSecretKey()
@@ -427,5 +433,47 @@ public class UtilsTests : BaseTests
         // In some fictional world where ETH equivalent has 19 decimals
         var adjustedValue = value.AdjustDecimals(18, 19);
         Assert.Equal(new BigInteger(15000000000000000000), adjustedValue);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task FetchThirdwebChainDataAsync_ReturnsChainData_WhenResponseIsSuccessful()
+    {
+        var chainId = new BigInteger(1);
+
+        var chainData = await Utils.FetchThirdwebChainDataAsync(_client, chainId);
+
+        Assert.NotNull(chainData);
+        _ = Assert.IsType<ThirdwebChainData>(chainData);
+
+        Assert.Equal("Ethereum Mainnet", chainData.Name);
+        Assert.Equal("eth", chainData.ShortName);
+        Assert.Equal(1, chainData.ChainId);
+        Assert.Equal(1, chainData.NetworkId);
+        Assert.Equal("ethereum", chainData.Slug);
+        Assert.Equal("https://ethereum.org", chainData.InfoURL);
+        Assert.NotNull(chainData.Icon);
+        Assert.NotNull(chainData.NativeCurrency);
+        Assert.NotNull(chainData.NativeCurrency.Name);
+        Assert.NotNull(chainData.NativeCurrency.Symbol);
+        Assert.Equal(18, chainData.NativeCurrency.Decimals);
+        Assert.NotNull(chainData.Features);
+        Assert.NotNull(chainData.Faucets);
+        Assert.NotNull(chainData.Explorers);
+        Assert.NotNull(chainData.RedFlags);
+        Assert.Null(chainData.Parent);
+
+        chainId = 42161;
+        chainData = await Utils.FetchThirdwebChainDataAsync(_client, chainId);
+        Assert.NotNull(chainData.Parent);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task FetchThirdwebChainDataAsync_ThrowsException_WhenResponseHasError()
+    {
+        var chainId = BigInteger.Zero;
+
+        var exception = await Assert.ThrowsAsync<Exception>(async () => await Utils.FetchThirdwebChainDataAsync(_client, chainId));
+
+        Assert.Contains("Failed to fetch chain data", exception.Message);
     }
 }
