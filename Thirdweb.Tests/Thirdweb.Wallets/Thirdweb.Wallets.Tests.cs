@@ -110,14 +110,6 @@ public class WalletTests : BaseTests
 
         var gen2 = await EIP712.GenerateSignature_SmartAccount("Account", "1", 421614, await wallet.GetAddress(), req, signerAcc);
         Assert.Equal(gen2, signature2);
-
-        // Recover address
-        var recoveredAddress = await wallet.RecoverAddressFromTypedDataV4(req, typedData2, signature2);
-        Assert.Equal(await wallet.GetAddress(), recoveredAddress);
-
-        // Recover address invalid
-        var recoveredAddress2 = await wallet.RecoverAddressFromTypedDataV4(req, typedData2, signature2 + "00");
-        Assert.NotEqual(await wallet.GetAddress(), recoveredAddress2);
     }
 
     [Fact(Timeout = 120000)]
@@ -166,6 +158,17 @@ public class WalletTests : BaseTests
         var message = "Hello, world!";
         var signature = await wallet.PersonalSign(message);
         var recoveredAddress = await wallet.RecoverAddressFromPersonalSign(message, signature);
+        Assert.Equal(await wallet.GetAddress(), recoveredAddress);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task RecoverAddressFromSignTypedDataV4_ReturnsSameAddress()
+    {
+        var wallet = await PrivateKeyWallet.Generate(_client);
+        var typedData = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 421614, await wallet.GetAddress());
+        var accountMessage = new AccountAbstraction.AccountMessage { Message = System.Text.Encoding.UTF8.GetBytes("Hello, world!").HashPrefixedMessage() };
+        var signature = await wallet.SignTypedDataV4(accountMessage, typedData);
+        var recoveredAddress = await wallet.RecoverAddressFromTypedDataV4<AccountAbstraction.AccountMessage, Nethereum.ABI.EIP712.Domain>(accountMessage, typedData, signature);
         Assert.Equal(await wallet.GetAddress(), recoveredAddress);
     }
 

@@ -66,7 +66,7 @@ namespace Thirdweb
         /// </summary>
         /// <param name="message">The UTF-8 encoded and prefixed message.</param>
         /// <param name="signature">The signature.</param>
-        /// <returns></returns>
+        /// <returns>The recovered address.</returns>
         Task<string> RecoverAddressFromPersonalSign(string message, string signature);
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace Thirdweb
         /// <param name="data">The data to sign.</param>
         /// <param name="typedData">The typed data.</param>
         /// <param name="signature">The signature.</param>
-        /// <returns></returns>
+        /// <returns>The recovered address.</returns>
         Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
             where TDomain : IDomain;
 

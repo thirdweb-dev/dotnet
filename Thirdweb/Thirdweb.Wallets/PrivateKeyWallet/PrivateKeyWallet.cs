@@ -110,8 +110,8 @@ namespace Thirdweb
         /// <summary>
         /// Recovers the address from a signed message using Ethereum's signing method.
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="signature"></param>
+        /// <param name="message">The UTF-8 encoded message.</param>
+        /// <param name="signature">The signature.</param>
         /// <returns>The recovered address.</returns>
         /// <exception cref="ArgumentNullException"></exception>
         public virtual Task<string> RecoverAddressFromEthSign(string message, string signature)
@@ -127,7 +127,7 @@ namespace Thirdweb
             }
 
             var signer = new MessageSigner();
-            var address = signer.HashAndEcRecover(message, signature);
+            var address = signer.EcRecover(Encoding.UTF8.GetBytes(message), signature);
             return Task.FromResult(address);
         }
 
@@ -168,8 +168,8 @@ namespace Thirdweb
         /// <summary>
         /// Recovers the address from a signed message using personal signing.
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="signature"></param>
+        /// <param name="message">The UTF-8 encoded and prefixed message.</param>
+        /// <param name="signature">The signature.</param>
         /// <returns>The recovered address.</returns>
         /// <exception cref="ArgumentNullException"></exception>
         public virtual Task<string> RecoverAddressFromPersonalSign(string message, string signature)
@@ -232,9 +232,9 @@ namespace Thirdweb
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <typeparam name="TDomain"></typeparam>
-        /// <param name="data"></param>
-        /// <param name="typedData"></param>
-        /// <param name="signature"></param>
+        /// <param name="data">The data to sign.</param>
+        /// <param name="typedData">The typed data.</param>
+        /// <param name="signature">The signature.</param>
         /// <returns>The recovered address.</returns>
         /// <exception cref="ArgumentNullException"></exception>
         public virtual Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
