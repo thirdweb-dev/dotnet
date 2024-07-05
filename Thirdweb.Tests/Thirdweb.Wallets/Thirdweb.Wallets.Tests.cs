@@ -201,4 +201,42 @@ public class WalletTests : BaseTests
         var recoveredAddress = await wallet.RecoverAddressFromPersonalSign(message, signature);
         Assert.NotEqual(await wallet.GetAddress(), recoveredAddress);
     }
+
+    [Fact(Timeout = 120000)]
+    public async Task RecoverAddress_AllVariants_NullTests()
+    {
+        var wallet = await PrivateKeyWallet.Generate(_client);
+        var message = "Hello, world!";
+        var signature = await wallet.PersonalSign(message);
+
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await wallet.RecoverAddressFromEthSign(null, signature));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await wallet.RecoverAddressFromEthSign(message, null));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await wallet.RecoverAddressFromPersonalSign(null, signature));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await wallet.RecoverAddressFromPersonalSign(message, null));
+
+#nullable disable
+        var nullData = null as AccountAbstraction.SignerPermissionRequest;
+        var nullTypedData = null as Nethereum.ABI.EIP712.TypedData<Nethereum.ABI.EIP712.Domain>;
+        var nullSig = null as string;
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(
+            async () => await wallet.RecoverAddressFromTypedDataV4<AccountAbstraction.SignerPermissionRequest, Nethereum.ABI.EIP712.Domain>(nullData, nullTypedData, nullSig)
+        );
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(
+            async () =>
+                await wallet.RecoverAddressFromTypedDataV4<AccountAbstraction.SignerPermissionRequest, Nethereum.ABI.EIP712.Domain>(
+                    new AccountAbstraction.SignerPermissionRequest(),
+                    nullTypedData,
+                    nullSig
+                )
+        );
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(
+            async () =>
+                await wallet.RecoverAddressFromTypedDataV4<AccountAbstraction.SignerPermissionRequest, Nethereum.ABI.EIP712.Domain>(
+                    new AccountAbstraction.SignerPermissionRequest(),
+                    new Nethereum.ABI.EIP712.TypedData<Nethereum.ABI.EIP712.Domain>(),
+                    nullSig
+                )
+        );
+#nullable restore
+    }
 }
