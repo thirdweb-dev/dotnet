@@ -470,10 +470,20 @@ public class UtilsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task FetchThirdwebChainDataAsync_ThrowsException_WhenResponseHasError()
     {
-        var chainId = BigInteger.Zero;
+        var chainId = 123124125418928133;
 
         var exception = await Assert.ThrowsAsync<Exception>(async () => await Utils.FetchThirdwebChainDataAsync(_client, chainId));
 
         Assert.Contains("Failed to fetch chain data", exception.Message);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task FetchThirdwebChainDataAsync_ThrowsException_InvalidChainId()
+    {
+        var chainId = BigInteger.Zero;
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await Utils.FetchThirdwebChainDataAsync(_client, chainId));
+
+        Assert.Contains("Invalid chain", exception.Message);
     }
 }

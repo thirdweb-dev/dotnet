@@ -319,11 +319,21 @@ namespace Thirdweb
 
         public static async Task<ThirdwebChainData> FetchThirdwebChainDataAsync(ThirdwebClient client, BigInteger chainId)
         {
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
+            if (chainId <= 0)
+            {
+                throw new ArgumentException("Invalid chain ID.");
+            }
+
             var url = $"https://api.thirdweb-dev.com/v1/chains/{chainId}";
             try
             {
-                var response = await client.HttpClient.GetAsync(url);
-                var json = await response.Content.ReadAsStringAsync();
+                var response = await client.HttpClient.GetAsync(url).ConfigureAwait(false);
+                var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 var deserializedResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<ThirdwebChainDataResponse>(json);
 
                 return deserializedResponse == null || deserializedResponse.Error != null
