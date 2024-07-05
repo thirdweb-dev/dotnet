@@ -40,6 +40,14 @@ namespace Thirdweb
         Task<string> EthSign(string message);
 
         /// <summary>
+        /// Recovers the address from a signed message using Ethereum's signing method.
+        /// </summary>
+        /// <param name="message">The UTF-8 encoded message.</param>
+        /// <param name="signature">The signature.</param>
+        /// <returns>The recovered address.</returns>
+        Task<string> RecoverAddressFromEthSign(string message, string signature);
+
+        /// <summary>
         /// Signs a raw message using personal signing.
         /// </summary>
         /// <param name="rawMessage">The raw message to sign.</param>
@@ -52,6 +60,14 @@ namespace Thirdweb
         /// <param name="message">The message to sign.</param>
         /// <returns>The signed message.</returns>
         Task<string> PersonalSign(string message);
+
+        /// <summary>
+        /// Recovers the address from a signed message using personal signing.
+        /// </summary>
+        /// <param name="message">The UTF-8 encoded and prefixed message.</param>
+        /// <param name="signature">The signature.</param>
+        /// <returns>The recovered address.</returns>
+        Task<string> RecoverAddressFromPersonalSign(string message, string signature);
 
         /// <summary>
         /// Signs typed data (version 4).
@@ -69,6 +85,18 @@ namespace Thirdweb
         /// <param name="typedData">The typed data.</param>
         /// <returns>The signed data.</returns>
         Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
+            where TDomain : IDomain;
+
+        /// <summary>
+        /// Recovers the address from a signed message using typed data (version 4).
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TDomain"></typeparam>
+        /// <param name="data">The data to sign.</param>
+        /// <param name="typedData">The typed data.</param>
+        /// <param name="signature">The signature.</param>
+        /// <returns>The recovered address.</returns>
+        Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
             where TDomain : IDomain;
 
         /// <summary>

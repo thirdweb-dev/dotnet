@@ -395,6 +395,11 @@ namespace Thirdweb
             return _personalAccount.EthSign(message);
         }
 
+        public Task<string> RecoverAddressFromEthSign(string message, string signature)
+        {
+            return _personalAccount.RecoverAddressFromEthSign(message, signature);
+        }
+
         public Task<string> PersonalSign(byte[] rawMessage)
         {
             return _personalAccount.PersonalSign(rawMessage);
@@ -440,6 +445,18 @@ namespace Thirdweb
             else
             {
                 throw new Exception("Smart account could not be deployed, unable to sign message.");
+            }
+        }
+
+        public async Task<string> RecoverAddressFromPersonalSign(string message, string signature)
+        {
+            if (!await IsValidSignature(message, signature))
+            {
+                return await _personalAccount.RecoverAddressFromPersonalSign(message, signature);
+            }
+            else
+            {
+                return await GetAddress();
             }
         }
 
@@ -572,6 +589,12 @@ namespace Thirdweb
             where TDomain : IDomain
         {
             return _personalAccount.SignTypedDataV4(data, typedData);
+        }
+
+        public Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
+            where TDomain : IDomain
+        {
+            return _personalAccount.RecoverAddressFromTypedDataV4(data, typedData, signature);
         }
 
         public async Task<BigInteger> EstimateUserOperationGas(ThirdwebTransactionInput transaction, BigInteger chainId)
