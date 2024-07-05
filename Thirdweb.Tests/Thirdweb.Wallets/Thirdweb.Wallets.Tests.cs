@@ -4,13 +4,17 @@ namespace Thirdweb.Tests.Wallets;
 
 public class WalletTests : BaseTests
 {
+    private ThirdwebClient _client;
+
     public WalletTests(ITestOutputHelper output)
-        : base(output) { }
+        : base(output)
+    {
+        _client = ThirdwebClient.Create(secretKey: _secretKey);
+    }
 
     private async Task<SmartWallet> GetAccount()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(_client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
     }
@@ -106,6 +110,14 @@ public class WalletTests : BaseTests
 
         var gen2 = await EIP712.GenerateSignature_SmartAccount("Account", "1", 421614, await wallet.GetAddress(), req, signerAcc);
         Assert.Equal(gen2, signature2);
+
+        // Recover address
+        var recoveredAddress = await wallet.RecoverAddressFromTypedDataV4(req, typedData2, signature2);
+        Assert.Equal(await wallet.GetAddress(), recoveredAddress);
+
+        // Recover address invalid
+        var recoveredAddress2 = await wallet.RecoverAddressFromTypedDataV4(req, typedData2, signature2 + "00");
+        Assert.NotEqual(await wallet.GetAddress(), recoveredAddress2);
     }
 
     [Fact(Timeout = 120000)]
@@ -125,5 +137,68 @@ public class WalletTests : BaseTests
         var rpc = ThirdwebRPC.GetRpcInstance(ThirdwebClient.Create(secretKey: _secretKey), 421614);
         var signature = await wallet.SignTransaction(transaction);
         Assert.NotNull(signature);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task RecoverAddressFromEthSign_ReturnsSameAddress()
+    {
+        var wallet = await PrivateKeyWallet.Generate(_client);
+        var message = "Hello, world!";
+        var signature = await wallet.EthSign(message);
+        var recoveredAddress = await wallet.RecoverAddressFromEthSign(message, signature);
+        Assert.Equal(await wallet.GetAddress(), recoveredAddress);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task RecoverAddressFromPersonalSign_ReturnsSameAddress()
+    {
+        var wallet = await PrivateKeyWallet.Generate(_client);
+        var message = "Hello, world!";
+        var signature = await wallet.PersonalSign(message);
+        var recoveredAddress = await wallet.RecoverAddressFromPersonalSign(message, signature);
+        Assert.Equal(await wallet.GetAddress(), recoveredAddress);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task RecoverAddressFromPersonalSign_ReturnsSameAddress_SmartWallet()
+    {
+        var wallet = await GetAccount();
+        var message = "Hello, world!";
+        var signature = await wallet.PersonalSign(message);
+        var recoveredAddress = await wallet.RecoverAddressFromPersonalSign(message, signature);
+        Assert.Equal(await wallet.GetAddress(), recoveredAddress);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task RecoverAddressFromEthSign_InvalidSignature()
+    {
+        var wallet = await PrivateKeyWallet.Generate(_client);
+        var wallet2 = await PrivateKeyWallet.Generate(_client);
+        var message = "Hello, world!";
+        var signature = await wallet2.EthSign(message);
+        var recoveredAddress = await wallet.RecoverAddressFromEthSign(message, signature);
+        Assert.NotEqual(await wallet.GetAddress(), recoveredAddress);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task RecoverAddressFromPersonalSign_InvalidSignature()
+    {
+        var wallet = await PrivateKeyWallet.Generate(_client);
+        var wallet2 = await PrivateKeyWallet.Generate(_client);
+        var message = "Hello, world!";
+        var signature = await wallet2.PersonalSign(message);
+        var recoveredAddress = await wallet.RecoverAddressFromPersonalSign(message, signature);
+        Assert.NotEqual(await wallet.GetAddress(), recoveredAddress);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task RecoverAddressFromPersonalSign_InvalidSignature_SmartWallet()
+    {
+        var wallet = await GetAccount();
+        var wallet2 = await GetAccount();
+        var message = "Hello, world!";
+        var signature = await wallet2.PersonalSign(message);
+        var recoveredAddress = await wallet.RecoverAddressFromPersonalSign(message, signature);
+        Assert.NotEqual(await wallet.GetAddress(), recoveredAddress);
     }
 }
