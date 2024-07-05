@@ -3,6 +3,8 @@ using dotenv.net;
 using System.Diagnostics;
 using Thirdweb.Pay;
 using Newtonsoft.Json;
+using Nethereum.Hex.HexTypes;
+using System.Numerics;
 
 DotEnv.Load();
 
@@ -22,6 +24,25 @@ Console.WriteLine($"Contract read result: {readResult}");
 // Create wallets (this is an advanced use case, typically one wallet is plenty)
 var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
 var walletAddress = await privateKeyWallet.GetAddress();
+
+var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
+Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
+
+// var smartWallet = await SmartWallet.Create(privateKeyWallet, 78600);
+
+// // self transfer 0
+// var tx = await ThirdwebTransaction.Create(
+//     smartWallet,
+//     new ThirdwebTransactionInput()
+//     {
+//         From = await smartWallet.GetAddress(),
+//         To = await smartWallet.GetAddress(),
+//         Value = new HexBigInteger(BigInteger.Zero)
+//     },
+//     78600
+// );
+// var txHash = await ThirdwebTransaction.Send(tx);
+// Console.WriteLine($"Transaction hash: {txHash}");
 
 // // Buy with Fiat
 // // Find out more about supported FIAT currencies
@@ -60,30 +81,30 @@ var walletAddress = await privateKeyWallet.GetAddress();
 // Buy with Crypto
 
 // Swap Polygon MATIC to Base ETH
-var swapQuoteParams = new BuyWithCryptoQuoteParams(
-    fromAddress: walletAddress,
-    fromChainId: 137,
-    fromTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
-    toTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
-    toChainId: 8453,
-    toAmount: "0.1"
-);
-var swapQuote = await ThirdwebPay.GetBuyWithCryptoQuote(client, swapQuoteParams);
-Console.WriteLine($"Swap quote: {JsonConvert.SerializeObject(swapQuote, Formatting.Indented)}");
+// var swapQuoteParams = new BuyWithCryptoQuoteParams(
+//     fromAddress: walletAddress,
+//     fromChainId: 137,
+//     fromTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
+//     toTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
+//     toChainId: 8453,
+//     toAmount: "0.1"
+// );
+// var swapQuote = await ThirdwebPay.GetBuyWithCryptoQuote(client, swapQuoteParams);
+// Console.WriteLine($"Swap quote: {JsonConvert.SerializeObject(swapQuote, Formatting.Indented)}");
 
-// Initiate swap
-var txHash = await ThirdwebPay.BuyWithCrypto(wallet: privateKeyWallet, buyWithCryptoQuote: swapQuote);
-Console.WriteLine($"Swap transaction hash: {txHash}");
+// // Initiate swap
+// var txHash = await ThirdwebPay.BuyWithCrypto(wallet: privateKeyWallet, buyWithCryptoQuote: swapQuote);
+// Console.WriteLine($"Swap transaction hash: {txHash}");
 
-// Poll for status
-var currentSwapStatus = SwapStatus.NONE;
-while (currentSwapStatus is not SwapStatus.COMPLETED and not SwapStatus.FAILED)
-{
-    var swapStatus = await ThirdwebPay.GetBuyWithCryptoStatus(client, txHash);
-    currentSwapStatus = Enum.Parse<SwapStatus>(swapStatus.Status);
-    Console.WriteLine($"Swap status: {JsonConvert.SerializeObject(swapStatus, Formatting.Indented)}");
-    await Task.Delay(5000);
-}
+// // Poll for status
+// var currentSwapStatus = SwapStatus.NONE;
+// while (currentSwapStatus is not SwapStatus.COMPLETED and not SwapStatus.FAILED)
+// {
+//     var swapStatus = await ThirdwebPay.GetBuyWithCryptoStatus(client, txHash);
+//     currentSwapStatus = Enum.Parse<SwapStatus>(swapStatus.Status);
+//     Console.WriteLine($"Swap status: {JsonConvert.SerializeObject(swapStatus, Formatting.Indented)}");
+//     await Task.Delay(5000);
+// }
 
 
 // var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+awsless@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
