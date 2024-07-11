@@ -26,6 +26,12 @@ namespace Thirdweb
         private BigInteger _chainId;
         private string _bundlerUrl;
         private string _paymasterUrl;
+        private string _erc20PaymasterAddress;
+        private string _erc20PaymasterToken;
+        private bool _isApproving;
+        private bool _isApproved;
+
+        private bool UseERC20Paymaster => !string.IsNullOrEmpty(_erc20PaymasterAddress) && !string.IsNullOrEmpty(_erc20PaymasterToken);
 
         protected SmartWallet(
             IThirdwebWallet personalAccount,
@@ -35,7 +41,9 @@ namespace Thirdweb
             string paymasterUrl,
             ThirdwebContract entryPointContract,
             ThirdwebContract factoryContract,
-            ThirdwebContract accountContract
+            ThirdwebContract accountContract,
+            string erc20PaymasterAddress,
+            string erc20PaymasterToken
         )
         {
             Client = personalAccount.Client;
@@ -48,6 +56,8 @@ namespace Thirdweb
             _entryPointContract = entryPointContract;
             _factoryContract = factoryContract;
             _accountContract = accountContract;
+            _erc20PaymasterAddress = erc20PaymasterAddress;
+            _erc20PaymasterToken = erc20PaymasterToken;
         }
 
         public static async Task<SmartWallet> Create(
@@ -58,7 +68,9 @@ namespace Thirdweb
             string accountAddressOverride = null,
             string entryPoint = null,
             string bundlerUrl = null,
-            string paymasterUrl = null
+            string paymasterUrl = null,
+            string erc20PaymasterAddress = null,
+            string erc20PaymasterToken = null
         )
         {
             if (!await personalWallet.IsConnected())
@@ -98,7 +110,7 @@ namespace Thirdweb
                 );
             }
 
-            return new SmartWallet(personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract);
+            return new SmartWallet(personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract, erc20PaymasterAddress, erc20PaymasterToken);
         }
 
         public async Task<bool> IsDeployed()
@@ -191,6 +203,37 @@ namespace Thirdweb
         {
             requestId ??= 1;
 
+            // Approve tokens if ERC20Paymaster
+            if (UseERC20Paymaster && !_isApproving && !_isApproved && !simulation)
+            {
+                try
+                {
+                    _isApproving = true;
+                    var tokenContract = await ThirdwebContract.Create(Client, _erc20PaymasterToken, _chainId);
+                    var approvedAmount = await tokenContract.ERC20_Allowance(_accountContract.Address, _erc20PaymasterAddress);
+                    if (approvedAmount == 0)
+                    {
+#if DEBUG
+                        Console.WriteLine($"Approving ERC20Paymaster {_erc20PaymasterAddress} to spend tokens: {_erc20PaymasterToken}");
+#endif
+                        _ = await tokenContract.ERC20_Approve(this, _erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1);
+#if DEBUG
+                        Console.WriteLine("Approved, proceeding with the transaction.");
+#endif
+                    }
+                    _isApproved = true;
+                }
+                catch (Exception e)
+                {
+                    _isApproved = false;
+                    throw new Exception($"Approving tokens for ERC20Paymaster spending failed: {e.Message}");
+                }
+                finally
+                {
+                    _isApproving = false;
+                }
+            }
+
             var initCode = await GetInitCode();
 
             // Wait until deployed to avoid double initCode
@@ -241,18 +284,22 @@ namespace Thirdweb
 
             // Update paymaster data if any
 
-            partialUserOp.PaymasterAndData = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp));
+            partialUserOp.PaymasterAndData = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
 
             // Estimate gas
 
             var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(Client, _bundlerUrl, requestId, EncodeUserOperation(partialUserOp), _entryPointContract.Address);
             partialUserOp.CallGasLimit = 50000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
             partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGas).Value;
+            // if (UseERC20Paymaster)
+            // {
+            //     partialUserOp.VerificationGasLimit *= 3;
+            // }
             partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
 
             // Update paymaster data if any
 
-            partialUserOp.PaymasterAndData = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp));
+            partialUserOp.PaymasterAndData = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
 
             // Hash, sign and encode the user operation
 
@@ -310,9 +357,13 @@ namespace Thirdweb
             return result.transactionHash;
         }
 
-        private async Task<byte[]> GetPaymasterAndData(object requestId, UserOperationHexified userOp)
+        private async Task<byte[]> GetPaymasterAndData(object requestId, UserOperationHexified userOp, bool simulation = false)
         {
-            if (_gasless)
+            if (UseERC20Paymaster && !_isApproving && !simulation)
+            {
+                return Utils.HexConcat(_erc20PaymasterAddress, _erc20PaymasterToken).HexToByteArray();
+            }
+            else if (_gasless)
             {
                 var paymasterAndData = await BundlerClient.PMSponsorUserOperation(Client, _paymasterUrl, requestId, userOp, _entryPointContract.Address);
                 return paymasterAndData.paymasterAndData.HexToByteArray();

@@ -66,6 +66,7 @@ namespace Thirdweb
             var address = await wallet.GetAddress().ConfigureAwait(false);
             txInput.From ??= address;
             txInput.Data ??= "0x";
+            txInput.Value ??= new HexBigInteger(0);
 
             if (address != txInput.From)
             {

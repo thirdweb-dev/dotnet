@@ -22,11 +22,37 @@ var readResult = await contract.ERC20_Name();
 Console.WriteLine($"Contract read result: {readResult}");
 
 // Create wallets (this is an advanced use case, typically one wallet is plenty)
-var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
+// var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
+var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 var walletAddress = await privateKeyWallet.GetAddress();
+Console.WriteLine($"PK Wallet address: {walletAddress}");
 
-var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
-Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
+var erc20SmartWalletSepolia = await SmartWallet.Create(
+    personalWallet: privateKeyWallet,
+    chainId: 11155111, // sepolia
+    gasless: true,
+    erc20PaymasterAddress: "0xEc87d96E3F324Dcc828750b52994C6DC69C8162b", // deposit paymaster
+    erc20PaymasterToken: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8" // usdc
+);
+var erc20SmartWalletSepoliaAddress = await erc20SmartWalletSepolia.GetAddress();
+Console.WriteLine($"ERC20 Smart Wallet Sepolia address: {erc20SmartWalletSepoliaAddress}");
+
+var selfTransfer = await ThirdwebTransaction.Create(
+    wallet: erc20SmartWalletSepolia,
+    txInput: new ThirdwebTransactionInput() { From = erc20SmartWalletSepoliaAddress, To = erc20SmartWalletSepoliaAddress, },
+    chainId: 11155111
+);
+
+var estimateGas = await ThirdwebTransaction.EstimateGasCosts(selfTransfer);
+Console.WriteLine($"Self transfer gas estimate: {estimateGas.ether}");
+Console.WriteLine("Make sure you have enough USDC!");
+Console.ReadLine();
+
+var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(selfTransfer);
+Console.WriteLine($"Self transfer receipt: {JsonConvert.SerializeObject(receipt, Formatting.Indented)}");
+
+// var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
+// Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
 
 // var smartWallet = await SmartWallet.Create(privateKeyWallet, 78600);
 
