@@ -13,19 +13,13 @@ namespace Thirdweb.AccountAbstraction
             return JsonConvert.DeserializeObject<EthGetUserOperationReceiptResponse>(response.Result.ToString());
         }
 
-        public static async Task<string> EthSendUserOperation(ThirdwebClient client, string bundlerUrl, object requestId, UserOperationHexified userOp, string entryPoint)
+        public static async Task<string> EthSendUserOperation(ThirdwebClient client, string bundlerUrl, object requestId, object userOp, string entryPoint)
         {
             var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_sendUserOperation", userOp, entryPoint);
             return response.Result.ToString();
         }
 
-        public static async Task<EthEstimateUserOperationGasResponse> EthEstimateUserOperationGas(
-            ThirdwebClient client,
-            string bundlerUrl,
-            object requestId,
-            UserOperationHexified userOp,
-            string entryPoint
-        )
+        public static async Task<EthEstimateUserOperationGasResponse> EthEstimateUserOperationGas(ThirdwebClient client, string bundlerUrl, object requestId, object userOp, string entryPoint)
         {
             var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_estimateUserOperationGas", userOp, entryPoint);
             return JsonConvert.DeserializeObject<EthEstimateUserOperationGasResponse>(response.Result.ToString());
@@ -39,16 +33,23 @@ namespace Thirdweb.AccountAbstraction
 
         // Paymaster requests
 
-        public static async Task<PMSponsorOperationResponse> PMSponsorUserOperation(ThirdwebClient client, string paymasterUrl, object requestId, UserOperationHexified userOp, string entryPoint)
+        public static async Task<PMSponsorOperationResponse> PMSponsorUserOperation(ThirdwebClient client, string paymasterUrl, object requestId, object userOp, string entryPoint)
         {
-            var response = await BundlerRequest(client, paymasterUrl, requestId, "pm_sponsorUserOperation", userOp, new EntryPointWrapper() { entryPoint = entryPoint });
+            var response = await BundlerRequest(
+                client,
+                paymasterUrl,
+                requestId,
+                "pm_sponsorUserOperation",
+                userOp,
+                entryPoint == Constants.ENTRYPOINT_ADDRESS_V06 ? new EntryPointWrapper() { entryPoint = entryPoint } : entryPoint
+            );
             try
             {
                 return JsonConvert.DeserializeObject<PMSponsorOperationResponse>(response.Result.ToString());
             }
             catch
             {
-                return new PMSponsorOperationResponse() { paymasterAndData = response.Result.ToString() };
+                return new PMSponsorOperationResponse() { PaymasterAndData = response.Result.ToString() };
             }
         }
 
@@ -61,7 +62,7 @@ namespace Thirdweb.AccountAbstraction
             }
             catch
             {
-                return new ZkPaymasterDataResponse() { paymaster = null, paymasterInput = null };
+                return new ZkPaymasterDataResponse() { Paymaster = null, PaymasterInput = null };
             }
         }
 
