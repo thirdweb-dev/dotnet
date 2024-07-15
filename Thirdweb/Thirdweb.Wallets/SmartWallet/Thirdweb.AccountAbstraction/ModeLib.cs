@@ -61,6 +61,7 @@ namespace Thirdweb.AccountAbstraction
         // Constants
         public static readonly CallType CALLTYPE_SINGLE = new CallType(0x00);
         public static readonly ExecType EXECTYPE_DEFAULT = new ExecType(0x00);
+        public static readonly ExecType EXECTYPE_TRY = new ExecType(0x01);
         public static readonly ModeSelector MODE_DEFAULT = new ModeSelector(new byte[] { 0x00, 0x00, 0x00, 0x00 });
         public static readonly ModePayload MODE_PAYLOAD_DEFAULT = new ModePayload(new byte[22]);
 
@@ -81,6 +82,11 @@ namespace Thirdweb.AccountAbstraction
         public static ModeCode EncodeSimpleSingle()
         {
             return Encode(CALLTYPE_SINGLE, EXECTYPE_DEFAULT, MODE_DEFAULT, MODE_PAYLOAD_DEFAULT);
+        }
+
+        public static ModeCode EncodeSimpleSingleTry()
+        {
+            return Encode(CALLTYPE_SINGLE, EXECTYPE_TRY, MODE_DEFAULT, MODE_PAYLOAD_DEFAULT);
         }
     }
 }

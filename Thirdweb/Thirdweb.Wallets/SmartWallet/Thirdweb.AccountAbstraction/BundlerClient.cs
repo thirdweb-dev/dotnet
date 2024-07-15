@@ -82,6 +82,10 @@ namespace Thirdweb.AccountAbstraction
             var requestMessage = new RpcRequestMessage(requestId, method, args);
             var requestMessageJson = JsonConvert.SerializeObject(requestMessage);
 
+#if DEBUG
+            Console.WriteLine($"Bundler Request {url}: {requestMessageJson}");
+#endif
+
             var httpContent = new StringContent(requestMessageJson, System.Text.Encoding.UTF8, "application/json");
 
             ThirdwebHttpResponseMessage httpResponse;
@@ -100,6 +104,10 @@ namespace Thirdweb.AccountAbstraction
             }
 
             var httpResponseJson = await httpResponse.Content.ReadAsStringAsync();
+
+#if DEBUG
+            Console.WriteLine($"Bundler Response: {httpResponseJson}");
+#endif
 
             var response = JsonConvert.DeserializeObject<RpcResponseMessage>(httpResponseJson);
             return response.Error != null ? throw new Exception($"Bundler Request Failed. Error: {response.Error.Code} - {response.Error.Message} - {response.Error.Data}") : response;

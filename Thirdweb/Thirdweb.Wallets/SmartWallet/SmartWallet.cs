@@ -88,9 +88,7 @@ namespace Thirdweb
                 factoryContract = await ThirdwebContract.Create(personalWallet.Client, factoryAddress, chainId, factoryAbi);
 
                 var personalAddress = await personalWallet.GetAddress();
-                var accountAddress =
-                    accountAddressOverride
-                    ?? await ThirdwebContract.Read<string>(factoryContract, "getAddress", entryPointVersion == 6 ? personalAddress : personalAddress.HexToBytes32(), new byte[0]);
+                var accountAddress = accountAddressOverride ?? await ThirdwebContract.Read<string>(factoryContract, "getAddress", personalAddress, new byte[0]);
 
                 accountContract = await ThirdwebContract.Create(personalWallet.Client, accountAddress, chainId, accountAbi);
             }
@@ -182,9 +180,8 @@ namespace Thirdweb
             var personalAccountAddress = await _personalAccount.GetAddress();
             var data = new Contract(null, _factoryContract.Abi, _factoryContract.Address)
                 .GetFunction("createAccount")
-                .GetData(Utils.GetEntryPointVersion(_entryPointContract.Address) == 6 ? personalAccountAddress : personalAccountAddress.HexToBytes32(), new byte[0]);
-            data = Utils.HexConcat(_factoryContract.Address, data);
-            return (data.HexToBytes(), _factoryContract.Address, data);
+                .GetData(personalAccountAddress, new byte[0], Utils.GetEntryPointVersion(_entryPointContract.Address) == 6 ? null : new byte[0]);
+            return (Utils.HexConcat(_factoryContract.Address, data).HexToBytes(), _factoryContract.Address, data);
         }
 
         private async Task<object> SignUserOp(ThirdwebTransactionInput transactionInput, int? requestId = null, bool simulation = false)
@@ -211,8 +208,6 @@ namespace Thirdweb
 
             // Create the user operation and its safe (hexified) version
 
-
-
             var fees = await BundlerClient.ThirdwebGetUserOperationGasPrice(Client, _bundlerUrl, requestId);
             var maxFee = new HexBigInteger(fees.MaxFeePerGas).Value;
             var maxPriorityFee = new HexBigInteger(fees.MaxPriorityFeePerGas).Value;
@@ -225,7 +220,7 @@ namespace Thirdweb
                 {
                     Target = transactionInput.To,
                     Value = transactionInput.Value.Value,
-                    Calldata = transactionInput.Data.HexToByteArray(),
+                    Calldata = transactionInput.Data.HexToBytes(),
                     FromAddress = await GetAddress(),
                 };
                 var executeInput = executeFn.CreateTransactionInput(await GetAddress());
@@ -235,7 +230,7 @@ namespace Thirdweb
                     Sender = _accountContract.Address,
                     Nonce = await GetNonce(),
                     InitCode = initCode,
-                    CallData = executeInput.Data.HexToByteArray(),
+                    CallData = executeInput.Data.HexToBytes(),
                     CallGasLimit = 0,
                     VerificationGasLimit = 0,
                     PreVerificationGas = 0,
@@ -247,7 +242,7 @@ namespace Thirdweb
 
                 // Update paymaster data if any
 
-                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp))).PaymasterAndData.HexToByteArray();
+                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp))).PaymasterAndData.HexToBytes();
 
                 // Estimate gas
 
@@ -258,7 +253,7 @@ namespace Thirdweb
 
                 // Update paymaster data if any
 
-                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp))).PaymasterAndData.HexToByteArray();
+                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp))).PaymasterAndData.HexToBytes();
 
                 // Hash, sign and encode the user operation
 
@@ -268,7 +263,7 @@ namespace Thirdweb
             }
             else
             {
-                var executeFn = new ExecuteFunctionV7 { Mode = ModeLib.EncodeSimpleSingle().Value, ExecutionCalldata = transactionInput.Data.HexToByteArray(), };
+                var executeFn = new ExecuteFunctionV7 { Mode = ModeLib.EncodeSimpleSingle().Value, ExecutionCalldata = transactionInput.Data.HexToBytes(), };
                 var executeInput = executeFn.CreateTransactionInput(await GetAddress());
 
                 var partialUserOp = new UserOperationV7()
@@ -416,7 +411,7 @@ namespace Thirdweb
             // PackedUserOp for v0.7, UserOperation for v0.6
             var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
             var sig = await _personalAccount.PersonalSign(userOpHash);
-            return sig.HexToByteArray();
+            return sig.HexToBytes();
         }
 
         private UserOperationHexifiedV6 EncodeUserOperation(UserOperationV6 userOperation)
@@ -425,15 +420,15 @@ namespace Thirdweb
             {
                 sender = userOperation.Sender,
                 nonce = userOperation.Nonce.ToHexBigInteger().HexValue,
-                initCode = userOperation.InitCode.ToHex(true),
-                callData = userOperation.CallData.ToHex(true),
+                initCode = userOperation.InitCode.BytesToHex(),
+                callData = userOperation.CallData.BytesToHex(),
                 callGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
                 verificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
                 preVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
                 maxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
                 maxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
-                paymasterAndData = userOperation.PaymasterAndData.ToHex(true),
-                signature = userOperation.Signature.ToHex(true)
+                paymasterAndData = userOperation.PaymasterAndData.BytesToHex(),
+                signature = userOperation.Signature.BytesToHex()
             };
         }
 
@@ -442,7 +437,7 @@ namespace Thirdweb
             return new UserOperationHexifiedV7()
             {
                 sender = userOperation.Sender,
-                nonce = userOperation.Nonce.ToHexBigInteger().HexValue,
+                nonce = Utils.HexConcat(Constants.ADDRESS_ZERO, userOperation.Nonce.ToHexBigInteger().HexValue),
                 factory = userOperation.Factory,
                 factoryData = userOperation.FactoryData.BytesToHex(),
                 callData = userOperation.CallData.BytesToHex(),
@@ -575,8 +570,8 @@ namespace Thirdweb
         {
             try
             {
-                var magicValue = await ThirdwebContract.Read<byte[]>(_accountContract, "isValidSignature", message.HashPrefixedMessage().HexToByteArray(), signature.HexToByteArray());
-                return magicValue.ToHex(true) == new byte[] { 0x16, 0x26, 0xba, 0x7e }.ToHex(true);
+                var magicValue = await ThirdwebContract.Read<byte[]>(_accountContract, "isValidSignature", message.HashPrefixedMessage().HexToBytes(), signature.HexToBytes());
+                return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
             }
             catch
             {
@@ -613,7 +608,7 @@ namespace Thirdweb
             };
 
             var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
-            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
+            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
             var txInput = new ThirdwebTransactionInput()
             {
                 From = await GetAddress(),
@@ -646,7 +641,7 @@ namespace Thirdweb
             };
 
             var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
-            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
+            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
             var txInput = new ThirdwebTransactionInput()
             {
                 From = await GetAddress(),
@@ -679,7 +674,7 @@ namespace Thirdweb
             };
 
             var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
-            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
+            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
             var txInput = new ThirdwebTransactionInput()
             {
                 From = await GetAddress(),
