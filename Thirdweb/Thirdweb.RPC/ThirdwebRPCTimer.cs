@@ -77,7 +77,7 @@ namespace Thirdweb
                         return;
                     }
 
-                    await Task.Yield();
+                    await Task.Delay(1).ConfigureAwait(false);
                 }
                 Elapsed?.Invoke();
             }
