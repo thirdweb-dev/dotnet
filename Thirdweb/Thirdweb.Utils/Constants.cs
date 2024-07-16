@@ -6,7 +6,7 @@
         public const string NATIVE_TOKEN_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
         public const double DECIMALS_18 = 1000000000000000000;
 
-        internal const string VERSION = "1.0.0";
+        internal const string VERSION = "1.0.1";
         internal const int DEFAULT_FETCH_TIMEOUT = 60000;
         internal const string DEFAULT_ENTRYPOINT_ADDRESS = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"; // v0.6
         internal const string DEFAULT_FACTORY_ADDRESS = "0x85e23b94e7F5E9cC1fF78BCe78cfb15B81f0DF00"; // v0.6
