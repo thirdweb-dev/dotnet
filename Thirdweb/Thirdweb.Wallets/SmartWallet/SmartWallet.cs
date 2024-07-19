@@ -180,7 +180,16 @@ namespace Thirdweb
             var personalAccountAddress = await _personalAccount.GetAddress();
             var data = new Contract(null, _factoryContract.Abi, _factoryContract.Address)
                 .GetFunction("createAccount")
-                .GetData(personalAccountAddress, new byte[0], Utils.GetEntryPointVersion(_entryPointContract.Address) == 6 ? null : new byte[0]);
+                .GetData(
+                    personalAccountAddress,
+                    new byte[0],
+                    Utils.GetEntryPointVersion(_entryPointContract.Address) == 6
+                        ? null
+                        : new InitializerInstallModule[]
+                        {
+                            // TODO: Add modules
+                        }
+                );
             return (Utils.HexConcat(_factoryContract.Address, data).HexToBytes(), _factoryContract.Address, data);
         }
 
@@ -263,7 +272,11 @@ namespace Thirdweb
             }
             else
             {
-                var executeFn = new ExecuteFunctionV7 { Mode = ModeLib.EncodeSimpleSingle().Value, ExecutionCalldata = transactionInput.Data.HexToBytes(), };
+                var executeFn = new ExecuteFunctionV7
+                {
+                    Mode = ModeLib.EncodeSimpleSingle().Value,
+                    ExecutionCalldata = ExecutionLib.EncodeSingle(transactionInput.To.HexToBytes(), (ulong)transactionInput.Value.Value, transactionInput.Data.HexToBytes())
+                };
                 var executeInput = executeFn.CreateTransactionInput(await GetAddress());
 
                 var partialUserOp = new UserOperationV7()

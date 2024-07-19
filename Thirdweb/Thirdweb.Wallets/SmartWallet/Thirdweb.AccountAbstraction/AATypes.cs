@@ -378,4 +378,17 @@ namespace Thirdweb.AccountAbstraction
         [JsonProperty("transactionHash")]
         public string TransactionHash { get; set; }
     }
+
+    [Struct("InitializerInstallModule")]
+    public class InitializerInstallModule
+    {
+        [Parameter("uint256", "moduleTypeId", 1)]
+        public virtual BigInteger ModuleTypeId { get; set; }
+
+        [Parameter("address", "module", 2)]
+        public virtual string Module { get; set; }
+
+        [Parameter("bytes", "initData", 3)]
+        public virtual byte[] InitData { get; set; }
+    }
 }
