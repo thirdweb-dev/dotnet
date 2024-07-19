@@ -178,18 +178,19 @@ namespace Thirdweb
             }
 
             var personalAccountAddress = await _personalAccount.GetAddress();
-            var data = new Contract(null, _factoryContract.Abi, _factoryContract.Address)
-                .GetFunction("createAccount")
-                .GetData(
-                    personalAccountAddress,
-                    new byte[0],
-                    Utils.GetEntryPointVersion(_entryPointContract.Address) == 6
-                        ? null
-                        : new InitializerInstallModule[]
-                        {
-                            // TODO: Add modules
-                        }
-                );
+            var data =
+                Utils.GetEntryPointVersion(_entryPointContract.Address) == 6
+                    ? new Contract(null, _factoryContract.Abi, _factoryContract.Address).GetFunction("createAccount").GetData(personalAccountAddress, new byte[0])
+                    : new Contract(null, _factoryContract.Abi, _factoryContract.Address)
+                        .GetFunction("createAccount")
+                        .GetData(
+                            personalAccountAddress,
+                            new byte[0],
+                            new InitializerInstallModule[]
+                            {
+                                // TODO: Add modules
+                            }
+                        );
             return (Utils.HexConcat(_factoryContract.Address, data).HexToBytes(), _factoryContract.Address, data);
         }
 
