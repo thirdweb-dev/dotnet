@@ -31,7 +31,7 @@ var smartWallet7579 = await SmartWallet.Create(
     personalWallet: privateKeyWallet,
     chainId: 11155111,
     gasless: true,
-    factoryAddress: "0x7Fb6d74CACbc3c0EA6143ac3cF0bc6A513507E10",
+    factoryAddress: "0x296e57E8a808aE80625A3CB5Ba95684fb99fEff2",
     entryPoint: Thirdweb.Constants.ENTRYPOINT_ADDRESS_V07
 );
 Console.WriteLine($"Smart Wallet address: {await smartWallet7579.GetAddress()}");
