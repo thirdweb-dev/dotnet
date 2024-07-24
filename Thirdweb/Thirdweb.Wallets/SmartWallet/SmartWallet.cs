@@ -5,6 +5,7 @@ using Nethereum.ABI.EIP712;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
+using Nethereum.Util;
 using Newtonsoft.Json;
 using Thirdweb.AccountAbstraction;
 
@@ -414,11 +415,60 @@ namespace Thirdweb
             }
         }
 
-        private async Task<byte[]> HashAndSignUserOp(object userOp, ThirdwebContract entryPointContract)
+        private async Task<byte[]> HashAndSignUserOp(UserOperationV6 userOp, ThirdwebContract entryPointContract)
         {
-            // PackedUserOp for v0.7, UserOperation for v0.6
             var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
             var sig = await _personalAccount.PersonalSign(userOpHash);
+            return sig.HexToBytes();
+        }
+
+        private async Task<byte[]> HashAndSignUserOp(UserOperationV7 userOp, ThirdwebContract entryPointContract)
+        {
+            var factoryBytes = userOp.Factory.HexToBytes();
+            var factoryDataBytes = userOp.FactoryData;
+            var initCodeBuffer = new byte[factoryBytes.Length + factoryDataBytes.Length];
+            Buffer.BlockCopy(factoryBytes, 0, initCodeBuffer, 0, factoryBytes.Length);
+            Buffer.BlockCopy(factoryDataBytes, 0, initCodeBuffer, factoryBytes.Length, factoryDataBytes.Length);
+
+            var verificationGasLimitBytes = userOp.VerificationGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+            var callGasLimitBytes = userOp.CallGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+            var accountGasLimitsBuffer = new byte[32];
+            Buffer.BlockCopy(verificationGasLimitBytes, 0, accountGasLimitsBuffer, 0, 16);
+            Buffer.BlockCopy(callGasLimitBytes, 0, accountGasLimitsBuffer, 16, 16);
+
+            var maxPriorityFeePerGasBytes = userOp.MaxPriorityFeePerGas.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+            var maxFeePerGasBytes = userOp.MaxFeePerGas.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+            var gasFeesBuffer = new byte[32];
+            Buffer.BlockCopy(maxPriorityFeePerGasBytes, 0, gasFeesBuffer, 0, 16);
+            Buffer.BlockCopy(maxFeePerGasBytes, 0, gasFeesBuffer, 16, 16);
+
+            var paymasterBytes = userOp.Paymaster.HexToBytes();
+            var paymasterVerificationGasLimitBytes = userOp.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+            var paymasterPostOpGasLimitBytes = userOp.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+            var paymasterDataBytes = userOp.PaymasterData;
+            var paymasterAndDataBuffer = new byte[20 + 16 + 16 + paymasterDataBytes.Length];
+            Buffer.BlockCopy(paymasterBytes, 0, paymasterAndDataBuffer, 0, 20);
+            Buffer.BlockCopy(paymasterVerificationGasLimitBytes, 0, paymasterAndDataBuffer, 20, 16);
+            Buffer.BlockCopy(paymasterPostOpGasLimitBytes, 0, paymasterAndDataBuffer, 20 + 16, 16);
+            Buffer.BlockCopy(paymasterDataBytes, 0, paymasterAndDataBuffer, 20 + 16 + 16, paymasterDataBytes.Length);
+
+            var packedOp = new PackedUserOperation()
+            {
+                Sender = userOp.Sender,
+                Nonce = userOp.Nonce,
+                InitCode = initCodeBuffer,
+                CallData = userOp.CallData,
+                AccountGasLimits = accountGasLimitsBuffer,
+                PreVerificationGas = userOp.PreVerificationGas,
+                GasFees = gasFeesBuffer,
+                PaymasterAndData = paymasterAndDataBuffer,
+                Signature = userOp.Signature
+            };
+
+            var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp);
+
+            var sig = await _personalAccount.PersonalSign(userOpHash);
+
             return sig.HexToBytes();
         }
 
