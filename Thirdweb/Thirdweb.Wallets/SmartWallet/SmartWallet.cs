@@ -270,7 +270,7 @@ namespace Thirdweb
                 var executeFn = new ExecuteFunctionV7
                 {
                     Mode = ModeLib.EncodeSimpleSingle().Value,
-                    ExecutionCalldata = ExecutionLib.EncodeSingle(transactionInput.To.HexToBytes(), (ulong)transactionInput.Value.Value, transactionInput.Data.HexToBytes())
+                    ExecutionCalldata = ExecutionLib.EncodeSingle(transactionInput.To.HexToBytes(), transactionInput.Value.HexValue.HexToBytes32(), transactionInput.Data.HexToBytes())
                 };
                 var executeInput = executeFn.CreateTransactionInput(await GetAddress());
 
