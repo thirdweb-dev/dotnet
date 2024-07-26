@@ -22,8 +22,9 @@ var readResult = await contract.ERC20_Name();
 Console.WriteLine($"Contract read result: {readResult}");
 
 // Create wallets (this is an advanced use case, typically one wallet is plenty)
-// var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
-var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
+var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
+
+// var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 var walletAddress = await privateKeyWallet.GetAddress();
 Console.WriteLine($"Private Key Wallet address: {walletAddress}");
 

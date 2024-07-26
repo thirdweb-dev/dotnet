@@ -298,12 +298,12 @@ namespace Thirdweb
 
                 var res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp));
                 partialUserOp.Paymaster = res.Paymaster;
-                partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
-                partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas).Value;
-                partialUserOp.VerificationGasLimit = new HexBigInteger(res.VerificationGasLimit).Value;
-                partialUserOp.CallGasLimit = new HexBigInteger(res.CallGasLimit).Value;
-                partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(res.PaymasterVerificationGasLimit).Value;
-                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(res.PaymasterPostOpGasLimit).Value;
+                partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? new byte[] { };
+                partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0").Value;
+                partialUserOp.VerificationGasLimit = new HexBigInteger(res.VerificationGasLimit ?? "0").Value;
+                partialUserOp.CallGasLimit = new HexBigInteger(res.CallGasLimit ?? "0").Value;
+                partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(res.PaymasterVerificationGasLimit ?? "0").Value;
+                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(res.PaymasterPostOpGasLimit ?? "0").Value;
 
                 // Estimate gas
 
@@ -405,14 +405,7 @@ namespace Thirdweb
 
         private async Task<PMSponsorOperationResponse> GetPaymasterAndData(object requestId, object userOp)
         {
-            if (_gasless)
-            {
-                return await BundlerClient.PMSponsorUserOperation(Client, _paymasterUrl, requestId, userOp, _entryPointContract.Address);
-            }
-            else
-            {
-                return default;
-            }
+            return _gasless ? await BundlerClient.PMSponsorUserOperation(Client, _paymasterUrl, requestId, userOp, _entryPointContract.Address) : new PMSponsorOperationResponse();
         }
 
         private async Task<byte[]> HashAndSignUserOp(UserOperationV6 userOp, ThirdwebContract entryPointContract)
