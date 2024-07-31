@@ -18,7 +18,7 @@ var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 60000));
 
 var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
-var readResult = await contract.ERC20_Name();
+var readResult = await contract.Read<string>("name");
 Console.WriteLine($"Contract read result: {readResult}");
 
 // Create wallets (this is an advanced use case, typically one wallet is plenty)
