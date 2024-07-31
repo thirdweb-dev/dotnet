@@ -129,7 +129,7 @@ public class SmartWalletTests : BaseTests
     public async Task GetPersonalAccount()
     {
         var account = await GetSmartAccount();
-        var personalAccount = await account.GetPersonalAccount();
+        var personalAccount = await account.GetPersonalWallet();
         Assert.NotNull(personalAccount);
         _ = Assert.IsType<PrivateKeyWallet>(personalAccount);
     }

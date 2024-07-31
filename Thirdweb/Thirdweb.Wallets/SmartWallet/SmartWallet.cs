@@ -375,7 +375,7 @@ namespace Thirdweb
             _ = await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
         }
 
-        public Task<IThirdwebWallet> GetPersonalAccount()
+        public Task<IThirdwebWallet> GetPersonalWallet()
         {
             return Task.FromResult(_personalAccount);
         }

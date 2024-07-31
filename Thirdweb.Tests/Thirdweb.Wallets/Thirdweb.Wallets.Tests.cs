@@ -81,7 +81,7 @@ public class WalletTests : BaseTests
         var signature = await wallet.SignTypedDataV4(accountMessage, typedData);
         Assert.NotNull(signature);
 
-        var signerAcc = await (wallet).GetPersonalAccount();
+        var signerAcc = await (wallet).GetPersonalWallet();
         var gen1 = await EIP712.GenerateSignature_SmartAccount_AccountMessage(
             "Account",
             "1",
