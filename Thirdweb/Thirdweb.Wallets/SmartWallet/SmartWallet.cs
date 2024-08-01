@@ -473,6 +473,28 @@ namespace Thirdweb
             }
         }
 
+        public async Task<List<string>> GetAllAdmins()
+        {
+            if (Utils.IsZkSync(_chainId))
+            {
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+            }
+
+            var result = await ThirdwebContract.Read<List<string>>(_accountContract, "getAllAdmins");
+            return result ?? new List<string>();
+        }
+
+        public async Task<List<SignerPermissions>> GetAllActiveSigners()
+        {
+            if (Utils.IsZkSync(_chainId))
+            {
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+            }
+
+            var result = await ThirdwebContract.Read<List<SignerPermissions>>(_accountContract, "getAllActiveSigners");
+            return result ?? new List<SignerPermissions>();
+        }
+
         public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
             string signerAddress,
             List<string> approvedTargets,
@@ -502,16 +524,17 @@ namespace Thirdweb
             };
 
             var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
-            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
-            var txInput = new ThirdwebTransactionInput()
+            return await _accountContract.Write(this, "setPermissionsForSigner", 0, request, signature.HexToByteArray());
+        }
+
+        public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
+        {
+            if (Utils.IsZkSync(_chainId))
             {
-                From = await GetAddress(),
-                To = _accountContract.Address,
-                Value = new HexBigInteger(0),
-                Data = data
-            };
-            var txHash = await SendTransaction(txInput);
-            return await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+            }
+
+            return await CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString());
         }
 
         public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)

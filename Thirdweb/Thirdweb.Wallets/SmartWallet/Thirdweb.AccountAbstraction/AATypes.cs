@@ -1,6 +1,7 @@
 using System.Numerics;
 using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
+using Newtonsoft.Json;
 
 namespace Thirdweb.AccountAbstraction
 {
@@ -227,5 +228,23 @@ namespace Thirdweb.AccountAbstraction
     public class ZkBroadcastTransactionResponse
     {
         public string transactionHash { get; set; }
+    }
+
+    public class SignerPermissions
+    {
+        [Parameter("address", "signer", 1)]
+        public virtual string Signer { get; set; }
+
+        [Parameter("address[]", "approvedTargets", 2)]
+        public virtual List<string> ApprovedTargets { get; set; }
+
+        [Parameter("uint256", "nativeTokenLimitPerTransaction", 3)]
+        public virtual BigInteger NativeTokenLimitPerTransaction { get; set; }
+
+        [Parameter("uint128", "startTimestamp", 4)]
+        public virtual BigInteger StartTimestamp { get; set; }
+
+        [Parameter("uint128", "endTimestamp", 5)]
+        public virtual BigInteger EndTimestamp { get; set; }
     }
 }
