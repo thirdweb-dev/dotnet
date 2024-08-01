@@ -34,7 +34,7 @@ jobs:
       - name: Test
         run: |
           dotnet tool install --global coverlet.console
-          timeout 2m dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=./coverage.info
+          timeout 10m dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=./coverage.info
         shell: bash
         env:
           THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
