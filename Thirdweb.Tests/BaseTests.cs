@@ -17,7 +17,7 @@ public class BaseTests
         _clientIdBundleIdOnly = Environment.GetEnvironmentVariable("THIRDWEB_CLIENT_ID_BUNDLE_ID_ONLY");
         _bundleIdBundleIdOnly = Environment.GetEnvironmentVariable("THIRDWEB_BUNDLE_ID_BUNDLE_ID_ONLY");
 
-        _output.WriteLine($"Initialized {GetType().Name}");
+        _output.WriteLine($"Started {GetType().FullName}");
     }
 
     [Fact(Timeout = 120000)]
