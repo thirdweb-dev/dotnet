@@ -486,4 +486,18 @@ public class UtilsTests : BaseTests
 
         Assert.Contains("Invalid chain", exception.Message);
     }
+
+    [Fact(Timeout = 120000)]
+    public async void ToJsonExternalWalletFriendly_ReturnsCorrectValue4()
+    {
+        var pkWallet = await PrivateKeyWallet.Generate(_client); // Assume external wallet
+        var msg = new AccountAbstraction.AccountMessage { Message = new byte[] { 0x01, 0x02, 0x03, 0x04 } };
+        var verifyingContract = await pkWallet.GetAddress(); // doesn't matter here
+        var typedDataRaw = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 137, verifyingContract);
+        var json = Utils.ToJsonExternalWalletFriendly(typedDataRaw, msg);
+        var jsonObject = Newtonsoft.Json.Linq.JObject.Parse(json);
+        var internalMsg = jsonObject.SelectToken("$.message.message");
+        Assert.NotNull(internalMsg);
+        Assert.Equal("0x01020304", internalMsg);
+    }
 }
