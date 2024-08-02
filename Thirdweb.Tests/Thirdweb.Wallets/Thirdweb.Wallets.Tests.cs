@@ -12,24 +12,29 @@ public class WalletTests : BaseTests
         _client = ThirdwebClient.Create(secretKey: _secretKey);
     }
 
-    private async Task<SmartWallet> GetAccount()
+    private async Task<SmartWallet> GetSmartAccount()
     {
         var privateKeyAccount = await PrivateKeyWallet.Generate(_client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
     }
 
+    private async Task<PrivateKeyWallet> GetPrivateKeyAccount()
+    {
+        return await PrivateKeyWallet.Generate(_client);
+    }
+
     [Fact(Timeout = 120000)]
     public async Task GetAddress()
     {
-        var wallet = await GetAccount();
+        var wallet = await GetSmartAccount();
         Assert.Equal(await wallet.GetAddress(), await wallet.GetAddress());
     }
 
     [Fact(Timeout = 120000)]
     public async Task EthSignRaw()
     {
-        var wallet = await GetAccount();
+        var wallet = await GetPrivateKeyAccount();
         var message = "Hello, world!";
         var signature = await wallet.EthSign(System.Text.Encoding.UTF8.GetBytes(message));
         Assert.NotNull(signature);
@@ -38,7 +43,7 @@ public class WalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task EthSign()
     {
-        var wallet = await GetAccount();
+        var wallet = await GetPrivateKeyAccount();
         var message = "Hello, world!";
         var signature = await wallet.EthSign(message);
         Assert.NotNull(signature);
@@ -47,7 +52,7 @@ public class WalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task PersonalSignRaw()
     {
-        var wallet = await GetAccount();
+        var wallet = await GetPrivateKeyAccount();
         var message = "Hello, world!";
         var signature = await wallet.PersonalSign(System.Text.Encoding.UTF8.GetBytes(message));
         Assert.NotNull(signature);
@@ -56,7 +61,7 @@ public class WalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task PersonalSign()
     {
-        var wallet = await GetAccount();
+        var wallet = await GetSmartAccount();
         var message = "Hello, world!";
         var signature = await wallet.PersonalSign(message);
         Assert.NotNull(signature);
@@ -65,7 +70,7 @@ public class WalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task SignTypedDataV4()
     {
-        var wallet = await GetAccount();
+        var wallet = await GetSmartAccount();
         var json =
             "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallet\",\"type\":\"address\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person\"},{\"name\":\"contents\",\"type\":\"string\"}]},\"primaryType\":\"Mail\",\"domain\":{\"name\":\"Ether Mail\",\"version\":\"1\",\"chainId\":1,\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\":{\"from\":{\"name\":\"Cow\",\"wallet\":\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\":{\"name\":\"Bob\",\"wallet\":\"0xbBbBBBBbbBBBbbbBbbBbbBBbBbbBbBbBbBbbBBbB\"},\"contents\":\"Hello, Bob!\"}}";
         var signature = await wallet.SignTypedDataV4(json);
@@ -75,7 +80,7 @@ public class WalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task SignTypedDataV4_Typed()
     {
-        var wallet = await GetAccount();
+        var wallet = await GetSmartAccount();
         var typedData = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 421614, await wallet.GetAddress());
         var accountMessage = new AccountAbstraction.AccountMessage { Message = System.Text.Encoding.UTF8.GetBytes("Hello, world!").HashPrefixedMessage() };
         var signature = await wallet.SignTypedDataV4(accountMessage, typedData);
@@ -115,7 +120,7 @@ public class WalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task SignTransaction()
     {
-        var wallet = await GetAccount();
+        var wallet = await GetSmartAccount();
         var transaction = new ThirdwebTransactionInput
         {
             To = await wallet.GetAddress(),
@@ -154,7 +159,7 @@ public class WalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task RecoverAddressFromPersonalSign_ReturnsSameAddress_SmartWallet()
     {
-        var wallet = await GetAccount();
+        var wallet = await GetSmartAccount();
         var message = "Hello, world!";
         var signature = await wallet.PersonalSign(message);
         var recoveredAddress = await wallet.RecoverAddressFromPersonalSign(message, signature);
@@ -197,8 +202,8 @@ public class WalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task RecoverAddressFromPersonalSign_InvalidSignature_SmartWallet()
     {
-        var wallet = await GetAccount();
-        var wallet2 = await GetAccount();
+        var wallet = await GetSmartAccount();
+        var wallet2 = await GetSmartAccount();
         var message = "Hello, world!";
         var signature = await wallet2.PersonalSign(message);
         var recoveredAddress = await wallet.RecoverAddressFromPersonalSign(message, signature);
