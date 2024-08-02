@@ -157,7 +157,7 @@ Smart wallets offer advanced functionalities such as gasless transactions and se
 **Creating a Smart Wallet**
 
 ```csharp
-var smartWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+var smartWallet = await SmartWallet.Create(personalWallet: inAppWallet, gasless: true, chainId: 421614);
 
 Console.WriteLine($"Smart Wallet: {await smartWallet.GetAddress()}");
 ```
@@ -224,7 +224,6 @@ ZkSync 0x71 (113) type transactions are supported through the Transaction Builde
 
 ```csharp
 var tx = await ThirdwebTransaction.Create(
-    client: client,
     wallet: privateKeyWallet,
     txInput: new ThirdwebTransactionInput()
     {
@@ -249,7 +248,7 @@ Console.WriteLine($"Transaction hash: {txHash}");
 With ZkSync, you don't need to pass an account factory address, and the rest works the same.
 
 ```csharp
-var zkSyncWallet = await SmartWallet.Create(client: client, personalWallet: inAppWallet, gasless: true, chainId: 300);
+var zkSyncWallet = await SmartWallet.Create(personalWallet: inAppWallet, gasless: true, chainId: 300);
 
 Console.WriteLine($"ZkSync Smart Wallet: {await zkSyncWallet.GetAddress()}");
 
