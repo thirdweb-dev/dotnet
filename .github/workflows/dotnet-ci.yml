@@ -44,7 +44,7 @@ jobs:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
       - name: Codecov
-        if: always() && (steps.test.outcome == 'success' || steps.test.outcome == 'cancelled')
+        if: always() && steps.test.outcome != 'cancelled'
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
