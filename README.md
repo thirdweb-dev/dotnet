@@ -67,14 +67,14 @@ You can interact with smart contracts by creating a contract instance and callin
 
 ```csharp
 var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
-var readResult = await ThirdwebContract.Read<string>(contract, "name");
+var readResult = await contract.Read<string>("name");
 Console.WriteLine($"Contract read result: {readResult}");
 ```
 
 **Writing Data**
 
 ```csharp
-var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
+var writeResult = await contract.Write(smartWallet, "mintTo", 0, await smartWallet.GetAddress(), 100);
 Console.WriteLine($"Contract write result: {writeResult}");
 ```
 
@@ -165,7 +165,7 @@ Console.WriteLine($"Smart Wallet: {await smartWallet.GetAddress()}");
 **Gasless Transactions**
 
 ```csharp
-var writeResult = await ThirdwebContract.Write(smartWallet, contract, "mintTo", 0, await smartWallet.GetAddress(), 100);
+var writeResult = await contract.Write(smartWallet, "mintTo", 0, await smartWallet.GetAddress(), 100);
 Console.WriteLine($"Gasless transaction result: {writeResult}");
 ```
 
@@ -252,7 +252,7 @@ var zkSyncWallet = await SmartWallet.Create(personalWallet: inAppWallet, gasless
 
 Console.WriteLine($"ZkSync Smart Wallet: {await zkSyncWallet.GetAddress()}");
 
-var zkSyncWriteResult = await ThirdwebContract.Write(zkSyncWallet, contract, "mintTo", 0, await zkSyncWallet.GetAddress(), 100);
+var zkSyncWriteResult = await contract.Write(zkSyncWallet, "mintTo", 0, await zkSyncWallet.GetAddress(), 100);
 Console.WriteLine($"ZkSync gasless transaction result: {zkSyncWriteResult}");
 ```
 
