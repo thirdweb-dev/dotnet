@@ -224,7 +224,6 @@ ZkSync 0x71 (113) type transactions are supported through the Transaction Builde
 
 ```csharp
 var tx = await ThirdwebTransaction.Create(
-    client: client,
     wallet: privateKeyWallet,
     txInput: new ThirdwebTransactionInput()
     {
