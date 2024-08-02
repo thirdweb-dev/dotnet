@@ -2,10 +2,13 @@
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+using Nethereum.ABI.EIP712;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
 using Nethereum.Util;
+using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace Thirdweb
 {
@@ -352,6 +355,137 @@ namespace Thirdweb
             {
                 throw new Exception($"Unexpected error while fetching chain data for chain ID {chainId}: {ex.Message}", ex);
             }
+        }
+
+        public static string ToJsonExternalWalletFriendly<TMessage, TDomain>(TypedData<TDomain> typedData, TMessage message)
+        {
+            typedData.EnsureDomainRawValuesAreInitialised();
+            typedData.Message = MemberValueFactory.CreateFromMessage(message);
+            var obj = (JObject)JToken.FromObject(typedData);
+            var jProperty = new JProperty("domain");
+            var jProperties = GetJProperties("EIP712Domain", typedData.DomainRawValues, typedData);
+            object[] content = jProperties.ToArray();
+            jProperty.Value = new JObject(content);
+            obj.Add(jProperty);
+            var jProperty2 = new JProperty("message");
+            var jProperties2 = GetJProperties(typedData.PrimaryType, typedData.Message, typedData);
+            content = jProperties2.ToArray();
+            jProperty2.Value = new JObject(content);
+            obj.Add(jProperty2);
+            return obj.ToString();
+        }
+
+        private static bool IsReferenceType(string typeName)
+        {
+            if (!new Regex("bytes\\d+").IsMatch(typeName))
+            {
+                var input = typeName;
+                if (!new Regex("uint\\d+").IsMatch(input))
+                {
+                    var input2 = typeName;
+                    if (!new Regex("int\\d+").IsMatch(input2))
+                    {
+                        switch (typeName)
+                        {
+                            case "bytes":
+                            case "string":
+                            case "bool":
+                            case "address":
+                                break;
+                            default:
+                                if (typeName.Contains("["))
+                                {
+                                    return false;
+                                }
+
+                                return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static List<JProperty> GetJProperties(string mainTypeName, MemberValue[] values, TypedDataRaw typedDataRaw)
+        {
+            var list = new List<JProperty>();
+            var array = typedDataRaw.Types[mainTypeName];
+            for (var i = 0; i < array.Length; i++)
+            {
+                var type = array[i].Type;
+                var name = array[i].Name;
+                if (IsReferenceType(type))
+                {
+                    var jProperty = new JProperty(name);
+                    if (values[i].Value != null)
+                    {
+                        object[] content = GetJProperties(type, (MemberValue[])values[i].Value, typedDataRaw).ToArray();
+                        jProperty.Value = new JObject(content);
+                    }
+                    else
+                    {
+                        jProperty.Value = null;
+                    }
+
+                    list.Add(jProperty);
+                }
+                else if (type.StartsWith("bytes"))
+                {
+                    var name2 = name;
+                    if (values[i].Value is byte[] v)
+                    {
+                        var content2 = v.BytesToHex();
+                        list.Add(new JProperty(name2, content2));
+                    }
+                    else
+                    {
+                        var value = values[i].Value;
+                        list.Add(new JProperty(name2, value));
+                    }
+                }
+                else if (type.Contains("["))
+                {
+                    var jProperty2 = new JProperty(name);
+                    var jArray = new JArray();
+                    var text = type.Substring(0, type.LastIndexOf("["));
+                    if (values[i].Value == null)
+                    {
+                        jProperty2.Value = null;
+                        list.Add(jProperty2);
+                        continue;
+                    }
+
+                    if (IsReferenceType(text))
+                    {
+                        foreach (var item in (List<MemberValue[]>)values[i].Value)
+                        {
+                            object[] content = GetJProperties(text, item, typedDataRaw).ToArray();
+                            jArray.Add(new JObject(content));
+                        }
+
+                        jProperty2.Value = jArray;
+                        list.Add(jProperty2);
+                        continue;
+                    }
+
+                    foreach (var item2 in (System.Collections.IList)values[i].Value)
+                    {
+                        jArray.Add(item2);
+                    }
+
+                    jProperty2.Value = jArray;
+                    list.Add(jProperty2);
+                }
+                else
+                {
+                    var name3 = name;
+                    var value2 = values[i].Value;
+                    list.Add(new JProperty(name3, value2));
+                }
+            }
+
+            return list;
         }
     }
 }

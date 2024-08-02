@@ -32,6 +32,7 @@ jobs:
         working-directory: ./
 
       - name: Test
+        id: test
         run: |
           dotnet tool install --global coverlet.console
           timeout 15m dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=./coverage.info
