@@ -45,7 +45,6 @@ if (!await inAppWalletDiscord.IsConnected())
 var inAppWalletDiscordAddress = await inAppWalletDiscord.GetAddress();
 Console.WriteLine($"InAppWallet Discord address: {inAppWalletDiscordAddress}");
 
-
 // var smartWallet = await SmartWallet.Create(privateKeyWallet, 78600);
 
 // // self transfer 0

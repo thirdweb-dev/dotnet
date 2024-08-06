@@ -126,8 +126,6 @@ namespace Thirdweb.EWS
 
             var payloadForGetCredentials = new { IdentityId = identityId, Logins = new Dictionary<string, string> { { "cognito-identity.amazonaws.com", token } } };
 
-            Console.WriteLine($"Payload for GetCredentialsForIdentity: {JsonConvert.SerializeObject(payloadForGetCredentials)}");
-
             var content = new StringContent(JsonConvert.SerializeObject(payloadForGetCredentials), Encoding.UTF8, "application/x-amz-json-1.1");
 
             client.AddHeader("X-Amz-Target", "AWSCognitoIdentityService.GetCredentialsForIdentity");
@@ -135,11 +133,8 @@ namespace Thirdweb.EWS
             var response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
             var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            Console.WriteLine($"Response from GetCredentialsForIdentity: {responseContent}");
-
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"Failed to get credentials: {responseContent}");
                 throw new Exception($"Failed to get credentials: {responseContent}");
             }
 
