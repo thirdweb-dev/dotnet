@@ -6,7 +6,11 @@ namespace Thirdweb.EWS
     {
         public async Task<VerifyResult> SignInWithOauthAsync(string authProvider, string authResult, string recoveryCode)
         {
-            var result = await server.VerifyOAuth2024Async(authResult).ConfigureAwait(false);
+            var result = authProvider.ToLower() switch
+            {
+                "discord" => await server.VerifyOAuth2024Async(authResult).ConfigureAwait(false),
+                _ => await server.VerifyOAuthAsync(authResult).ConfigureAwait(false),
+            };
             return await PostAuthSetup(result, recoveryCode, null, authProvider).ConfigureAwait(false);
         }
 
