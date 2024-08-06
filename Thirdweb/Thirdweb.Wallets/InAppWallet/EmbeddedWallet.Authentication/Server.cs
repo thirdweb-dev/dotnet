@@ -18,6 +18,8 @@ namespace Thirdweb.EWS
 
         internal abstract Task<(string authShare, string recoveryShare)> FetchAuthAndRecoverySharesAsync(string authToken);
         internal abstract Task<string> FetchAuthShareAsync(string authToken);
+
+        internal abstract Task<string> FetchHeadlessOauthLoginLink2024Async(string authProvider, string platform);
         internal abstract Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform);
 
         internal abstract Task<bool> CheckIsEmailKmsOtpValidAsync(string userName, string otp);
@@ -35,6 +37,8 @@ namespace Thirdweb.EWS
 
         internal abstract Task<Server.VerifyResult> VerifyJwtAsync(string jwtToken);
 
+        internal abstract Task<Server.VerifyResult> VerifyOAuth2024Async(string authResultStr);
+
         internal abstract Task<Server.VerifyResult> VerifyOAuthAsync(string authVerifiedToken);
 
         internal abstract Task<Server.VerifyResult> VerifyAuthEndpointAsync(string payload);
@@ -44,6 +48,7 @@ namespace Thirdweb.EWS
     {
         private const string ROOT_URL = "https://embedded-wallet.thirdweb.com";
         private const string ROOT_URL_LEGACY = "https://ews.thirdweb.com";
+        private const string API_ROOT_PATH_2024 = "/api/2024-05-05";
         private const string API_ROOT_PATH = "/api/2023-10-20";
         private const string API_ROOT_PATH_LEGACY = "/api/2022-08-12";
 
@@ -167,6 +172,15 @@ namespace Thirdweb.EWS
             return rv;
         }
 
+        // login/web-token-exchange
+        private async Task<IdTokenV2Response> FetchCognitoIdToken2024Async(string authToken)
+        {
+            var uri = MakeUri2024("/login/web-token-exchange");
+            var response = await SendHttpWithAuthAsync(uri, authToken).ConfigureAwait(false);
+            await CheckStatusCodeAsync(response).ConfigureAwait(false);
+            return await DeserializeAsync<IdTokenV2Response>(response).ConfigureAwait(false);
+        }
+
         // embedded-wallet/cognito-id-token
         private async Task<IdTokenResponse> FetchCognitoIdTokenAsync(string authToken)
         {
@@ -174,6 +188,12 @@ namespace Thirdweb.EWS
             var response = await SendHttpWithAuthAsync(uri, authToken).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
             return await DeserializeAsync<IdTokenResponse>(response).ConfigureAwait(false);
+        }
+
+        // embedded-wallet/headless-oauth-login-link
+        internal override Task<string> FetchHeadlessOauthLoginLink2024Async(string authProvider, string platform)
+        {
+            return Task.FromResult(MakeUri2024($"/login/{authProvider}", new Dictionary<string, string> { { "clientId", clientId }, { "platform", platform } }).ToString());
         }
 
         // embedded-wallet/headless-oauth-login-link
@@ -438,6 +458,34 @@ namespace Thirdweb.EWS
             return new VerifyResult(isNewUser, authToken, walletUserId, recoveryCode, email);
         }
 
+        internal override async Task<VerifyResult> VerifyOAuth2024Async(string authResultStr)
+        {
+            var authResult = JsonConvert.DeserializeObject<AuthResultType_OAuth>(authResultStr);
+            var isNewUser = authResult.StoredToken.IsNewUser;
+            var authToken = authResult.StoredToken.CookieString;
+            var walletUserId = authResult.StoredToken.AuthDetails.UserWalletId;
+            var isUserManaged = (await FetchUserDetailsAsync(authResult.StoredToken.AuthDetails.Email, authToken).ConfigureAwait(false)).RecoveryShareManagement == "USER_MANAGED";
+            string recoveryCode = null;
+
+            if (!isUserManaged)
+            {
+                var idTokenResponse = await FetchCognitoIdToken2024Async(authToken).ConfigureAwait(false);
+                var token = idTokenResponse.Token;
+                var identityId = idTokenResponse.IdentityId;
+                var lambdaToken = idTokenResponse.LambdaToken;
+
+                var invokePayload = Serialize(new { token = lambdaToken });
+                var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaV2Async(identityId, token, invokePayload, thirdwebHttpClientType).ConfigureAwait(false);
+
+                JsonSerializer jsonSerializer = new();
+                var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));
+                payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StringReader(payload.Body)));
+                recoveryCode = payload.RecoverySharePassword;
+            }
+
+            return new VerifyResult(isNewUser, authToken, walletUserId, recoveryCode, authResult.StoredToken.AuthDetails.Email);
+        }
+
         internal override async Task<VerifyResult> VerifyOAuthAsync(string authResultStr)
         {
             var authResult = JsonConvert.DeserializeObject<AuthResultType_OAuth>(authResultStr);
@@ -516,6 +564,17 @@ namespace Thirdweb.EWS
             TextReader textReader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
             var rv = jsonSerializer.Deserialize<T>(new JsonTextReader(textReader));
             return rv;
+        }
+
+        private static Uri MakeUri2024(string path, IDictionary<string, string> parameters = null)
+        {
+            UriBuilder b = new(ROOT_URL) { Path = API_ROOT_PATH_2024 + path, };
+            if (parameters != null && parameters.Any())
+            {
+                var queryString = string.Join('&', parameters.Select((p) => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
+                b.Query = queryString;
+            }
+            return b.Uri;
         }
 
         private static Uri MakeUri(string path, IDictionary<string, string> parameters = null)

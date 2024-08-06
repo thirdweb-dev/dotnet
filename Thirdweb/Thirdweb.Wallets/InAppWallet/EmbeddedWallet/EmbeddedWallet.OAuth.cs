@@ -6,13 +6,17 @@ namespace Thirdweb.EWS
     {
         public async Task<VerifyResult> SignInWithOauthAsync(string authProvider, string authResult, string recoveryCode)
         {
-            Server.VerifyResult result = await server.VerifyOAuthAsync(authResult).ConfigureAwait(false);
+            var result = await server.VerifyOAuth2024Async(authResult).ConfigureAwait(false);
             return await PostAuthSetup(result, recoveryCode, null, authProvider).ConfigureAwait(false);
         }
 
         public async Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform)
         {
-            return await server.FetchHeadlessOauthLoginLinkAsync(authProvider, platform).ConfigureAwait(false);
+            return authProvider.ToLower() switch
+            {
+                "discord" => await server.FetchHeadlessOauthLoginLink2024Async(authProvider, platform).ConfigureAwait(false),
+                _ => await server.FetchHeadlessOauthLoginLinkAsync(authProvider, platform).ConfigureAwait(false),
+            };
         }
 
         public async Task<bool> IsRecoveryCodeNeededAsync(string authResultStr)

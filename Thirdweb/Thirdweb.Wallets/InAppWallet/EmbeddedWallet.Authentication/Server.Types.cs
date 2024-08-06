@@ -200,6 +200,19 @@ namespace Thirdweb.EWS
         }
 
         [DataContract]
+        private class IdTokenV2Response
+        {
+            [DataMember(Name = "token")]
+            internal string Token { get; set; }
+
+            [DataMember(Name = "identityId")]
+            internal string IdentityId { get; set; }
+
+            [DataMember(Name = "lambdaToken")]
+            internal string LambdaToken { get; set; }
+        }
+
+        [DataContract]
         private class RecoverySharePasswordResponse
         {
             [DataMember(Name = "body")]
