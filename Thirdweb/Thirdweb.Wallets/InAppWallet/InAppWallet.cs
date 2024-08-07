@@ -15,7 +15,9 @@ namespace Thirdweb
         Facebook,
         JWT,
         AuthEndpoint,
-        Discord
+        Discord,
+        Farcaster,
+        Telegram
     }
 
     /// <summary>
@@ -68,6 +70,8 @@ namespace Thirdweb
                 AuthProvider.JWT => "JWT",
                 AuthProvider.AuthEndpoint => "AuthEndpoint",
                 AuthProvider.Discord => "Discord",
+                AuthProvider.Farcaster => "Farcaster",
+                AuthProvider.Telegram => "Telegram",
                 AuthProvider.Default => string.IsNullOrEmpty(email) ? "PhoneOTP" : "EmailOTP",
                 _ => throw new ArgumentException("Invalid AuthProvider"),
             };

@@ -28,10 +28,10 @@ var walletAddress = await privateKeyWallet.GetAddress();
 var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
 Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
 
-var inAppWalletDiscord = await InAppWallet.Create(client: client, authProvider: AuthProvider.Discord);
-if (!await inAppWalletDiscord.IsConnected())
+var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Telegram);
+if (!await inAppWalletOAuth.IsConnected())
 {
-    _ = await inAppWalletDiscord.LoginWithOauth(
+    _ = await inAppWalletOAuth.LoginWithOauth(
         isMobile: false,
         (url) =>
         {
@@ -42,8 +42,8 @@ if (!await inAppWalletDiscord.IsConnected())
         new InAppWalletBrowser()
     );
 }
-var inAppWalletDiscordAddress = await inAppWalletDiscord.GetAddress();
-Console.WriteLine($"InAppWallet Discord address: {inAppWalletDiscordAddress}");
+var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
+Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
 
 // var smartWallet = await SmartWallet.Create(privateKeyWallet, 78600);
 
