@@ -80,7 +80,7 @@ namespace Thirdweb
 
                 browserOpenAction.Invoke(loginUrl);
 
-                var completedTask = await Task.WhenAny(_taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(60), cancellationToken));
+                var completedTask = await Task.WhenAny(_taskCompletionSource.Task, Task.Delay(TimeSpan.FromSeconds(120), cancellationToken));
                 return completedTask == _taskCompletionSource.Task ? await _taskCompletionSource.Task : new BrowserResult(BrowserStatus.Timeout, null, "The operation timed out.");
             }
             catch (TaskCanceledException)
