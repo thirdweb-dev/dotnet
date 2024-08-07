@@ -11,6 +11,7 @@ namespace Thirdweb.EWS
         private static readonly string cognitoIdentityPoolId = $"{awsRegion}:2ad7ab1e-f48b-48a6-adfa-ac1090689c26";
         private static readonly string cognitoUserPoolId = $"{awsRegion}_UFwLcZIpq";
         private static readonly string recoverySharePasswordLambdaFunctionName = $"arn:aws:lambda:{awsRegion}:324457261097:function:recovery-share-password-GenerateRecoverySharePassw-bbE5ZbVAToil";
+        private static readonly string recoverySharePasswordLambdaFunctionNameV2 = "arn:aws:lambda:us-west-2:324457261097:function:lambda-thirdweb-auth-enc-key-prod-ThirdwebAuthEncKeyFunction";
 
         internal static async Task SignUpCognitoUserAsync(string emailAddress, string userName, Type thirdwebHttpClientType)
         {
@@ -112,10 +113,45 @@ namespace Thirdweb.EWS
             return new TokenCollection(result.AccessToken.ToString(), result.IdToken.ToString(), result.RefreshToken.ToString());
         }
 
+        internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaV2Async(string identityId, string token, string invokePayload, Type thirdwebHttpClientType)
+        {
+            var credentials = await GetTemporaryCredentialsV2Async(identityId, token, thirdwebHttpClientType).ConfigureAwait(false);
+            return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, thirdwebHttpClientType, recoverySharePasswordLambdaFunctionNameV2).ConfigureAwait(false);
+        }
+
+        private static async Task<AwsCredentials> GetTemporaryCredentialsV2Async(string identityId, string token, Type thirdwebHttpClientType)
+        {
+            var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
+            var endpoint = $"https://cognito-identity.{awsRegion}.amazonaws.com/";
+
+            var payloadForGetCredentials = new { IdentityId = identityId, Logins = new Dictionary<string, string> { { "cognito-identity.amazonaws.com", token } } };
+
+            var content = new StringContent(JsonConvert.SerializeObject(payloadForGetCredentials), Encoding.UTF8, "application/x-amz-json-1.1");
+
+            client.AddHeader("X-Amz-Target", "AWSCognitoIdentityService.GetCredentialsForIdentity");
+
+            var response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
+            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Failed to get credentials: {responseContent}");
+            }
+
+            var credentialsResponse = JsonConvert.DeserializeObject<GetCredentialsForIdentityResponse>(responseContent);
+
+            return new AwsCredentials
+            {
+                AccessKeyId = credentialsResponse.Credentials.AccessKeyId,
+                SecretAccessKey = credentialsResponse.Credentials.SecretKey,
+                SessionToken = credentialsResponse.Credentials.SessionToken
+            };
+        }
+
         internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaAsync(string idToken, string invokePayload, Type thirdwebHttpClientType)
         {
             var credentials = await GetTemporaryCredentialsAsync(idToken, thirdwebHttpClientType).ConfigureAwait(false);
-            return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, thirdwebHttpClientType).ConfigureAwait(false);
+            return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, thirdwebHttpClientType, recoverySharePasswordLambdaFunctionName).ConfigureAwait(false);
         }
 
         private static async Task<AwsCredentials> GetTemporaryCredentialsAsync(string idToken, Type thirdwebHttpClientType)
@@ -170,9 +206,9 @@ namespace Thirdweb.EWS
             };
         }
 
-        private static async Task<MemoryStream> InvokeLambdaWithTemporaryCredentialsAsync(AwsCredentials credentials, string invokePayload, Type thirdwebHttpClientType)
+        private static async Task<MemoryStream> InvokeLambdaWithTemporaryCredentialsAsync(AwsCredentials credentials, string invokePayload, Type thirdwebHttpClientType, string lambdaFunction)
         {
-            var endpoint = $"https://lambda.{awsRegion}.amazonaws.com/2015-03-31/functions/{recoverySharePasswordLambdaFunctionName}/invocations";
+            var endpoint = $"https://lambda.{awsRegion}.amazonaws.com/2015-03-31/functions/{lambdaFunction}/invocations";
             var requestBody = new StringContent(invokePayload, Encoding.UTF8, "application/json");
 
             var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
@@ -181,7 +217,7 @@ namespace Thirdweb.EWS
             var dateStamp = dateTimeNow.ToString("yyyyMMdd");
             var amzDate = dateTimeNow.ToString("yyyyMMddTHHmmssZ");
 
-            var canonicalUri = "/2015-03-31/functions/" + Uri.EscapeDataString(recoverySharePasswordLambdaFunctionName) + "/invocations";
+            var canonicalUri = "/2015-03-31/functions/" + Uri.EscapeDataString(lambdaFunction) + "/invocations";
             var canonicalQueryString = "";
             var canonicalHeaders = $"host:lambda.{awsRegion}.amazonaws.com\nx-amz-date:{amzDate}\n";
             var signedHeaders = "host;x-amz-date";

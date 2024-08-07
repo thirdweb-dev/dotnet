@@ -28,6 +28,23 @@ var walletAddress = await privateKeyWallet.GetAddress();
 var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
 Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
 
+var inAppWalletDiscord = await InAppWallet.Create(client: client, authProvider: AuthProvider.Discord);
+if (!await inAppWalletDiscord.IsConnected())
+{
+    _ = await inAppWalletDiscord.LoginWithOauth(
+        isMobile: false,
+        (url) =>
+        {
+            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+            _ = Process.Start(psi);
+        },
+        "thirdweb://",
+        new InAppWalletBrowser()
+    );
+}
+var inAppWalletDiscordAddress = await inAppWalletDiscord.GetAddress();
+Console.WriteLine($"InAppWallet Discord address: {inAppWalletDiscordAddress}");
+
 // var smartWallet = await SmartWallet.Create(privateKeyWallet, 78600);
 
 // // self transfer 0

@@ -6,7 +6,7 @@ namespace Thirdweb.EWS
     {
         public async Task<VerifyResult> SignInWithOauthAsync(string authProvider, string authResult, string recoveryCode)
         {
-            Server.VerifyResult result = await server.VerifyOAuthAsync(authResult).ConfigureAwait(false);
+            var result = await server.VerifyOAuthAsync(authResult).ConfigureAwait(false);
             return await PostAuthSetup(result, recoveryCode, null, authProvider).ConfigureAwait(false);
         }
 

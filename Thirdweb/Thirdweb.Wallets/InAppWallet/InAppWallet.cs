@@ -14,7 +14,8 @@ namespace Thirdweb
         Apple,
         Facebook,
         JWT,
-        AuthEndpoint
+        AuthEndpoint,
+        Discord
     }
 
     /// <summary>
@@ -42,7 +43,7 @@ namespace Thirdweb
         /// <param name="client">The Thirdweb client instance.</param>
         /// <param name="email">The email address for authentication.</param>
         /// <param name="phoneNumber">The phone number for authentication.</param>
-        /// <param name="authprovider">The authentication provider to use.</param>
+        /// <param name="authProvider">The authentication provider to use.</param>
         /// <param name="storageDirectoryPath">The path to the storage directory.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the created in-app wallet.</returns>
         /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
@@ -50,22 +51,23 @@ namespace Thirdweb
             ThirdwebClient client,
             string email = null,
             string phoneNumber = null,
-            AuthProvider authprovider = AuthProvider.Default,
+            AuthProvider authProvider = AuthProvider.Default,
             string storageDirectoryPath = null
         )
         {
-            if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber) && authprovider == AuthProvider.Default)
+            if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber) && authProvider == AuthProvider.Default)
             {
                 throw new ArgumentException("Email, Phone Number, or OAuth Provider must be provided to login.");
             }
 
-            var authproviderStr = authprovider switch
+            var authproviderStr = authProvider switch
             {
                 AuthProvider.Google => "Google",
                 AuthProvider.Apple => "Apple",
                 AuthProvider.Facebook => "Facebook",
                 AuthProvider.JWT => "JWT",
                 AuthProvider.AuthEndpoint => "AuthEndpoint",
+                AuthProvider.Discord => "Discord",
                 AuthProvider.Default => string.IsNullOrEmpty(email) ? "PhoneOTP" : "EmailOTP",
                 _ => throw new ArgumentException("Invalid AuthProvider"),
             };
