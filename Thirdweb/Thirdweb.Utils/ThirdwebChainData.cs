@@ -45,9 +45,6 @@ namespace Thirdweb
         [JsonProperty("icon")]
         public ThirdwebChainIcon Icon { get; set; }
 
-        [JsonProperty("features")]
-        public List<ThirdwebChainFeature> Features { get; set; }
-
         [JsonProperty("faucets")]
         public List<object> Faucets { get; set; }
 
@@ -97,13 +94,6 @@ namespace Thirdweb
 
         [JsonProperty("format")]
         public string Format { get; set; }
-    }
-
-    [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
-    public class ThirdwebChainFeature
-    {
-        [JsonProperty("name")]
-        public string Name { get; set; }
     }
 
     public class ThirdwebChainEns
