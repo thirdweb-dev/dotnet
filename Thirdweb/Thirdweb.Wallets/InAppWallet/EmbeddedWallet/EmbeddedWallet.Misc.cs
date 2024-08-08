@@ -93,7 +93,7 @@ namespace Thirdweb.EWS
 
         private async Task<User> MakeUserAsync(string emailAddress, string phoneNumber, Account account, string authToken, string walletUserId, string deviceShare, string authProvider)
         {
-            var data = new LocalStorage.DataStorage(authToken, deviceShare, emailAddress ?? "", walletUserId, authProvider);
+            var data = new LocalStorage.DataStorage(authToken, deviceShare, emailAddress, phoneNumber, walletUserId, authProvider);
             await localStorage.SaveDataAsync(data).ConfigureAwait(false);
             user = new User(account, emailAddress, phoneNumber);
             return user;
