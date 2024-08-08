@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
 namespace Thirdweb.EWS
 {
