@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
 namespace Thirdweb.EWS
 {
@@ -7,13 +6,14 @@ namespace Thirdweb.EWS
     {
         internal class VerifyResult
         {
-            internal VerifyResult(bool isNewUser, string authToken, string walletUserId, string recoveryCode, string email)
+            internal VerifyResult(bool isNewUser, string authToken, string walletUserId, string recoveryCode, string email, string phoneNumber)
             {
                 IsNewUser = isNewUser;
                 AuthToken = authToken;
                 WalletUserId = walletUserId;
                 RecoveryCode = recoveryCode;
                 Email = email;
+                PhoneNumber = phoneNumber;
             }
 
             internal bool IsNewUser { get; }
@@ -21,6 +21,21 @@ namespace Thirdweb.EWS
             internal string WalletUserId { get; }
             internal string RecoveryCode { get; }
             internal string Email { get; }
+            internal string PhoneNumber { get; }
+        }
+
+        [DataContract]
+        private class SendEmailOtpReturnType
+        {
+            [DataMember(Name = "email")]
+            internal string Email { get; set; }
+        }
+
+        [DataContract]
+        private class SendPhoneOtpReturnType
+        {
+            [DataMember(Name = "phone")]
+            internal string Phone { get; set; }
         }
 
 #pragma warning disable CS0169, CS8618, IDE0051 // Deserialization will construct the following classes.
@@ -37,7 +52,7 @@ namespace Thirdweb.EWS
             internal class VerifiedTokenType
             {
                 [DataMember(Name = "authDetails")]
-                internal UserAuthDetails AuthDetails { get; set; }
+                internal AuthDetailsType AuthDetails { get; set; }
 
                 [DataMember]
                 private string authProvider;
@@ -53,32 +68,6 @@ namespace Thirdweb.EWS
 
                 [DataMember]
                 private string userId;
-            }
-        }
-
-        [DataContract]
-        private class GetUserStatusApiReturnType
-        {
-            [DataMember]
-#pragma warning disable CS0649 // Deserialization will populate this field.
-            private string status;
-#pragma warning restore CS0649 // Field 'Server.GetUserStatusApiReturnType.status' is never assigned to, and will always have its default value null
-            internal UserStatus Status => (UserStatus)status.Length;
-
-            [DataMember]
-            private StoredTokenType storedToken;
-
-            [DataMember(Name = "user")]
-            internal UserType User { get; set; }
-
-            [DataContract]
-            internal class UserType
-            {
-                [DataMember(Name = "authDetails")]
-                internal UserAuthDetails AuthDetails { get; set; }
-
-                [DataMember]
-                private string walletAddress;
             }
         }
 
@@ -103,67 +92,6 @@ namespace Thirdweb.EWS
         }
 
         [DataContract]
-        private class IsEmailOtpValidResponse
-        {
-            [DataMember(Name = "isOtpValid")]
-            internal bool IsOtpValid { get; set; }
-        }
-
-        [DataContract]
-        private class HeadlessOauthLoginLinkResponse
-        {
-            [DataMember(Name = "googleLoginLink")]
-            internal string GoogleLoginLink { get; set; }
-
-            [DataMember(Name = "platformLoginLink")]
-            internal string PlatformLoginLink { get; set; }
-
-            [DataMember(Name = "oauthLoginLink")]
-            internal string OauthLoginLink { get; set; }
-        }
-
-        [DataContract]
-        internal class StoredTokenType
-        {
-            [DataMember]
-            private string jwtToken;
-
-            [DataMember]
-            private string authProvider;
-
-            [DataMember(Name = "authDetails")]
-            internal UserAuthDetails AuthDetails { get; set; }
-
-            [DataMember]
-            private string developerClientId;
-
-            [DataMember]
-            private string cookieString;
-
-            [DataMember]
-            private bool isNewUser;
-        }
-
-        [DataContract]
-        internal class UserAuthDetails
-        {
-            [DataMember(Name = "email")]
-            internal string Email { get; set; }
-
-            [DataMember(Name = "userWalletId")]
-            internal string WalletUserId { get; set; }
-
-            [DataMember(Name = "recoveryShareManagement")]
-            internal string RecoveryShareManagement { get; set; }
-
-            [DataMember(Name = "recoveryCode")]
-            internal string RecoveryCode { get; set; }
-
-            [DataMember(Name = "backupRecoveryCodes")]
-            internal string[] BackupRecoveryCodes { get; set; }
-        }
-
-        [DataContract]
         internal class UserWallet
         {
             [DataMember(Name = "status")]
@@ -184,16 +112,6 @@ namespace Thirdweb.EWS
 
         [DataContract]
         private class IdTokenResponse
-        {
-            [DataMember(Name = "accessToken")]
-            internal string AccessToken { get; set; }
-
-            [DataMember(Name = "idToken")]
-            internal string IdToken { get; set; }
-        }
-
-        [DataContract]
-        private class IdTokenV2Response
         {
             [DataMember(Name = "token")]
             internal string Token { get; set; }
@@ -216,33 +134,17 @@ namespace Thirdweb.EWS
         }
 
         [DataContract]
-        internal class RecoveryShareManagementResponse
-        {
-            internal string Value => data.oauth.FirstOrDefault()?.recovery_share_management;
-#pragma warning disable CS0649 // Deserialization will populate these fields.
-            [DataMember]
-            private RecoveryShareManagementResponse data;
-
-            [DataMember]
-            private RecoveryShareManagementResponse[] oauth;
-
-            [DataMember]
-            private string recovery_share_management;
-#pragma warning restore CS0649 // Field 'Server.RecoveryShareManagementResponse.*' is never assigned to, and will always have its default value null
-        }
-
-        [DataContract]
-        internal class AuthResultType_OAuth
+        internal class AuthResultType
         {
             [DataMember(Name = "storedToken")]
-            internal StoredTokenType_OAuth StoredToken { get; set; }
+            internal StoredTokenType StoredToken { get; set; }
 
             [DataMember(Name = "walletDetails")]
-            internal WalletDetailsType_OAuth WalletDetails { get; set; }
+            internal WalletDetailsType WalletDetails { get; set; }
         }
 
         [DataContract]
-        internal class StoredTokenType_OAuth
+        internal class StoredTokenType
         {
             [DataMember(Name = "jwtToken")]
             internal string JwtToken { get; set; }
@@ -251,7 +153,7 @@ namespace Thirdweb.EWS
             internal string AuthProvider { get; set; }
 
             [DataMember(Name = "authDetails")]
-            internal AuthDetailsType_OAuth AuthDetails { get; set; }
+            internal AuthDetailsType AuthDetails { get; set; }
 
             [DataMember(Name = "developerClientId")]
             internal string DeveloperClientId { get; set; }
@@ -264,23 +166,32 @@ namespace Thirdweb.EWS
 
             [DataMember(Name = "isNewUser")]
             internal bool IsNewUser { get; set; }
-
-            [DataContract]
-            internal class AuthDetailsType_OAuth
-            {
-                [DataMember(Name = "email")]
-                internal string Email { get; set; }
-
-                [DataMember(Name = "userWalletId")]
-                internal string UserWalletId { get; set; }
-
-                [DataMember(Name = "recoveryCode")]
-                internal string RecoveryCode { get; set; }
-            }
         }
 
         [DataContract]
-        internal class WalletDetailsType_OAuth
+        internal class AuthDetailsType
+        {
+            [DataMember(Name = "phoneNumber")]
+            internal string PhoneNumber { get; set; }
+
+            [DataMember(Name = "email")]
+            internal string Email { get; set; }
+
+            [DataMember(Name = "userWalletId")]
+            internal string UserWalletId { get; set; }
+
+            [DataMember(Name = "recoveryCode")]
+            internal string RecoveryCode { get; set; }
+
+            [DataMember(Name = "recoveryShareManagement")]
+            internal string RecoveryShareManagement { get; set; }
+
+            [DataMember(Name = "backupRecoveryCodes")]
+            internal string[] BackupRecoveryCodes { get; set; }
+        }
+
+        [DataContract]
+        internal class WalletDetailsType
         {
             [DataMember(Name = "deviceShareStored")]
             internal string DeviceShareStored { get; set; }

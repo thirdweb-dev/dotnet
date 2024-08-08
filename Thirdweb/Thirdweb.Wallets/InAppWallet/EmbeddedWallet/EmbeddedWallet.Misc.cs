@@ -15,20 +15,17 @@ namespace Thirdweb.EWS
 
         private async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)
         {
-            // Define necessary variables from the result.
-            Account account;
             var walletUserId = result.WalletUserId;
             var authToken = result.AuthToken;
             var emailAddress = result.Email;
-            var deviceShare = localStorage.Data?.DeviceShare;
+            var phoneNumber = result.PhoneNumber;
 
-            // Initialize variables related to recovery codes and email status.
             var mainRecoveryCode = (twManagedRecoveryCodeOverride ?? result.RecoveryCode) ?? throw new InvalidOperationException("Server failed to return recovery code.");
 
-            (account, deviceShare) = result.IsNewUser
+            (var account, var deviceShare) = result.IsNewUser
                 ? await CreateAccountAsync(result.AuthToken, mainRecoveryCode).ConfigureAwait(false)
                 : await RecoverAccountAsync(result.AuthToken, mainRecoveryCode).ConfigureAwait(false);
-            var user = await MakeUserAsync(emailAddress, account, authToken, walletUserId, deviceShare, authProvider).ConfigureAwait(false);
+            var user = await MakeUserAsync(emailAddress, phoneNumber, account, authToken, walletUserId, deviceShare, authProvider).ConfigureAwait(false);
             return new VerifyResult(user, mainRecoveryCode);
         }
 
@@ -38,8 +35,10 @@ namespace Thirdweb.EWS
             await localStorage.RemoveAuthTokenAsync().ConfigureAwait(false);
         }
 
-        public async Task<User> GetUserAsync(string email, string authProvider)
+        public async Task<User> GetUserAsync(string email, string phone, string authProvider)
         {
+            email = email?.ToLower();
+
             if (user != null)
             {
                 return user;
@@ -67,11 +66,12 @@ namespace Thirdweb.EWS
 
                     var authShare = await server.FetchAuthShareAsync(localStorage.Data.AuthToken).ConfigureAwait(false);
                     var emailAddress = userWallet.StoredToken?.AuthDetails.Email;
+                    var phoneNumber = userWallet.StoredToken?.AuthDetails.PhoneNumber;
 
-                    if (email != null && email != emailAddress)
+                    if ((email != null && email != emailAddress) || (phone != null && phone != phoneNumber))
                     {
                         await SignOutAsync().ConfigureAwait(false);
-                        throw new InvalidOperationException("User email does not match");
+                        throw new InvalidOperationException("User email or phone number do not match");
                     }
                     else if (email == null && localStorage.Data.AuthProvider != authProvider)
                     {
@@ -82,7 +82,8 @@ namespace Thirdweb.EWS
                     {
                         throw new InvalidOperationException("Server failed to return auth share");
                     }
-                    user = new User(MakeAccountFromShares(new[] { authShare, localStorage.Data.DeviceShare }), emailAddress);
+
+                    user = new User(MakeAccountFromShares(new[] { authShare, localStorage.Data.DeviceShare }), emailAddress, phoneNumber);
                     return user;
                 default:
                     break;
@@ -90,11 +91,11 @@ namespace Thirdweb.EWS
             throw new InvalidOperationException($"Unexpected user status '{userWallet.Status}'");
         }
 
-        private async Task<User> MakeUserAsync(string emailAddress, Account account, string authToken, string walletUserId, string deviceShare, string authProvider)
+        private async Task<User> MakeUserAsync(string emailAddress, string phoneNumber, Account account, string authToken, string walletUserId, string deviceShare, string authProvider)
         {
-            var data = new LocalStorage.DataStorage(authToken, deviceShare, emailAddress ?? "", walletUserId, authProvider);
+            var data = new LocalStorage.DataStorage(authToken, deviceShare, emailAddress, phoneNumber, walletUserId, authProvider);
             await localStorage.SaveDataAsync(data).ConfigureAwait(false);
-            user = new User(account, emailAddress ?? "");
+            user = new User(account, emailAddress, phoneNumber);
             return user;
         }
 

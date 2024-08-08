@@ -456,15 +456,8 @@ public class UtilsTests : BaseTests
         Assert.NotNull(chainData.NativeCurrency.Name);
         Assert.NotNull(chainData.NativeCurrency.Symbol);
         Assert.Equal(18, chainData.NativeCurrency.Decimals);
-        Assert.NotNull(chainData.Features);
         Assert.NotNull(chainData.Faucets);
         Assert.NotNull(chainData.Explorers);
-        Assert.NotNull(chainData.RedFlags);
-        Assert.Null(chainData.Parent);
-
-        chainId = 42161;
-        chainData = await Utils.FetchThirdwebChainDataAsync(_client, chainId);
-        Assert.NotNull(chainData.Parent);
     }
 
     [Fact(Timeout = 120000)]

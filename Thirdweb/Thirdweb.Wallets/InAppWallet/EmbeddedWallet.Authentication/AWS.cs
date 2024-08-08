@@ -6,123 +6,20 @@ namespace Thirdweb.EWS
 {
     internal class AWS
     {
-        private const string awsRegion = "us-west-2";
-        private const string cognitoAppClientId = "2e02ha2ce6du13ldk8pai4h3d0";
-        private static readonly string cognitoIdentityPoolId = $"{awsRegion}:2ad7ab1e-f48b-48a6-adfa-ac1090689c26";
-        private static readonly string cognitoUserPoolId = $"{awsRegion}_UFwLcZIpq";
-        private static readonly string recoverySharePasswordLambdaFunctionName = $"arn:aws:lambda:{awsRegion}:324457261097:function:recovery-share-password-GenerateRecoverySharePassw-bbE5ZbVAToil";
-        private static readonly string recoverySharePasswordLambdaFunctionNameV2 = "arn:aws:lambda:us-west-2:324457261097:function:lambda-thirdweb-auth-enc-key-prod-ThirdwebAuthEncKeyFunction";
+        private const string AWS_REGION = "us-west-2";
 
-        internal static async Task SignUpCognitoUserAsync(string emailAddress, string userName, Type thirdwebHttpClientType)
+        private static readonly string recoverySharePasswordLambdaFunctionNameV2 = $"arn:aws:lambda:{AWS_REGION}:324457261097:function:lambda-thirdweb-auth-enc-key-prod-ThirdwebAuthEncKeyFunction";
+
+        internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaAsync(string identityId, string token, string invokePayload, Type thirdwebHttpClientType)
         {
-            emailAddress ??= "cognito@thirdweb.com";
-
-            var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
-            var endpoint = $"https://cognito-idp.{awsRegion}.amazonaws.com/";
-            var payload = new
-            {
-                ClientId = cognitoAppClientId,
-                Username = userName,
-                Password = Secrets.Random(12),
-                UserAttributes = new[] { new { Name = "email", Value = emailAddress } }
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/x-amz-json-1.1");
-
-            client.AddHeader("X-Amz-Target", "AWSCognitoIdentityProviderService.SignUp");
-
-            var response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                throw new Exception($"Sign-up failed: {responseBody}");
-            }
-        }
-
-        internal static async Task<string> StartCognitoUserAuth(string userName, Type thirdwebHttpClientType)
-        {
-            var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
-            var endpoint = $"https://cognito-idp.{awsRegion}.amazonaws.com/";
-            var payload = new
-            {
-                AuthFlow = "CUSTOM_AUTH",
-                ClientId = cognitoAppClientId,
-                AuthParameters = new Dictionary<string, string> { { "USERNAME", userName } },
-                ClientMetadata = new Dictionary<string, string>()
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/x-amz-json-1.1");
-
-            client.AddHeader("X-Amz-Target", "AWSCognitoIdentityProviderService.InitiateAuth");
-
-            var response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
-
-            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(responseContent);
-                if (errorResponse.Type == "UserNotFoundException")
-                {
-                    return null;
-                }
-                throw new Exception($"Authentication initiation failed: {responseContent}");
-            }
-
-            var jsonResponse = JsonConvert.DeserializeObject<StartAuthResponse>(responseContent);
-            return jsonResponse.Session;
-        }
-
-        internal static async Task<TokenCollection> FinishCognitoUserAuth(string userName, string otp, string sessionId, Type thirdwebHttpClientType)
-        {
-            var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
-            var endpoint = $"https://cognito-idp.{awsRegion}.amazonaws.com/";
-            var payload = new
-            {
-                ChallengeName = "CUSTOM_CHALLENGE",
-                ClientId = cognitoAppClientId,
-                ChallengeResponses = new Dictionary<string, string> { { "USERNAME", userName }, { "ANSWER", otp } },
-                Session = sessionId
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/x-amz-json-1.1");
-
-            client.AddHeader("X-Amz-Target", "AWSCognitoIdentityProviderService.RespondToAuthChallenge");
-
-            var response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
-
-            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(responseContent);
-                if (errorResponse.Type == "NotAuthorizedException")
-                {
-                    throw new VerificationException("The session expired", false);
-                }
-                if (errorResponse.Type == "UserNotFoundException")
-                {
-                    throw new InvalidOperationException("The user was not found");
-                }
-                throw new Exception($"Challenge response failed: {responseContent}");
-            }
-
-            var jsonResponse = JsonConvert.DeserializeObject<FinishAuthResponse>(responseContent);
-            var result = jsonResponse.AuthenticationResult ?? throw new VerificationException("The OTP is incorrect", true);
-            return new TokenCollection(result.AccessToken.ToString(), result.IdToken.ToString(), result.RefreshToken.ToString());
-        }
-
-        internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaV2Async(string identityId, string token, string invokePayload, Type thirdwebHttpClientType)
-        {
-            var credentials = await GetTemporaryCredentialsV2Async(identityId, token, thirdwebHttpClientType).ConfigureAwait(false);
+            var credentials = await GetTemporaryCredentialsAsync(identityId, token, thirdwebHttpClientType).ConfigureAwait(false);
             return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, thirdwebHttpClientType, recoverySharePasswordLambdaFunctionNameV2).ConfigureAwait(false);
         }
 
-        private static async Task<AwsCredentials> GetTemporaryCredentialsV2Async(string identityId, string token, Type thirdwebHttpClientType)
+        private static async Task<AwsCredentials> GetTemporaryCredentialsAsync(string identityId, string token, Type thirdwebHttpClientType)
         {
             var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
-            var endpoint = $"https://cognito-identity.{awsRegion}.amazonaws.com/";
+            var endpoint = $"https://cognito-identity.{AWS_REGION}.amazonaws.com/";
 
             var payloadForGetCredentials = new { IdentityId = identityId, Logins = new Dictionary<string, string> { { "cognito-identity.amazonaws.com", token } } };
 
@@ -148,67 +45,9 @@ namespace Thirdweb.EWS
             };
         }
 
-        internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaAsync(string idToken, string invokePayload, Type thirdwebHttpClientType)
-        {
-            var credentials = await GetTemporaryCredentialsAsync(idToken, thirdwebHttpClientType).ConfigureAwait(false);
-            return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, thirdwebHttpClientType, recoverySharePasswordLambdaFunctionName).ConfigureAwait(false);
-        }
-
-        private static async Task<AwsCredentials> GetTemporaryCredentialsAsync(string idToken, Type thirdwebHttpClientType)
-        {
-            var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
-            var endpoint = $"https://cognito-identity.{awsRegion}.amazonaws.com/";
-
-            var payloadForGetId = new { IdentityPoolId = cognitoIdentityPoolId, Logins = new Dictionary<string, string> { { $"cognito-idp.{awsRegion}.amazonaws.com/{cognitoUserPoolId}", idToken } } };
-
-            var content = new StringContent(JsonConvert.SerializeObject(payloadForGetId), Encoding.UTF8, "application/x-amz-json-1.1");
-
-            client.AddHeader("X-Amz-Target", "AWSCognitoIdentityService.GetId");
-
-            var response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
-
-            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"Failed to get identity ID: {responseContent}");
-            }
-
-            var identityIdResponse = JsonConvert.DeserializeObject<GetIdResponse>(responseContent);
-
-            var payloadForGetCredentials = new
-            {
-                IdentityId = identityIdResponse.IdentityId,
-                Logins = new Dictionary<string, string> { { $"cognito-idp.{awsRegion}.amazonaws.com/{cognitoUserPoolId}", idToken } }
-            };
-
-            content = new StringContent(JsonConvert.SerializeObject(payloadForGetCredentials), Encoding.UTF8, "application/x-amz-json-1.1");
-
-            client.RemoveHeader("X-Amz-Target");
-            client.AddHeader("X-Amz-Target", "AWSCognitoIdentityService.GetCredentialsForIdentity");
-
-            response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
-
-            responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"Failed to get credentials: {responseContent}");
-            }
-
-            var credentialsResponse = JsonConvert.DeserializeObject<GetCredentialsForIdentityResponse>(responseContent);
-
-            return new AwsCredentials
-            {
-                AccessKeyId = credentialsResponse.Credentials.AccessKeyId,
-                SecretAccessKey = credentialsResponse.Credentials.SecretKey,
-                SessionToken = credentialsResponse.Credentials.SessionToken
-            };
-        }
-
         private static async Task<MemoryStream> InvokeLambdaWithTemporaryCredentialsAsync(AwsCredentials credentials, string invokePayload, Type thirdwebHttpClientType, string lambdaFunction)
         {
-            var endpoint = $"https://lambda.{awsRegion}.amazonaws.com/2015-03-31/functions/{lambdaFunction}/invocations";
+            var endpoint = $"https://lambda.{AWS_REGION}.amazonaws.com/2015-03-31/functions/{lambdaFunction}/invocations";
             var requestBody = new StringContent(invokePayload, Encoding.UTF8, "application/json");
 
             var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
@@ -219,7 +58,7 @@ namespace Thirdweb.EWS
 
             var canonicalUri = "/2015-03-31/functions/" + Uri.EscapeDataString(lambdaFunction) + "/invocations";
             var canonicalQueryString = "";
-            var canonicalHeaders = $"host:lambda.{awsRegion}.amazonaws.com\nx-amz-date:{amzDate}\n";
+            var canonicalHeaders = $"host:lambda.{AWS_REGION}.amazonaws.com\nx-amz-date:{amzDate}\n";
             var signedHeaders = "host;x-amz-date";
 
             using var sha256 = SHA256.Create();
@@ -227,10 +66,10 @@ namespace Thirdweb.EWS
             var canonicalRequest = $"POST\n{canonicalUri}\n{canonicalQueryString}\n{canonicalHeaders}\n{signedHeaders}\n{payloadHash}";
 
             var algorithm = "AWS4-HMAC-SHA256";
-            var credentialScope = $"{dateStamp}/{awsRegion}/lambda/aws4_request";
+            var credentialScope = $"{dateStamp}/{AWS_REGION}/lambda/aws4_request";
             var stringToSign = $"{algorithm}\n{amzDate}\n{credentialScope}\n{ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(canonicalRequest)))}";
 
-            var signingKey = GetSignatureKey(credentials.SecretAccessKey, dateStamp, awsRegion, "lambda");
+            var signingKey = GetSignatureKey(credentials.SecretAccessKey, dateStamp, AWS_REGION, "lambda");
             var signature = ToHexString(HMACSHA256(signingKey, stringToSign));
 
             var authorizationHeader = $"{algorithm} Credential={credentials.AccessKeyId}/{credentialScope}, SignedHeaders={signedHeaders}, Signature={signature}";

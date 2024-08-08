@@ -33,7 +33,7 @@ namespace Thirdweb
         internal InAppWallet(ThirdwebClient client, string email, string phoneNumber, string authProvider, EmbeddedWallet embeddedWallet, EthECKey ecKey)
             : base(client, ecKey)
         {
-            _email = email;
+            _email = email?.ToLower();
             _phoneNumber = phoneNumber;
             _embeddedWallet = embeddedWallet;
             _authProvider = authProvider;
@@ -72,7 +72,7 @@ namespace Thirdweb
                 AuthProvider.Discord => "Discord",
                 AuthProvider.Farcaster => "Farcaster",
                 AuthProvider.Telegram => "Telegram",
-                AuthProvider.Default => string.IsNullOrEmpty(email) ? "PhoneOTP" : "EmailOTP",
+                AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
                 _ => throw new ArgumentException("Invalid AuthProvider"),
             };
 
@@ -81,7 +81,7 @@ namespace Thirdweb
             try
             {
                 if (!string.IsNullOrEmpty(authproviderStr)) { }
-                var user = await embeddedWallet.GetUserAsync(email, authproviderStr);
+                var user = await embeddedWallet.GetUserAsync(email, phoneNumber, authproviderStr);
                 ecKey = new EthECKey(user.Account.PrivateKey);
             }
             catch
@@ -198,18 +198,7 @@ namespace Thirdweb
 
             try
             {
-                if (_email != null)
-                {
-                    (var isNewUser, var isNewDevice) = await _embeddedWallet.SendOtpEmailAsync(_email);
-                }
-                else if (_phoneNumber != null)
-                {
-                    (var isNewUser, var isNewDevice) = await _embeddedWallet.SendOtpPhoneAsync(_phoneNumber);
-                }
-                else
-                {
-                    throw new Exception("Email or Phone Number must be provided to login.");
-                }
+                (var isNewUser, var isNewDevice) = _email == null ? await _embeddedWallet.SendPhoneOtpAsync(_phoneNumber) : await _embeddedWallet.SendEmailOtpAsync(_email);
             }
             catch (Exception e)
             {
@@ -236,7 +225,7 @@ namespace Thirdweb
                 throw new Exception("Email or Phone Number is required for OTP login");
             }
 
-            var res = _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp) : await _embeddedWallet.VerifyOtpAsync(_email, otp);
+            var res = _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp) : await _embeddedWallet.VerifyEmailOtpAsync(_email, otp);
             if (res.User == null)
             {
                 return (null, res.CanRetry);

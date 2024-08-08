@@ -5,18 +5,14 @@ namespace Thirdweb.EWS
     internal abstract class LocalStorageBase
     {
         internal abstract LocalStorage.DataStorage Data { get; }
-        internal abstract LocalStorage.SessionStorage Session { get; }
 
         internal abstract Task RemoveAuthTokenAsync();
-        internal abstract Task RemoveSessionAsync();
         internal abstract Task SaveDataAsync(LocalStorage.DataStorage data);
-        internal abstract Task SaveSessionAsync(string sessionId);
     }
 
     internal partial class LocalStorage : LocalStorageBase
     {
         internal override DataStorage Data => storage.Data;
-        internal override SessionStorage Session => storage.Session;
         private readonly Storage storage;
         private readonly string filePath;
 
@@ -25,7 +21,7 @@ namespace Thirdweb.EWS
             string directory;
             directory = storageDirectoryPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             directory = Path.Combine(directory, "EWS");
-            Directory.CreateDirectory(directory);
+            _ = Directory.CreateDirectory(directory);
             filePath = Path.Combine(directory, $"{clientId}.txt");
             try
             {
@@ -71,24 +67,6 @@ namespace Thirdweb.EWS
             return UpdateDataAsync(() =>
             {
                 storage.Data = data;
-                return true;
-            });
-        }
-
-        internal override Task SaveSessionAsync(string sessionId)
-        {
-            return UpdateDataAsync(() =>
-            {
-                storage.Session = new SessionStorage(sessionId);
-                return true;
-            });
-        }
-
-        internal override Task RemoveSessionAsync()
-        {
-            return UpdateDataAsync(() =>
-            {
-                storage.Session = null;
                 return true;
             });
         }

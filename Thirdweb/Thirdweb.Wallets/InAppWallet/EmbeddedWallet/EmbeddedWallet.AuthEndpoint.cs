@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace Thirdweb.EWS
 {
     internal partial class EmbeddedWallet
