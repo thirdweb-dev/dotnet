@@ -202,7 +202,7 @@ namespace Thirdweb
             }
             catch (Exception e)
             {
-                throw new Exception("Failed to send OTP email", e);
+                throw new Exception("Failed to send OTP", e);
             }
         }
 
