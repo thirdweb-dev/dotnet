@@ -10,7 +10,7 @@ namespace Thirdweb.EWS
         internal abstract Task RemoveAuthTokenAsync();
         internal abstract Task RemoveSessionAsync();
         internal abstract Task SaveDataAsync(LocalStorage.DataStorage data);
-        internal abstract Task SaveSessionAsync(string sessionId, bool isKmsWallet);
+        internal abstract Task SaveSessionAsync(string sessionId);
     }
 
     internal partial class LocalStorage : LocalStorageBase
@@ -29,7 +29,7 @@ namespace Thirdweb.EWS
             filePath = Path.Combine(directory, $"{clientId}.txt");
             try
             {
-                byte[] json = File.ReadAllBytes(filePath);
+                var json = File.ReadAllBytes(filePath);
                 DataContractJsonSerializer serializer = new(typeof(Storage));
                 MemoryStream fin = new(json);
                 storage = (Storage)serializer.ReadObject(fin);
@@ -75,11 +75,11 @@ namespace Thirdweb.EWS
             });
         }
 
-        internal override Task SaveSessionAsync(string sessionId, bool isKmsWallet)
+        internal override Task SaveSessionAsync(string sessionId)
         {
             return UpdateDataAsync(() =>
             {
-                storage.Session = new SessionStorage(sessionId, isKmsWallet);
+                storage.Session = new SessionStorage(sessionId);
                 return true;
             });
         }

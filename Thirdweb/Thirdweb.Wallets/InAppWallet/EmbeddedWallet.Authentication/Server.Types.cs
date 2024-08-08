@@ -103,14 +103,7 @@ namespace Thirdweb.EWS
         }
 
         [DataContract]
-        private class IsEmailUserOtpValidResponse
-        {
-            [DataMember(Name = "isValid")]
-            internal bool IsValid { get; set; }
-        }
-
-        [DataContract]
-        private class IsEmailKmsOtpValidResponse
+        private class IsEmailOtpValidResponse
         {
             [DataMember(Name = "isOtpValid")]
             internal bool IsOtpValid { get; set; }

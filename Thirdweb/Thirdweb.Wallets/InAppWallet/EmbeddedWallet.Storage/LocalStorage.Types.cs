@@ -44,18 +44,13 @@ namespace Thirdweb.EWS
         internal class SessionStorage
         {
             internal string Id => id;
-            internal bool IsKmsWallet => isKmsWallet;
 
             [DataMember]
             private string id;
 
-            [DataMember]
-            private bool isKmsWallet;
-
-            internal SessionStorage(string id, bool isKmsWallet)
+            internal SessionStorage(string id)
             {
                 this.id = id;
-                this.isKmsWallet = isKmsWallet;
             }
         }
 

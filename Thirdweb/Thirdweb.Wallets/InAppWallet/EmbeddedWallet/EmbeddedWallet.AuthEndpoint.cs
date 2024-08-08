@@ -4,10 +4,10 @@ namespace Thirdweb.EWS
 {
     internal partial class EmbeddedWallet
     {
-        public async Task<VerifyResult> SignInWithAuthEndpointAsync(string payload, string encryptionKey, string recoveryCode)
+        public async Task<VerifyResult> SignInWithAuthEndpointAsync(string payload, string encryptionKey)
         {
-            Server.VerifyResult result = await server.VerifyAuthEndpointAsync(payload).ConfigureAwait(false);
-            return await PostAuthSetup(result, recoveryCode, encryptionKey, "AuthEndpoint").ConfigureAwait(false);
+            var result = await server.VerifyAuthEndpointAsync(payload).ConfigureAwait(false);
+            return await PostAuthSetup(result, encryptionKey, "AuthEndpoint").ConfigureAwait(false);
         }
     }
 }
