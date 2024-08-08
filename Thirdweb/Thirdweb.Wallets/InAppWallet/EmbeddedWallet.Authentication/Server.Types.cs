@@ -22,6 +22,20 @@ namespace Thirdweb.EWS
             internal string Email { get; }
         }
 
+        [DataContract]
+        private class SendEmailOtpReturnType
+        {
+            [DataMember(Name = "email")]
+            internal string Email { get; set; }
+        }
+
+        [DataContract]
+        private class SendPhoneOtpReturnType
+        {
+            [DataMember(Name = "phone")]
+            internal string Phone { get; set; }
+        }
+
 #pragma warning disable CS0169, CS8618, IDE0051 // Deserialization will construct the following classes.
         [DataContract]
         private class AuthVerifiedTokenReturnType
@@ -56,32 +70,6 @@ namespace Thirdweb.EWS
         }
 
         [DataContract]
-        private class GetUserStatusApiReturnType
-        {
-            [DataMember]
-#pragma warning disable CS0649 // Deserialization will populate this field.
-            private string status;
-#pragma warning restore CS0649 // Field 'Server.GetUserStatusApiReturnType.status' is never assigned to, and will always have its default value null
-            internal UserStatus Status => (UserStatus)status.Length;
-
-            [DataMember]
-            private StoredTokenType storedToken;
-
-            [DataMember(Name = "user")]
-            internal UserType User { get; set; }
-
-            [DataContract]
-            internal class UserType
-            {
-                [DataMember(Name = "authDetails")]
-                internal UserAuthDetails AuthDetails { get; set; }
-
-                [DataMember]
-                private string walletAddress;
-            }
-        }
-
-        [DataContract]
         private class HttpErrorWithMessage
         {
             [DataMember(Name = "error")]
@@ -99,26 +87,6 @@ namespace Thirdweb.EWS
 
             [DataMember(Name = "maybeEncryptedRecoveryShares")]
             internal string[] MaybeEncryptedRecoveryShares { get; set; }
-        }
-
-        [DataContract]
-        private class IsEmailOtpValidResponse
-        {
-            [DataMember(Name = "isOtpValid")]
-            internal bool IsOtpValid { get; set; }
-        }
-
-        [DataContract]
-        private class HeadlessOauthLoginLinkResponse
-        {
-            [DataMember(Name = "googleLoginLink")]
-            internal string GoogleLoginLink { get; set; }
-
-            [DataMember(Name = "platformLoginLink")]
-            internal string PlatformLoginLink { get; set; }
-
-            [DataMember(Name = "oauthLoginLink")]
-            internal string OauthLoginLink { get; set; }
         }
 
         [DataContract]
@@ -184,16 +152,6 @@ namespace Thirdweb.EWS
         [DataContract]
         private class IdTokenResponse
         {
-            [DataMember(Name = "accessToken")]
-            internal string AccessToken { get; set; }
-
-            [DataMember(Name = "idToken")]
-            internal string IdToken { get; set; }
-        }
-
-        [DataContract]
-        private class IdTokenV2Response
-        {
             [DataMember(Name = "token")]
             internal string Token { get; set; }
 
@@ -212,22 +170,6 @@ namespace Thirdweb.EWS
 
             [DataMember(Name = "recoveryShareEncKey")]
             internal string RecoverySharePassword { get; set; }
-        }
-
-        [DataContract]
-        internal class RecoveryShareManagementResponse
-        {
-            internal string Value => data.oauth.FirstOrDefault()?.recovery_share_management;
-#pragma warning disable CS0649 // Deserialization will populate these fields.
-            [DataMember]
-            private RecoveryShareManagementResponse data;
-
-            [DataMember]
-            private RecoveryShareManagementResponse[] oauth;
-
-            [DataMember]
-            private string recovery_share_management;
-#pragma warning restore CS0649 // Field 'Server.RecoveryShareManagementResponse.*' is never assigned to, and will always have its default value null
         }
 
         [DataContract]

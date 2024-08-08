@@ -15,17 +15,13 @@ namespace Thirdweb.EWS
 
         private async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)
         {
-            // Define necessary variables from the result.
-            Account account;
             var walletUserId = result.WalletUserId;
             var authToken = result.AuthToken;
             var emailAddress = result.Email;
-            var deviceShare = localStorage.Data?.DeviceShare;
 
-            // Initialize variables related to recovery codes and email status.
             var mainRecoveryCode = (twManagedRecoveryCodeOverride ?? result.RecoveryCode) ?? throw new InvalidOperationException("Server failed to return recovery code.");
 
-            (account, deviceShare) = result.IsNewUser
+            (var account, var deviceShare) = result.IsNewUser
                 ? await CreateAccountAsync(result.AuthToken, mainRecoveryCode).ConfigureAwait(false)
                 : await RecoverAccountAsync(result.AuthToken, mainRecoveryCode).ConfigureAwait(false);
             var user = await MakeUserAsync(emailAddress, account, authToken, walletUserId, deviceShare, authProvider).ConfigureAwait(false);
@@ -40,6 +36,8 @@ namespace Thirdweb.EWS
 
         public async Task<User> GetUserAsync(string email, string authProvider)
         {
+            email = email?.ToLower();
+
             if (user != null)
             {
                 return user;
