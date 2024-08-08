@@ -72,7 +72,7 @@ namespace Thirdweb
                 AuthProvider.Discord => "Discord",
                 AuthProvider.Farcaster => "Farcaster",
                 AuthProvider.Telegram => "Telegram",
-                AuthProvider.Default => string.IsNullOrEmpty(email) ? "PhoneOTP" : "EmailOTP",
+                AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
                 _ => throw new ArgumentException("Invalid AuthProvider"),
             };
 
@@ -81,7 +81,7 @@ namespace Thirdweb
             try
             {
                 if (!string.IsNullOrEmpty(authproviderStr)) { }
-                var user = await embeddedWallet.GetUserAsync(email, authproviderStr);
+                var user = await embeddedWallet.GetUserAsync(email, phoneNumber, authproviderStr);
                 ecKey = new EthECKey(user.Account.PrivateKey);
             }
             catch

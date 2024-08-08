@@ -17,7 +17,7 @@ namespace Thirdweb.EWS
 
         public async Task<bool> IsRecoveryCodeNeededAsync(string authResultStr)
         {
-            var authResult = JsonConvert.DeserializeObject<Server.AuthResultType_OAuth>(authResultStr);
+            var authResult = JsonConvert.DeserializeObject<Server.AuthResultType>(authResultStr);
             var userWallet = await server.FetchUserDetailsAsync(authResult.StoredToken.AuthDetails.Email, null).ConfigureAwait(false);
             return userWallet.RecoveryShareManagement == "USER_MANAGED" && !userWallet.IsNewUser && localStorage.Data?.DeviceShare == null;
         }

@@ -168,7 +168,7 @@ namespace Thirdweb.EWS
             var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
-            var authResult = await DeserializeAsync<AuthResultType_OAuth>(response).ConfigureAwait(false);
+            var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
             return await InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
         }
 
@@ -179,7 +179,7 @@ namespace Thirdweb.EWS
             var content = MakeHttpContent(new { phone = phoneNumber });
             var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
-            Console.WriteLine($"SendPhoneOtpAsync: {await response.Content.ReadAsStringAsync().ConfigureAwait(false)}");
+
             var result = await DeserializeAsync<SendPhoneOtpReturnType>(response).ConfigureAwait(false);
             return result.Phone;
         }
@@ -191,8 +191,8 @@ namespace Thirdweb.EWS
             var content = MakeHttpContent(new { phone = phoneNumber, code = otp });
             var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
-            Console.WriteLine($"VerifyPhoneOtpAsync: {await response.Content.ReadAsStringAsync().ConfigureAwait(false)}");
-            var authResult = await DeserializeAsync<AuthResultType_OAuth>(response).ConfigureAwait(false);
+
+            var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
             return await InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
         }
 
@@ -209,9 +209,10 @@ namespace Thirdweb.EWS
             return new VerifyResult(
                 authVerifiedToken.VerifiedToken.IsNewUser,
                 authVerifiedToken.VerifiedTokenJwtString,
-                authVerifiedToken.VerifiedToken.AuthDetails.WalletUserId,
+                authVerifiedToken.VerifiedToken.AuthDetails.UserWalletId,
                 authVerifiedToken.VerifiedToken.AuthDetails.RecoveryCode,
-                authVerifiedToken.VerifiedToken.AuthDetails.Email
+                authVerifiedToken.VerifiedToken.AuthDetails.Email,
+                authVerifiedToken.VerifiedToken.AuthDetails.PhoneNumber
             );
         }
 
@@ -228,21 +229,22 @@ namespace Thirdweb.EWS
             return new VerifyResult(
                 authVerifiedToken.VerifiedToken.IsNewUser,
                 authVerifiedToken.VerifiedTokenJwtString,
-                authVerifiedToken.VerifiedToken.AuthDetails.WalletUserId,
+                authVerifiedToken.VerifiedToken.AuthDetails.UserWalletId,
                 authVerifiedToken.VerifiedToken.AuthDetails.RecoveryCode,
-                authVerifiedToken.VerifiedToken.AuthDetails.Email
+                authVerifiedToken.VerifiedToken.AuthDetails.Email,
+                authVerifiedToken.VerifiedToken.AuthDetails.PhoneNumber
             );
         }
 
         internal override async Task<VerifyResult> VerifyOAuthAsync(string authResultStr)
         {
-            var authResult = JsonConvert.DeserializeObject<AuthResultType_OAuth>(authResultStr);
+            var authResult = JsonConvert.DeserializeObject<AuthResultType>(authResultStr);
             return await InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
         }
 
         #region Misc
 
-        private async Task<VerifyResult> InvokeAuthResultLambdaAsync(AuthResultType_OAuth authResult)
+        private async Task<VerifyResult> InvokeAuthResultLambdaAsync(AuthResultType authResult)
         {
             var authToken = authResult.StoredToken.CookieString;
             var idTokenResponse = await FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
@@ -258,7 +260,8 @@ namespace Thirdweb.EWS
                 authToken,
                 authResult.StoredToken.AuthDetails.UserWalletId,
                 payload.RecoverySharePassword,
-                authResult.StoredToken.AuthDetails.Email
+                authResult.StoredToken.AuthDetails.Email,
+                authResult.StoredToken.AuthDetails.PhoneNumber
             );
         }
 
