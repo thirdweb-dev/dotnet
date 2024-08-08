@@ -59,12 +59,6 @@ namespace Thirdweb
 
         [JsonProperty("testnet")]
         public bool Testnet { get; set; }
-
-        [JsonProperty("redFlags")]
-        public List<object> RedFlags { get; set; }
-
-        [JsonProperty("parent")]
-        public ThirdwebChainParent Parent { get; set; }
     }
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
@@ -115,18 +109,6 @@ namespace Thirdweb
 
         [JsonProperty("icon")]
         public ThirdwebChainIcon Icon { get; set; }
-    }
-
-    public class ThirdwebChainParent
-    {
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
-        [JsonProperty("chain")]
-        public string Chain { get; set; }
-
-        [JsonProperty("bridges")]
-        public List<ThirdwebChainBridge> Bridges { get; set; }
     }
 
     public class ThirdwebChainBridge
