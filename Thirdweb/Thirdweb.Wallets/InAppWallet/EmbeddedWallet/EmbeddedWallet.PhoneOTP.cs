@@ -11,7 +11,7 @@ namespace Thirdweb.EWS
             return (isNewUser, isNewDevice);
         }
 
-        public async Task<VerifyResult> VerifyPhoneOtpAsync(string phoneNumber, string otp, string recoveryCode)
+        public async Task<VerifyResult> VerifyPhoneOtpAsync(string phoneNumber, string otp)
         {
             if (localStorage.Session == null)
             {
@@ -21,7 +21,7 @@ namespace Thirdweb.EWS
             {
                 var result = await server.VerifyPhoneOtpAsync(phoneNumber, otp, localStorage.Session.Id).ConfigureAwait(false);
                 await localStorage.RemoveSessionAsync().ConfigureAwait(false);
-                return await PostAuthSetup(result, recoveryCode, null, "PhoneOTP").ConfigureAwait(false);
+                return await PostAuthSetup(result, null, "PhoneOTP").ConfigureAwait(false);
             }
             catch (VerificationException ex)
             {

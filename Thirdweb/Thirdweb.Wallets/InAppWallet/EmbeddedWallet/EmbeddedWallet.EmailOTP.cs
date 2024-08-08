@@ -15,7 +15,7 @@ namespace Thirdweb.EWS
             return (userWallet.IsNewUser, isNewDevice);
         }
 
-        public async Task<VerifyResult> VerifyOtpAsync(string emailAddress, string otp, string recoveryCode)
+        public async Task<VerifyResult> VerifyOtpAsync(string emailAddress, string otp)
         {
             if (localStorage.Session == null)
             {
@@ -29,7 +29,7 @@ namespace Thirdweb.EWS
                 }
                 var result = await server.VerifyEmailOtpAsync(emailAddress, otp, localStorage.Session.Id).ConfigureAwait(false);
                 await localStorage.RemoveSessionAsync().ConfigureAwait(false);
-                return await PostAuthSetup(result, recoveryCode, null, "EmailOTP").ConfigureAwait(false);
+                return await PostAuthSetup(result, null, "EmailOTP").ConfigureAwait(false);
             }
             catch (VerificationException ex)
             {

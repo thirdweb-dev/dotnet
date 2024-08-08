@@ -338,25 +338,18 @@ namespace Thirdweb.EWS
             var isNewUser = authResult.StoredToken.IsNewUser;
             var authToken = authResult.StoredToken.CookieString;
             var walletUserId = authResult.StoredToken.AuthDetails.UserWalletId;
-            var isUserManaged = (await FetchUserDetailsAsync(authResult.StoredToken.AuthDetails.Email, authToken).ConfigureAwait(false)).RecoveryShareManagement == "USER_MANAGED";
-            string recoveryCode = null;
+            var idTokenResponse = await FetchCognitoIdTokenV2Async(authToken).ConfigureAwait(false);
+            var token = idTokenResponse.Token;
+            var identityId = idTokenResponse.IdentityId;
+            var lambdaToken = idTokenResponse.LambdaToken;
 
-            if (!isUserManaged)
-            {
-                var idTokenResponse = await FetchCognitoIdTokenV2Async(authToken).ConfigureAwait(false);
-                var token = idTokenResponse.Token;
-                var identityId = idTokenResponse.IdentityId;
-                var lambdaToken = idTokenResponse.LambdaToken;
+            var invokePayload = Serialize(new { token = lambdaToken });
+            var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaV2Async(identityId, token, invokePayload, thirdwebHttpClientType).ConfigureAwait(false);
 
-                var invokePayload = Serialize(new { token = lambdaToken });
-                var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaV2Async(identityId, token, invokePayload, thirdwebHttpClientType).ConfigureAwait(false);
-
-                JsonSerializer jsonSerializer = new();
-                var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));
-                payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StringReader(payload.Body)));
-                recoveryCode = payload.RecoverySharePassword;
-            }
-
+            var jsonSerializer = new JsonSerializer();
+            var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));
+            payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StringReader(payload.Body)));
+            var recoveryCode = payload.RecoverySharePassword;
             return new VerifyResult(isNewUser, authToken, walletUserId, recoveryCode, authResult.StoredToken.AuthDetails.Email);
         }
 

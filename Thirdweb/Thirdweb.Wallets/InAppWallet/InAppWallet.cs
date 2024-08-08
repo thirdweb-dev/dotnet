@@ -171,7 +171,7 @@ namespace Thirdweb
                 authResultJson = queryDict["authResult"];
             }
 
-            var res = await _embeddedWallet.SignInWithOauthAsync(_authProvider, authResultJson, null);
+            var res = await _embeddedWallet.SignInWithOauthAsync(_authProvider, authResultJson);
             if (res.User == null)
             {
                 throw new Exception("Failed to login with OAuth2");
@@ -236,7 +236,7 @@ namespace Thirdweb
                 throw new Exception("Email or Phone Number is required for OTP login");
             }
 
-            var res = _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp, null) : await _embeddedWallet.VerifyOtpAsync(_email, otp, null);
+            var res = _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp) : await _embeddedWallet.VerifyOtpAsync(_email, otp);
             if (res.User == null)
             {
                 return (null, res.CanRetry);
@@ -275,11 +275,10 @@ namespace Thirdweb
         /// </summary>
         /// <param name="jwt">The JWT to use for authentication.</param>
         /// <param name="encryptionKey">The encryption key to use.</param>
-        /// <param name="recoveryCode">The optional recovery code.</param>
         /// <returns>A task representing the asynchronous operation. The task result contains the login result.</returns>
         /// <exception cref="ArgumentException">Thrown when JWT or encryption key is not provided.</exception>
         /// <exception cref="Exception">Thrown when the login fails.</exception>
-        public async Task<string> LoginWithJWT(string jwt, string encryptionKey, string recoveryCode = null)
+        public async Task<string> LoginWithJWT(string jwt, string encryptionKey)
         {
             if (string.IsNullOrEmpty(jwt))
             {
@@ -291,7 +290,7 @@ namespace Thirdweb
                 throw new ArgumentException(nameof(encryptionKey), "Encryption key cannot be null or empty.");
             }
 
-            var res = await _embeddedWallet.SignInWithJwtAsync(jwt, encryptionKey, recoveryCode);
+            var res = await _embeddedWallet.SignInWithJwtAsync(jwt, encryptionKey);
 
             if (res.User == null)
             {
@@ -312,11 +311,10 @@ namespace Thirdweb
         /// </summary>
         /// <param name="payload">The payload to use for authentication.</param>
         /// <param name="encryptionKey">The encryption key to use.</param>
-        /// <param name="recoveryCode">The optional recovery code.</param>
         /// <returns>A task representing the asynchronous operation. The task result contains the login result.</returns>
         /// <exception cref="ArgumentException">Thrown when payload or encryption key is not provided.</exception>
         /// <exception cref="Exception">Thrown when the login fails.</exception>
-        public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey, string recoveryCode = null)
+        public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey)
         {
             if (string.IsNullOrEmpty(payload))
             {
@@ -328,7 +326,7 @@ namespace Thirdweb
                 throw new ArgumentException(nameof(encryptionKey), "Encryption key cannot be null or empty.");
             }
 
-            var res = await _embeddedWallet.SignInWithAuthEndpointAsync(payload, encryptionKey, recoveryCode);
+            var res = await _embeddedWallet.SignInWithAuthEndpointAsync(payload, encryptionKey);
 
             if (res.User == null)
             {

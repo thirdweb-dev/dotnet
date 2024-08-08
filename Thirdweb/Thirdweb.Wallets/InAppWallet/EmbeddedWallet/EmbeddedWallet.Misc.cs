@@ -13,7 +13,7 @@ namespace Thirdweb.EWS
             }
         }
 
-        private async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string userRecoveryCode, string twManagedRecoveryCodeOverride, string authProvider)
+        private async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)
         {
             // Define necessary variables from the result.
             Account account;

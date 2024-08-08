@@ -140,7 +140,7 @@ namespace Thirdweb
         /// <returns>The URL with a forward slash added if necessary.</returns>
         private string AddForwardSlashIfNecessary(string url)
         {
-            string forwardSlash = "/";
+            var forwardSlash = "/";
             if (!url.EndsWith(forwardSlash))
             {
                 url += forwardSlash;

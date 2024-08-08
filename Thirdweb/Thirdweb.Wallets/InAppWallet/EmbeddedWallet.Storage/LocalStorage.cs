@@ -29,7 +29,7 @@ namespace Thirdweb.EWS
             filePath = Path.Combine(directory, $"{clientId}.txt");
             try
             {
-                byte[] json = File.ReadAllBytes(filePath);
+                var json = File.ReadAllBytes(filePath);
                 DataContractJsonSerializer serializer = new(typeof(Storage));
                 MemoryStream fin = new(json);
                 storage = (Storage)serializer.ReadObject(fin);
