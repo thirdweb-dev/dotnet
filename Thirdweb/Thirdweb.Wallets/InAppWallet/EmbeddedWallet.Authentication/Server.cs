@@ -61,15 +61,15 @@ namespace Thirdweb.EWS
         }
 
         // embedded-wallet/embedded-wallet-user-details
-        internal override async Task<UserWallet> FetchUserDetailsAsync(string emailAddress, string authToken)
+        internal override async Task<UserWallet> FetchUserDetailsAsync(string emailOrPhone, string authToken)
         {
             Dictionary<string, string> queryParams = new();
-            if (emailAddress == null && authToken == null)
+            if (emailOrPhone == null && authToken == null)
             {
                 throw new InvalidOperationException("Must provide either email address or auth token");
             }
 
-            queryParams.Add("email", emailAddress ?? "uninitialized");
+            queryParams.Add("email", emailOrPhone ?? "uninitialized");
             queryParams.Add("clientId", clientId);
 
             var uri = MakeUri2023("/embedded-wallet/embedded-wallet-user-details", queryParams);

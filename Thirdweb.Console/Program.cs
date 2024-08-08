@@ -124,7 +124,7 @@ Console.WriteLine($"Contract read result: {readResult}");
 // }
 
 
-var inAppWallet = await InAppWallet.Create(client: client, email: "0xfirekeeper@gmail.com"); // or email: null, phoneNumber: "+1234567890"
+var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+otpv2@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
 
 // var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
 
