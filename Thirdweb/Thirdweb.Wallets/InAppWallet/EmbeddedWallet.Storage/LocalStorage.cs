@@ -10,7 +10,7 @@ namespace Thirdweb.EWS
         internal abstract Task RemoveAuthTokenAsync();
         internal abstract Task RemoveSessionAsync();
         internal abstract Task SaveDataAsync(LocalStorage.DataStorage data);
-        internal abstract Task SaveSessionAsync(string sessionId, bool isKmsWallet);
+        internal abstract Task SaveSessionAsync(string sessionId);
     }
 
     internal partial class LocalStorage : LocalStorageBase
@@ -75,11 +75,11 @@ namespace Thirdweb.EWS
             });
         }
 
-        internal override Task SaveSessionAsync(string sessionId, bool isKmsWallet)
+        internal override Task SaveSessionAsync(string sessionId)
         {
             return UpdateDataAsync(() =>
             {
-                storage.Session = new SessionStorage(sessionId, isKmsWallet);
+                storage.Session = new SessionStorage(sessionId);
                 return true;
             });
         }

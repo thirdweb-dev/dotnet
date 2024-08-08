@@ -200,11 +200,11 @@ namespace Thirdweb
             {
                 if (_email != null)
                 {
-                    (var isNewUser, var isNewDevice, var needsRecoveryCode) = await _embeddedWallet.SendOtpEmailAsync(_email);
+                    (var isNewUser, var isNewDevice) = await _embeddedWallet.SendOtpEmailAsync(_email);
                 }
                 else if (_phoneNumber != null)
                 {
-                    (var isNewUser, var isNewDevice, var needsRecoveryCode) = await _embeddedWallet.SendOtpPhoneAsync(_phoneNumber);
+                    (var isNewUser, var isNewDevice) = await _embeddedWallet.SendOtpPhoneAsync(_phoneNumber);
                 }
                 else
                 {
