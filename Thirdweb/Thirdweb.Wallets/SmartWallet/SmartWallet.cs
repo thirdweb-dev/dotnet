@@ -213,13 +213,7 @@ namespace Thirdweb
                     var approvedAmount = await tokenContract.ERC20_Allowance(_accountContract.Address, _erc20PaymasterAddress);
                     if (approvedAmount == 0)
                     {
-#if DEBUG
-                        Console.WriteLine($"Approving ERC20Paymaster {_erc20PaymasterAddress} to spend tokens: {_erc20PaymasterToken}");
-#endif
                         _ = await tokenContract.ERC20_Approve(this, _erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1);
-#if DEBUG
-                        Console.WriteLine("Approved, proceeding with the transaction.");
-#endif
                     }
                     _isApproved = true;
                 }
@@ -291,10 +285,6 @@ namespace Thirdweb
             var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(Client, _bundlerUrl, requestId, EncodeUserOperation(partialUserOp), _entryPointContract.Address);
             partialUserOp.CallGasLimit = 50000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
             partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGas).Value;
-            // if (UseERC20Paymaster)
-            // {
-            //     partialUserOp.VerificationGasLimit *= 3;
-            // }
             partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
 
             // Update paymaster data if any

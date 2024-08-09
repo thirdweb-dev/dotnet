@@ -168,7 +168,7 @@ Console.WriteLine($"Wallet address: {walletAddress}");
 // }
 
 
-var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+otpv2@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
+// var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+otpv2@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
 
 // var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
 
@@ -194,27 +194,27 @@ var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+ot
 //     Console.WriteLine($"InAppWallet address: {address}");
 // }
 
-if (await inAppWallet.IsConnected())
-{
-    Console.WriteLine($"InAppWallet address: {await inAppWallet.GetAddress()}");
-    return;
-}
-await inAppWallet.SendOTP();
-Console.WriteLine("Please submit the OTP.");
-retry:
-var otp = Console.ReadLine();
-(var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
-if (inAppWalletAddress == null && canRetry)
-{
-    Console.WriteLine("Please submit the OTP again.");
-    goto retry;
-}
-if (inAppWalletAddress == null)
-{
-    Console.WriteLine("OTP login failed. Please try again.");
-    return;
-}
-Console.WriteLine($"InAppWallet address: {inAppWalletAddress}");
+// if (await inAppWallet.IsConnected())
+// {
+//     Console.WriteLine($"InAppWallet address: {await inAppWallet.GetAddress()}");
+//     return;
+// }
+// await inAppWallet.SendOTP();
+// Console.WriteLine("Please submit the OTP.");
+// retry:
+// var otp = Console.ReadLine();
+// (var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
+// if (inAppWalletAddress == null && canRetry)
+// {
+//     Console.WriteLine("Please submit the OTP again.");
+//     goto retry;
+// }
+// if (inAppWalletAddress == null)
+// {
+//     Console.WriteLine("OTP login failed. Please try again.");
+//     return;
+// }
+// Console.WriteLine($"InAppWallet address: {inAppWalletAddress}");
 // }
 
 // Prepare a transaction directly, or with Contract.Prepare
