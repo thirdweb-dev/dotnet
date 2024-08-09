@@ -10,17 +10,9 @@ namespace Thirdweb.EWS
             return (userWallet.IsNewUser, isNewDevice);
         }
 
-        public async Task<VerifyResult> VerifyPhoneOtpAsync(string phoneNumber, string otp)
+        public async Task<Server.VerifyResult> VerifyPhoneOtpAsync(string phoneNumber, string otp)
         {
-            try
-            {
-                var result = await server.VerifyPhoneOtpAsync(phoneNumber, otp).ConfigureAwait(false);
-                return await PostAuthSetup(result, null, "Phone").ConfigureAwait(false);
-            }
-            catch (VerificationException ex)
-            {
-                return new VerifyResult(ex.CanRetry);
-            }
+            return await server.VerifyPhoneOtpAsync(phoneNumber, otp).ConfigureAwait(false);
         }
     }
 }

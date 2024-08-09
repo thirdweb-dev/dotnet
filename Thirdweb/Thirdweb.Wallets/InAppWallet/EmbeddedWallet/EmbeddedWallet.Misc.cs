@@ -13,7 +13,12 @@ namespace Thirdweb.EWS
             }
         }
 
-        private async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)
+        internal string GetCurrentAuthToken()
+        {
+            return localStorage.Data?.AuthToken;
+        }
+
+        internal async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)
         {
             var walletUserId = result.WalletUserId;
             var authToken = result.AuthToken;

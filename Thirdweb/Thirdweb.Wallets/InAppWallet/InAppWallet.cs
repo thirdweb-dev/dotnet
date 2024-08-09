@@ -104,6 +104,114 @@ namespace Thirdweb
             await _embeddedWallet.SignOutAsync();
         }
 
+        /// <summary>
+        /// Gets the email associated with the in-app wallet.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation. The task result contains the email address.</returns>
+        public Task<string> GetEmail()
+        {
+            return Task.FromResult(_email);
+        }
+
+        /// <summary>
+        /// Gets the phone number associated with the in-app wallet.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation. The task result contains the phone number.</returns>
+        public Task<string> GetPhoneNumber()
+        {
+            return Task.FromResult(_phoneNumber);
+        }
+
+        #region Account Linking
+
+        public async Task LinkAccount(
+            InAppWallet walletToLink,
+            string otp = null,
+            bool? isMobile = null,
+            Action<string> browserOpenAction = null,
+            string mobileRedirectScheme = "thirdweb://",
+            IThirdwebBrowser browser = null,
+            IThirdwebWallet siweSigner = null,
+            BigInteger? chainId = null,
+            string jwt = null,
+            string payload = null
+        )
+        {
+            if (!await IsConnected())
+            {
+                throw new InvalidOperationException("Cannot link account with a wallet that is not connected. Please login to the wallet before linking other wallets.");
+            }
+
+            if (walletToLink == null)
+            {
+                throw new ArgumentNullException(nameof(walletToLink), "Wallet to link cannot be null.");
+            }
+
+            if (await walletToLink.IsConnected())
+            {
+                throw new ArgumentException("Cannot link account with a wallet that is already connected. Please call InAppWallet.Disconnect() on the wallet to link before linking.");
+            }
+
+            Server.VerifyResult serverRes = null;
+            switch (walletToLink._authProvider)
+            {
+                case "Email":
+                    if (string.IsNullOrEmpty(walletToLink._email))
+                    {
+                        throw new ArgumentException("Cannot link account with an email wallet that does not have an email address.");
+                    }
+                    serverRes = await PreAuth_Otp(otp).ConfigureAwait(false);
+                    break;
+                case "Phone":
+                    if (string.IsNullOrEmpty(walletToLink._phoneNumber))
+                    {
+                        throw new ArgumentException("Cannot link account with a phone wallet that does not have a phone number.");
+                    }
+                    serverRes = await PreAuth_Otp(otp).ConfigureAwait(false);
+                    break;
+                case "Siwe":
+                    if (siweSigner == null || chainId == null)
+                    {
+                        throw new ArgumentException("Cannot link account with a Siwe wallet without a signer and chain ID.");
+                    }
+                    serverRes = await PreAuth_Siwe(siweSigner, chainId.Value).ConfigureAwait(false);
+                    break;
+                case "JWT":
+                    if (string.IsNullOrEmpty(jwt))
+                    {
+                        throw new ArgumentException("Cannot link account with a JWT wallet without a JWT.");
+                    }
+                    serverRes = await PreAuth_JWT(jwt).ConfigureAwait(false);
+                    break;
+                case "AuthEndpoint":
+                    if (string.IsNullOrEmpty(payload))
+                    {
+                        throw new ArgumentException("Cannot link account with an AuthEndpoint wallet without an payload.");
+                    }
+                    serverRes = await PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
+                    break;
+                case "Google":
+                case "Apple":
+                case "Facebook":
+                case "Discord":
+                case "Farcaster":
+                case "Telegram":
+                    serverRes = await PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
+                    break;
+                default:
+                    throw new ArgumentException($"Cannot link account with an unsupported authentication provider:", walletToLink._authProvider);
+            }
+
+            var currentAccountToken = _embeddedWallet.GetCurrentAuthToken();
+            var authTokenToConnect = serverRes.AuthToken;
+
+            // Link account (/account/connect endpoint with `Bearer iaw-auth-token:${currentAccountToken}`)
+            // await _embeddedWallet.LinkAccountAsync(currentAccountToken, authTokenToConnect).ConfigureAwait(false);
+            return;
+        }
+
+        #endregion
+
         #region OAuth2 Flow
 
         /// <summary>
@@ -119,6 +227,18 @@ namespace Thirdweb
         /// <exception cref="TaskCanceledException">Thrown when the operation is canceled.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
         public virtual async Task<string> LoginWithOauth(
+            bool isMobile,
+            Action<string> browserOpenAction,
+            string mobileRedirectScheme = "thirdweb://",
+            IThirdwebBrowser browser = null,
+            CancellationToken cancellationToken = default
+        )
+        {
+            var serverRes = await PreAuth_OAuth(isMobile, browserOpenAction, mobileRedirectScheme, browser, cancellationToken).ConfigureAwait(false);
+            return await PostAuth(serverRes, null, _authProvider).ConfigureAwait(false);
+        }
+
+        private async Task<Server.VerifyResult> PreAuth_OAuth(
             bool isMobile,
             Action<string> browserOpenAction,
             string mobileRedirectScheme = "thirdweb://",
@@ -174,13 +294,7 @@ namespace Thirdweb
                 authResultJson = queryDict["authResult"];
             }
 
-            var res = await _embeddedWallet.SignInWithOauthAsync(_authProvider, authResultJson);
-            if (res.User == null)
-            {
-                throw new Exception("Failed to login with OAuth2");
-            }
-            _ecKey = new EthECKey(res.User.Account.PrivateKey);
-            return await GetAddress();
+            return await _embeddedWallet.SignInWithOauthAsync(_authProvider, authResultJson);
         }
 
         #endregion
@@ -190,9 +304,9 @@ namespace Thirdweb
         /// <summary>
         /// Sends an OTP to the user's email or phone number.
         /// </summary>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <returns>A task representing the asynchronous operation. The task result contains a boolean indicating if the user is new and a boolean indicating if the device is new.</returns>
         /// <exception cref="Exception">Thrown when email or phone number is not provided.</exception>
-        public async Task SendOTP()
+        public async Task<(bool isNewUser, bool isNewDevice)> SendOTP()
         {
             if (string.IsNullOrEmpty(_email) && string.IsNullOrEmpty(_phoneNumber))
             {
@@ -201,7 +315,7 @@ namespace Thirdweb
 
             try
             {
-                (var isNewUser, var isNewDevice) = _email == null ? await _embeddedWallet.SendPhoneOtpAsync(_phoneNumber) : await _embeddedWallet.SendEmailOtpAsync(_email);
+                return _email == null ? await _embeddedWallet.SendPhoneOtpAsync(_phoneNumber) : await _embeddedWallet.SendEmailOtpAsync(_email);
             }
             catch (Exception e)
             {
@@ -216,7 +330,25 @@ namespace Thirdweb
         /// <returns>A task representing the asynchronous operation. The task result contains the address and a boolean indicating if retry is possible.</returns>
         /// <exception cref="ArgumentNullException">Thrown when OTP is not provided.</exception>
         /// <exception cref="Exception">Thrown when email or phone number is not provided.</exception>
-        public async Task<(string, bool)> SubmitOTP(string otp)
+        public async Task<(string address, bool canRetry)> LoginWithOtp(string otp)
+        {
+            if (string.IsNullOrEmpty(otp))
+            {
+                throw new ArgumentNullException(nameof(otp), "OTP cannot be null or empty.");
+            }
+
+            var serverRes = await PreAuth_Otp(otp).ConfigureAwait(false);
+            try
+            {
+                return (await PostAuth(serverRes, null, _email == null ? "Email" : "Phone").ConfigureAwait(false), false);
+            }
+            catch (VerificationException e)
+            {
+                return (null, e.CanRetry);
+            }
+        }
+
+        private async Task<Server.VerifyResult> PreAuth_Otp(string otp)
         {
             if (string.IsNullOrEmpty(otp))
             {
@@ -228,34 +360,7 @@ namespace Thirdweb
                 throw new Exception("Email or Phone Number is required for OTP login");
             }
 
-            var res = _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp) : await _embeddedWallet.VerifyEmailOtpAsync(_email, otp);
-            if (res.User == null)
-            {
-                return (null, res.CanRetry);
-            }
-            else
-            {
-                _ecKey = new EthECKey(res.User.Account.PrivateKey);
-                return (await GetAddress(), false);
-            }
-        }
-
-        /// <summary>
-        /// Gets the email associated with the in-app wallet.
-        /// </summary>
-        /// <returns>A task representing the asynchronous operation. The task result contains the email address.</returns>
-        public Task<string> GetEmail()
-        {
-            return Task.FromResult(_email);
-        }
-
-        /// <summary>
-        /// Gets the phone number associated with the in-app wallet.
-        /// </summary>
-        /// <returns>A task representing the asynchronous operation. The task result contains the phone number.</returns>
-        public Task<string> GetPhoneNumber()
-        {
-            return Task.FromResult(_phoneNumber);
+            return _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp) : await _embeddedWallet.VerifyEmailOtpAsync(_email, otp);
         }
 
         #endregion
@@ -273,6 +378,12 @@ namespace Thirdweb
         /// <exception cref="ArgumentException">Thrown when chain ID is invalid.</exception>
         public async Task<string> LoginWithSiwe(IThirdwebWallet signer, BigInteger chainId)
         {
+            var serverRes = await PreAuth_Siwe(signer, chainId).ConfigureAwait(false);
+            return await PostAuth(serverRes, null, "Siwe");
+        }
+
+        private async Task<Server.VerifyResult> PreAuth_Siwe(IThirdwebWallet signer, BigInteger chainId)
+        {
             if (signer == null)
             {
                 throw new ArgumentNullException(nameof(signer), "Signer wallet cannot be null.");
@@ -288,16 +399,7 @@ namespace Thirdweb
                 throw new ArgumentException(nameof(chainId), "Chain ID must be greater than 0.");
             }
 
-            var res = await _embeddedWallet.SignInWithSiweAsync(signer, chainId);
-
-            if (res.User == null)
-            {
-                throw new Exception("Failed to login with SIWE");
-            }
-
-            _ecKey = new EthECKey(res.User.Account.PrivateKey);
-
-            return await GetAddress();
+            return await _embeddedWallet.SignInWithSiweAsync(signer, chainId);
         }
 
         #endregion
@@ -314,26 +416,23 @@ namespace Thirdweb
         /// <exception cref="Exception">Thrown when the login fails.</exception>
         public async Task<string> LoginWithJWT(string jwt, string encryptionKey)
         {
-            if (string.IsNullOrEmpty(jwt))
-            {
-                throw new ArgumentException(nameof(jwt), "JWT cannot be null or empty.");
-            }
-
             if (string.IsNullOrEmpty(encryptionKey))
             {
                 throw new ArgumentException(nameof(encryptionKey), "Encryption key cannot be null or empty.");
             }
 
-            var res = await _embeddedWallet.SignInWithJwtAsync(jwt, encryptionKey);
+            var serverRes = await PreAuth_JWT(jwt).ConfigureAwait(false);
+            return await PostAuth(serverRes, encryptionKey, "JWT");
+        }
 
-            if (res.User == null)
+        private async Task<Server.VerifyResult> PreAuth_JWT(string jwt)
+        {
+            if (string.IsNullOrEmpty(jwt))
             {
-                throw new Exception("Failed to login with JWT");
+                throw new ArgumentException(nameof(jwt), "JWT cannot be null or empty.");
             }
 
-            _ecKey = new EthECKey(res.User.Account.PrivateKey);
-
-            return await GetAddress();
+            return await _embeddedWallet.SignInWithJwtAsync(jwt);
         }
 
         #endregion
@@ -350,28 +449,36 @@ namespace Thirdweb
         /// <exception cref="Exception">Thrown when the login fails.</exception>
         public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey)
         {
-            if (string.IsNullOrEmpty(payload))
-            {
-                throw new ArgumentException(nameof(payload), "Payload cannot be null or empty.");
-            }
-
             if (string.IsNullOrEmpty(encryptionKey))
             {
                 throw new ArgumentException(nameof(encryptionKey), "Encryption key cannot be null or empty.");
             }
 
-            var res = await _embeddedWallet.SignInWithAuthEndpointAsync(payload, encryptionKey);
+            var serverRes = await PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
+            return await PostAuth(serverRes, encryptionKey, "AuthEndpoint");
+        }
 
-            if (res.User == null)
+        private async Task<Server.VerifyResult> PreAuth_AuthEndpoint(string payload)
+        {
+            if (string.IsNullOrEmpty(payload))
             {
-                throw new Exception("Failed to login with Auth Endpoint");
+                throw new ArgumentException(nameof(payload), "Payload cannot be null or empty.");
             }
 
-            _ecKey = new EthECKey(res.User.Account.PrivateKey);
-
-            return await GetAddress();
+            return await _embeddedWallet.SignInWithAuthEndpointAsync(payload);
         }
 
         #endregion
+
+        private async Task<string> PostAuth(Server.VerifyResult serverRes, string encryptionKey, string authProvider)
+        {
+            var res = await _embeddedWallet.PostAuthSetup(serverRes, encryptionKey, "JWT").ConfigureAwait(false);
+            if (res.User == null)
+            {
+                throw new Exception($"Failed to login with {authProvider}");
+            }
+            _ecKey = new EthECKey(res.User.Account.PrivateKey);
+            return await GetAddress();
+        }
     }
 }
