@@ -260,6 +260,13 @@ namespace Thirdweb
             return Task.FromResult(address);
         }
 
+        public string SignTransactionLegacy(string to, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gas, string data)
+        {
+            var rawSigner = new LegacyTransactionSigner();
+            var signedTx = rawSigner.SignTransaction(_ecKey.GetPrivateKey(), to, value, nonce, gasPrice, gas, data);
+            return "0x" + signedTx;
+        }
+
         /// <summary>
         /// Signs a transaction using the wallet's private key.
         /// </summary>

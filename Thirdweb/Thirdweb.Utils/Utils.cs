@@ -10,6 +10,7 @@ using Nethereum.Util;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using Nethereum.Hex.HexTypes;
 
 namespace Thirdweb
 {
@@ -585,6 +586,56 @@ namespace Thirdweb
                 default:
                     return true;
             }
+        }
+
+        public static async Task<ThirdwebTransactionReceipt> DeployEntryPoint(ThirdwebClient client, BigInteger chainId, BigInteger? gasLimitOverride = null)
+        {
+            var arachnid = "0x4e59b44847b379578588920cA78FbF26c0B4956C";
+
+            var arachnidDeployed = await IsDeployed(client, chainId, arachnid);
+            Console.WriteLine($"Arachnid deployed: {arachnidDeployed}");
+
+            if (!arachnidDeployed && await IsEip155Enforced(client, chainId))
+            {
+                throw new Exception("EIP-155 is enforced on this chain. Cannot deploy entry point.");
+            }
+
+            var entryPointAddress = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
+
+            if (await IsDeployed(client, chainId, entryPointAddress))
+            {
+                throw new Exception($"Entry point already deployed at {entryPointAddress}.");
+            }
+
+            var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80");
+            var walletAddress = await privateKeyWallet.GetAddress();
+            Console.WriteLine($"Deployer: {walletAddress}");
+
+            var balance = await privateKeyWallet.GetBalance(chainId);
+            Console.WriteLine($"Balance: {balance.ToString().ToEth()}");
+            if (balance <= 0)
+            {
+                throw new Exception("Insufficient balance to deploy entry point.");
+            }
+
+            var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+            var nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", walletAddress, "pending"));
+            var gasPrice = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice"));
+            var gasLimit = gasLimitOverride ?? 6800000;
+
+            var signedTx = privateKeyWallet.SignTransactionLegacy(to: arachnid, value: 0, nonce: nonce, gasPrice: gasPrice, gas: gasLimit, data: Constants.ENTRY_POINT_FACTORY_DEPLOY_DATA);
+
+            var hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
+            Console.WriteLine($"Transaction hash: {hash}");
+
+            return await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, hash);
+        }
+
+        public static async Task<bool> IsDeployed(ThirdwebClient client, BigInteger chainId, string address)
+        {
+            var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+            var code = await rpc.SendRequestAsync<string>("eth_getCode", address, "latest");
+            return code != "0x";
         }
     }
 }
