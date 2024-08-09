@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Web;
 using Nethereum.Signer;
 using Thirdweb.EWS;
@@ -17,7 +18,8 @@ namespace Thirdweb
         AuthEndpoint,
         Discord,
         Farcaster,
-        Telegram
+        Telegram,
+        Siwe
     }
 
     /// <summary>
@@ -72,6 +74,7 @@ namespace Thirdweb
                 AuthProvider.Discord => "Discord",
                 AuthProvider.Farcaster => "Farcaster",
                 AuthProvider.Telegram => "Telegram",
+                AuthProvider.Siwe => "Siwe",
                 AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
                 _ => throw new ArgumentException("Invalid AuthProvider"),
             };
@@ -257,6 +260,48 @@ namespace Thirdweb
 
         #endregion
 
+        #region SIWE Flow
+
+        /// <summary>
+        /// Logs in with SIWE (Sign-In with Ethereum).
+        /// </summary>
+        /// <param name="signer">The wallet that will be used to sign the SIWE payload</param>
+        /// <param name="chainId">The chain ID to use for signing the SIWE payload</param>
+        /// <returns>A task representing the asynchronous operation. The task result contains the address.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when external wallet is not provided.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the external wallet is not connected.</exception>
+        /// <exception cref="ArgumentException">Thrown when chain ID is invalid.</exception>
+        public async Task<string> LoginWithSiwe(IThirdwebWallet signer, BigInteger chainId)
+        {
+            if (signer == null)
+            {
+                throw new ArgumentNullException(nameof(signer), "Signer wallet cannot be null.");
+            }
+
+            if (!await signer.IsConnected().ConfigureAwait(false))
+            {
+                throw new InvalidOperationException("Signer wallet must be connected as this operation requires it to sign a message.");
+            }
+
+            if (chainId <= 0)
+            {
+                throw new ArgumentException(nameof(chainId), "Chain ID must be greater than 0.");
+            }
+
+            var res = await _embeddedWallet.SignInWithSiweAsync(signer, chainId);
+
+            if (res.User == null)
+            {
+                throw new Exception("Failed to login with SIWE");
+            }
+
+            _ecKey = new EthECKey(res.User.Account.PrivateKey);
+
+            return await GetAddress();
+        }
+
+        #endregion
+
         #region JWT Flow
 
         /// <summary>
@@ -264,7 +309,7 @@ namespace Thirdweb
         /// </summary>
         /// <param name="jwt">The JWT to use for authentication.</param>
         /// <param name="encryptionKey">The encryption key to use.</param>
-        /// <returns>A task representing the asynchronous operation. The task result contains the login result.</returns>
+        /// <returns>A task representing the asynchronous operation. The task result contains the address.</returns>
         /// <exception cref="ArgumentException">Thrown when JWT or encryption key is not provided.</exception>
         /// <exception cref="Exception">Thrown when the login fails.</exception>
         public async Task<string> LoginWithJWT(string jwt, string encryptionKey)

@@ -12,7 +12,8 @@ namespace Thirdweb.EWS
         internal abstract Task<(string authShare, string recoveryShare)> FetchAuthAndRecoverySharesAsync(string authToken);
         internal abstract Task<string> FetchAuthShareAsync(string authToken);
 
-        internal abstract Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform);
+        internal abstract Task<LoginPayloadData> FetchSiwePayloadAsync(string address, string chainId);
+        internal abstract Task<Server.VerifyResult> VerifySiweAsync(LoginPayloadData payload, string signature);
 
         internal abstract Task<string> SendEmailOtpAsync(string emailAddress);
         internal abstract Task<Server.VerifyResult> VerifyEmailOtpAsync(string emailAddress, string otp);
@@ -22,6 +23,7 @@ namespace Thirdweb.EWS
 
         internal abstract Task<Server.VerifyResult> VerifyJwtAsync(string jwtToken);
 
+        internal abstract Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform);
         internal abstract Task<Server.VerifyResult> VerifyOAuthAsync(string authResultStr);
 
         internal abstract Task<Server.VerifyResult> VerifyAuthEndpointAsync(string payload);
@@ -142,7 +144,28 @@ namespace Thirdweb.EWS
             return await DeserializeAsync<IdTokenResponse>(response).ConfigureAwait(false);
         }
 
-        // embedded-wallet/headless-oauth-login-link
+        // login/siwe
+        internal override async Task<LoginPayloadData> FetchSiwePayloadAsync(string address, string chainId)
+        {
+            var uri = MakeUri2024("/login/siwe", new Dictionary<string, string> { { "address", address }, { "chainId", chainId } });
+            var response = await httpClient.GetAsync(uri.ToString()).ConfigureAwait(false);
+            await CheckStatusCodeAsync(response).ConfigureAwait(false);
+
+            return await DeserializeAsync<LoginPayloadData>(response).ConfigureAwait(false);
+        }
+
+        internal override async Task<VerifyResult> VerifySiweAsync(LoginPayloadData payload, string signature)
+        {
+            var uri = MakeUri2024("/login/siwe/callback");
+            var content = MakeHttpContent(new { signature = signature, payload = payload });
+            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            await CheckStatusCodeAsync(response).ConfigureAwait(false);
+
+            var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
+            return await InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+        }
+
+        // login/oauthprovider
         internal override Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform)
         {
             return Task.FromResult(MakeUri2024($"/login/{authProvider}", new Dictionary<string, string> { { "clientId", clientId }, { "platform", platform } }).ToString());

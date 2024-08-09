@@ -27,33 +27,44 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 var walletAddress = await privateKeyWallet.GetAddress();
 Console.WriteLine($"PK Wallet address: {walletAddress}");
 
-var erc20SmartWalletSepolia = await SmartWallet.Create(
-    personalWallet: privateKeyWallet,
-    chainId: 11155111, // sepolia
-    gasless: true,
-    erc20PaymasterAddress: "0xEc87d96E3F324Dcc828750b52994C6DC69C8162b", // deposit paymaster
-    erc20PaymasterToken: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8" // usdc
-);
-var erc20SmartWalletSepoliaAddress = await erc20SmartWalletSepolia.GetAddress();
-Console.WriteLine($"ERC20 Smart Wallet Sepolia address: {erc20SmartWalletSepoliaAddress}");
+var smartWalletSigner = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true); // because why not
 
-var selfTransfer = await ThirdwebTransaction.Create(
-    wallet: erc20SmartWalletSepolia,
-    txInput: new ThirdwebTransactionInput() { From = erc20SmartWalletSepoliaAddress, To = erc20SmartWalletSepoliaAddress, },
-    chainId: 11155111
-);
+var inAppWalletSiwe = await InAppWallet.Create(client: client, authProvider: AuthProvider.Siwe);
+if (!await inAppWalletSiwe.IsConnected())
+{
+    _ = await inAppWalletSiwe.LoginWithSiwe(smartWalletSigner, 421614);
+}
+var inAppWalletSiweAddress = await inAppWalletSiwe.GetAddress();
+Console.WriteLine($"InAppWallet Siwe address: {inAppWalletSiweAddress}");
 
-var estimateGas = await ThirdwebTransaction.EstimateGasCosts(selfTransfer);
-Console.WriteLine($"Self transfer gas estimate: {estimateGas.ether}");
-Console.WriteLine("Make sure you have enough USDC!");
-Console.ReadLine();
 
-var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(selfTransfer);
-Console.WriteLine($"Self transfer receipt: {JsonConvert.SerializeObject(receipt, Formatting.Indented)}");
+// var erc20SmartWalletSepolia = await SmartWallet.Create(
+//     personalWallet: privateKeyWallet,
+//     chainId: 11155111, // sepolia
+//     gasless: true,
+//     erc20PaymasterAddress: "0xEc87d96E3F324Dcc828750b52994C6DC69C8162b", // deposit paymaster
+//     erc20PaymasterToken: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8" // usdc
+// );
+// var erc20SmartWalletSepoliaAddress = await erc20SmartWalletSepolia.GetAddress();
+// Console.WriteLine($"ERC20 Smart Wallet Sepolia address: {erc20SmartWalletSepoliaAddress}");
 
-// var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
-// Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
-Console.WriteLine($"Wallet address: {walletAddress}");
+// var selfTransfer = await ThirdwebTransaction.Create(
+//     wallet: erc20SmartWalletSepolia,
+//     txInput: new ThirdwebTransactionInput() { From = erc20SmartWalletSepoliaAddress, To = erc20SmartWalletSepoliaAddress, },
+//     chainId: 11155111
+// );
+
+// var estimateGas = await ThirdwebTransaction.EstimateGasCosts(selfTransfer);
+// Console.WriteLine($"Self transfer gas estimate: {estimateGas.ether}");
+// Console.WriteLine("Make sure you have enough USDC!");
+// Console.ReadLine();
+
+// var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(selfTransfer);
+// Console.WriteLine($"Self transfer receipt: {JsonConvert.SerializeObject(receipt, Formatting.Indented)}");
+
+// // var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
+// // Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
+// Console.WriteLine($"Wallet address: {walletAddress}");
 
 // // Self transfer 0 on chain 842
 // var tx = await ThirdwebTransaction.Create(

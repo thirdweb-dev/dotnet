@@ -163,12 +163,6 @@ namespace Thirdweb
     public class LoginPayloadData
     {
         /// <summary>
-        /// Gets or sets the type of the login payload.
-        /// </summary>
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
-        /// <summary>
         /// Gets or sets the domain of the login payload.
         /// </summary>
         [JsonProperty("domain")]
@@ -237,9 +231,6 @@ namespace Thirdweb
         /// <summary>
         /// Initializes a new instance of the <see cref="LoginPayloadData"/> class.
         /// </summary>
-        public LoginPayloadData()
-        {
-            Type = "evm";
-        }
+        public LoginPayloadData() { }
     }
 }
