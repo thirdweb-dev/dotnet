@@ -22,8 +22,23 @@ var readResult = await contract.Read<string>("name");
 Console.WriteLine($"Contract read result: {readResult}");
 
 // Create wallets (this is an advanced use case, typically one wallet is plenty)
-// var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
-// var walletAddress = await privateKeyWallet.GetAddress();
+var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: privateKey);
+var walletAddress = await privateKeyWallet.GetAddress();
+Console.WriteLine($"Wallet address: {walletAddress}");
+
+// // Self transfer 0 on chain 842
+// var tx = await ThirdwebTransaction.Create(
+//     wallet: privateKeyWallet,
+//     txInput: new ThirdwebTransactionInput()
+//     {
+//         From = await privateKeyWallet.GetAddress(),
+//         To = await privateKeyWallet.GetAddress(),
+//         Value = new HexBigInteger(BigInteger.Zero),
+//     },
+//     chainId: 842
+// );
+// var txHash = await ThirdwebTransaction.Send(tx);
+// Console.WriteLine($"Transaction hash: {txHash}");
 
 // var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
 // Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");

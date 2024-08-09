@@ -577,6 +577,10 @@ namespace Thirdweb
                 case "2040":
                 // Vanar Testnet (Vanguard)
                 case "78600":
+                // Taraxa Mainnet
+                case "841":
+                // Taraxa Testnet
+                case "842":
                     return false;
                 default:
                     return true;
