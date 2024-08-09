@@ -590,21 +590,32 @@ namespace Thirdweb
 
         public static async Task<ThirdwebTransactionReceipt> DeployEntryPoint(ThirdwebClient client, BigInteger chainId, BigInteger? gasLimitOverride = null)
         {
-            var arachnid = "0x4e59b44847b379578588920cA78FbF26c0B4956C";
+            var entryPointAddress = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
+            if (await IsDeployed(client, chainId, entryPointAddress))
+            {
+                throw new Exception($"Entry point already deployed at {entryPointAddress}.");
+            }
 
+            var arachnid = "0x4e59b44847b379578588920cA78FbF26c0B4956C";
+            var arachnidDeployer = "0x3fab184622dc19b6109349b94811493bf2a45362";
             var arachnidDeployed = await IsDeployed(client, chainId, arachnid);
             Console.WriteLine($"Arachnid deployed: {arachnidDeployed}");
 
             if (!arachnidDeployed && await IsEip155Enforced(client, chainId))
             {
-                throw new Exception("EIP-155 is enforced on this chain. Cannot deploy entry point.");
-            }
-
-            var entryPointAddress = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
-
-            if (await IsDeployed(client, chainId, entryPointAddress))
-            {
-                throw new Exception($"Entry point already deployed at {entryPointAddress}.");
+                var arachnidDeployerBalance = await ThirdwebExtensions.GetBalanceRaw(client, chainId, arachnidDeployer);
+                var eip155StrictlyEnforced = arachnidDeployerBalance >= 10000000000000000;
+                if (eip155StrictlyEnforced)
+                {
+                    throw new Exception("EIP-155 Strictly Enforced, Cannot Deploy Create2Factory.");
+                }
+                else
+                {
+                    throw new Exception(
+                        $"EIP-155 might be enforced on this chain. Try funding {arachnidDeployer} with 0.01 ETH or equivalent and call this method again.\n"
+                            + "If this keeps failing, then EIP-155 is strictly enforced and you must contact protocol devs."
+                    );
+                }
             }
 
             var privateKeyWallet = await PrivateKeyWallet.Create(client: client, privateKeyHex: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80");
