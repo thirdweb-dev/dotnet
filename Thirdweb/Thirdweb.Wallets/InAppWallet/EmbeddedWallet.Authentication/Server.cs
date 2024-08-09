@@ -5,7 +5,9 @@ namespace Thirdweb.EWS
 {
     internal abstract class ServerBase
     {
+        internal abstract Task<List<Server.LinkedAccount>> LinkAccountAsync(string currentAccountToken, string authTokenToConnect);
         internal abstract Task<string> VerifyThirdwebClientIdAsync(string domain);
+
         internal abstract Task<Server.UserWallet> FetchUserDetailsAsync(string emailAddress, string authToken);
         internal abstract Task StoreAddressAndSharesAsync(string walletAddress, string authShare, string encryptedRecoveryShare, string authToken);
 
@@ -50,6 +52,19 @@ namespace Thirdweb.EWS
             thirdwebHttpClientType = httpClient.GetType();
         }
 
+        // /account/connect endpoint with `Bearer iaw-auth-token:${currentAccountToken}`
+        internal override async Task<List<LinkedAccount>> LinkAccountAsync(string currentAccountToken, string authTokenToConnect)
+        {
+            var uri = MakeUri2024("/account/connect");
+            var content = MakeHttpContent(new { accountAuthTokenToConnect = authTokenToConnect });
+            httpClient.AddHeader("Authorization", $"Bearer iaw-auth-token:{currentAccountToken}");
+            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            await CheckStatusCodeAsync(response).ConfigureAwait(false);
+
+            var res = await DeserializeAsync<AccountConnectResponse>(response).ConfigureAwait(false);
+            return res == null || res.LinkedAccounts == null || res.LinkedAccounts.Count == 0 ? throw new InvalidOperationException("No linked accounts returned") : res.LinkedAccounts;
+        }
+
         // embedded-wallet/verify-thirdweb-client-id
         internal override async Task<string> VerifyThirdwebClientIdAsync(string parentDomain)
         {
@@ -58,8 +73,8 @@ namespace Thirdweb.EWS
             var content = MakeHttpContent(new { clientId, parentDomain });
             var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
-            var error = await DeserializeAsync<HttpErrorWithMessage>(response).ConfigureAwait(false);
-            return error.Error;
+
+            return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
 
         // embedded-wallet/embedded-wallet-user-details

@@ -25,6 +25,39 @@ namespace Thirdweb.EWS
         }
 
         [DataContract]
+        internal class AccountConnectResponse
+        {
+            [DataMember(Name = "linkedAccounts", IsRequired = true)]
+            public List<LinkedAccount> LinkedAccounts { get; set; }
+        }
+
+        [DataContract]
+        public class LinkedAccount
+        {
+            [DataMember(Name = "type", IsRequired = true)]
+            public string Type { get; set; }
+
+            [DataMember(Name = "details", IsRequired = true)]
+            public LinkedAccountDetails Details { get; set; }
+
+            [DataContract]
+            public class LinkedAccountDetails
+            {
+                [DataMember(Name = "email", EmitDefaultValue = false)]
+                public string Email { get; set; }
+
+                [DataMember(Name = "address", EmitDefaultValue = false)]
+                public string Address { get; set; }
+
+                [DataMember(Name = "phone", EmitDefaultValue = false)]
+                public string Phone { get; set; }
+
+                [DataMember(Name = "id", EmitDefaultValue = false)]
+                public string Id { get; set; }
+            }
+        }
+
+        [DataContract]
         private class SendEmailOtpReturnType
         {
             [DataMember(Name = "email")]

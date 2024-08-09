@@ -20,7 +20,7 @@ namespace Thirdweb.EWS
         {
             string directory;
             directory = storageDirectoryPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            directory = Path.Combine(directory, "EWS");
+            directory = Path.Combine(directory, "Thirdweb", "InAppWallet");
             _ = Directory.CreateDirectory(directory);
             filePath = Path.Combine(directory, $"{clientId}.txt");
             try

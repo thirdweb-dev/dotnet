@@ -27,15 +27,32 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 var walletAddress = await privateKeyWallet.GetAddress();
 Console.WriteLine($"PK Wallet address: {walletAddress}");
 
-var smartWalletSigner = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true); // because why not
-
-var inAppWalletSiwe = await InAppWallet.Create(client: client, authProvider: AuthProvider.Siwe);
-if (!await inAppWalletSiwe.IsConnected())
+var inAppWalletMain = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+if (!await inAppWalletMain.IsConnected())
 {
-    _ = await inAppWalletSiwe.LoginWithSiwe(smartWalletSigner, 421614);
+    _ = await inAppWalletMain.LoginWithOauth(
+        isMobile: false,
+        (url) =>
+        {
+            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+            _ = Process.Start(psi);
+        },
+        "thirdweb://",
+        new InAppWalletBrowser()
+    );
 }
-var inAppWalletSiweAddress = await inAppWalletSiwe.GetAddress();
-Console.WriteLine($"InAppWallet Siwe address: {inAppWalletSiweAddress}");
+
+var inAppWalletToLink = await InAppWallet.Create(client: client, email: "firekeeper+tolink@thirdweb.com", authProvider: AuthProvider.Default);
+if (await inAppWalletToLink.IsConnected())
+{
+    await inAppWalletToLink.Disconnect();
+}
+await inAppWalletToLink.SendOTP();
+Console.WriteLine("Please submit the OTP.");
+var otp = Console.ReadLine();
+
+var linkedAccounts = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink, otp: otp);
+Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
 
 
 // var erc20SmartWalletSepolia = await SmartWallet.Create(

@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Web;
 using Nethereum.Signer;
+using Newtonsoft.Json;
 using Thirdweb.EWS;
 
 namespace Thirdweb
@@ -22,6 +23,25 @@ namespace Thirdweb
         Siwe
     }
 
+    public struct LinkedAccount
+    {
+        public string Type { get; set; }
+        public LinkedAccountDetails Details { get; set; }
+
+        public struct LinkedAccountDetails
+        {
+            public string Email { get; set; }
+            public string Address { get; set; }
+            public string Phone { get; set; }
+            public string Id { get; set; }
+        }
+
+        public override readonly string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
+    }
+
     /// <summary>
     /// Represents an in-app wallet that extends the functionality of a private key wallet.
     /// </summary>
@@ -31,24 +51,27 @@ namespace Thirdweb
         internal string _email;
         internal string _phoneNumber;
         internal string _authProvider;
+        internal IThirdwebWallet _siweSigner;
 
-        internal InAppWallet(ThirdwebClient client, string email, string phoneNumber, string authProvider, EmbeddedWallet embeddedWallet, EthECKey ecKey)
+        internal InAppWallet(ThirdwebClient client, string email, string phoneNumber, string authProvider, EmbeddedWallet embeddedWallet, EthECKey ecKey, IThirdwebWallet siweSigner)
             : base(client, ecKey)
         {
             _email = email?.ToLower();
             _phoneNumber = phoneNumber;
             _embeddedWallet = embeddedWallet;
             _authProvider = authProvider;
+            _siweSigner = siweSigner;
         }
 
         /// <summary>
         /// Creates a new instance of the <see cref="InAppWallet"/> class.
         /// </summary>
         /// <param name="client">The Thirdweb client instance.</param>
-        /// <param name="email">The email address for authentication.</param>
-        /// <param name="phoneNumber">The phone number for authentication.</param>
+        /// <param name="email">The email address for Email OTP authentication.</param>
+        /// <param name="phoneNumber">The phone number for Phone OTP authentication.</param>
         /// <param name="authProvider">The authentication provider to use.</param>
         /// <param name="storageDirectoryPath">The path to the storage directory.</param>
+        /// <param name="siweSigner">The SIWE signer wallet for SIWE authentication.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the created in-app wallet.</returns>
         /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
         public static async Task<InAppWallet> Create(
@@ -56,7 +79,8 @@ namespace Thirdweb
             string email = null,
             string phoneNumber = null,
             AuthProvider authProvider = AuthProvider.Default,
-            string storageDirectoryPath = null
+            string storageDirectoryPath = null,
+            IThirdwebWallet siweSigner = null
         )
         {
             if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber) && authProvider == AuthProvider.Default)
@@ -91,7 +115,7 @@ namespace Thirdweb
             {
                 ecKey = null;
             }
-            return new InAppWallet(client, email, phoneNumber, authproviderStr, embeddedWallet, ecKey);
+            return new InAppWallet(client, email, phoneNumber, authproviderStr, embeddedWallet, ecKey, siweSigner);
         }
 
         /// <summary>
@@ -124,14 +148,13 @@ namespace Thirdweb
 
         #region Account Linking
 
-        public async Task LinkAccount(
+        public async Task<List<LinkedAccount>> LinkAccount(
             InAppWallet walletToLink,
             string otp = null,
             bool? isMobile = null,
             Action<string> browserOpenAction = null,
             string mobileRedirectScheme = "thirdweb://",
             IThirdwebBrowser browser = null,
-            IThirdwebWallet siweSigner = null,
             BigInteger? chainId = null,
             string jwt = null,
             string payload = null
@@ -160,35 +183,35 @@ namespace Thirdweb
                     {
                         throw new ArgumentException("Cannot link account with an email wallet that does not have an email address.");
                     }
-                    serverRes = await PreAuth_Otp(otp).ConfigureAwait(false);
+                    serverRes = await walletToLink.PreAuth_Otp(otp).ConfigureAwait(false);
                     break;
                 case "Phone":
                     if (string.IsNullOrEmpty(walletToLink._phoneNumber))
                     {
                         throw new ArgumentException("Cannot link account with a phone wallet that does not have a phone number.");
                     }
-                    serverRes = await PreAuth_Otp(otp).ConfigureAwait(false);
+                    serverRes = await walletToLink.PreAuth_Otp(otp).ConfigureAwait(false);
                     break;
                 case "Siwe":
-                    if (siweSigner == null || chainId == null)
+                    if (walletToLink._siweSigner == null || chainId == null)
                     {
                         throw new ArgumentException("Cannot link account with a Siwe wallet without a signer and chain ID.");
                     }
-                    serverRes = await PreAuth_Siwe(siweSigner, chainId.Value).ConfigureAwait(false);
+                    serverRes = await walletToLink.PreAuth_Siwe(walletToLink._siweSigner, chainId.Value).ConfigureAwait(false);
                     break;
                 case "JWT":
                     if (string.IsNullOrEmpty(jwt))
                     {
                         throw new ArgumentException("Cannot link account with a JWT wallet without a JWT.");
                     }
-                    serverRes = await PreAuth_JWT(jwt).ConfigureAwait(false);
+                    serverRes = await walletToLink.PreAuth_JWT(jwt).ConfigureAwait(false);
                     break;
                 case "AuthEndpoint":
                     if (string.IsNullOrEmpty(payload))
                     {
                         throw new ArgumentException("Cannot link account with an AuthEndpoint wallet without an payload.");
                     }
-                    serverRes = await PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
+                    serverRes = await walletToLink.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
                     break;
                 case "Google":
                 case "Apple":
@@ -196,7 +219,7 @@ namespace Thirdweb
                 case "Discord":
                 case "Farcaster":
                 case "Telegram":
-                    serverRes = await PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
+                    serverRes = await walletToLink.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                     break;
                 default:
                     throw new ArgumentException($"Cannot link account with an unsupported authentication provider:", walletToLink._authProvider);
@@ -205,9 +228,25 @@ namespace Thirdweb
             var currentAccountToken = _embeddedWallet.GetCurrentAuthToken();
             var authTokenToConnect = serverRes.AuthToken;
 
-            // Link account (/account/connect endpoint with `Bearer iaw-auth-token:${currentAccountToken}`)
-            // await _embeddedWallet.LinkAccountAsync(currentAccountToken, authTokenToConnect).ConfigureAwait(false);
-            return;
+            var serverLinkedAccounts = await _embeddedWallet.LinkAccountAsync(currentAccountToken, authTokenToConnect).ConfigureAwait(false);
+            var linkedAccounts = new List<LinkedAccount>();
+            foreach (var linkedAccount in serverLinkedAccounts)
+            {
+                linkedAccounts.Add(
+                    new LinkedAccount
+                    {
+                        Type = linkedAccount.Type,
+                        Details = new LinkedAccount.LinkedAccountDetails
+                        {
+                            Email = linkedAccount.Details?.Email,
+                            Address = linkedAccount.Details?.Address,
+                            Phone = linkedAccount.Details?.Phone,
+                            Id = linkedAccount.Details?.Id
+                        }
+                    }
+                );
+            }
+            return linkedAccounts;
         }
 
         #endregion
@@ -370,15 +409,14 @@ namespace Thirdweb
         /// <summary>
         /// Logs in with SIWE (Sign-In with Ethereum).
         /// </summary>
-        /// <param name="signer">The wallet that will be used to sign the SIWE payload</param>
         /// <param name="chainId">The chain ID to use for signing the SIWE payload</param>
         /// <returns>A task representing the asynchronous operation. The task result contains the address.</returns>
         /// <exception cref="ArgumentNullException">Thrown when external wallet is not provided.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the external wallet is not connected.</exception>
         /// <exception cref="ArgumentException">Thrown when chain ID is invalid.</exception>
-        public async Task<string> LoginWithSiwe(IThirdwebWallet signer, BigInteger chainId)
+        public async Task<string> LoginWithSiwe(BigInteger chainId)
         {
-            var serverRes = await PreAuth_Siwe(signer, chainId).ConfigureAwait(false);
+            var serverRes = await PreAuth_Siwe(_siweSigner, chainId).ConfigureAwait(false);
             return await PostAuth(serverRes, null, "Siwe");
         }
 
@@ -386,12 +424,12 @@ namespace Thirdweb
         {
             if (signer == null)
             {
-                throw new ArgumentNullException(nameof(signer), "Signer wallet cannot be null.");
+                throw new ArgumentNullException(nameof(signer), "SIWE Signer wallet cannot be null.");
             }
 
             if (!await signer.IsConnected().ConfigureAwait(false))
             {
-                throw new InvalidOperationException("Signer wallet must be connected as this operation requires it to sign a message.");
+                throw new InvalidOperationException("SIWE Signer wallet must be connected as this operation requires it to sign a message.");
             }
 
             if (chainId <= 0)
