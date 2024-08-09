@@ -6,7 +6,7 @@ namespace Thirdweb.EWS
     internal abstract class ServerBase
     {
         internal abstract Task<List<Server.LinkedAccount>> LinkAccountAsync(string currentAccountToken, string authTokenToConnect);
-        internal abstract Task<string> VerifyThirdwebClientIdAsync(string domain);
+        internal abstract Task<List<Server.LinkedAccount>> GetLinkedAccountsAsync(string currentAccountToken);
 
         internal abstract Task<Server.UserWallet> FetchUserDetailsAsync(string emailAddress, string authToken);
         internal abstract Task StoreAddressAndSharesAsync(string walletAddress, string authShare, string encryptedRecoveryShare, string authToken);
@@ -52,29 +52,29 @@ namespace Thirdweb.EWS
             thirdwebHttpClientType = httpClient.GetType();
         }
 
-        // /account/connect endpoint with `Bearer iaw-auth-token:${currentAccountToken}`
+        // account/connect
         internal override async Task<List<LinkedAccount>> LinkAccountAsync(string currentAccountToken, string authTokenToConnect)
         {
             var uri = MakeUri2024("/account/connect");
             var content = MakeHttpContent(new { accountAuthTokenToConnect = authTokenToConnect });
             httpClient.AddHeader("Authorization", $"Bearer iaw-auth-token:{currentAccountToken}");
             var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            httpClient.RemoveHeader("Authorization");
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
             var res = await DeserializeAsync<AccountConnectResponse>(response).ConfigureAwait(false);
             return res == null || res.LinkedAccounts == null || res.LinkedAccounts.Count == 0 ? throw new InvalidOperationException("No linked accounts returned") : res.LinkedAccounts;
         }
 
-        // embedded-wallet/verify-thirdweb-client-id
-        internal override async Task<string> VerifyThirdwebClientIdAsync(string parentDomain)
+        // accounts GET
+        internal override async Task<List<LinkedAccount>> GetLinkedAccountsAsync(string currentAccountToken)
         {
-            Dictionary<string, string> queryParams = new() { { "clientId", clientId }, { "parentDomain", parentDomain } };
-            var uri = MakeUri2023("/embedded-wallet/verify-thirdweb-client-id", queryParams);
-            var content = MakeHttpContent(new { clientId, parentDomain });
-            var response = await httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+            var uri = MakeUri2024("/accounts");
+            var response = await SendHttpWithAuthAsync(uri, currentAccountToken).ConfigureAwait(false);
             await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
-            return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var res = await DeserializeAsync<AccountConnectResponse>(response).ConfigureAwait(false);
+            return res == null || res.LinkedAccounts == null || res.LinkedAccounts.Count == 0 ? new List<LinkedAccount>() : res.LinkedAccounts;
         }
 
         // embedded-wallet/embedded-wallet-user-details

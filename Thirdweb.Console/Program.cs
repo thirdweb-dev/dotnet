@@ -41,8 +41,9 @@ if (!await inAppWalletMain.IsConnected())
         new InAppWalletBrowser()
     );
 }
+Console.WriteLine($"Main InAppWallet address: {await inAppWalletMain.GetAddress()}");
 
-var inAppWalletToLink = await InAppWallet.Create(client: client, email: "firekeeper+tolink@thirdweb.com", authProvider: AuthProvider.Default);
+var inAppWalletToLink = await InAppWallet.Create(client: client, email: "firekeeper+tolink2@thirdweb.com", authProvider: AuthProvider.Default);
 if (await inAppWalletToLink.IsConnected())
 {
     await inAppWalletToLink.Disconnect();
@@ -53,6 +54,11 @@ var otp = Console.ReadLine();
 
 var linkedAccounts = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink, otp: otp);
 Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
+
+var linkedAccountsMain = await inAppWalletMain.GetLinkedAccounts();
+Console.WriteLine($"Main linked accounts: {JsonConvert.SerializeObject(linkedAccountsMain, Formatting.Indented)}");
+
+
 
 
 // var erc20SmartWalletSepolia = await SmartWallet.Create(

@@ -6,5 +6,10 @@ namespace Thirdweb.EWS
         {
             return await server.LinkAccountAsync(currentAccountToken, authTokenToConnect).ConfigureAwait(false);
         }
+
+        public async Task<List<Server.LinkedAccount>> GetLinkedAccountsAsync(string currentAccountToken)
+        {
+            return await server.GetLinkedAccountsAsync(currentAccountToken).ConfigureAwait(false);
+        }
     }
 }

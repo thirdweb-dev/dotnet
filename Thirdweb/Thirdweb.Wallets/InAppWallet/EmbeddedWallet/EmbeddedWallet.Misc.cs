@@ -4,15 +4,6 @@ namespace Thirdweb.EWS
 {
     internal partial class EmbeddedWallet
     {
-        public async Task VerifyThirdwebClientIdAsync(string domain)
-        {
-            var error = await server.VerifyThirdwebClientIdAsync(domain).ConfigureAwait(false);
-            if (error != "")
-            {
-                throw new InvalidOperationException($"Invalid thirdweb client id for domain {domain} | {error}");
-            }
-        }
-
         internal string GetCurrentAuthToken()
         {
             return localStorage.Data?.AuthToken;

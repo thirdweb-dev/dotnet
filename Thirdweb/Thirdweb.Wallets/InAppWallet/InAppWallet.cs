@@ -249,6 +249,30 @@ namespace Thirdweb
             return linkedAccounts;
         }
 
+        public async Task<List<LinkedAccount>> GetLinkedAccounts()
+        {
+            var currentAccountToken = _embeddedWallet.GetCurrentAuthToken();
+            var serverLinkedAccounts = await _embeddedWallet.GetLinkedAccountsAsync(currentAccountToken).ConfigureAwait(false);
+            var linkedAccounts = new List<LinkedAccount>();
+            foreach (var linkedAccount in serverLinkedAccounts)
+            {
+                linkedAccounts.Add(
+                    new LinkedAccount
+                    {
+                        Type = linkedAccount.Type,
+                        Details = new LinkedAccount.LinkedAccountDetails
+                        {
+                            Email = linkedAccount.Details?.Email,
+                            Address = linkedAccount.Details?.Address,
+                            Phone = linkedAccount.Details?.Phone,
+                            Id = linkedAccount.Details?.Id
+                        }
+                    }
+                );
+            }
+            return linkedAccounts;
+        }
+
         #endregion
 
         #region OAuth2 Flow
@@ -510,7 +534,7 @@ namespace Thirdweb
 
         private async Task<string> PostAuth(Server.VerifyResult serverRes, string encryptionKey, string authProvider)
         {
-            var res = await _embeddedWallet.PostAuthSetup(serverRes, encryptionKey, "JWT").ConfigureAwait(false);
+            var res = await _embeddedWallet.PostAuthSetup(serverRes, encryptionKey, authProvider).ConfigureAwait(false);
             if (res.User == null)
             {
                 throw new Exception($"Failed to login with {authProvider}");
