@@ -9,8 +9,9 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 var client = ThirdwebClient.Create(secretKey: secretKey);
 
 // dotnet run --project Thirdweb.Console [chainId] [optionalGasLimitOverride]
-var chainId = BigInteger.Parse(Environment.GetCommandLineArgs()[1]);
-BigInteger? gasLimitOverride = Environment.GetCommandLineArgs().Length > 2 ? BigInteger.Parse(Environment.GetCommandLineArgs()[2]) : null;
+var cmd = Environment.GetCommandLineArgs();
+var chainId = BigInteger.Parse(cmd[1]);
+BigInteger? gasLimitOverride = cmd.Length > 2 ? BigInteger.Parse(cmd[2]) : null;
 
 try
 {
