@@ -438,10 +438,10 @@ public class UtilsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task FetchThirdwebChainDataAsync_ReturnsChainData_WhenResponseIsSuccessful()
     {
+        var timer = System.Diagnostics.Stopwatch.StartNew();
         var chainId = new BigInteger(1);
 
         var chainData = await Utils.FetchThirdwebChainDataAsync(_client, chainId);
-
         Assert.NotNull(chainData);
         _ = Assert.IsType<ThirdwebChainData>(chainData);
 
@@ -458,6 +458,17 @@ public class UtilsTests : BaseTests
         Assert.Equal(18, chainData.NativeCurrency.Decimals);
         Assert.NotNull(chainData.Faucets);
         Assert.NotNull(chainData.Explorers);
+
+        timer.Stop();
+        var timeAttempt1 = timer.ElapsedMilliseconds;
+
+        timer.Restart();
+        var chainData2 = await Utils.FetchThirdwebChainDataAsync(_client, chainId);
+        Assert.NotNull(chainData2);
+        _ = Assert.IsType<ThirdwebChainData>(chainData);
+
+        var timeAttempt2 = timer.ElapsedMilliseconds;
+        Assert.True(timeAttempt1 > timeAttempt2);
     }
 
     [Fact(Timeout = 120000)]
@@ -492,5 +503,45 @@ public class UtilsTests : BaseTests
         var internalMsg = jsonObject.SelectToken("$.message.message");
         Assert.NotNull(internalMsg);
         Assert.Equal("0x01020304", internalMsg);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task IsEip155Enforced_ReturnsTrue_WhenEIP155IsEnforced()
+    {
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        var chainId = new BigInteger(842);
+
+        var isEnforced = await Utils.IsEip155Enforced(_client, chainId);
+        Assert.True(isEnforced);
+
+        timer.Stop();
+        var timeAttempt1 = timer.ElapsedMilliseconds;
+
+        timer.Restart();
+        var isEnforcedCached = await Utils.IsEip155Enforced(_client, chainId);
+        Assert.True(isEnforcedCached);
+
+        var timeAttempt2 = timer.ElapsedMilliseconds;
+        Assert.True(timeAttempt1 > timeAttempt2);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task IsEip155Enforced_ReturnsFalse_WhenEIP155IsNotEnforced()
+    {
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        var chainId = new BigInteger(11155111);
+
+        var isEnforced = await Utils.IsEip155Enforced(_client, chainId);
+        Assert.False(isEnforced);
+
+        timer.Stop();
+        var timeAttempt1 = timer.ElapsedMilliseconds;
+
+        timer.Restart();
+        var isEnforcedCached = await Utils.IsEip155Enforced(_client, chainId);
+        Assert.False(isEnforcedCached);
+
+        var timeAttempt2 = timer.ElapsedMilliseconds;
+        Assert.True(timeAttempt1 > timeAttempt2);
     }
 }

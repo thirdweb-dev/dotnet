@@ -9,6 +9,7 @@ using Nethereum.Signer;
 using Nethereum.Util;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace Thirdweb
 {
@@ -17,6 +18,9 @@ namespace Thirdweb
     /// </summary>
     public static class Utils
     {
+        private static readonly Dictionary<BigInteger, bool> Eip155EnforcedCache = new Dictionary<BigInteger, bool>();
+        private static readonly Dictionary<BigInteger, ThirdwebChainData> ChainDataCache = new Dictionary<BigInteger, ThirdwebChainData>();
+
         /// <summary>
         /// Computes the client ID from the given secret key.
         /// </summary>
@@ -322,6 +326,11 @@ namespace Thirdweb
 
         public static async Task<ThirdwebChainData> FetchThirdwebChainDataAsync(ThirdwebClient client, BigInteger chainId)
         {
+            if (ChainDataCache.ContainsKey(chainId))
+            {
+                return ChainDataCache[chainId];
+            }
+
             if (client == null)
             {
                 throw new ArgumentNullException(nameof(client));
@@ -337,17 +346,23 @@ namespace Thirdweb
             {
                 var response = await client.HttpClient.GetAsync(url).ConfigureAwait(false);
                 var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var deserializedResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<ThirdwebChainDataResponse>(json);
+                var deserializedResponse = JsonConvert.DeserializeObject<ThirdwebChainDataResponse>(json);
 
-                return deserializedResponse == null || deserializedResponse.Error != null
-                    ? throw new Exception($"Failed to fetch chain data for chain ID {chainId}. Error: {Newtonsoft.Json.JsonConvert.SerializeObject(deserializedResponse?.Error)}")
-                    : deserializedResponse.Data;
+                if (deserializedResponse == null || deserializedResponse.Error != null)
+                {
+                    throw new Exception($"Failed to fetch chain data for chain ID {chainId}. Error: {JsonConvert.SerializeObject(deserializedResponse?.Error)}");
+                }
+                else
+                {
+                    ChainDataCache[chainId] = deserializedResponse.Data;
+                    return deserializedResponse.Data;
+                }
             }
             catch (HttpRequestException httpEx)
             {
                 throw new Exception($"HTTP request error while fetching chain data for chain ID {chainId}: {httpEx.Message}", httpEx);
             }
-            catch (Newtonsoft.Json.JsonException jsonEx)
+            catch (JsonException jsonEx)
             {
                 throw new Exception($"JSON deserialization error while fetching chain data for chain ID {chainId}: {jsonEx.Message}", jsonEx);
             }
@@ -486,6 +501,87 @@ namespace Thirdweb
             }
 
             return list;
+        }
+
+        public static async Task<bool> IsEip155Enforced(ThirdwebClient client, BigInteger chainId)
+        {
+            if (Eip155EnforcedCache.ContainsKey(chainId))
+            {
+                return Eip155EnforcedCache[chainId];
+            }
+
+            var result = false;
+            var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+
+            try
+            {
+                // Pre-155 tx that will fail
+                var rawTransaction =
+                    "0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222";
+                _ = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", rawTransaction);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error while checking EIP-155 enforcement: {e.ToString()}");
+                var errorMsg = e.Message.ToLower();
+
+                var errorSubstrings = new List<string>
+                {
+                    "eip-155",
+                    "eip155",
+                    "protected",
+                    "invalid chain id for signer",
+                    "chain id none",
+                    "chain_id mismatch",
+                    "recovered sender mismatch",
+                    "transaction hash mismatch",
+                    "chainid no support",
+                    "chainid (0)",
+                    "chainid(0)",
+                    "invalid sender"
+                };
+
+                if (errorSubstrings.Any(errorMsg.Contains))
+                {
+                    result = true;
+                }
+                else
+                {
+                    // Check if all substrings in any of the composite substrings are present
+                    var errorSubstringsComposite = new List<string[]> { new[] { "account", "not found" }, new[] { "wrong", "chainid" } };
+
+                    result = errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
+                }
+            }
+
+            Eip155EnforcedCache[chainId] = result;
+            return result;
+        }
+
+        public static bool IsEip1559Supported(string chainId)
+        {
+            switch (chainId)
+            {
+                // BNB Mainnet
+                case "56":
+                // BNB Testnet
+                case "97":
+                // opBNB Mainnet
+                case "204":
+                // opBNB Testnet
+                case "5611":
+                // Oasys Mainnet
+                case "248":
+                // Oasys Testnet
+                case "9372":
+                // Vanar Mainnet
+                case "2040":
+                // Vanar Testnet (Vanguard)
+                case "78600":
+                    return false;
+                default:
+                    return true;
+            }
         }
     }
 }
