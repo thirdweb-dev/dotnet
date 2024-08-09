@@ -27,10 +27,12 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 var walletAddress = await privateKeyWallet.GetAddress();
 Console.WriteLine($"PK Wallet address: {walletAddress}");
 
+var smartWalletSigner = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true); // because why not
+
 var inAppWalletSiwe = await InAppWallet.Create(client: client, authProvider: AuthProvider.Siwe);
 if (!await inAppWalletSiwe.IsConnected())
 {
-    _ = await inAppWalletSiwe.LoginWithSiwe(privateKeyWallet, 421614);
+    _ = await inAppWalletSiwe.LoginWithSiwe(smartWalletSigner, 421614);
 }
 var inAppWalletSiweAddress = await inAppWalletSiwe.GetAddress();
 Console.WriteLine($"InAppWallet Siwe address: {inAppWalletSiweAddress}");
