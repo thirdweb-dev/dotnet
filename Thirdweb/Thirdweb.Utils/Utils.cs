@@ -522,7 +522,6 @@ namespace Thirdweb
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error while checking EIP-155 enforcement: {e.ToString()}");
                 var errorMsg = e.Message.ToLower();
 
                 var errorSubstrings = new List<string>
