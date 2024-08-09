@@ -2,31 +2,20 @@ namespace Thirdweb.EWS
 {
     internal partial class EmbeddedWallet
     {
-        public async Task<(bool isNewUser, bool isNewDevice, bool needsPassword)> SendOtpPhoneAsync(string phoneNumber)
+        public async Task<(bool isNewUser, bool isNewDevice)> SendPhoneOtpAsync(string phoneNumber)
         {
-            var sessionId = await server.SendKmsPhoneOtpAsync(phoneNumber).ConfigureAwait(false);
-            var isKmsWallet = true;
-            await localStorage.SaveSessionAsync(sessionId, isKmsWallet).ConfigureAwait(false);
-            var isNewUser = true;
-            var isNewDevice = true;
-            return (isNewUser, isNewDevice, !isKmsWallet);
+            var userWallet = await server.FetchUserDetailsAsync(phoneNumber, null).ConfigureAwait(false);
+            _ = await server.SendPhoneOtpAsync(phoneNumber).ConfigureAwait(false);
+            var isNewDevice = userWallet.IsNewUser || localStorage.Data?.WalletUserId != userWallet.WalletUserId;
+            return (userWallet.IsNewUser, isNewDevice);
         }
 
-        public async Task<VerifyResult> VerifyPhoneOtpAsync(string phoneNumber, string otp, string recoveryCode)
+        public async Task<VerifyResult> VerifyPhoneOtpAsync(string phoneNumber, string otp)
         {
-            if (localStorage.Session == null)
-            {
-                throw new InvalidOperationException($"Must first invoke {nameof(SendOtpPhoneAsync)}", new NullReferenceException());
-            }
             try
             {
-                // if (!await server.CheckIsPhoneKmsOtpValidAsync(phoneNumber, otp))
-                // {
-                //     throw new VerificationException("Invalid OTP", true);
-                // }
-                var result = await server.VerifyKmsPhoneOtpAsync(phoneNumber, otp, localStorage.Session.Id).ConfigureAwait(false);
-                await localStorage.RemoveSessionAsync().ConfigureAwait(false);
-                return await PostAuthSetup(result, recoveryCode, null, "PhoneOTP").ConfigureAwait(false);
+                var result = await server.VerifyPhoneOtpAsync(phoneNumber, otp).ConfigureAwait(false);
+                return await PostAuthSetup(result, null, "Phone").ConfigureAwait(false);
             }
             catch (VerificationException ex)
             {

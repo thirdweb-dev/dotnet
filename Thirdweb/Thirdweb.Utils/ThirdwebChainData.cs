@@ -45,9 +45,6 @@ namespace Thirdweb
         [JsonProperty("icon")]
         public ThirdwebChainIcon Icon { get; set; }
 
-        [JsonProperty("features")]
-        public List<ThirdwebChainFeature> Features { get; set; }
-
         [JsonProperty("faucets")]
         public List<object> Faucets { get; set; }
 
@@ -62,12 +59,6 @@ namespace Thirdweb
 
         [JsonProperty("testnet")]
         public bool Testnet { get; set; }
-
-        [JsonProperty("redFlags")]
-        public List<object> RedFlags { get; set; }
-
-        [JsonProperty("parent")]
-        public ThirdwebChainParent Parent { get; set; }
     }
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
@@ -99,13 +90,6 @@ namespace Thirdweb
         public string Format { get; set; }
     }
 
-    [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
-    public class ThirdwebChainFeature
-    {
-        [JsonProperty("name")]
-        public string Name { get; set; }
-    }
-
     public class ThirdwebChainEns
     {
         [JsonProperty("registry")]
@@ -125,18 +109,6 @@ namespace Thirdweb
 
         [JsonProperty("icon")]
         public ThirdwebChainIcon Icon { get; set; }
-    }
-
-    public class ThirdwebChainParent
-    {
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
-        [JsonProperty("chain")]
-        public string Chain { get; set; }
-
-        [JsonProperty("bridges")]
-        public List<ThirdwebChainBridge> Bridges { get; set; }
     }
 
     public class ThirdwebChainBridge

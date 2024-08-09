@@ -18,7 +18,7 @@ var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 60000));
 
 var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
-var readResult = await contract.ERC20_Name();
+var readResult = await contract.Read<string>("name");
 Console.WriteLine($"Contract read result: {readResult}");
 
 // Create wallets (this is an advanced use case, typically one wallet is plenty)
@@ -53,6 +53,41 @@ Console.WriteLine($"Self transfer receipt: {JsonConvert.SerializeObject(receipt,
 
 // var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
 // Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
+Console.WriteLine($"Wallet address: {walletAddress}");
+
+// // Self transfer 0 on chain 842
+// var tx = await ThirdwebTransaction.Create(
+//     wallet: privateKeyWallet,
+//     txInput: new ThirdwebTransactionInput()
+//     {
+//         From = await privateKeyWallet.GetAddress(),
+//         To = await privateKeyWallet.GetAddress(),
+//         Value = new HexBigInteger(BigInteger.Zero),
+//     },
+//     chainId: 842
+// );
+// var txHash = await ThirdwebTransaction.Send(tx);
+// Console.WriteLine($"Transaction hash: {txHash}");
+
+// var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
+// Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
+
+// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Telegram);
+// if (!await inAppWalletOAuth.IsConnected())
+// {
+//     _ = await inAppWalletOAuth.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         "thirdweb://",
+//         new InAppWalletBrowser()
+//     );
+// }
+// var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
+// Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
 
 // var smartWallet = await SmartWallet.Create(privateKeyWallet, 78600);
 
@@ -133,7 +168,7 @@ Console.WriteLine($"Self transfer receipt: {JsonConvert.SerializeObject(receipt,
 // }
 
 
-// var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+awsless@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
+var inAppWallet = await InAppWallet.Create(client: client, email: "firekeeper+otpv2@thirdweb.com"); // or email: null, phoneNumber: "+1234567890"
 
 // var inAppWallet = await InAppWallet.Create(client: client, authprovider: AuthProvider.Google); // or email: null, phoneNumber: "+1234567890"
 
@@ -159,22 +194,27 @@ Console.WriteLine($"Self transfer receipt: {JsonConvert.SerializeObject(receipt,
 //     Console.WriteLine($"InAppWallet address: {address}");
 // }
 
-// await inAppWallet.SendOTP();
-// Console.WriteLine("Please submit the OTP.");
-// retry:
-// var otp = Console.ReadLine();
-// (var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
-// if (inAppWalletAddress == null && canRetry)
-// {
-//     Console.WriteLine("Please submit the OTP again.");
-//     goto retry;
-// }
-// if (inAppWalletAddress == null)
-// {
-//     Console.WriteLine("OTP login failed. Please try again.");
-//     return;
-// }
-// Console.WriteLine($"InAppWallet address: {inAppWalletAddress}");
+if (await inAppWallet.IsConnected())
+{
+    Console.WriteLine($"InAppWallet address: {await inAppWallet.GetAddress()}");
+    return;
+}
+await inAppWallet.SendOTP();
+Console.WriteLine("Please submit the OTP.");
+retry:
+var otp = Console.ReadLine();
+(var inAppWalletAddress, var canRetry) = await inAppWallet.SubmitOTP(otp);
+if (inAppWalletAddress == null && canRetry)
+{
+    Console.WriteLine("Please submit the OTP again.");
+    goto retry;
+}
+if (inAppWalletAddress == null)
+{
+    Console.WriteLine("OTP login failed. Please try again.");
+    return;
+}
+Console.WriteLine($"InAppWallet address: {inAppWalletAddress}");
 // }
 
 // Prepare a transaction directly, or with Contract.Prepare

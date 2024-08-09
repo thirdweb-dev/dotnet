@@ -14,7 +14,10 @@ namespace Thirdweb
         Apple,
         Facebook,
         JWT,
-        AuthEndpoint
+        AuthEndpoint,
+        Discord,
+        Farcaster,
+        Telegram
     }
 
     /// <summary>
@@ -30,7 +33,7 @@ namespace Thirdweb
         internal InAppWallet(ThirdwebClient client, string email, string phoneNumber, string authProvider, EmbeddedWallet embeddedWallet, EthECKey ecKey)
             : base(client, ecKey)
         {
-            _email = email;
+            _email = email?.ToLower();
             _phoneNumber = phoneNumber;
             _embeddedWallet = embeddedWallet;
             _authProvider = authProvider;
@@ -42,7 +45,7 @@ namespace Thirdweb
         /// <param name="client">The Thirdweb client instance.</param>
         /// <param name="email">The email address for authentication.</param>
         /// <param name="phoneNumber">The phone number for authentication.</param>
-        /// <param name="authprovider">The authentication provider to use.</param>
+        /// <param name="authProvider">The authentication provider to use.</param>
         /// <param name="storageDirectoryPath">The path to the storage directory.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the created in-app wallet.</returns>
         /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
@@ -50,23 +53,26 @@ namespace Thirdweb
             ThirdwebClient client,
             string email = null,
             string phoneNumber = null,
-            AuthProvider authprovider = AuthProvider.Default,
+            AuthProvider authProvider = AuthProvider.Default,
             string storageDirectoryPath = null
         )
         {
-            if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber) && authprovider == AuthProvider.Default)
+            if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber) && authProvider == AuthProvider.Default)
             {
                 throw new ArgumentException("Email, Phone Number, or OAuth Provider must be provided to login.");
             }
 
-            var authproviderStr = authprovider switch
+            var authproviderStr = authProvider switch
             {
                 AuthProvider.Google => "Google",
                 AuthProvider.Apple => "Apple",
                 AuthProvider.Facebook => "Facebook",
                 AuthProvider.JWT => "JWT",
                 AuthProvider.AuthEndpoint => "AuthEndpoint",
-                AuthProvider.Default => string.IsNullOrEmpty(email) ? "PhoneOTP" : "EmailOTP",
+                AuthProvider.Discord => "Discord",
+                AuthProvider.Farcaster => "Farcaster",
+                AuthProvider.Telegram => "Telegram",
+                AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
                 _ => throw new ArgumentException("Invalid AuthProvider"),
             };
 
@@ -75,7 +81,7 @@ namespace Thirdweb
             try
             {
                 if (!string.IsNullOrEmpty(authproviderStr)) { }
-                var user = await embeddedWallet.GetUserAsync(email, authproviderStr);
+                var user = await embeddedWallet.GetUserAsync(email, phoneNumber, authproviderStr);
                 ecKey = new EthECKey(user.Account.PrivateKey);
             }
             catch
@@ -165,7 +171,7 @@ namespace Thirdweb
                 authResultJson = queryDict["authResult"];
             }
 
-            var res = await _embeddedWallet.SignInWithOauthAsync(_authProvider, authResultJson, null);
+            var res = await _embeddedWallet.SignInWithOauthAsync(_authProvider, authResultJson);
             if (res.User == null)
             {
                 throw new Exception("Failed to login with OAuth2");
@@ -192,22 +198,11 @@ namespace Thirdweb
 
             try
             {
-                if (_email != null)
-                {
-                    (var isNewUser, var isNewDevice, var needsRecoveryCode) = await _embeddedWallet.SendOtpEmailAsync(_email);
-                }
-                else if (_phoneNumber != null)
-                {
-                    (var isNewUser, var isNewDevice, var needsRecoveryCode) = await _embeddedWallet.SendOtpPhoneAsync(_phoneNumber);
-                }
-                else
-                {
-                    throw new Exception("Email or Phone Number must be provided to login.");
-                }
+                (var isNewUser, var isNewDevice) = _email == null ? await _embeddedWallet.SendPhoneOtpAsync(_phoneNumber) : await _embeddedWallet.SendEmailOtpAsync(_email);
             }
             catch (Exception e)
             {
-                throw new Exception("Failed to send OTP email", e);
+                throw new Exception("Failed to send OTP", e);
             }
         }
 
@@ -230,7 +225,7 @@ namespace Thirdweb
                 throw new Exception("Email or Phone Number is required for OTP login");
             }
 
-            var res = _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp, null) : await _embeddedWallet.VerifyOtpAsync(_email, otp, null);
+            var res = _email == null ? await _embeddedWallet.VerifyPhoneOtpAsync(_phoneNumber, otp) : await _embeddedWallet.VerifyEmailOtpAsync(_email, otp);
             if (res.User == null)
             {
                 return (null, res.CanRetry);
@@ -269,11 +264,10 @@ namespace Thirdweb
         /// </summary>
         /// <param name="jwt">The JWT to use for authentication.</param>
         /// <param name="encryptionKey">The encryption key to use.</param>
-        /// <param name="recoveryCode">The optional recovery code.</param>
         /// <returns>A task representing the asynchronous operation. The task result contains the login result.</returns>
         /// <exception cref="ArgumentException">Thrown when JWT or encryption key is not provided.</exception>
         /// <exception cref="Exception">Thrown when the login fails.</exception>
-        public async Task<string> LoginWithJWT(string jwt, string encryptionKey, string recoveryCode = null)
+        public async Task<string> LoginWithJWT(string jwt, string encryptionKey)
         {
             if (string.IsNullOrEmpty(jwt))
             {
@@ -285,7 +279,7 @@ namespace Thirdweb
                 throw new ArgumentException(nameof(encryptionKey), "Encryption key cannot be null or empty.");
             }
 
-            var res = await _embeddedWallet.SignInWithJwtAsync(jwt, encryptionKey, recoveryCode);
+            var res = await _embeddedWallet.SignInWithJwtAsync(jwt, encryptionKey);
 
             if (res.User == null)
             {
@@ -306,11 +300,10 @@ namespace Thirdweb
         /// </summary>
         /// <param name="payload">The payload to use for authentication.</param>
         /// <param name="encryptionKey">The encryption key to use.</param>
-        /// <param name="recoveryCode">The optional recovery code.</param>
         /// <returns>A task representing the asynchronous operation. The task result contains the login result.</returns>
         /// <exception cref="ArgumentException">Thrown when payload or encryption key is not provided.</exception>
         /// <exception cref="Exception">Thrown when the login fails.</exception>
-        public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey, string recoveryCode = null)
+        public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey)
         {
             if (string.IsNullOrEmpty(payload))
             {
@@ -322,7 +315,7 @@ namespace Thirdweb
                 throw new ArgumentException(nameof(encryptionKey), "Encryption key cannot be null or empty.");
             }
 
-            var res = await _embeddedWallet.SignInWithAuthEndpointAsync(payload, encryptionKey, recoveryCode);
+            var res = await _embeddedWallet.SignInWithAuthEndpointAsync(payload, encryptionKey);
 
             if (res.User == null)
             {

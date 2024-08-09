@@ -1,7 +1,4 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace Thirdweb.EWS
+﻿namespace Thirdweb.EWS
 {
     internal class VerificationException : Exception
     {

@@ -10,6 +10,47 @@ namespace Thirdweb
         #region Common
 
         /// <summary>
+        /// Reads data from the contract using the specified method.
+        /// </summary>
+        /// <typeparam name="T">The type of the return value.</typeparam>
+        /// <param name="contract">The contract instance.</param>
+        /// <param name="method">The method to call.</param>
+        /// <param name="parameters">The parameters for the method.</param>
+        /// <returns>The result of the method call.</returns>
+        public static async Task<T> Read<T>(this ThirdwebContract contract, string method, params object[] parameters)
+        {
+            return await ThirdwebContract.Read<T>(contract, method, parameters);
+        }
+
+        /// <summary>
+        /// Writes data to the contract using the specified method and parameters.
+        /// </summary>
+        /// <param name="contract">The contract instance.</param>
+        /// <param name="wallet">The wallet instance.</param>
+        /// <param name="method">The method to call.</param>
+        /// <param name="weiValue">The value in wei to send.</param>
+        /// <param name="parameters">The parameters for the method.</param>
+        /// <returns>A transaction receipt.</returns>
+        public static async Task<ThirdwebTransactionReceipt> Write(this ThirdwebContract contract, IThirdwebWallet wallet, string method, BigInteger weiValue, params object[] parameters)
+        {
+            return await ThirdwebContract.Write(wallet, contract, method, weiValue, parameters);
+        }
+
+        /// <summary>
+        /// Prepares a transaction for the specified method and parameters.
+        /// </summary>
+        /// <param name="contract">The contract instance.</param>
+        /// <param name="wallet">The wallet instance.</param>
+        /// <param name="method">The method to call.</param>
+        /// <param name="weiValue">The value in wei to send.</param>
+        /// <param name="parameters">The parameters for the method.</param>
+        /// <returns>A prepared transaction.</returns>
+        public static async Task<ThirdwebTransaction> Prepare(this ThirdwebContract contract, IThirdwebWallet wallet, string method, BigInteger weiValue, params object[] parameters)
+        {
+            return await ThirdwebContract.Prepare(wallet, contract, method, weiValue, parameters);
+        }
+
+        /// <summary>
         /// Retrieves the metadata of the specified contract.
         /// </summary>
         /// <param name="contract">The contract to retrieve metadata for.</param>

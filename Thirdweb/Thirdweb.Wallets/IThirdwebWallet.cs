@@ -129,6 +129,11 @@ namespace Thirdweb
         /// <param name="httpClientOverride">The HTTP client override.</param>
         /// <returns>The authentication result.</returns>
         Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", IThirdwebHttpClient httpClientOverride = null);
+
+        /// <summary>
+        /// Disconnects the wallet (if using InAppWallet, clears session)
+        /// </summary>
+        Task Disconnect();
     }
 
     /// <summary>

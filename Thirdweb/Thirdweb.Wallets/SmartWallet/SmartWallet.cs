@@ -377,7 +377,8 @@ namespace Thirdweb
         private async Task<byte[]> HashAndSignUserOp(UserOperation userOp, ThirdwebContract entryPointContract)
         {
             var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
-            var sig = await _personalAccount.PersonalSign(userOpHash);
+            var sig =
+                _personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await _personalAccount.PersonalSign(userOpHash.BytesToHex()) : await _personalAccount.PersonalSign(userOpHash);
             return sig.HexToByteArray();
         }
 
@@ -426,7 +427,7 @@ namespace Thirdweb
             _ = await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
         }
 
-        public Task<IThirdwebWallet> GetPersonalAccount()
+        public Task<IThirdwebWallet> GetPersonalWallet()
         {
             return Task.FromResult(_personalAccount);
         }
@@ -438,22 +439,22 @@ namespace Thirdweb
 
         public Task<string> EthSign(byte[] rawMessage)
         {
-            return _personalAccount.EthSign(rawMessage);
+            throw new NotImplementedException();
         }
 
         public Task<string> EthSign(string message)
         {
-            return _personalAccount.EthSign(message);
+            throw new NotImplementedException();
         }
 
         public Task<string> RecoverAddressFromEthSign(string message, string signature)
         {
-            return _personalAccount.RecoverAddressFromEthSign(message, signature);
+            throw new NotImplementedException();
         }
 
         public Task<string> PersonalSign(byte[] rawMessage)
         {
-            return _personalAccount.PersonalSign(rawMessage);
+            throw new NotImplementedException();
         }
 
         public async Task<string> PersonalSign(string message)
@@ -524,6 +525,28 @@ namespace Thirdweb
             }
         }
 
+        public async Task<List<string>> GetAllAdmins()
+        {
+            if (Utils.IsZkSync(_chainId))
+            {
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+            }
+
+            var result = await ThirdwebContract.Read<List<string>>(_accountContract, "getAllAdmins");
+            return result ?? new List<string>();
+        }
+
+        public async Task<List<SignerPermissions>> GetAllActiveSigners()
+        {
+            if (Utils.IsZkSync(_chainId))
+            {
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+            }
+
+            var result = await ThirdwebContract.Read<List<SignerPermissions>>(_accountContract, "getAllActiveSigners");
+            return result ?? new List<SignerPermissions>();
+        }
+
         public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
             string signerAddress,
             List<string> approvedTargets,
@@ -553,6 +576,7 @@ namespace Thirdweb
             };
 
             var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
+            // Do it this way to avoid triggering an extra sig from estimation
             var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToByteArray());
             var txInput = new ThirdwebTransactionInput()
             {
@@ -563,6 +587,16 @@ namespace Thirdweb
             };
             var txHash = await SendTransaction(txInput);
             return await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
+        }
+
+        public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
+        {
+            if (Utils.IsZkSync(_chainId))
+            {
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+            }
+
+            return await CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString());
         }
 
         public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)

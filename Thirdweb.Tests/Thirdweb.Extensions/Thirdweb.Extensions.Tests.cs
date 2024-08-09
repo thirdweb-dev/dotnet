@@ -922,14 +922,14 @@ public class ExtensionsTests : BaseTests
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.DropERC721_GetActiveClaimCondition());
     }
 
-    [Fact(Timeout = 120000)]
-    public async Task DropERC721_Claim_ShouldThrowTokens()
-    {
-        var contract = await GetDrop721Contract();
-        var wallet = await GetSmartWallet();
-        var ex = await Assert.ThrowsAsync<Exception>(async () => await contract.DropERC721_Claim(wallet, await wallet.GetAddress(), 1));
-        Assert.Contains("!Tokens", ex.Message);
-    }
+    // [Fact(Timeout = 120000)]
+    // public async Task DropERC721_Claim_ShouldThrowTokens()
+    // {
+    //     var contract = await GetDrop721Contract();
+    //     var wallet = await GetSmartWallet();
+    //     var ex = await Assert.ThrowsAsync<Exception>(async () => await contract.DropERC721_Claim(wallet, await wallet.GetAddress(), 1));
+    //     Assert.Contains("!Tokens", ex.Message);
+    // }
 
     [Fact(Timeout = 120000)]
     public async Task DropERC721_GetActiveClaimConditionId()

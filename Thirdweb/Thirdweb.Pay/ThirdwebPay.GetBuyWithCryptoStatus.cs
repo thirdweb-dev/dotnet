@@ -25,7 +25,7 @@ namespace Thirdweb.Pay
             var queryString = new Dictionary<string, string> { { "transactionHash", transactionHash } };
 
             var queryStringFormatted = string.Join("&", queryString.Where(kv => kv.Value != null).Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
-            var url = $"{Constants.THIRDWEB_PAY_CRYPTO_STATUS_ENDPOINT}?{queryStringFormatted}";
+            var url = $"{THIRDWEB_PAY_CRYPTO_STATUS_ENDPOINT}?{queryStringFormatted}";
 
             var getResponse = await client.HttpClient.GetAsync(url);
 

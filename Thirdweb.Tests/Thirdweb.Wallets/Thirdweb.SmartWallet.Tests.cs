@@ -5,14 +5,18 @@ namespace Thirdweb.Tests.Wallets;
 
 public class SmartWalletTests : BaseTests
 {
+    private readonly ThirdwebClient _client;
+
     public SmartWalletTests(ITestOutputHelper output)
-        : base(output) { }
+        : base(output)
+    {
+        _client = ThirdwebClient.Create(secretKey: _secretKey);
+    }
 
     private async Task<SmartWallet> GetSmartAccount()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
-        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(_client);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, gasless: true, chainId: 421614);
         return smartAccount;
     }
 
@@ -129,7 +133,7 @@ public class SmartWalletTests : BaseTests
     public async Task GetPersonalAccount()
     {
         var account = await GetSmartAccount();
-        var personalAccount = await account.GetPersonalAccount();
+        var personalAccount = await account.GetPersonalWallet();
         Assert.NotNull(personalAccount);
         _ = Assert.IsType<PrivateKeyWallet>(personalAccount);
     }
@@ -220,5 +224,62 @@ public class SmartWalletTests : BaseTests
         var account = await GetSmartAccount();
         await account.Disconnect();
         Assert.False(await account.IsConnected());
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetAllActiveSigners()
+    {
+        var account = await GetSmartAccount();
+        var signers = await account.GetAllActiveSigners();
+        Assert.NotNull(signers);
+        var count = signers.Count;
+
+        // add signer
+        var randomSigner = await (await PrivateKeyWallet.Generate(_client)).GetAddress();
+        _ = await account.CreateSessionKey(
+            signerAddress: randomSigner,
+            approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
+            nativeTokenLimitPerTransactionInWei: "0",
+            permissionStartTimestamp: "0",
+            permissionEndTimestamp: (Utils.GetUnixTimeStampNow() + 86400).ToString(),
+            reqValidityStartTimestamp: "0",
+            reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
+        );
+
+        signers = await account.GetAllActiveSigners();
+
+        Assert.Equal(count + 1, signers.Count);
+
+        // remove signer
+        _ = await account.RevokeSessionKey(signerAddress: randomSigner);
+
+        signers = await account.GetAllActiveSigners();
+
+        Assert.Equal(count, signers.Count);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetAllAdmins()
+    {
+        var account = await GetSmartAccount();
+        await account.ForceDeploy();
+        var admins = await account.GetAllAdmins();
+        Assert.NotNull(admins);
+        var count = admins.Count;
+
+        // add admin
+        var randomAdmin = await (await PrivateKeyWallet.Generate(_client)).GetAddress();
+        _ = await account.AddAdmin(randomAdmin);
+
+        admins = await account.GetAllAdmins();
+
+        Assert.Equal(count + 1, admins.Count);
+
+        // remove admin
+        _ = await account.RemoveAdmin(randomAdmin);
+
+        admins = await account.GetAllAdmins();
+
+        Assert.Equal(count, admins.Count);
     }
 }
