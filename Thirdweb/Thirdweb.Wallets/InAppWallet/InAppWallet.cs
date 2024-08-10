@@ -172,7 +172,7 @@ namespace Thirdweb
 
             if (await walletToLink.IsConnected())
             {
-                throw new ArgumentException("Cannot link account with a wallet that is already connected. Please call InAppWallet.Disconnect() on the wallet to link before linking.");
+                throw new ArgumentException("Cannot link account with a wallet that is already created and connected.");
             }
 
             Server.VerifyResult serverRes = null;
@@ -209,7 +209,7 @@ namespace Thirdweb
                 case "AuthEndpoint":
                     if (string.IsNullOrEmpty(payload))
                     {
-                        throw new ArgumentException("Cannot link account with an AuthEndpoint wallet without an payload.");
+                        throw new ArgumentException("Cannot link account with an AuthEndpoint wallet without a payload.");
                     }
                     serverRes = await walletToLink.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
                     break;
