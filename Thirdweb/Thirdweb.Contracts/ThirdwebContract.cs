@@ -99,11 +99,27 @@ namespace Thirdweb
         public static async Task<T> Read<T>(ThirdwebContract contract, string method, params object[] parameters)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(contract.Client, contract.Chain);
-
             var contractRaw = new Contract(null, contract.Abi, contract.Address);
-            var function = GetFunctionMatchSignature(contractRaw, method, parameters);
-            var data = function.GetData(parameters);
 
+            var function = GetFunctionMatchSignature(contractRaw, method, parameters);
+            if (function == null)
+            {
+                if (method.Contains("("))
+                {
+                    try
+                    {
+                        var canonicalSignature = ExtractCanonicalSignature(method);
+                        var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
+                        function = contractRaw.GetFunctionBySignature(selector);
+                    }
+                    catch
+                    {
+                        function = contractRaw.GetFunction(method);
+                    }
+                }
+            }
+
+            var data = function.GetData(parameters);
             var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data = data }, "latest").ConfigureAwait(false);
 
             return function.DecodeTypeOutput<T>(resultData);
@@ -122,6 +138,23 @@ namespace Thirdweb
         {
             var contractRaw = new Contract(null, contract.Abi, contract.Address);
             var function = GetFunctionMatchSignature(contractRaw, method, parameters);
+            if (function == null)
+            {
+                if (method.Contains("("))
+                {
+                    try
+                    {
+                        var canonicalSignature = ExtractCanonicalSignature(method);
+                        var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
+                        function = contractRaw.GetFunctionBySignature(selector);
+                    }
+                    catch
+                    {
+                        function = contractRaw.GetFunction(method);
+                    }
+                }
+            }
+
             var data = function.GetData(parameters);
             var transaction = new ThirdwebTransactionInput
             {
@@ -170,6 +203,36 @@ namespace Thirdweb
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Extracts the canonical signature from the specified method.
+        /// </summary>
+        /// <param name="method">The method to extract the signature from.</param>
+        /// <returns>The canonical signature.</returns>
+        /// <exception cref="ArgumentException"></exception>
+        private static string ExtractCanonicalSignature(string method)
+        {
+            method = method.Split("returns")[0];
+            var startOfParameters = method.IndexOf('(');
+            if (startOfParameters == -1)
+            {
+                throw new ArgumentException("Invalid function signature: Missing opening parenthesis.");
+            }
+
+            var endOfParameters = method.LastIndexOf(')');
+            if (endOfParameters == -1)
+            {
+                throw new ArgumentException("Invalid function signature: Missing closing parenthesis.");
+            }
+
+            var functionName = method.Substring(0, startOfParameters).Trim().Split(' ').Last(); // Get the last part after any spaces (in case of "function name(...)")
+            var parameters = method.Substring(startOfParameters + 1, endOfParameters - startOfParameters - 1);
+
+            var paramTypes = parameters.Split(',').Select(param => param.Trim().Split(' ')[0]).ToArray();
+
+            var canonicalSignature = $"{functionName}({string.Join(",", paramTypes)})";
+            return canonicalSignature;
         }
     }
 }
