@@ -217,6 +217,7 @@ namespace Thirdweb
         /// <exception cref="ArgumentException"></exception>
         private static string ExtractCanonicalSignature(string method)
         {
+            method = method.Split("returns")[0];
             var startOfParameters = method.IndexOf('(');
             if (startOfParameters == -1)
             {
