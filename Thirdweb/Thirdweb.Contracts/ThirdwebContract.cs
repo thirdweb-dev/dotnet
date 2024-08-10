@@ -106,16 +106,13 @@ namespace Thirdweb
             {
                 if (method.Contains("("))
                 {
-                    try
-                    {
-                        var canonicalSignature = ExtractCanonicalSignature(method);
-                        var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
-                        function = contractRaw.GetFunctionBySignature(selector);
-                    }
-                    catch
-                    {
-                        function = contractRaw.GetFunction(method);
-                    }
+                    var canonicalSignature = ExtractCanonicalSignature(method);
+                    var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
+                    function = contractRaw.GetFunctionBySignature(selector);
+                }
+                else
+                {
+                    throw new ArgumentException("Method signature not found in contract ABI.");
                 }
             }
 
@@ -142,16 +139,13 @@ namespace Thirdweb
             {
                 if (method.Contains("("))
                 {
-                    try
-                    {
-                        var canonicalSignature = ExtractCanonicalSignature(method);
-                        var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
-                        function = contractRaw.GetFunctionBySignature(selector);
-                    }
-                    catch
-                    {
-                        function = contractRaw.GetFunction(method);
-                    }
+                    var canonicalSignature = ExtractCanonicalSignature(method);
+                    var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
+                    function = contractRaw.GetFunctionBySignature(selector);
+                }
+                else
+                {
+                    throw new ArgumentException("Method signature not found in contract ABI.");
                 }
             }
 
