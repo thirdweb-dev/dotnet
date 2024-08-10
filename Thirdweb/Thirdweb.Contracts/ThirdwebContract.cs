@@ -223,18 +223,18 @@ namespace Thirdweb
                 throw new ArgumentException("Invalid function signature: Missing opening parenthesis.");
             }
 
-            var endOfParameters = method.IndexOf(')', startOfParameters);
+            var endOfParameters = method.LastIndexOf(')');
             if (endOfParameters == -1)
             {
                 throw new ArgumentException("Invalid function signature: Missing closing parenthesis.");
             }
 
-            var canonicalSignature = method.Substring(0, endOfParameters + 1);
-            if (canonicalSignature.Contains(" "))
-            {
-                canonicalSignature = canonicalSignature.Substring(canonicalSignature.LastIndexOf(' ') + 1);
-            }
+            var functionName = method.Substring(0, startOfParameters).Trim().Split(' ').Last(); // Get the last part after any spaces (in case of "function name(...)")
+            var parameters = method.Substring(startOfParameters + 1, endOfParameters - startOfParameters - 1);
 
+            var paramTypes = parameters.Split(',').Select(param => param.Trim().Split(' ')[0]).ToArray();
+
+            var canonicalSignature = $"{functionName}({string.Join(",", paramTypes)})";
             return canonicalSignature;
         }
     }
