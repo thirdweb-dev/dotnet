@@ -119,11 +119,6 @@ namespace Thirdweb
                 }
             }
 
-            if (function == null)
-            {
-                throw new ArgumentException($"Function '{method}' not found in the contract ABI.");
-            }
-
             var data = function.GetData(parameters);
             var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data = data }, "latest").ConfigureAwait(false);
 
@@ -159,6 +154,7 @@ namespace Thirdweb
                     }
                 }
             }
+
             var data = function.GetData(parameters);
             var transaction = new ThirdwebTransactionInput
             {
