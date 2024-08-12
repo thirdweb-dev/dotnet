@@ -78,6 +78,22 @@ public class ContractsTests : BaseTests
         Assert.Equal(0, result.ReturnValue2);
     }
 
+    [Fact(Timeout = 120000)]
+    public async Task ReadTest_FullSig()
+    {
+        var contract = await GetContract();
+        var result = await ThirdwebContract.Read<string>(contract, "function name() view returns (string)");
+        Assert.Equal("Kitty DropERC20", result);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task ReadTest_PartialSig()
+    {
+        var contract = await GetContract();
+        var result = await ThirdwebContract.Read<string>(contract, "name()");
+        Assert.Equal("Kitty DropERC20", result);
+    }
+
     private class AllowlistProof
     {
         public List<byte[]> Proof { get; set; } = new();
@@ -98,6 +114,35 @@ public class ContractsTests : BaseTests
         var allowlistProof = new object[] { new byte[] { }, BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
         var data = new byte[] { };
         var result = await ThirdwebContract.Write(smartAccount, contract, "claim", 0, receiver, quantity, currency, pricePerToken, allowlistProof, data);
+        Assert.NotNull(result);
+        var receipt = await ThirdwebTransaction.WaitForTransactionReceipt(contract.Client, contract.Chain, result.TransactionHash);
+        Assert.NotNull(receipt);
+        Assert.Equal(result.TransactionHash, receipt.TransactionHash);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task WriteTest_SmartAccount_FullSig()
+    {
+        var contract = await GetContract();
+        var smartAccount = await GetAccount();
+        var receiver = await smartAccount.GetAddress();
+        var quantity = BigInteger.One;
+        var currency = Constants.NATIVE_TOKEN_ADDRESS;
+        var pricePerToken = BigInteger.Zero;
+        var allowlistProof = new object[] { new byte[] { }, BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        var data = new byte[] { };
+        var result = await ThirdwebContract.Write(
+            smartAccount,
+            contract,
+            "claim(address, uint256, address, uint256, (bytes32[], uint256, uint256, address), bytes)",
+            0,
+            receiver,
+            quantity,
+            currency,
+            pricePerToken,
+            allowlistProof,
+            data
+        );
         Assert.NotNull(result);
         var receipt = await ThirdwebTransaction.WaitForTransactionReceipt(contract.Client, contract.Chain, result.TransactionHash);
         Assert.NotNull(receipt);
