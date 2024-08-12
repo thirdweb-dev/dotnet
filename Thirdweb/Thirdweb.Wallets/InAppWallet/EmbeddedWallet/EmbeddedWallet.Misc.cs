@@ -4,16 +4,12 @@ namespace Thirdweb.EWS
 {
     internal partial class EmbeddedWallet
     {
-        public async Task VerifyThirdwebClientIdAsync(string domain)
+        internal string GetCurrentAuthToken()
         {
-            var error = await server.VerifyThirdwebClientIdAsync(domain).ConfigureAwait(false);
-            if (error != "")
-            {
-                throw new InvalidOperationException($"Invalid thirdweb client id for domain {domain} | {error}");
-            }
+            return localStorage.Data?.AuthToken;
         }
 
-        private async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)
+        internal async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)
         {
             var walletUserId = result.WalletUserId;
             var authToken = result.AuthToken;
@@ -52,15 +48,12 @@ namespace Thirdweb.EWS
             switch (userWallet.Status)
             {
                 case "Logged Out":
-                    await SignOutAsync().ConfigureAwait(false);
                     throw new InvalidOperationException("User is logged out");
                 case "Logged In, Wallet Uninitialized":
-                    await SignOutAsync().ConfigureAwait(false);
                     throw new InvalidOperationException("User is logged in but wallet is uninitialized");
                 case "Logged In, Wallet Initialized":
                     if (string.IsNullOrEmpty(localStorage.Data?.DeviceShare))
                     {
-                        await SignOutAsync().ConfigureAwait(false);
                         throw new InvalidOperationException("User is logged in but wallet is uninitialized");
                     }
 
@@ -70,12 +63,10 @@ namespace Thirdweb.EWS
 
                     if ((email != null && email != emailAddress) || (phone != null && phone != phoneNumber))
                     {
-                        await SignOutAsync().ConfigureAwait(false);
                         throw new InvalidOperationException("User email or phone number do not match");
                     }
                     else if (email == null && localStorage.Data.AuthProvider != authProvider)
                     {
-                        await SignOutAsync().ConfigureAwait(false);
                         throw new InvalidOperationException($"User auth provider does not match. Expected {localStorage.Data.AuthProvider}, got {authProvider}");
                     }
                     else if (authShare == null)

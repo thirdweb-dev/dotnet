@@ -11,18 +11,10 @@ namespace Thirdweb.EWS
             return (userWallet.IsNewUser, isNewDevice);
         }
 
-        public async Task<VerifyResult> VerifyEmailOtpAsync(string emailAddress, string otp)
+        public async Task<Server.VerifyResult> VerifyEmailOtpAsync(string emailAddress, string otp)
         {
             emailAddress = emailAddress.ToLower();
-            try
-            {
-                var result = await server.VerifyEmailOtpAsync(emailAddress, otp).ConfigureAwait(false);
-                return await PostAuthSetup(result, null, "Email").ConfigureAwait(false);
-            }
-            catch (VerificationException ex)
-            {
-                return new VerifyResult(ex.CanRetry);
-            }
+            return await server.VerifyEmailOtpAsync(emailAddress, otp).ConfigureAwait(false);
         }
     }
 }
