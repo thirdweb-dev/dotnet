@@ -48,11 +48,14 @@ if (!await inAppWalletMain.IsConnected())
 }
 Console.WriteLine($"Main InAppWallet address: {await inAppWalletMain.GetAddress()}");
 
-// var inAppWalletToLink = await InAppWallet.Create(client: client, authProvider: AuthProvider.Siwe, siweSigner: privateKeyWallet);
-// _ = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink, chainId: 421614);
+// var inAppWalletToLink = await InAppWallet.Create(client: client, email: "firekeeper+toLink3@thirdweb.com");
+// _ = inAppWalletToLink.SendOTP();
+// Console.WriteLine("Enter OTP:");
+// var otp = Console.ReadLine();
+// _ = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink, otp: otp);
 
-// var linkedAccounts = await inAppWalletMain.GetLinkedAccounts();
-// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
+var linkedAccounts = await inAppWalletMain.GetLinkedAccounts();
+Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts)}");
 
 #endregion
 

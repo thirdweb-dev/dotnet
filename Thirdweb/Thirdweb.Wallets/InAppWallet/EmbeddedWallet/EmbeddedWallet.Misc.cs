@@ -48,15 +48,12 @@ namespace Thirdweb.EWS
             switch (userWallet.Status)
             {
                 case "Logged Out":
-                    await SignOutAsync().ConfigureAwait(false);
                     throw new InvalidOperationException("User is logged out");
                 case "Logged In, Wallet Uninitialized":
-                    await SignOutAsync().ConfigureAwait(false);
                     throw new InvalidOperationException("User is logged in but wallet is uninitialized");
                 case "Logged In, Wallet Initialized":
                     if (string.IsNullOrEmpty(localStorage.Data?.DeviceShare))
                     {
-                        await SignOutAsync().ConfigureAwait(false);
                         throw new InvalidOperationException("User is logged in but wallet is uninitialized");
                     }
 
@@ -66,12 +63,10 @@ namespace Thirdweb.EWS
 
                     if ((email != null && email != emailAddress) || (phone != null && phone != phoneNumber))
                     {
-                        await SignOutAsync().ConfigureAwait(false);
                         throw new InvalidOperationException("User email or phone number do not match");
                     }
                     else if (email == null && localStorage.Data.AuthProvider != authProvider)
                     {
-                        await SignOutAsync().ConfigureAwait(false);
                         throw new InvalidOperationException($"User auth provider does not match. Expected {localStorage.Data.AuthProvider}, got {authProvider}");
                     }
                     else if (authShare == null)

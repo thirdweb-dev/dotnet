@@ -107,7 +107,6 @@ namespace Thirdweb
             EthECKey ecKey;
             try
             {
-                if (!string.IsNullOrEmpty(authproviderStr)) { }
                 var user = await embeddedWallet.GetUserAsync(email, phoneNumber, authproviderStr);
                 ecKey = new EthECKey(user.Account.PrivateKey);
             }
