@@ -276,7 +276,7 @@ namespace Thirdweb
         /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
         public static bool IsZkSync(BigInteger chainId)
         {
-            return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302);
+            return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124);
         }
 
         /// <summary>
