@@ -196,8 +196,8 @@ namespace Thirdweb
             var createFunction = factoryContract.GetFunction("createAccount");
             var data =
                 entryPointVersion == 6
-                    ? createFunction.GetData(personalAccountAddress, new byte { })
-                    : createFunction.GetData(personalAccountAddress, new byte { }, Array.Empty<InitializerInstallModule>());
+                    ? createFunction.GetData(personalAccountAddress, new byte[] { })
+                    : createFunction.GetData(personalAccountAddress, new byte[] { }, Array.Empty<InitializerInstallModule>());
             return (Utils.HexConcat(_factoryContract.Address, data).HexToBytes(), _factoryContract.Address, data);
         }
 
@@ -207,7 +207,7 @@ namespace Thirdweb
 
             (var initCode, var factory, var factoryData) = await GetInitCode();
 
-          // Approve tokens if ERC20Paymaster
+            // Approve tokens if ERC20Paymaster
             if (UseERC20Paymaster && !_isApproving && !_isApproved && !simulation)
             {
                 try
@@ -231,8 +231,6 @@ namespace Thirdweb
                     _isApproving = false;
                 }
             }
-
-            var initCode = await GetInitCode();
 
             // Wait until deployed to avoid double initCode
             if (!simulation)
@@ -335,7 +333,7 @@ namespace Thirdweb
 
                 // Update paymaster data if any
 
-                var res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp));
+                var res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
                 partialUserOp.Paymaster = res.Paymaster;
                 partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? new byte[] { };
                 partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0").Value;
@@ -363,7 +361,7 @@ namespace Thirdweb
 
                     // Update paymaster data if any
 
-                    res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp));
+                    res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
                     partialUserOp.Paymaster = res.Paymaster;
                     partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
                 }
@@ -446,11 +444,11 @@ namespace Thirdweb
         {
             if (UseERC20Paymaster && !_isApproving && !simulation)
             {
-                return Utils.HexConcat(_erc20PaymasterAddress, _erc20PaymasterToken).HexToByteArray();
+                return new PMSponsorOperationResponse() { PaymasterAndData = Utils.HexConcat(_erc20PaymasterAddress, _erc20PaymasterToken) };
             }
             else if (_gasless)
             {
-                return await BundlerClient.PMSponsorUserOperation(Client, _paymasterUrl, requestId, userOp, _entryPointContract.Address)
+                return await BundlerClient.PMSponsorUserOperation(Client, _paymasterUrl, requestId, userOp, _entryPointContract.Address);
             }
             else
             {
@@ -461,7 +459,8 @@ namespace Thirdweb
         private async Task<byte[]> HashAndSignUserOp(UserOperationV6 userOp, ThirdwebContract entryPointContract)
         {
             var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
-            var sig = _personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await _personalAccount.PersonalSign(userOpHash.BytesToHex()) : await _personalAccount.PersonalSign(userOpHash);
+            var sig =
+                _personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await _personalAccount.PersonalSign(userOpHash.BytesToHex()) : await _personalAccount.PersonalSign(userOpHash);
             return sig.HexToBytes();
         }
 
@@ -510,7 +509,8 @@ namespace Thirdweb
 
             var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp);
 
-            var sig = _personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await _personalAccount.PersonalSign(userOpHash.BytesToHex()) : await _personalAccount.PersonalSign(userOpHash);
+            var sig =
+                _personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await _personalAccount.PersonalSign(userOpHash.BytesToHex()) : await _personalAccount.PersonalSign(userOpHash);
 
             return sig.HexToBytes();
         }

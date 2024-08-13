@@ -15,7 +15,7 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
 // Fetch timeout options are optional, default is 60000ms
-var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 30000, rpc: 60000));
+var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000));
 
 // Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
@@ -24,29 +24,89 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 
 #region Contract Interaction
 
-var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
-var readResult = await contract.Read<string>("name");
-Console.WriteLine($"Contract read result: {readResult}");
+// var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
+// var readResult = await contract.Read<string>("name");
+// Console.WriteLine($"Contract read result: {readResult}");
+
+#endregion
+
+#region AA 0.6
+
+var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11155111, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V06);
+
+var hash06 = await smartWallet06.SendTransaction(
+    new ThirdwebTransactionInput()
+    {
+        From = await smartWallet06.GetAddress(),
+        To = await smartWallet06.GetAddress(),
+        Value = new HexBigInteger(BigInteger.Zero),
+        Data = "0x"
+    }
+);
+
+Console.WriteLine($"Transaction hash: {hash06}");
+
+#endregion
+
+#region AA 0.7
+
+// var smartWallet07 = await SmartWallet.Create(
+//     personalWallet: privateKeyWallet,
+//     chainId: 11155111,
+//     gasless: true,
+//     factoryAddress: "0x296e57E8a808aE80625A3CB5Ba95684fb99fEff2",
+//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
+// );
+
+// var hash07 = await smartWallet07.SendTransaction(
+//     new ThirdwebTransactionInput()
+//     {
+//         From = await smartWallet07.GetAddress(),
+//         To = await smartWallet07.GetAddress(),
+//         Value = new HexBigInteger(BigInteger.Zero),
+//         Data = "0x"
+//     }
+// );
+
+// Console.WriteLine($"Transaction hash: {hash07}");
+
+#endregion
+
+#region AA ZkSync (Abstract)
+
+// var smartWalletAbstract = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
+
+// var hash = await smartWalletAbstract.SendTransaction(
+//     new ThirdwebTransactionInput()
+//     {
+//         From = await smartWalletAbstract.GetAddress(),
+//         To = await smartWalletAbstract.GetAddress(),
+//         Value = new HexBigInteger(BigInteger.Zero),
+//         Data = "0x"
+//     }
+// );
+
+// Console.WriteLine($"Transaction hash: {hash}");
 
 #endregion
 
 #region Account Linking
 
-var inAppWalletMain = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
-if (!await inAppWalletMain.IsConnected())
-{
-    _ = await inAppWalletMain.LoginWithOauth(
-        isMobile: false,
-        (url) =>
-        {
-            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-            _ = Process.Start(psi);
-        },
-        "thirdweb://",
-        new InAppWalletBrowser()
-    );
-}
-Console.WriteLine($"Main InAppWallet address: {await inAppWalletMain.GetAddress()}");
+// var inAppWalletMain = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+// if (!await inAppWalletMain.IsConnected())
+// {
+//     _ = await inAppWalletMain.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         "thirdweb://",
+//         new InAppWalletBrowser()
+//     );
+// }
+// Console.WriteLine($"Main InAppWallet address: {await inAppWalletMain.GetAddress()}");
 
 // var inAppWalletToLink = await InAppWallet.Create(client: client, email: "firekeeper+toLink3@thirdweb.com");
 // _ = inAppWalletToLink.SendOTP();
@@ -54,8 +114,8 @@ Console.WriteLine($"Main InAppWallet address: {await inAppWalletMain.GetAddress(
 // var otp = Console.ReadLine();
 // _ = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink, otp: otp);
 
-var linkedAccounts = await inAppWalletMain.GetLinkedAccounts();
-Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts)}");
+// var linkedAccounts = await inAppWalletMain.GetLinkedAccounts();
+// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts)}");
 
 #endregion
 
@@ -159,7 +219,7 @@ Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts
 // Console.WriteLine($"Supported currencies: {JsonConvert.SerializeObject(supportedCurrencies, Formatting.Indented)}");
 
 // // Get a Buy with Fiat quote
-// var fiatQuoteParams = new BuyWithFiatQuoteParams(fromCurrencySymbol: "USD", toAddress: walletAddress, toChainId: "137", toTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS, toAmount: "20");
+// var fiatQuoteParams = new BuyWithFiatQuoteParams(fromCurrencySymbol: "USD", toAddress: walletAddress, toChainId: "137", toTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, toAmount: "20");
 // var fiatOnrampQuote = await ThirdwebPay.GetBuyWithFiatQuote(client, fiatQuoteParams);
 // Console.WriteLine($"Fiat onramp quote: {JsonConvert.SerializeObject(fiatOnrampQuote, Formatting.Indented)}");
 
@@ -189,8 +249,8 @@ Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts
 // var swapQuoteParams = new BuyWithCryptoQuoteParams(
 //     fromAddress: walletAddress,
 //     fromChainId: 137,
-//     fromTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
-//     toTokenAddress: Thirdweb.Constants.NATIVE_TOKEN_ADDRESS,
+//     fromTokenAddress: Constants.NATIVE_TOKEN_ADDRESS,
+//     toTokenAddress: Constants.NATIVE_TOKEN_ADDRESS,
 //     toChainId: 8453,
 //     toAmount: "0.1"
 // );
