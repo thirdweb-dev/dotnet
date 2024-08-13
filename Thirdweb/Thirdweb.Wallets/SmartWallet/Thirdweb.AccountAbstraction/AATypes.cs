@@ -154,7 +154,7 @@ namespace Thirdweb.AccountAbstraction
     }
 
     [Function("execute")]
-    public class ExecuteFunctionV6 : FunctionMessage
+    public class ExecuteFunction : FunctionMessage
     {
         [Parameter("address", "_target", 1)]
         public virtual string Target { get; set; }
@@ -164,16 +164,6 @@ namespace Thirdweb.AccountAbstraction
 
         [Parameter("bytes", "_calldata", 3)]
         public virtual byte[] Calldata { get; set; }
-    }
-
-    [Function("execute")]
-    public class ExecuteFunctionV7 : FunctionMessage
-    {
-        [Parameter("bytes32", "mode", 1)]
-        public virtual byte[] Mode { get; set; }
-
-        [Parameter("bytes", "executionCalldata", 2)]
-        public virtual byte[] ExecutionCalldata { get; set; }
     }
 
     public class EthEstimateUserOperationGasResponse
@@ -377,19 +367,6 @@ namespace Thirdweb.AccountAbstraction
     {
         [JsonProperty("transactionHash")]
         public string TransactionHash { get; set; }
-    }
-
-    [Struct("InitializerInstallModule")]
-    public class InitializerInstallModule
-    {
-        [Parameter("uint256", "moduleTypeId", 1)]
-        public virtual BigInteger ModuleTypeId { get; set; }
-
-        [Parameter("address", "module", 2)]
-        public virtual string Module { get; set; }
-
-        [Parameter("bytes", "initData", 3)]
-        public virtual byte[] InitData { get; set; }
     }
 
     public class SignerPermissions

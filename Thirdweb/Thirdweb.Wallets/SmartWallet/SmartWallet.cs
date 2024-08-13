@@ -85,7 +85,7 @@ namespace Thirdweb
 
             bundlerUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
             paymasterUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
-            factoryAddress ??= Constants.DEFAULT_FACTORY_ADDRESS;
+            factoryAddress ??= entryPointVersion == 6 ? Constants.DEFAULT_FACTORY_ADDRESS_V06 : Constants.DEFAULT_FACTORY_ADDRESS_V07;
 
             ThirdwebContract entryPointContract = null;
             ThirdwebContract factoryContract = null;
@@ -190,14 +190,10 @@ namespace Thirdweb
                 return (new byte[] { }, null, null);
             }
 
-            var entryPointVersion = Utils.GetEntryPointVersion(_entryPointContract.Address);
             var personalAccountAddress = await _personalAccount.GetAddress();
             var factoryContract = new Contract(null, _factoryContract.Abi, _factoryContract.Address);
             var createFunction = factoryContract.GetFunction("createAccount");
-            var data =
-                entryPointVersion == 6
-                    ? createFunction.GetData(personalAccountAddress, new byte[] { })
-                    : createFunction.GetData(personalAccountAddress, new byte[] { }, Array.Empty<InitializerInstallModule>());
+            var data = createFunction.GetData(personalAccountAddress, new byte[] { });
             return (Utils.HexConcat(_factoryContract.Address, data).HexToBytes(), _factoryContract.Address, data);
         }
 
@@ -258,7 +254,7 @@ namespace Thirdweb
 
             if (entryPointVersion == 6)
             {
-                var executeFn = new ExecuteFunctionV6
+                var executeFn = new ExecuteFunction
                 {
                     Target = transactionInput.To,
                     Value = transactionInput.Value.Value,
@@ -305,10 +301,12 @@ namespace Thirdweb
             }
             else
             {
-                var executeFn = new ExecuteFunctionV7
+                var executeFn = new ExecuteFunction
                 {
-                    Mode = ModeLib.EncodeSimpleSingle().Value,
-                    ExecutionCalldata = ExecutionLib.EncodeSingle(transactionInput.To.HexToBytes(), transactionInput.Value.HexValue.HexToBytes32(), transactionInput.Data.HexToBytes())
+                    Target = transactionInput.To,
+                    Value = transactionInput.Value.Value,
+                    Calldata = transactionInput.Data.HexToBytes(),
+                    FromAddress = await GetAddress(),
                 };
                 var executeInput = executeFn.CreateTransactionInput(await GetAddress());
 

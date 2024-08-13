@@ -32,43 +32,43 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 
 #region AA 0.6
 
-var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11155111, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V06);
+// var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11155111, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V06);
 
-var hash06 = await smartWallet06.SendTransaction(
-    new ThirdwebTransactionInput()
-    {
-        From = await smartWallet06.GetAddress(),
-        To = await smartWallet06.GetAddress(),
-        Value = new HexBigInteger(BigInteger.Zero),
-        Data = "0x"
-    }
-);
-
-Console.WriteLine($"Transaction hash: {hash06}");
-
-#endregion
-
-#region AA 0.7
-
-// var smartWallet07 = await SmartWallet.Create(
-//     personalWallet: privateKeyWallet,
-//     chainId: 11155111,
-//     gasless: true,
-//     factoryAddress: "0x296e57E8a808aE80625A3CB5Ba95684fb99fEff2",
-//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
-// );
-
-// var hash07 = await smartWallet07.SendTransaction(
+// var hash06 = await smartWallet06.SendTransaction(
 //     new ThirdwebTransactionInput()
 //     {
-//         From = await smartWallet07.GetAddress(),
-//         To = await smartWallet07.GetAddress(),
+//         From = await smartWallet06.GetAddress(),
+//         To = await smartWallet06.GetAddress(),
 //         Value = new HexBigInteger(BigInteger.Zero),
 //         Data = "0x"
 //     }
 // );
 
-// Console.WriteLine($"Transaction hash: {hash07}");
+// Console.WriteLine($"Transaction hash: {hash06}");
+
+#endregion
+
+#region AA 0.7
+
+var smartWallet07 = await SmartWallet.Create(
+    personalWallet: privateKeyWallet,
+    chainId: 11155111,
+    gasless: true,
+    factoryAddress: "0xc5A43D081Dc10316EE640504Ea1cBc74666F3874",
+    entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
+);
+
+var hash07 = await smartWallet07.SendTransaction(
+    new ThirdwebTransactionInput()
+    {
+        From = await smartWallet07.GetAddress(),
+        To = await smartWallet07.GetAddress(),
+        Value = new HexBigInteger(BigInteger.Zero),
+        Data = "0x"
+    }
+);
+
+Console.WriteLine($"Transaction hash: {hash07}");
 
 #endregion
 
