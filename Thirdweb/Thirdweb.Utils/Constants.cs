@@ -9,7 +9,7 @@
         public const string ENTRYPOINT_ADDRESS_V07 = "0x0000000071727De22E5E9d8BAf0edAc6f37da032";
         public const string DEFAULT_FACTORY_ADDRESS = "0x85e23b94e7F5E9cC1fF78BCe78cfb15B81f0DF00"; // v0.6
 
-        internal const string VERSION = "1.0.1";
+        internal const string VERSION = "1.4.0";
         internal const int DEFAULT_FETCH_TIMEOUT = 60000;
         internal const string DUMMY_SIG = "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
         internal const string DUMMY_PAYMASTER_AND_DATA_HEX =

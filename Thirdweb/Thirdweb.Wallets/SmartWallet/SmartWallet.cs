@@ -27,6 +27,12 @@ namespace Thirdweb
         private BigInteger _chainId;
         private string _bundlerUrl;
         private string _paymasterUrl;
+        private string _erc20PaymasterAddress;
+        private string _erc20PaymasterToken;
+        private bool _isApproving;
+        private bool _isApproved;
+
+        private bool UseERC20Paymaster => !string.IsNullOrEmpty(_erc20PaymasterAddress) && !string.IsNullOrEmpty(_erc20PaymasterToken);
 
         protected SmartWallet(
             IThirdwebWallet personalAccount,
@@ -36,7 +42,9 @@ namespace Thirdweb
             string paymasterUrl,
             ThirdwebContract entryPointContract,
             ThirdwebContract factoryContract,
-            ThirdwebContract accountContract
+            ThirdwebContract accountContract,
+            string erc20PaymasterAddress,
+            string erc20PaymasterToken
         )
         {
             Client = personalAccount.Client;
@@ -49,6 +57,8 @@ namespace Thirdweb
             _entryPointContract = entryPointContract;
             _factoryContract = factoryContract;
             _accountContract = accountContract;
+            _erc20PaymasterAddress = erc20PaymasterAddress;
+            _erc20PaymasterToken = erc20PaymasterToken;
         }
 
         public static async Task<SmartWallet> Create(
@@ -59,7 +69,9 @@ namespace Thirdweb
             string accountAddressOverride = null,
             string entryPoint = null,
             string bundlerUrl = null,
-            string paymasterUrl = null
+            string paymasterUrl = null,
+            string erc20PaymasterAddress = null,
+            string erc20PaymasterToken = null
         )
         {
             if (!await personalWallet.IsConnected())
@@ -94,7 +106,7 @@ namespace Thirdweb
                 accountContract = await ThirdwebContract.Create(personalWallet.Client, accountAddress, chainId, accountAbi);
             }
 
-            return new SmartWallet(personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract);
+            return new SmartWallet(personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract, erc20PaymasterAddress, erc20PaymasterToken);
         }
 
         public async Task<bool> IsDeployed()
@@ -195,6 +207,33 @@ namespace Thirdweb
 
             (var initCode, var factory, var factoryData) = await GetInitCode();
 
+          // Approve tokens if ERC20Paymaster
+            if (UseERC20Paymaster && !_isApproving && !_isApproved && !simulation)
+            {
+                try
+                {
+                    _isApproving = true;
+                    var tokenContract = await ThirdwebContract.Create(Client, _erc20PaymasterToken, _chainId);
+                    var approvedAmount = await tokenContract.ERC20_Allowance(_accountContract.Address, _erc20PaymasterAddress);
+                    if (approvedAmount == 0)
+                    {
+                        _ = await tokenContract.ERC20_Approve(this, _erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1);
+                    }
+                    _isApproved = true;
+                }
+                catch (Exception e)
+                {
+                    _isApproved = false;
+                    throw new Exception($"Approving tokens for ERC20Paymaster spending failed: {e.Message}");
+                }
+                finally
+                {
+                    _isApproving = false;
+                }
+            }
+
+            var initCode = await GetInitCode();
+
             // Wait until deployed to avoid double initCode
             if (!simulation)
             {
@@ -247,7 +286,7 @@ namespace Thirdweb
 
                 // Update paymaster data if any
 
-                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp))).PaymasterAndData.HexToBytes();
+                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation)).PaymasterAndData.HexToBytes();
 
                 // Estimate gas
 
@@ -258,7 +297,7 @@ namespace Thirdweb
 
                 // Update paymaster data if any
 
-                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp))).PaymasterAndData.HexToBytes();
+                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation)).PaymasterAndData.HexToBytes();
 
                 // Hash, sign and encode the user operation
 
@@ -403,15 +442,26 @@ namespace Thirdweb
             return result.TransactionHash;
         }
 
-        private async Task<PMSponsorOperationResponse> GetPaymasterAndData(object requestId, object userOp)
+        private async Task<PMSponsorOperationResponse> GetPaymasterAndData(object requestId, object userOp, bool simulation)
         {
-            return _gasless ? await BundlerClient.PMSponsorUserOperation(Client, _paymasterUrl, requestId, userOp, _entryPointContract.Address) : new PMSponsorOperationResponse();
+            if (UseERC20Paymaster && !_isApproving && !simulation)
+            {
+                return Utils.HexConcat(_erc20PaymasterAddress, _erc20PaymasterToken).HexToByteArray();
+            }
+            else if (_gasless)
+            {
+                return await BundlerClient.PMSponsorUserOperation(Client, _paymasterUrl, requestId, userOp, _entryPointContract.Address)
+            }
+            else
+            {
+                return new PMSponsorOperationResponse();
+            }
         }
 
         private async Task<byte[]> HashAndSignUserOp(UserOperationV6 userOp, ThirdwebContract entryPointContract)
         {
             var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
-            var sig = await _personalAccount.PersonalSign(userOpHash);
+            var sig = _personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await _personalAccount.PersonalSign(userOpHash.BytesToHex()) : await _personalAccount.PersonalSign(userOpHash);
             return sig.HexToBytes();
         }
 
@@ -460,7 +510,7 @@ namespace Thirdweb
 
             var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp);
 
-            var sig = await _personalAccount.PersonalSign(userOpHash);
+            var sig = _personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await _personalAccount.PersonalSign(userOpHash.BytesToHex()) : await _personalAccount.PersonalSign(userOpHash);
 
             return sig.HexToBytes();
         }
@@ -532,7 +582,7 @@ namespace Thirdweb
             _ = await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
         }
 
-        public Task<IThirdwebWallet> GetPersonalAccount()
+        public Task<IThirdwebWallet> GetPersonalWallet()
         {
             return Task.FromResult(_personalAccount);
         }
@@ -544,22 +594,22 @@ namespace Thirdweb
 
         public Task<string> EthSign(byte[] rawMessage)
         {
-            return _personalAccount.EthSign(rawMessage);
+            throw new NotImplementedException();
         }
 
         public Task<string> EthSign(string message)
         {
-            return _personalAccount.EthSign(message);
+            throw new NotImplementedException();
         }
 
         public Task<string> RecoverAddressFromEthSign(string message, string signature)
         {
-            return _personalAccount.RecoverAddressFromEthSign(message, signature);
+            throw new NotImplementedException();
         }
 
         public Task<string> PersonalSign(byte[] rawMessage)
         {
-            return _personalAccount.PersonalSign(rawMessage);
+            throw new NotImplementedException();
         }
 
         public async Task<string> PersonalSign(string message)
@@ -630,6 +680,28 @@ namespace Thirdweb
             }
         }
 
+        public async Task<List<string>> GetAllAdmins()
+        {
+            if (Utils.IsZkSync(_chainId))
+            {
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+            }
+
+            var result = await ThirdwebContract.Read<List<string>>(_accountContract, "getAllAdmins");
+            return result ?? new List<string>();
+        }
+
+        public async Task<List<SignerPermissions>> GetAllActiveSigners()
+        {
+            if (Utils.IsZkSync(_chainId))
+            {
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+            }
+
+            var result = await ThirdwebContract.Read<List<SignerPermissions>>(_accountContract, "getAllActiveSigners");
+            return result ?? new List<SignerPermissions>();
+        }
+
         public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
             string signerAddress,
             List<string> approvedTargets,
@@ -659,6 +731,7 @@ namespace Thirdweb
             };
 
             var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
+            // Do it this way to avoid triggering an extra sig from estimation
             var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
             var txInput = new ThirdwebTransactionInput()
             {
@@ -669,6 +742,16 @@ namespace Thirdweb
             };
             var txHash = await SendTransaction(txInput);
             return await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
+        }
+
+        public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
+        {
+            if (Utils.IsZkSync(_chainId))
+            {
+                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+            }
+
+            return await CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString());
         }
 
         public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)

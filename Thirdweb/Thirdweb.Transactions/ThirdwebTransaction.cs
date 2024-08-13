@@ -66,6 +66,7 @@ namespace Thirdweb
             var address = await wallet.GetAddress().ConfigureAwait(false);
             txInput.From ??= address;
             txInput.Data ??= "0x";
+            txInput.Value ??= new HexBigInteger(0);
 
             if (address != txInput.From)
             {
@@ -238,7 +239,7 @@ namespace Thirdweb
         /// <param name="transaction">The transaction.</param>
         /// <param name="withBump">Whether to include a bump in the gas fees.</param>
         /// <returns>The estimated maximum fee per gas and maximum priority fee per gas.</returns>
-        public static async Task<(BigInteger, BigInteger)> EstimateGasFees(ThirdwebTransaction transaction, bool withBump = true)
+        public static async Task<(BigInteger maxFeePerGas, BigInteger maxPriorityFeePerGas)> EstimateGasFees(ThirdwebTransaction transaction, bool withBump = true)
         {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
             var chainId = transaction.Input.ChainId.Value;
@@ -373,16 +374,23 @@ namespace Thirdweb
             transaction.Input.Value ??= new HexBigInteger(0);
             transaction.Input.Data ??= "0x";
             transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction).ConfigureAwait(false));
-            if (transaction.Input.GasPrice == null)
+
+            var supports1559 = Utils.IsEip1559Supported(transaction.Input.ChainId.Value.ToString());
+            if (supports1559)
             {
-                var (maxFeePerGas, maxPriorityFeePerGas) = await EstimateGasFees(transaction).ConfigureAwait(false);
-                transaction.Input.MaxFeePerGas ??= maxFeePerGas.ToHexBigInteger();
-                transaction.Input.MaxPriorityFeePerGas ??= maxPriorityFeePerGas.ToHexBigInteger();
+                if (transaction.Input.GasPrice == null)
+                {
+                    var (maxFeePerGas, maxPriorityFeePerGas) = await EstimateGasFees(transaction).ConfigureAwait(false);
+                    transaction.Input.MaxFeePerGas ??= new HexBigInteger(maxFeePerGas);
+                    transaction.Input.MaxPriorityFeePerGas ??= new HexBigInteger(maxPriorityFeePerGas);
+                }
             }
             else
             {
-                transaction.Input.MaxFeePerGas = null;
-                transaction.Input.MaxPriorityFeePerGas = null;
+                if (transaction.Input.MaxFeePerGas == null && transaction.Input.MaxPriorityFeePerGas == null)
+                {
+                    transaction.Input.GasPrice ??= new HexBigInteger(await EstimateGasPrice(transaction).ConfigureAwait(false));
+                }
             }
 
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);

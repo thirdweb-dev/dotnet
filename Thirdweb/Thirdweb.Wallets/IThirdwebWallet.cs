@@ -129,6 +129,11 @@ namespace Thirdweb
         /// <param name="httpClientOverride">The HTTP client override.</param>
         /// <returns>The authentication result.</returns>
         Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", IThirdwebHttpClient httpClientOverride = null);
+
+        /// <summary>
+        /// Disconnects the wallet (if using InAppWallet, clears session)
+        /// </summary>
+        Task Disconnect();
     }
 
     /// <summary>
@@ -157,12 +162,6 @@ namespace Thirdweb
     [Serializable]
     public class LoginPayloadData
     {
-        /// <summary>
-        /// Gets or sets the type of the login payload.
-        /// </summary>
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
         /// <summary>
         /// Gets or sets the domain of the login payload.
         /// </summary>
@@ -232,9 +231,6 @@ namespace Thirdweb
         /// <summary>
         /// Initializes a new instance of the <see cref="LoginPayloadData"/> class.
         /// </summary>
-        public LoginPayloadData()
-        {
-            Type = "evm";
-        }
+        public LoginPayloadData() { }
     }
 }

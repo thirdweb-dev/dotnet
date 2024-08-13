@@ -32,9 +32,10 @@ jobs:
         working-directory: ./
 
       - name: Test
+        id: test
         run: |
           dotnet tool install --global coverlet.console
-          dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=./coverage.info
+          timeout 15m dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=./coverage.info
         shell: bash
         env:
           THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
@@ -43,6 +44,7 @@ jobs:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
       - name: Codecov
+        if: always() && steps.test.outcome != 'cancelled'
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

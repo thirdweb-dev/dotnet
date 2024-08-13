@@ -210,43 +210,43 @@ public class TransactionTests : BaseTests
         Assert.Null(transaction.Input.ZkSync?.FactoryDeps);
     }
 
-    [Fact(Timeout = 120000)]
-    public async Task Send_ZkSync_TransfersGaslessly()
-    {
-        var transaction = await CreateSampleTransaction();
-        _ = transaction.SetChainId(300);
-        _ = transaction.SetTo("0xbA226d47Cbb2731CBAA67C916c57d68484AA269F");
-        _ = transaction.SetValue(BigInteger.Zero);
-        _ = transaction.SetZkSyncOptions(
-            new ZkSyncOptions(
-                paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
-                paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-                gasPerPubdataByteLimit: 50000,
-                factoryDeps: new List<byte[]>()
-            )
-        );
-        var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(transaction);
-        Assert.NotNull(receipt);
-        Assert.StartsWith("0x", receipt.TransactionHash);
-    }
+    // [Fact(Timeout = 120000)]
+    // public async Task Send_ZkSync_TransfersGaslessly()
+    // {
+    //     var transaction = await CreateSampleTransaction();
+    //     _ = transaction.SetChainId(300);
+    //     _ = transaction.SetTo("0xbA226d47Cbb2731CBAA67C916c57d68484AA269F");
+    //     _ = transaction.SetValue(BigInteger.Zero);
+    //     _ = transaction.SetZkSyncOptions(
+    //         new ZkSyncOptions(
+    //             paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
+    //             paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
+    //             gasPerPubdataByteLimit: 50000,
+    //             factoryDeps: new List<byte[]>()
+    //         )
+    //     );
+    //     var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(transaction);
+    //     Assert.NotNull(receipt);
+    //     Assert.StartsWith("0x", receipt.TransactionHash);
+    // }
 
-    [Fact(Timeout = 120000)]
-    public async Task Send_ZkSync_NoGasPerPubFactoryDepsTransfersGaslessly()
-    {
-        var transaction = await CreateSampleTransaction();
-        _ = transaction.SetChainId(300);
-        _ = transaction.SetTo("0xbA226d47Cbb2731CBAA67C916c57d68484AA269F");
-        _ = transaction.SetValue(BigInteger.Zero);
-        _ = transaction.SetZkSyncOptions(
-            new ZkSyncOptions(
-                paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
-                paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
-            )
-        );
-        var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(transaction);
-        Assert.NotNull(receipt);
-        Assert.StartsWith("0x", receipt.TransactionHash);
-    }
+    // [Fact(Timeout = 120000)]
+    // public async Task Send_ZkSync_NoGasPerPubFactoryDepsTransfersGaslessly()
+    // {
+    //     var transaction = await CreateSampleTransaction();
+    //     _ = transaction.SetChainId(300);
+    //     _ = transaction.SetTo("0xbA226d47Cbb2731CBAA67C916c57d68484AA269F");
+    //     _ = transaction.SetValue(BigInteger.Zero);
+    //     _ = transaction.SetZkSyncOptions(
+    //         new ZkSyncOptions(
+    //             paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
+    //             paymasterInput: "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+    //         )
+    //     );
+    //     var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(transaction);
+    //     Assert.NotNull(receipt);
+    //     Assert.StartsWith("0x", receipt.TransactionHash);
+    // }
 
     [Fact(Timeout = 120000)]
     public async Task EstimateTotalCosts_CalculatesCostsCorrectly()

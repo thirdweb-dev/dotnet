@@ -2,10 +2,14 @@
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+using Nethereum.ABI.EIP712;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
 using Nethereum.Util;
+using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace Thirdweb
 {
@@ -14,6 +18,9 @@ namespace Thirdweb
     /// </summary>
     public static class Utils
     {
+        private static readonly Dictionary<BigInteger, bool> Eip155EnforcedCache = new Dictionary<BigInteger, bool>();
+        private static readonly Dictionary<BigInteger, ThirdwebChainData> ChainDataCache = new Dictionary<BigInteger, ThirdwebChainData>();
+
         /// <summary>
         /// Computes the client ID from the given secret key.
         /// </summary>
@@ -269,7 +276,7 @@ namespace Thirdweb
         /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
         public static bool IsZkSync(BigInteger chainId)
         {
-            return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302);
+            return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124);
         }
 
         /// <summary>
@@ -319,6 +326,11 @@ namespace Thirdweb
 
         public static async Task<ThirdwebChainData> FetchThirdwebChainDataAsync(ThirdwebClient client, BigInteger chainId)
         {
+            if (ChainDataCache.ContainsKey(chainId))
+            {
+                return ChainDataCache[chainId];
+            }
+
             if (client == null)
             {
                 throw new ArgumentNullException(nameof(client));
@@ -334,17 +346,23 @@ namespace Thirdweb
             {
                 var response = await client.HttpClient.GetAsync(url).ConfigureAwait(false);
                 var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var deserializedResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<ThirdwebChainDataResponse>(json);
+                var deserializedResponse = JsonConvert.DeserializeObject<ThirdwebChainDataResponse>(json);
 
-                return deserializedResponse == null || deserializedResponse.Error != null
-                    ? throw new Exception($"Failed to fetch chain data for chain ID {chainId}. Error: {Newtonsoft.Json.JsonConvert.SerializeObject(deserializedResponse?.Error)}")
-                    : deserializedResponse.Data;
+                if (deserializedResponse == null || deserializedResponse.Error != null)
+                {
+                    throw new Exception($"Failed to fetch chain data for chain ID {chainId}. Error: {JsonConvert.SerializeObject(deserializedResponse?.Error)}");
+                }
+                else
+                {
+                    ChainDataCache[chainId] = deserializedResponse.Data;
+                    return deserializedResponse.Data;
+                }
             }
             catch (HttpRequestException httpEx)
             {
                 throw new Exception($"HTTP request error while fetching chain data for chain ID {chainId}: {httpEx.Message}", httpEx);
             }
-            catch (Newtonsoft.Json.JsonException jsonEx)
+            catch (JsonException jsonEx)
             {
                 throw new Exception($"JSON deserialization error while fetching chain data for chain ID {chainId}: {jsonEx.Message}", jsonEx);
             }
@@ -386,6 +404,221 @@ namespace Thirdweb
             }
 
             return bytes;
+        }
+      
+        public static string ToJsonExternalWalletFriendly<TMessage, TDomain>(TypedData<TDomain> typedData, TMessage message)
+        {
+            typedData.EnsureDomainRawValuesAreInitialised();
+            typedData.Message = MemberValueFactory.CreateFromMessage(message);
+            var obj = (JObject)JToken.FromObject(typedData);
+            var jProperty = new JProperty("domain");
+            var jProperties = GetJProperties("EIP712Domain", typedData.DomainRawValues, typedData);
+            object[] content = jProperties.ToArray();
+            jProperty.Value = new JObject(content);
+            obj.Add(jProperty);
+            var jProperty2 = new JProperty("message");
+            var jProperties2 = GetJProperties(typedData.PrimaryType, typedData.Message, typedData);
+            content = jProperties2.ToArray();
+            jProperty2.Value = new JObject(content);
+            obj.Add(jProperty2);
+            return obj.ToString();
+        }
+
+        private static bool IsReferenceType(string typeName)
+        {
+            if (!new Regex("bytes\\d+").IsMatch(typeName))
+            {
+                var input = typeName;
+                if (!new Regex("uint\\d+").IsMatch(input))
+                {
+                    var input2 = typeName;
+                    if (!new Regex("int\\d+").IsMatch(input2))
+                    {
+                        switch (typeName)
+                        {
+                            case "bytes":
+                            case "string":
+                            case "bool":
+                            case "address":
+                                break;
+                            default:
+                                if (typeName.Contains("["))
+                                {
+                                    return false;
+                                }
+
+                                return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static List<JProperty> GetJProperties(string mainTypeName, MemberValue[] values, TypedDataRaw typedDataRaw)
+        {
+            var list = new List<JProperty>();
+            var array = typedDataRaw.Types[mainTypeName];
+            for (var i = 0; i < array.Length; i++)
+            {
+                var type = array[i].Type;
+                var name = array[i].Name;
+                if (IsReferenceType(type))
+                {
+                    var jProperty = new JProperty(name);
+                    if (values[i].Value != null)
+                    {
+                        object[] content = GetJProperties(type, (MemberValue[])values[i].Value, typedDataRaw).ToArray();
+                        jProperty.Value = new JObject(content);
+                    }
+                    else
+                    {
+                        jProperty.Value = null;
+                    }
+
+                    list.Add(jProperty);
+                }
+                else if (type.StartsWith("bytes"))
+                {
+                    var name2 = name;
+                    if (values[i].Value is byte[] v)
+                    {
+                        var content2 = v.BytesToHex();
+                        list.Add(new JProperty(name2, content2));
+                    }
+                    else
+                    {
+                        var value = values[i].Value;
+                        list.Add(new JProperty(name2, value));
+                    }
+                }
+                else if (type.Contains("["))
+                {
+                    var jProperty2 = new JProperty(name);
+                    var jArray = new JArray();
+                    var text = type.Substring(0, type.LastIndexOf("["));
+                    if (values[i].Value == null)
+                    {
+                        jProperty2.Value = null;
+                        list.Add(jProperty2);
+                        continue;
+                    }
+
+                    if (IsReferenceType(text))
+                    {
+                        foreach (var item in (List<MemberValue[]>)values[i].Value)
+                        {
+                            object[] content = GetJProperties(text, item, typedDataRaw).ToArray();
+                            jArray.Add(new JObject(content));
+                        }
+
+                        jProperty2.Value = jArray;
+                        list.Add(jProperty2);
+                        continue;
+                    }
+
+                    foreach (var item2 in (System.Collections.IList)values[i].Value)
+                    {
+                        jArray.Add(item2);
+                    }
+
+                    jProperty2.Value = jArray;
+                    list.Add(jProperty2);
+                }
+                else
+                {
+                    var name3 = name;
+                    var value2 = values[i].Value;
+                    list.Add(new JProperty(name3, value2));
+                }
+            }
+
+            return list;
+        }
+
+        public static async Task<bool> IsEip155Enforced(ThirdwebClient client, BigInteger chainId)
+        {
+            if (Eip155EnforcedCache.ContainsKey(chainId))
+            {
+                return Eip155EnforcedCache[chainId];
+            }
+
+            var result = false;
+            var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+
+            try
+            {
+                // Pre-155 tx that will fail
+                var rawTransaction =
+                    "0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222";
+                _ = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", rawTransaction);
+            }
+            catch (Exception e)
+            {
+                var errorMsg = e.Message.ToLower();
+
+                var errorSubstrings = new List<string>
+                {
+                    "eip-155",
+                    "eip155",
+                    "protected",
+                    "invalid chain id for signer",
+                    "chain id none",
+                    "chain_id mismatch",
+                    "recovered sender mismatch",
+                    "transaction hash mismatch",
+                    "chainid no support",
+                    "chainid (0)",
+                    "chainid(0)",
+                    "invalid sender"
+                };
+
+                if (errorSubstrings.Any(errorMsg.Contains))
+                {
+                    result = true;
+                }
+                else
+                {
+                    // Check if all substrings in any of the composite substrings are present
+                    var errorSubstringsComposite = new List<string[]> { new[] { "account", "not found" }, new[] { "wrong", "chainid" } };
+
+                    result = errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
+                }
+            }
+
+            Eip155EnforcedCache[chainId] = result;
+            return result;
+        }
+
+        public static bool IsEip1559Supported(string chainId)
+        {
+            switch (chainId)
+            {
+                // BNB Mainnet
+                case "56":
+                // BNB Testnet
+                case "97":
+                // opBNB Mainnet
+                case "204":
+                // opBNB Testnet
+                case "5611":
+                // Oasys Mainnet
+                case "248":
+                // Oasys Testnet
+                case "9372":
+                // Vanar Mainnet
+                case "2040":
+                // Vanar Testnet (Vanguard)
+                case "78600":
+                // Taraxa Mainnet
+                case "841":
+                // Taraxa Testnet
+                case "842":
+                    return false;
+                default:
+                    return true;
+            }
         }
     }
 }

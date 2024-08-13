@@ -15,7 +15,7 @@ namespace Thirdweb.Pay
         /// <exception cref="Exception">Thrown if the HTTP response is not successful.</exception>
         public static async Task<List<string>> GetBuyWithFiatCurrencies(ThirdwebClient client)
         {
-            var url = $"{Constants.THIRDWEB_PAY_FIAT_CURRENCIES_ENDPOINT}";
+            var url = $"{THIRDWEB_PAY_FIAT_CURRENCIES_ENDPOINT}";
 
             var getResponse = await client.HttpClient.GetAsync(url);
 
