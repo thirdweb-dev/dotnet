@@ -216,6 +216,7 @@ namespace Thirdweb
                         _ = await tokenContract.ERC20_Approve(this, _erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1);
                     }
                     _isApproved = true;
+                    (initCode, factory, factoryData) = await GetInitCode();
                 }
                 catch (Exception e)
                 {
@@ -442,7 +443,12 @@ namespace Thirdweb
         {
             if (UseERC20Paymaster && !_isApproving && !simulation)
             {
-                return new PMSponsorOperationResponse() { PaymasterAndData = Utils.HexConcat(_erc20PaymasterAddress, _erc20PaymasterToken) };
+                return new PMSponsorOperationResponse()
+                {
+                    PaymasterAndData = Utils.HexConcat(_erc20PaymasterAddress, _erc20PaymasterToken),
+                    Paymaster = _erc20PaymasterAddress,
+                    PaymasterData = "0x",
+                };
             }
             else if (_gasless)
             {
