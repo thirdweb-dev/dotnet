@@ -50,25 +50,25 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 
 #region AA 0.7
 
-var smartWallet07 = await SmartWallet.Create(
-    personalWallet: privateKeyWallet,
-    chainId: 11155111,
-    gasless: true,
-    factoryAddress: "0xc5A43D081Dc10316EE640504Ea1cBc74666F3874",
-    entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
-);
+// var smartWallet07 = await SmartWallet.Create(
+//     personalWallet: privateKeyWallet,
+//     chainId: 11155111,
+//     gasless: true,
+//     factoryAddress: "0xc5A43D081Dc10316EE640504Ea1cBc74666F3874",
+//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
+// );
 
-var hash07 = await smartWallet07.SendTransaction(
-    new ThirdwebTransactionInput()
-    {
-        From = await smartWallet07.GetAddress(),
-        To = await smartWallet07.GetAddress(),
-        Value = new HexBigInteger(BigInteger.Zero),
-        Data = "0x"
-    }
-);
+// var hash07 = await smartWallet07.SendTransaction(
+//     new ThirdwebTransactionInput()
+//     {
+//         From = await smartWallet07.GetAddress(),
+//         To = await smartWallet07.GetAddress(),
+//         Value = new HexBigInteger(BigInteger.Zero),
+//         Data = "0x"
+//     }
+// );
 
-Console.WriteLine($"Transaction hash: {hash07}");
+// Console.WriteLine($"Transaction hash: {hash07}");
 
 #endregion
 
@@ -119,22 +119,24 @@ Console.WriteLine($"Transaction hash: {hash07}");
 
 #endregion
 
-#region ERC20 Smart Wallet - Sepolia
+#region ERC20 Smart Wallet - Base USDC
 
 // var erc20SmartWalletSepolia = await SmartWallet.Create(
 //     personalWallet: privateKeyWallet,
-//     chainId: 11155111, // sepolia
+//     chainId: 8453, // base mainnet
 //     gasless: true,
-//     erc20PaymasterAddress: "0xEc87d96E3F324Dcc828750b52994C6DC69C8162b", // deposit paymaster
-//     erc20PaymasterToken: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8" // usdc
+//     factoryAddress: "0xEc87d96E3F324Dcc828750b52994C6DC69C8162b",
+//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07,
+//     erc20PaymasterAddress: "0x34013B37A6EE4F353F9443102d1d17dD93B0c40D", // TokenPaymaster
+//     erc20PaymasterToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" // USDC
 // );
 // var erc20SmartWalletSepoliaAddress = await erc20SmartWalletSepolia.GetAddress();
-// Console.WriteLine($"ERC20 Smart Wallet Sepolia address: {erc20SmartWalletSepoliaAddress}");
+// Console.WriteLine($"ERC20 Smart Wallet address: {erc20SmartWalletSepoliaAddress}");
 
 // var selfTransfer = await ThirdwebTransaction.Create(
 //     wallet: erc20SmartWalletSepolia,
 //     txInput: new ThirdwebTransactionInput() { From = erc20SmartWalletSepoliaAddress, To = erc20SmartWalletSepoliaAddress, },
-//     chainId: 11155111
+//     chainId: 8453
 // );
 
 // var estimateGas = await ThirdwebTransaction.EstimateGasCosts(selfTransfer);
