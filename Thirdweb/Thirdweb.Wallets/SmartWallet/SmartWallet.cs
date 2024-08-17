@@ -129,24 +129,12 @@ namespace Thirdweb
                 throw new InvalidOperationException("SmartAccount.SendTransaction: Transaction input is required.");
             }
 
+            var transaction = await ThirdwebTransaction.Create(Utils.IsZkSync(_chainId) ? _personalAccount : this, transactionInput, _chainId);
+            transaction = await ThirdwebTransaction.Prepare(transaction);
+            transactionInput = transaction.Input;
+
             if (Utils.IsZkSync(_chainId))
             {
-                var transaction = await ThirdwebTransaction.Create(_personalAccount, transactionInput, _chainId);
-
-                if (transactionInput.Nonce == null)
-                {
-                    _ = transaction.SetNonce(await ThirdwebTransaction.GetNonce(transaction));
-                }
-                if (transactionInput.Gas == null)
-                {
-                    _ = transaction.SetGasLimit(await ThirdwebTransaction.EstimateGasLimit(transaction));
-                }
-                if (transactionInput.MaxFeePerGas == null)
-                {
-                    (var maxFee, _) = await ThirdwebTransaction.EstimateGasFees(transaction);
-                    _ = transaction.SetMaxFeePerGas(maxFee);
-                }
-
                 if (_gasless)
                 {
                     (var paymaster, var paymasterInput) = await ZkPaymasterData(transactionInput);
@@ -183,6 +171,12 @@ namespace Thirdweb
                 var signedOp = await SignUserOp(transactionInput);
                 return await SendUserOp(signedOp);
             }
+        }
+
+        public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
+        {
+            var txHash = await SendTransaction(transactionInput);
+            return await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
         }
 
         private async Task<(byte[] initCode, string factory, string factoryData)> GetInitCode()
@@ -760,7 +754,6 @@ namespace Thirdweb
             var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
             var txInput = new ThirdwebTransactionInput()
             {
-                From = await GetAddress(),
                 To = _accountContract.Address,
                 Value = new HexBigInteger(0),
                 Data = data
@@ -803,7 +796,6 @@ namespace Thirdweb
             var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
             var txInput = new ThirdwebTransactionInput()
             {
-                From = await GetAddress(),
                 To = _accountContract.Address,
                 Value = new HexBigInteger(0),
                 Data = data
@@ -836,7 +828,6 @@ namespace Thirdweb
             var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
             var txInput = new ThirdwebTransactionInput()
             {
-                From = await GetAddress(),
                 To = _accountContract.Address,
                 Value = new HexBigInteger(0),
                 Data = data

@@ -12,6 +12,33 @@ namespace Thirdweb
     {
         public ThirdwebTransactionInput() { }
 
+        public ThirdwebTransactionInput(
+            string from = null,
+            string to = null,
+            BigInteger? nonce = null,
+            BigInteger? gas = null,
+            BigInteger? gasPrice = null,
+            BigInteger? value = null,
+            string data = null,
+            BigInteger? chainId = null,
+            BigInteger? maxFeePerGas = null,
+            BigInteger? maxPriorityFeePerGas = null,
+            ZkSyncOptions? zkSync = null
+        )
+        {
+            From = string.IsNullOrEmpty(from) ? Constants.ADDRESS_ZERO : from;
+            To = string.IsNullOrEmpty(to) ? Constants.ADDRESS_ZERO : to;
+            Nonce = nonce == null ? null : new HexBigInteger(nonce.Value);
+            Gas = gas == null ? null : new HexBigInteger(gas.Value);
+            GasPrice = gasPrice == null ? null : new HexBigInteger(gasPrice.Value);
+            Value = value == null ? null : new HexBigInteger(value.Value);
+            Data = string.IsNullOrEmpty(data) ? "0x" : data;
+            ChainId = chainId == null ? null : new HexBigInteger(chainId.Value);
+            MaxFeePerGas = maxFeePerGas == null ? null : new HexBigInteger(maxFeePerGas.Value);
+            MaxPriorityFeePerGas = maxPriorityFeePerGas == null ? null : new HexBigInteger(maxPriorityFeePerGas.Value);
+            ZkSync = zkSync;
+        }
+
         /// <summary>
         /// Gets or sets the nonce of the transaction.
         /// </summary>
@@ -26,7 +53,7 @@ namespace Thirdweb
         /// Gets or sets the sender address of the transaction.
         /// </summary>
         [JsonProperty(PropertyName = "from")]
-        public string From
+        internal string From
         {
             get => _from.EnsureHexPrefix();
             set => _from = value;
@@ -86,7 +113,7 @@ namespace Thirdweb
         /// Gets or sets the chain ID for the transaction.
         /// </summary>
         [JsonProperty(PropertyName = "chainId")]
-        public HexBigInteger ChainId { get; set; }
+        internal HexBigInteger ChainId { get; set; }
 
         /// <summary>
         /// Gets or sets the zkSync options for the transaction.

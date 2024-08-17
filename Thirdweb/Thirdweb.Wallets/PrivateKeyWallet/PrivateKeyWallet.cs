@@ -4,6 +4,7 @@ using Nethereum.ABI.EIP712;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Model;
+using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Signer;
 using Nethereum.Signer.EIP712;
 using Newtonsoft.Json;
@@ -265,20 +266,11 @@ namespace Thirdweb
         /// </summary>
         /// <param name="transaction">The transaction to sign.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the signed transaction.</returns>
-        public virtual async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
+        public virtual Task<string> SignTransaction(ThirdwebTransactionInput transaction)
         {
             if (transaction == null)
             {
                 throw new ArgumentNullException(nameof(transaction));
-            }
-
-            if (string.IsNullOrWhiteSpace(transaction.From))
-            {
-                transaction.From = await GetAddress();
-            }
-            else if (transaction.From != await GetAddress())
-            {
-                throw new Exception("Transaction 'From' address does not match the wallet address");
             }
 
             var nonce = transaction.Nonce ?? throw new ArgumentNullException(nameof(transaction), "Transaction nonce has not been set");
@@ -318,7 +310,7 @@ namespace Thirdweb
                 signedTransaction = transaction1559.GetRLPEncoded().ToHex();
             }
 
-            return "0x" + signedTransaction;
+            return Task.FromResult("0x" + signedTransaction);
         }
 
         /// <summary>
@@ -391,6 +383,11 @@ namespace Thirdweb
         public Task<string> SendTransaction(ThirdwebTransactionInput transaction)
         {
             throw new InvalidOperationException("SendTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");
+        }
+
+        public Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
+        {
+            throw new InvalidOperationException("ExecuteTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");
         }
     }
 }

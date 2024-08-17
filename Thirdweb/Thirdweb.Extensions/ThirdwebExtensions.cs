@@ -232,12 +232,7 @@ namespace Thirdweb
                 throw new ArgumentOutOfRangeException(nameof(weiAmount), "Amount must be 0 or greater.");
             }
 
-            var txInput = new ThirdwebTransactionInput()
-            {
-                From = await wallet.GetAddress().ConfigureAwait(false),
-                To = toAddress,
-                Value = new HexBigInteger(weiAmount)
-            };
+            var txInput = new ThirdwebTransactionInput() { To = toAddress, Value = new HexBigInteger(weiAmount) };
             var tx = await ThirdwebTransaction.Create(wallet, txInput, chainId).ConfigureAwait(false);
             return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx).ConfigureAwait(false);
         }

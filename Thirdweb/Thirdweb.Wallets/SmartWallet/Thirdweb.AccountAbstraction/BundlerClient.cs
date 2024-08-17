@@ -86,7 +86,7 @@ namespace Thirdweb.AccountAbstraction
             var cts = new CancellationTokenSource(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
 
             var httpClient = client.HttpClient;
-            var requestMessage = new RpcRequestMessage(requestId, method, args);
+            var requestMessage = new RpcRequestMessage(requestId, method, args = args.Where(a => a != null).ToArray());
             var requestMessageJson = JsonConvert.SerializeObject(requestMessage);
 
 #if DEBUG

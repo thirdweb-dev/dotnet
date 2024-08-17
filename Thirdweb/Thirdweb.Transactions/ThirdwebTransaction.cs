@@ -63,15 +63,9 @@ namespace Thirdweb
                 throw new ArgumentException("Transaction recipient (to) must be provided", nameof(txInput));
             }
 
-            var address = await wallet.GetAddress().ConfigureAwait(false);
-            txInput.From ??= address;
+            txInput.From = await wallet.GetAddress().ConfigureAwait(false);
             txInput.Data ??= "0x";
             txInput.Value ??= new HexBigInteger(0);
-
-            if (address != txInput.From)
-            {
-                throw new ArgumentException("Transaction sender (from) must match wallet address", nameof(txInput));
-            }
 
             return new ThirdwebTransaction(wallet, txInput, chainId);
         }
@@ -354,11 +348,12 @@ namespace Thirdweb
         }
 
         /// <summary>
-        /// Sends the transaction.
+        /// Populates the transaction and prepares it for sending.
         /// </summary>
         /// <param name="transaction">The transaction.</param>
-        /// <returns>The transaction hash.</returns>
-        public static async Task<string> Send(ThirdwebTransaction transaction)
+        /// <returns>The populated transaction.</returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static async Task<ThirdwebTransaction> Prepare(ThirdwebTransaction transaction)
         {
             if (transaction.Input.To == null)
             {
@@ -370,7 +365,6 @@ namespace Thirdweb
                 throw new InvalidOperationException("Transaction GasPrice and MaxFeePerGas/MaxPriorityFeePerGas cannot be set at the same time");
             }
 
-            transaction.Input.From ??= await transaction._wallet.GetAddress().ConfigureAwait(false);
             transaction.Input.Value ??= new HexBigInteger(0);
             transaction.Input.Data ??= "0x";
             transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction).ConfigureAwait(false));
@@ -393,6 +387,16 @@ namespace Thirdweb
                 }
             }
 
+            return transaction;
+        }
+
+        /// <summary>
+        /// Sends the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        /// <returns>The transaction hash.</returns>
+        public static async Task<string> Send(ThirdwebTransaction transaction)
+        {
             var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
             string hash;
             if (

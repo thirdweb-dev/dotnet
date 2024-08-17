@@ -19,8 +19,8 @@ var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: ne
 
 // Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
-var walletAddress = await privateKeyWallet.GetAddress();
-Console.WriteLine($"PK Wallet address: {walletAddress}");
+// var walletAddress = await privateKeyWallet.GetAddress();
+// Console.WriteLine($"PK Wallet address: {walletAddress}");
 
 #region Contract Interaction
 
@@ -32,19 +32,18 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 
 #region AA 0.6
 
-// var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 660279, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V06);
+// var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V06);
 
-// var hash06 = await smartWallet06.SendTransaction(
+// var receipt06 = await smartWallet06.ExecuteTransaction(
 //     new ThirdwebTransactionInput()
 //     {
-//         From = await smartWallet06.GetAddress(),
 //         To = await smartWallet06.GetAddress(),
 //         Value = new HexBigInteger(BigInteger.Zero),
-//         Data = "0x"
+//         Data = "0x",
 //     }
 // );
 
-// Console.WriteLine($"Transaction hash: {hash06}");
+// Console.WriteLine($"Receipt: {receipt06}");
 
 #endregion
 
@@ -58,17 +57,16 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 //     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
 // );
 
-// var hash07 = await smartWallet07.SendTransaction(
+// var receipt07 = await smartWallet07.ExecuteTransaction(
 //     new ThirdwebTransactionInput()
 //     {
-//         From = await smartWallet07.GetAddress(),
 //         To = await smartWallet07.GetAddress(),
 //         Value = new HexBigInteger(BigInteger.Zero),
 //         Data = "0x"
 //     }
 // );
 
-// Console.WriteLine($"Transaction hash: {hash07}");
+// Console.WriteLine($"Receipt: {receipt07}");
 
 #endregion
 
@@ -79,7 +77,6 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 // var hash = await smartWalletAbstract.SendTransaction(
 //     new ThirdwebTransactionInput()
 //     {
-//         From = await smartWalletAbstract.GetAddress(),
 //         To = await smartWalletAbstract.GetAddress(),
 //         Value = new HexBigInteger(BigInteger.Zero),
 //         Data = "0x"
@@ -135,7 +132,7 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 
 // var selfTransfer = await ThirdwebTransaction.Create(
 //     wallet: erc20SmartWalletSepolia,
-//     txInput: new ThirdwebTransactionInput() { From = erc20SmartWalletSepoliaAddress, To = erc20SmartWalletSepoliaAddress, },
+//     txInput: new ThirdwebTransactionInput() { To = erc20SmartWalletSepoliaAddress, },
 //     chainId: 8453
 // );
 
@@ -162,7 +159,6 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 //     wallet: privateKeyWallet,
 //     txInput: new ThirdwebTransactionInput()
 //     {
-//         From = await privateKeyWallet.GetAddress(),
 //         To = await privateKeyWallet.GetAddress(),
 //         Value = new HexBigInteger(BigInteger.Zero),
 //     },
@@ -203,7 +199,6 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 //     smartWallet,
 //     new ThirdwebTransactionInput()
 //     {
-//         From = await smartWallet.GetAddress(),
 //         To = await smartWallet.GetAddress(),
 //         Value = new HexBigInteger(BigInteger.Zero)
 //     },

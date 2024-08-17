@@ -152,7 +152,6 @@ namespace Thirdweb
             var data = function.GetData(parameters);
             var transaction = new ThirdwebTransactionInput
             {
-                From = await wallet.GetAddress().ConfigureAwait(false),
                 To = contract.Address,
                 Data = data,
                 Value = new HexBigInteger(weiValue),

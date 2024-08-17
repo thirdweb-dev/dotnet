@@ -176,7 +176,7 @@ public class PrivateKeyWalletTests : BaseTests
             To = Constants.ADDRESS_ZERO,
             // Value = new HexBigInteger(0),
             Gas = new HexBigInteger(21000),
-            Data = "0x",
+            // Data = "0x",
             Nonce = new HexBigInteger(99999999999),
             GasPrice = new HexBigInteger(10000000000),
             ChainId = new HexBigInteger(421614)
@@ -225,24 +225,6 @@ public class PrivateKeyWalletTests : BaseTests
         };
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction nonce has not been set (Parameter 'transaction')", ex.Message);
-    }
-
-    [Fact(Timeout = 120000)]
-    public async Task SignTransaction_WrongFrom()
-    {
-        var account = await GetAccount();
-        var transaction = new ThirdwebTransactionInput
-        {
-            From = Constants.ADDRESS_ZERO,
-            To = Constants.ADDRESS_ZERO,
-            Value = new HexBigInteger(0),
-            Gas = new HexBigInteger(21000),
-            Data = "0x",
-            Nonce = new HexBigInteger(99999999999),
-            ChainId = new HexBigInteger(421614)
-        };
-        var ex = await Assert.ThrowsAsync<Exception>(() => account.SignTransaction(transaction));
-        Assert.Equal("Transaction 'From' address does not match the wallet address", ex.Message);
     }
 
     [Fact(Timeout = 120000)]
@@ -372,5 +354,19 @@ public class PrivateKeyWalletTests : BaseTests
             Data = "0x",
         };
         _ = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SendTransaction(transaction));
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task ExecuteTransaction_InvalidOperation()
+    {
+        var account = await GetAccount();
+        var transaction = new ThirdwebTransactionInput
+        {
+            From = await account.GetAddress(),
+            To = Constants.ADDRESS_ZERO,
+            Value = new HexBigInteger(0),
+            Data = "0x",
+        };
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(() => account.ExecuteTransaction(transaction));
     }
 }

@@ -28,7 +28,6 @@ namespace Thirdweb.Pay
 
             var txInput = new ThirdwebTransactionInput()
             {
-                From = buyWithCryptoQuote.TransactionRequest.From,
                 To = buyWithCryptoQuote.TransactionRequest.To,
                 Data = buyWithCryptoQuote.TransactionRequest.Data,
                 Value = new HexBigInteger(BigInteger.Parse(buyWithCryptoQuote.TransactionRequest.Value)),

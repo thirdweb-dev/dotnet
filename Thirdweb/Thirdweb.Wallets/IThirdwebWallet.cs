@@ -120,6 +120,13 @@ namespace Thirdweb
         Task<string> SendTransaction(ThirdwebTransactionInput transaction);
 
         /// <summary>
+        /// Sends a transaction and waits for its receipt.
+        /// </summary>
+        /// <param name="transaction">The transaction to execute.</param>
+        /// <returns>The transaction receipt.</returns>
+        Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transaction);
+
+        /// <summary>
         /// Authenticates the wallet.
         /// </summary>
         /// <param name="domain">The authentication domain.</param>
