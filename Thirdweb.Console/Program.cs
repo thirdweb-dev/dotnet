@@ -17,7 +17,7 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 // Do not use private keys client side, use InAppWallet/SmartWallet instead
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
-// Fetch timeout options are optional, default is 60000ms
+// Fetch timeout options are optional, default is 120000ms
 var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000));
 
 // Create a private key wallet

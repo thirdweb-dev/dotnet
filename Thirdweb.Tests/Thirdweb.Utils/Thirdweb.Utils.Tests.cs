@@ -543,4 +543,21 @@ public class UtilsTests : BaseTests
         var timeAttempt2 = timer.ElapsedMilliseconds;
         Assert.True(timeAttempt1 > timeAttempt2);
     }
+
+    [Fact(Timeout = 120000)]
+    public void HexToBytes32_ReturnsCorrectly()
+    {
+        var hex = "0x1";
+        var bytes32 = Utils.HexToBytes32(hex);
+        var expectedBytes = new byte[32];
+        expectedBytes[31] = 1;
+        Assert.Equal(expectedBytes, bytes32);
+
+        hex = "1";
+        bytes32 = Utils.HexToBytes32(hex);
+        Assert.Equal(expectedBytes, bytes32);
+
+        var hexTooLarge = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+        _ = Assert.Throws<ArgumentException>(() => Utils.HexToBytes32(hexTooLarge));
+    }
 }
