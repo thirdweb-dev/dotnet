@@ -11,580 +11,667 @@ using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
-namespace Thirdweb
+namespace Thirdweb;
+
+/// <summary>
+/// Provides utility methods for various operations.
+/// </summary>
+public static partial class Utils
 {
+    private static readonly Dictionary<BigInteger, bool> _eip155EnforcedCache = [];
+    private static readonly Dictionary<BigInteger, ThirdwebChainData> _chainDataCache = [];
+
     /// <summary>
-    /// Provides utility methods for various operations.
+    /// Computes the client ID from the given secret key.
     /// </summary>
-    public static class Utils
+    /// <param name="secretKey">The secret key.</param>
+    /// <returns>The computed client ID.</returns>
+    public static string ComputeClientIdFromSecretKey(string secretKey)
     {
-        private static readonly Dictionary<BigInteger, bool> Eip155EnforcedCache = new Dictionary<BigInteger, bool>();
-        private static readonly Dictionary<BigInteger, ThirdwebChainData> ChainDataCache = new Dictionary<BigInteger, ThirdwebChainData>();
+#if NETSTANDARD
+        using var sha256 = SHA256.Create();
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(secretKey));
+        return BitConverter.ToString(hash).Replace("-", "").ToLower().Substring(0, 32);
+#else
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(secretKey));
+        return BitConverter.ToString(hash).Replace("-", "").ToLower()[..32];
+#endif
+    }
 
-        /// <summary>
-        /// Computes the client ID from the given secret key.
-        /// </summary>
-        /// <param name="secretKey">The secret key.</param>
-        /// <returns>The computed client ID.</returns>
-        public static string ComputeClientIdFromSecretKey(string secretKey)
+    // public static byte[] StringToSha256(string bytes)
+    // {
+    //     #if NETSTANDARD
+    //     using var sha256 = SHA256.Create();
+    //     return sha256.ComputeHash(bytes);
+    // }
+
+    /// <summary>
+    /// Concatenates the given hex strings.
+    /// </summary>
+    /// <param name="hexStrings">The hex strings to concatenate.</param>
+    /// <returns>The concatenated hex string.</returns>
+    public static string HexConcat(params string[] hexStrings)
+    {
+        var hex = new StringBuilder("0x");
+
+        foreach (var hexStr in hexStrings)
         {
-            using var sha256 = SHA256.Create();
-            var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(secretKey));
-            return BitConverter.ToString(hash).Replace("-", "").ToLower().Substring(0, 32);
+            _ = hex.Append(hexStr[2..]);
         }
 
-        /// <summary>
-        /// Concatenates the given hex strings.
-        /// </summary>
-        /// <param name="hexStrings">The hex strings to concatenate.</param>
-        /// <returns>The concatenated hex string.</returns>
-        public static string HexConcat(params string[] hexStrings)
+        return hex.ToString();
+    }
+
+    /// <summary>
+    /// Hashes the given message bytes with a prefixed message.
+    /// </summary>
+    /// <param name="messageBytes">The message bytes to hash.</param>
+    /// <returns>The hashed message bytes.</returns>
+    public static byte[] HashPrefixedMessage(this byte[] messageBytes)
+    {
+        var signer = new EthereumMessageSigner();
+        return signer.HashPrefixedMessage(messageBytes);
+    }
+
+    /// <summary>
+    /// Hashes the given message with a prefixed message.
+    /// </summary>
+    /// <param name="message">The message to hash.</param>
+    /// <returns>The hashed message.</returns>
+    public static string HashPrefixedMessage(this string message)
+    {
+        var signer = new EthereumMessageSigner();
+        return signer.HashPrefixedMessage(Encoding.UTF8.GetBytes(message)).ToHex(true);
+    }
+
+    /// <summary>
+    /// Hashes the given message bytes.
+    /// </summary>
+    /// <param name="messageBytes">The message bytes to hash.</param>
+    /// <returns>The hashed message bytes.</returns>
+    public static byte[] HashMessage(this byte[] messageBytes)
+    {
+        return Sha3Keccack.Current.CalculateHash(messageBytes);
+    }
+
+    /// <summary>
+    /// Hashes the given message.
+    /// </summary>
+    /// <param name="message">The message to hash.</param>
+    /// <returns>The hashed message.</returns>
+    public static string HashMessage(this string message)
+    {
+        return Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(message)).ToHex(true);
+    }
+
+    /// <summary>
+    /// Converts the given bytes to a hex string.
+    /// </summary>
+    /// <param name="bytes">The bytes to convert.</param>
+    /// <returns>The hex string.</returns>
+    public static string BytesToHex(this byte[] bytes)
+    {
+        return bytes.ToHex(true);
+    }
+
+    /// <summary>
+    /// Converts the given hex string to bytes.
+    /// </summary>
+    /// <param name="hex">The hex string to convert.</param>
+    /// <returns>The bytes.</returns>
+    public static byte[] HexToBytes(this string hex)
+    {
+        return hex.HexToByteArray();
+    }
+
+    /// <summary>
+    /// Converts the given string to a hex string.
+    /// </summary>
+    /// <param name="str">The string to convert.</param>
+    /// <returns>The hex string.</returns>
+    public static string StringToHex(this string str)
+    {
+        return "0x" + Encoding.UTF8.GetBytes(str).ToHex();
+    }
+
+    /// <summary>
+    /// Converts the given hex string to a regular string.
+    /// </summary>
+    /// <param name="hex">The hex string to convert.</param>
+    /// <returns>The regular string.</returns>
+    public static string HexToString(this string hex)
+    {
+        var array = HexToBytes(hex);
+        return Encoding.UTF8.GetString(array, 0, array.Length);
+    }
+
+    /// <summary>
+    /// Gets the current Unix timestamp.
+    /// </summary>
+    /// <returns>The current Unix timestamp.</returns>
+    public static long GetUnixTimeStampNow()
+    {
+        return DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    }
+
+    /// <summary>
+    /// Gets the Unix timestamp for 10 years from now.
+    /// </summary>
+    /// <returns>The Unix timestamp for 10 years from now.</returns>
+    public static long GetUnixTimeStampIn10Years()
+    {
+        return DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (60 * 60 * 24 * 365 * 10);
+    }
+
+    /// <summary>
+    /// Replaces the IPFS URI with a specified gateway.
+    /// </summary>
+    /// <param name="uri">The URI to replace.</param>
+    /// <param name="gateway">The gateway to use.</param>
+    /// <returns>The replaced URI.</returns>
+    public static string ReplaceIPFS(this string uri, string gateway = null)
+    {
+        gateway ??= Constants.FALLBACK_IPFS_GATEWAY;
+        return !string.IsNullOrEmpty(uri) && uri.StartsWith("ipfs://") ? uri.Replace("ipfs://", gateway) : uri;
+    }
+
+    /// <summary>
+    /// Converts the given ether value to wei.
+    /// </summary>
+    /// <param name="eth">The ether value to convert.</param>
+    /// <returns>The wei value.</returns>
+    public static string ToWei(this string eth)
+    {
+        if (!double.TryParse(eth, NumberStyles.Number, CultureInfo.InvariantCulture, out var ethDouble))
         {
-            var hex = new StringBuilder("0x");
-
-            foreach (var hexStr in hexStrings)
-            {
-                _ = hex.Append(hexStr[2..]);
-            }
-
-            return hex.ToString();
+            throw new ArgumentException("Invalid eth value.");
         }
 
-        /// <summary>
-        /// Hashes the given message bytes with a prefixed message.
-        /// </summary>
-        /// <param name="messageBytes">The message bytes to hash.</param>
-        /// <returns>The hashed message bytes.</returns>
-        public static byte[] HashPrefixedMessage(this byte[] messageBytes)
+        var wei = (BigInteger)(ethDouble * Constants.DECIMALS_18);
+        return wei.ToString();
+    }
+
+    /// <summary>
+    /// Converts the given wei value to ether.
+    /// </summary>
+    /// <param name="wei">The wei value to convert.</param>
+    /// <param name="decimalsToDisplay">The number of decimals to display.</param>
+    /// <param name="addCommas">Whether to add commas to the output.</param>
+    /// <returns>The ether value.</returns>
+    public static string ToEth(this string wei, int decimalsToDisplay = 4, bool addCommas = false)
+    {
+        return FormatERC20(wei, decimalsToDisplay, 18, addCommas);
+    }
+
+    /// <summary>
+    /// Formats the given ERC20 token value.
+    /// </summary>
+    /// <param name="wei">The wei value to format.</param>
+    /// <param name="decimalsToDisplay">The number of decimals to display.</param>
+    /// <param name="decimals">The number of decimals of the token.</param>
+    /// <param name="addCommas">Whether to add commas to the output.</param>
+    /// <returns>The formatted token value.</returns>
+    public static string FormatERC20(this string wei, int decimalsToDisplay = 4, int decimals = 18, bool addCommas = false)
+    {
+        if (!BigInteger.TryParse(wei, out var weiBigInt))
         {
-            var signer = new EthereumMessageSigner();
-            return signer.HashPrefixedMessage(messageBytes);
+            throw new ArgumentException("Invalid wei value.");
         }
 
-        /// <summary>
-        /// Hashes the given message with a prefixed message.
-        /// </summary>
-        /// <param name="message">The message to hash.</param>
-        /// <returns>The hashed message.</returns>
-        public static string HashPrefixedMessage(this string message)
+        var eth = (double)weiBigInt / Math.Pow(10.0, decimals);
+        var format = addCommas ? "#,0" : "#0";
+        if (decimalsToDisplay > 0)
         {
-            var signer = new EthereumMessageSigner();
-            return signer.HashPrefixedMessage(Encoding.UTF8.GetBytes(message)).ToHex(true);
+            format += ".";
+            format += new string('0', decimalsToDisplay);
         }
 
-        /// <summary>
-        /// Hashes the given message bytes.
-        /// </summary>
-        /// <param name="messageBytes">The message bytes to hash.</param>
-        /// <returns>The hashed message bytes.</returns>
-        public static byte[] HashMessage(this byte[] messageBytes)
+        return eth.ToString(format);
+    }
+
+    /// <summary>
+    /// Generates a Sign-In With Ethereum (SIWE) message.
+    /// </summary>
+    /// <param name="loginPayloadData">The login payload data.</param>
+    /// <returns>The generated SIWE message.</returns>
+    public static string GenerateSIWE(LoginPayloadData loginPayloadData)
+    {
+        if (loginPayloadData == null)
         {
-            return Sha3Keccack.Current.CalculateHash(messageBytes);
+            throw new ArgumentNullException(nameof(loginPayloadData));
+        }
+        else if (string.IsNullOrEmpty(loginPayloadData.Domain))
+        {
+            throw new ArgumentNullException(nameof(loginPayloadData.Domain));
+        }
+        else if (string.IsNullOrEmpty(loginPayloadData.Address))
+        {
+            throw new ArgumentNullException(nameof(loginPayloadData.Address));
+        }
+        else if (string.IsNullOrEmpty(loginPayloadData.Version))
+        {
+            throw new ArgumentNullException(nameof(loginPayloadData.Version));
+        }
+        else if (string.IsNullOrEmpty(loginPayloadData.ChainId))
+        {
+            throw new ArgumentNullException(nameof(loginPayloadData.ChainId));
+        }
+        else if (string.IsNullOrEmpty(loginPayloadData.Nonce))
+        {
+            throw new ArgumentNullException(nameof(loginPayloadData.Nonce));
+        }
+        else if (string.IsNullOrEmpty(loginPayloadData.IssuedAt))
+        {
+            throw new ArgumentNullException(nameof(loginPayloadData.IssuedAt));
         }
 
-        /// <summary>
-        /// Hashes the given message.
-        /// </summary>
-        /// <param name="message">The message to hash.</param>
-        /// <returns>The hashed message.</returns>
-        public static string HashMessage(this string message)
+        var resourcesString = loginPayloadData.Resources != null ? "\nResources:" + string.Join("", loginPayloadData.Resources.Select(r => $"\n- {r}")) : string.Empty;
+        var payloadToSign =
+            $"{loginPayloadData.Domain} wants you to sign in with your Ethereum account:"
+            + $"\n{loginPayloadData.Address}\n\n"
+            + $"{(string.IsNullOrEmpty(loginPayloadData.Statement) ? "" : $"{loginPayloadData.Statement}\n")}"
+            + $"{(string.IsNullOrEmpty(loginPayloadData.Uri) ? "" : $"\nURI: {loginPayloadData.Uri}")}"
+            + $"\nVersion: {loginPayloadData.Version}"
+            + $"\nChain ID: {loginPayloadData.ChainId}"
+            + $"\nNonce: {loginPayloadData.Nonce}"
+            + $"\nIssued At: {loginPayloadData.IssuedAt}"
+            + $"{(string.IsNullOrEmpty(loginPayloadData.ExpirationTime) ? "" : $"\nExpiration Time: {loginPayloadData.ExpirationTime}")}"
+            + $"{(string.IsNullOrEmpty(loginPayloadData.InvalidBefore) ? "" : $"\nNot Before: {loginPayloadData.InvalidBefore}")}"
+            + resourcesString;
+        return payloadToSign;
+    }
+
+    /// <summary>
+    /// Checks if the chain ID corresponds to zkSync.
+    /// </summary>
+    /// <param name="chainId">The chain ID.</param>
+    /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
+    public static bool IsZkSync(BigInteger chainId)
+    {
+        return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124);
+    }
+
+    /// <summary>
+    /// Converts an Ethereum address to its checksum format.
+    /// </summary>
+    /// <param name="address">The Ethereum address.</param>
+    /// <returns>The checksummed Ethereum address.</returns>
+    public static string ToChecksumAddress(this string address)
+    {
+        return new AddressUtil().ConvertToChecksumAddress(address);
+    }
+
+    /// <summary>
+    /// Decodes all events of the specified type from the transaction receipt logs.
+    /// </summary>
+    /// <typeparam name="TEventDTO">The event DTO type.</typeparam>
+    /// <param name="transactionReceipt">The transaction receipt.</param>
+    /// <returns>A list of decoded events.</returns>
+    public static List<EventLog<TEventDTO>> DecodeAllEvents<TEventDTO>(this ThirdwebTransactionReceipt transactionReceipt)
+        where TEventDTO : new()
+    {
+        return transactionReceipt.Logs.DecodeAllEvents<TEventDTO>();
+    }
+
+    /// <summary>
+    /// Adjusts the value's decimals.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="fromDecimals">The original number of decimals.</param>
+    /// <param name="toDecimals">The target number of decimals.</param>
+    /// <returns>The value adjusted to the new decimals.</returns>
+    public static BigInteger AdjustDecimals(this BigInteger value, int fromDecimals, int toDecimals)
+    {
+        var differenceInDecimals = fromDecimals - toDecimals;
+
+        if (differenceInDecimals > 0)
         {
-            return Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(message)).ToHex(true);
+            return value / BigInteger.Pow(10, differenceInDecimals);
+        }
+        else if (differenceInDecimals < 0)
+        {
+            return value * BigInteger.Pow(10, -differenceInDecimals);
         }
 
-        /// <summary>
-        /// Converts the given bytes to a hex string.
-        /// </summary>
-        /// <param name="bytes">The bytes to convert.</param>
-        /// <returns>The hex string.</returns>
-        public static string BytesToHex(this byte[] bytes)
+        return value;
+    }
+
+    public static async Task<ThirdwebChainData> FetchThirdwebChainDataAsync(ThirdwebClient client, BigInteger chainId)
+    {
+        if (_chainDataCache.TryGetValue(chainId, out var value))
         {
-            return bytes.ToHex(true);
-        }
-
-        /// <summary>
-        /// Converts the given hex string to bytes.
-        /// </summary>
-        /// <param name="hex">The hex string to convert.</param>
-        /// <returns>The bytes.</returns>
-        public static byte[] HexToBytes(this string hex)
-        {
-            return hex.HexToByteArray();
-        }
-
-        /// <summary>
-        /// Converts the given string to a hex string.
-        /// </summary>
-        /// <param name="str">The string to convert.</param>
-        /// <returns>The hex string.</returns>
-        public static string StringToHex(this string str)
-        {
-            return "0x" + Encoding.UTF8.GetBytes(str).ToHex();
-        }
-
-        /// <summary>
-        /// Converts the given hex string to a regular string.
-        /// </summary>
-        /// <param name="hex">The hex string to convert.</param>
-        /// <returns>The regular string.</returns>
-        public static string HexToString(this string hex)
-        {
-            var array = HexToBytes(hex);
-            return Encoding.UTF8.GetString(array, 0, array.Length);
-        }
-
-        /// <summary>
-        /// Gets the current Unix timestamp.
-        /// </summary>
-        /// <returns>The current Unix timestamp.</returns>
-        public static long GetUnixTimeStampNow()
-        {
-            return DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        }
-
-        /// <summary>
-        /// Gets the Unix timestamp for 10 years from now.
-        /// </summary>
-        /// <returns>The Unix timestamp for 10 years from now.</returns>
-        public static long GetUnixTimeStampIn10Years()
-        {
-            return DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 60 * 60 * 24 * 365 * 10;
-        }
-
-        /// <summary>
-        /// Replaces the IPFS URI with a specified gateway.
-        /// </summary>
-        /// <param name="uri">The URI to replace.</param>
-        /// <param name="gateway">The gateway to use.</param>
-        /// <returns>The replaced URI.</returns>
-        public static string ReplaceIPFS(this string uri, string gateway = null)
-        {
-            gateway ??= Constants.FALLBACK_IPFS_GATEWAY;
-            return !string.IsNullOrEmpty(uri) && uri.StartsWith("ipfs://") ? uri.Replace("ipfs://", gateway) : uri;
-        }
-
-        /// <summary>
-        /// Converts the given ether value to wei.
-        /// </summary>
-        /// <param name="eth">The ether value to convert.</param>
-        /// <returns>The wei value.</returns>
-        public static string ToWei(this string eth)
-        {
-            if (!double.TryParse(eth, NumberStyles.Number, CultureInfo.InvariantCulture, out var ethDouble))
-            {
-                throw new ArgumentException("Invalid eth value.");
-            }
-
-            var wei = (BigInteger)(ethDouble * Constants.DECIMALS_18);
-            return wei.ToString();
-        }
-
-        /// <summary>
-        /// Converts the given wei value to ether.
-        /// </summary>
-        /// <param name="wei">The wei value to convert.</param>
-        /// <param name="decimalsToDisplay">The number of decimals to display.</param>
-        /// <param name="addCommas">Whether to add commas to the output.</param>
-        /// <returns>The ether value.</returns>
-        public static string ToEth(this string wei, int decimalsToDisplay = 4, bool addCommas = false)
-        {
-            return FormatERC20(wei, decimalsToDisplay, 18, addCommas);
-        }
-
-        /// <summary>
-        /// Formats the given ERC20 token value.
-        /// </summary>
-        /// <param name="wei">The wei value to format.</param>
-        /// <param name="decimalsToDisplay">The number of decimals to display.</param>
-        /// <param name="decimals">The number of decimals of the token.</param>
-        /// <param name="addCommas">Whether to add commas to the output.</param>
-        /// <returns>The formatted token value.</returns>
-        public static string FormatERC20(this string wei, int decimalsToDisplay = 4, int decimals = 18, bool addCommas = false)
-        {
-            if (!BigInteger.TryParse(wei, out var weiBigInt))
-            {
-                throw new ArgumentException("Invalid wei value.");
-            }
-
-            var eth = (double)weiBigInt / Math.Pow(10.0, decimals);
-            var format = addCommas ? "#,0" : "#0";
-            if (decimalsToDisplay > 0)
-            {
-                format += ".";
-                format += new string('0', decimalsToDisplay);
-            }
-
-            return eth.ToString(format);
-        }
-
-        /// <summary>
-        /// Generates a Sign-In With Ethereum (SIWE) message.
-        /// </summary>
-        /// <param name="loginPayloadData">The login payload data.</param>
-        /// <returns>The generated SIWE message.</returns>
-        public static string GenerateSIWE(LoginPayloadData loginPayloadData)
-        {
-            if (loginPayloadData == null)
-            {
-                throw new ArgumentNullException(nameof(loginPayloadData));
-            }
-            else if (string.IsNullOrEmpty(loginPayloadData.Domain))
-            {
-                throw new ArgumentNullException(nameof(loginPayloadData.Domain));
-            }
-            else if (string.IsNullOrEmpty(loginPayloadData.Address))
-            {
-                throw new ArgumentNullException(nameof(loginPayloadData.Address));
-            }
-            else if (string.IsNullOrEmpty(loginPayloadData.Version))
-            {
-                throw new ArgumentNullException(nameof(loginPayloadData.Version));
-            }
-            else if (string.IsNullOrEmpty(loginPayloadData.ChainId))
-            {
-                throw new ArgumentNullException(nameof(loginPayloadData.ChainId));
-            }
-            else if (string.IsNullOrEmpty(loginPayloadData.Nonce))
-            {
-                throw new ArgumentNullException(nameof(loginPayloadData.Nonce));
-            }
-            else if (string.IsNullOrEmpty(loginPayloadData.IssuedAt))
-            {
-                throw new ArgumentNullException(nameof(loginPayloadData.IssuedAt));
-            }
-
-            var resourcesString = loginPayloadData.Resources != null ? "\nResources:" + string.Join("", loginPayloadData.Resources.Select(r => $"\n- {r}")) : string.Empty;
-            var payloadToSign =
-                $"{loginPayloadData.Domain} wants you to sign in with your Ethereum account:"
-                + $"\n{loginPayloadData.Address}\n\n"
-                + $"{(string.IsNullOrEmpty(loginPayloadData.Statement) ? "" : $"{loginPayloadData.Statement}\n")}"
-                + $"{(string.IsNullOrEmpty(loginPayloadData.Uri) ? "" : $"\nURI: {loginPayloadData.Uri}")}"
-                + $"\nVersion: {loginPayloadData.Version}"
-                + $"\nChain ID: {loginPayloadData.ChainId}"
-                + $"\nNonce: {loginPayloadData.Nonce}"
-                + $"\nIssued At: {loginPayloadData.IssuedAt}"
-                + $"{(string.IsNullOrEmpty(loginPayloadData.ExpirationTime) ? "" : $"\nExpiration Time: {loginPayloadData.ExpirationTime}")}"
-                + $"{(string.IsNullOrEmpty(loginPayloadData.InvalidBefore) ? "" : $"\nNot Before: {loginPayloadData.InvalidBefore}")}"
-                + resourcesString;
-            return payloadToSign;
-        }
-
-        /// <summary>
-        /// Checks if the chain ID corresponds to zkSync.
-        /// </summary>
-        /// <param name="chainId">The chain ID.</param>
-        /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
-        public static bool IsZkSync(BigInteger chainId)
-        {
-            return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124);
-        }
-
-        /// <summary>
-        /// Converts an Ethereum address to its checksum format.
-        /// </summary>
-        /// <param name="address">The Ethereum address.</param>
-        /// <returns>The checksummed Ethereum address.</returns>
-        public static string ToChecksumAddress(this string address)
-        {
-            return new AddressUtil().ConvertToChecksumAddress(address);
-        }
-
-        /// <summary>
-        /// Decodes all events of the specified type from the transaction receipt logs.
-        /// </summary>
-        /// <typeparam name="TEventDTO">The event DTO type.</typeparam>
-        /// <param name="transactionReceipt">The transaction receipt.</param>
-        /// <returns>A list of decoded events.</returns>
-        public static List<EventLog<TEventDTO>> DecodeAllEvents<TEventDTO>(this ThirdwebTransactionReceipt transactionReceipt)
-            where TEventDTO : new()
-        {
-            return transactionReceipt.Logs.DecodeAllEvents<TEventDTO>();
-        }
-
-        /// <summary>
-        /// Adjusts the value's decimals.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="fromDecimals">The original number of decimals.</param>
-        /// <param name="toDecimals">The target number of decimals.</param>
-        /// <returns>The value adjusted to the new decimals.</returns>
-        public static BigInteger AdjustDecimals(this BigInteger value, int fromDecimals, int toDecimals)
-        {
-            var differenceInDecimals = fromDecimals - toDecimals;
-
-            if (differenceInDecimals > 0)
-            {
-                return value / BigInteger.Pow(10, differenceInDecimals);
-            }
-            else if (differenceInDecimals < 0)
-            {
-                return value * BigInteger.Pow(10, -differenceInDecimals);
-            }
-
             return value;
+
         }
 
-        public static async Task<ThirdwebChainData> FetchThirdwebChainDataAsync(ThirdwebClient client, BigInteger chainId)
+        if (client == null)
         {
-            if (ChainDataCache.ContainsKey(chainId))
+            throw new ArgumentNullException(nameof(client));
+        }
+
+        if (chainId <= 0)
+        {
+            throw new ArgumentException("Invalid chain ID.");
+        }
+
+        var url = $"https://api.thirdweb-dev.com/v1/chains/{chainId}";
+        try
+        {
+            var response = await client.HttpClient.GetAsync(url).ConfigureAwait(false);
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var deserializedResponse = JsonConvert.DeserializeObject<ThirdwebChainDataResponse>(json);
+
+            if (deserializedResponse == null || deserializedResponse.Error != null)
             {
-                return ChainDataCache[chainId];
+                throw new Exception($"Failed to fetch chain data for chain ID {chainId}. Error: {JsonConvert.SerializeObject(deserializedResponse?.Error)}");
             }
-
-            if (client == null)
+            else
             {
-                throw new ArgumentNullException(nameof(client));
+                _chainDataCache[chainId] = deserializedResponse.Data;
+                return deserializedResponse.Data;
             }
+        }
+        catch (HttpRequestException httpEx)
+        {
+            throw new Exception($"HTTP request error while fetching chain data for chain ID {chainId}: {httpEx.Message}", httpEx);
+        }
+        catch (JsonException jsonEx)
+        {
+            throw new Exception($"JSON deserialization error while fetching chain data for chain ID {chainId}: {jsonEx.Message}", jsonEx);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Unexpected error while fetching chain data for chain ID {chainId}: {ex.Message}", ex);
+        }
+    }
 
-            if (chainId <= 0)
+    public static int GetEntryPointVersion(string address)
+    {
+        address = address.ToChecksumAddress();
+        return address switch
+        {
+            Constants.ENTRYPOINT_ADDRESS_V06 => 6,
+            Constants.ENTRYPOINT_ADDRESS_V07 => 7,
+            _ => 6,
+        };
+    }
+
+    public static byte[] HexToBytes32(this string hex)
+    {
+        if (hex.StartsWith("0x"))
+        {
+            hex = hex[2..];
+        }
+
+        if (hex.Length > 64)
+        {
+            throw new ArgumentException("Hex string is too long to fit into 32 bytes.");
+        }
+
+        hex = hex.PadLeft(64, '0');
+
+        var bytes = new byte[32];
+        for (var i = 0; i < hex.Length; i += 2)
+        {
+            bytes[i / 2] = byte.Parse(hex.AsSpan(i, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+        }
+
+        return bytes;
+    }
+
+    public static string ToJsonExternalWalletFriendly<TMessage, TDomain>(TypedData<TDomain> typedData, TMessage message)
+    {
+        typedData.EnsureDomainRawValuesAreInitialised();
+        typedData.Message = MemberValueFactory.CreateFromMessage(message);
+        var obj = (JObject)JToken.FromObject(typedData);
+        var jProperty = new JProperty("domain");
+        var jProperties = GetJProperties("EIP712Domain", typedData.DomainRawValues, typedData);
+        object[] content = jProperties.ToArray();
+        jProperty.Value = new JObject(content);
+        obj.Add(jProperty);
+        var jProperty2 = new JProperty("message");
+        var jProperties2 = GetJProperties(typedData.PrimaryType, typedData.Message, typedData);
+        content = jProperties2.ToArray();
+        jProperty2.Value = new JObject(content);
+        obj.Add(jProperty2);
+        return obj.ToString();
+    }
+
+#if NET8_0_OR_GREATER
+    [GeneratedRegex("bytes\\d+")]
+    private static partial Regex BytesRegex();
+
+    [GeneratedRegex("uint\\d+")]
+    private static partial Regex UintRegex();
+
+    [GeneratedRegex("int\\d+")]
+    private static partial Regex IntRegex();
+
+    private static bool IsReferenceType(string typeName)
+    {
+        if (!BytesRegex().IsMatch(typeName))
+        {
+            if (!UintRegex().IsMatch(typeName))
             {
-                throw new ArgumentException("Invalid chain ID.");
-            }
-
-            var url = $"https://api.thirdweb-dev.com/v1/chains/{chainId}";
-            try
-            {
-                var response = await client.HttpClient.GetAsync(url).ConfigureAwait(false);
-                var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var deserializedResponse = JsonConvert.DeserializeObject<ThirdwebChainDataResponse>(json);
-
-                if (deserializedResponse == null || deserializedResponse.Error != null)
+                if (!IntRegex().IsMatch(typeName))
                 {
-                    throw new Exception($"Failed to fetch chain data for chain ID {chainId}. Error: {JsonConvert.SerializeObject(deserializedResponse?.Error)}");
+                    switch (typeName)
+                    {
+                        case "bytes":
+                        case "string":
+                        case "bool":
+                        case "address":
+                            break;
+                        default:
+                            if (typeName.Contains('['))
+                            {
+                                return false;
+                            }
+                            return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+#else
+    private static bool IsReferenceType(string typeName)
+    {
+        if (!new Regex("bytes\\d+").IsMatch(typeName))
+        {
+            if (!new Regex("uint\\d+").IsMatch(typeName))
+            {
+                if (!new Regex("int\\d+").IsMatch(typeName))
+                {
+                    switch (typeName)
+                    {
+                        case "bytes":
+                        case "string":
+                        case "bool":
+                        case "address":
+                            break;
+                        default:
+                            if (typeName.Contains('['))
+                            {
+                                return false;
+                            }
+                            return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+#endif
+
+    private static List<JProperty> GetJProperties(string mainTypeName, MemberValue[] values, TypedDataRaw typedDataRaw)
+    {
+        var list = new List<JProperty>();
+        var array = typedDataRaw.Types[mainTypeName];
+        for (var i = 0; i < array.Length; i++)
+        {
+            var type = array[i].Type;
+            var name = array[i].Name;
+            if (IsReferenceType(type))
+            {
+                var jProperty = new JProperty(name);
+                if (values[i].Value != null)
+                {
+                    object[] content = GetJProperties(type, (MemberValue[])values[i].Value, typedDataRaw).ToArray();
+                    jProperty.Value = new JObject(content);
                 }
                 else
                 {
-                    ChainDataCache[chainId] = deserializedResponse.Data;
-                    return deserializedResponse.Data;
+                    jProperty.Value = null;
+                }
+
+                list.Add(jProperty);
+            }
+            else if (type.StartsWith("bytes"))
+            {
+                var name2 = name;
+                if (values[i].Value is byte[] v)
+                {
+                    var content2 = v.BytesToHex();
+                    list.Add(new JProperty(name2, content2));
+                }
+                else
+                {
+                    var value = values[i].Value;
+                    list.Add(new JProperty(name2, value));
                 }
             }
-            catch (HttpRequestException httpEx)
+            else if (type.Contains('['))
             {
-                throw new Exception($"HTTP request error while fetching chain data for chain ID {chainId}: {httpEx.Message}", httpEx);
-            }
-            catch (JsonException jsonEx)
-            {
-                throw new Exception($"JSON deserialization error while fetching chain data for chain ID {chainId}: {jsonEx.Message}", jsonEx);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Unexpected error while fetching chain data for chain ID {chainId}: {ex.Message}", ex);
-            }
-        }
-
-        public static string ToJsonExternalWalletFriendly<TMessage, TDomain>(TypedData<TDomain> typedData, TMessage message)
-        {
-            typedData.EnsureDomainRawValuesAreInitialised();
-            typedData.Message = MemberValueFactory.CreateFromMessage(message);
-            var obj = (JObject)JToken.FromObject(typedData);
-            var jProperty = new JProperty("domain");
-            var jProperties = GetJProperties("EIP712Domain", typedData.DomainRawValues, typedData);
-            object[] content = jProperties.ToArray();
-            jProperty.Value = new JObject(content);
-            obj.Add(jProperty);
-            var jProperty2 = new JProperty("message");
-            var jProperties2 = GetJProperties(typedData.PrimaryType, typedData.Message, typedData);
-            content = jProperties2.ToArray();
-            jProperty2.Value = new JObject(content);
-            obj.Add(jProperty2);
-            return obj.ToString();
-        }
-
-        private static bool IsReferenceType(string typeName)
-        {
-            if (!new Regex("bytes\\d+").IsMatch(typeName))
-            {
-                var input = typeName;
-                if (!new Regex("uint\\d+").IsMatch(input))
+                var jProperty2 = new JProperty(name);
+                var jArray = new JArray();
+                var text = type[..type.LastIndexOf('[')];
+                if (values[i].Value == null)
                 {
-                    var input2 = typeName;
-                    if (!new Regex("int\\d+").IsMatch(input2))
-                    {
-                        switch (typeName)
-                        {
-                            case "bytes":
-                            case "string":
-                            case "bool":
-                            case "address":
-                                break;
-                            default:
-                                if (typeName.Contains("["))
-                                {
-                                    return false;
-                                }
-
-                                return true;
-                        }
-                    }
+                    jProperty2.Value = null;
+                    list.Add(jProperty2);
+                    continue;
                 }
-            }
 
-            return false;
-        }
-
-        private static List<JProperty> GetJProperties(string mainTypeName, MemberValue[] values, TypedDataRaw typedDataRaw)
-        {
-            var list = new List<JProperty>();
-            var array = typedDataRaw.Types[mainTypeName];
-            for (var i = 0; i < array.Length; i++)
-            {
-                var type = array[i].Type;
-                var name = array[i].Name;
-                if (IsReferenceType(type))
+                if (IsReferenceType(text))
                 {
-                    var jProperty = new JProperty(name);
-                    if (values[i].Value != null)
+                    foreach (var item in (List<MemberValue[]>)values[i].Value)
                     {
-                        object[] content = GetJProperties(type, (MemberValue[])values[i].Value, typedDataRaw).ToArray();
-                        jProperty.Value = new JObject(content);
-                    }
-                    else
-                    {
-                        jProperty.Value = null;
-                    }
-
-                    list.Add(jProperty);
-                }
-                else if (type.StartsWith("bytes"))
-                {
-                    var name2 = name;
-                    if (values[i].Value is byte[] v)
-                    {
-                        var content2 = v.BytesToHex();
-                        list.Add(new JProperty(name2, content2));
-                    }
-                    else
-                    {
-                        var value = values[i].Value;
-                        list.Add(new JProperty(name2, value));
-                    }
-                }
-                else if (type.Contains("["))
-                {
-                    var jProperty2 = new JProperty(name);
-                    var jArray = new JArray();
-                    var text = type.Substring(0, type.LastIndexOf("["));
-                    if (values[i].Value == null)
-                    {
-                        jProperty2.Value = null;
-                        list.Add(jProperty2);
-                        continue;
-                    }
-
-                    if (IsReferenceType(text))
-                    {
-                        foreach (var item in (List<MemberValue[]>)values[i].Value)
-                        {
-                            object[] content = GetJProperties(text, item, typedDataRaw).ToArray();
-                            jArray.Add(new JObject(content));
-                        }
-
-                        jProperty2.Value = jArray;
-                        list.Add(jProperty2);
-                        continue;
-                    }
-
-                    foreach (var item2 in (System.Collections.IList)values[i].Value)
-                    {
-                        jArray.Add(item2);
+                        object[] content = GetJProperties(text, item, typedDataRaw).ToArray();
+                        jArray.Add(new JObject(content));
                     }
 
                     jProperty2.Value = jArray;
                     list.Add(jProperty2);
+                    continue;
                 }
-                else
-                {
-                    var name3 = name;
-                    var value2 = values[i].Value;
-                    list.Add(new JProperty(name3, value2));
-                }
-            }
 
-            return list;
+                foreach (var item2 in (System.Collections.IList)values[i].Value)
+                {
+                    jArray.Add(item2);
+                }
+
+                jProperty2.Value = jArray;
+                list.Add(jProperty2);
+            }
+            else
+            {
+                var name3 = name;
+                var value2 = values[i].Value;
+                list.Add(new JProperty(name3, value2));
+            }
         }
 
-        public static async Task<bool> IsEip155Enforced(ThirdwebClient client, BigInteger chainId)
+        return list;
+    }
+
+    private static readonly string[] _composite1 = new[] { "account", "not found!" };
+    private static readonly string[] _composite2 = new[] { "wrong", "chainid" };
+
+    public static async Task<bool> IsEip155Enforced(ThirdwebClient client, BigInteger chainId)
+    {
+
+        if (_eip155EnforcedCache.TryGetValue(chainId, out var value))
         {
-            if (Eip155EnforcedCache.ContainsKey(chainId))
-            {
-                return Eip155EnforcedCache[chainId];
-            }
-
-            var result = false;
-            var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
-
-            try
-            {
-                // Pre-155 tx that will fail
-                var rawTransaction =
-                    "0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222";
-                _ = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", rawTransaction);
-            }
-            catch (Exception e)
-            {
-                var errorMsg = e.Message.ToLower();
-
-                var errorSubstrings = new List<string>
-                {
-                    "eip-155",
-                    "eip155",
-                    "protected",
-                    "invalid chain id for signer",
-                    "chain id none",
-                    "chain_id mismatch",
-                    "recovered sender mismatch",
-                    "transaction hash mismatch",
-                    "chainid no support",
-                    "chainid (0)",
-                    "chainid(0)",
-                    "invalid sender"
-                };
-
-                if (errorSubstrings.Any(errorMsg.Contains))
-                {
-                    result = true;
-                }
-                else
-                {
-                    // Check if all substrings in any of the composite substrings are present
-                    var errorSubstringsComposite = new List<string[]> { new[] { "account", "not found" }, new[] { "wrong", "chainid" } };
-
-                    result = errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
-                }
-            }
-
-            Eip155EnforcedCache[chainId] = result;
-            return result;
+            return value;
         }
 
-        public static bool IsEip1559Supported(string chainId)
+        var result = false;
+        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+
+        try
         {
-            switch (chainId)
+            // Pre-155 tx that will fail
+            var rawTransaction =
+                "0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222";
+            _ = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", rawTransaction);
+        }
+        catch (Exception e)
+        {
+            var errorMsg = e.Message.ToLower();
+
+            var errorSubstrings = new List<string>
             {
-                // BNB Mainnet
-                case "56":
-                // BNB Testnet
-                case "97":
-                // opBNB Mainnet
-                case "204":
-                // opBNB Testnet
-                case "5611":
-                // Oasys Mainnet
-                case "248":
-                // Oasys Testnet
-                case "9372":
-                // Vanar Mainnet
-                case "2040":
-                // Vanar Testnet (Vanguard)
-                case "78600":
-                // Taraxa Mainnet
-                case "841":
-                // Taraxa Testnet
-                case "842":
-                    return false;
-                default:
-                    return true;
+                "eip-155",
+                "eip155",
+                "protected",
+                "invalid chain id for signer",
+                "chain id none",
+                "chain_id mismatch",
+                "recovered sender mismatch",
+                "transaction hash mismatch",
+                "chainid no support",
+                "chainid (0)",
+                "chainid(0)",
+                "invalid sender"
+            };
+
+            if (errorSubstrings.Any(errorMsg.Contains))
+            {
+                result = true;
             }
+            else
+            {
+                // Check if all substrings in any of the composite substrings are present
+                var errorSubstringsComposite = new List<string[]> { _composite1, _composite2 };
+
+                result = errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
+            }
+        }
+
+        _eip155EnforcedCache[chainId] = result;
+
+        return result;
+    }
+
+    public static bool IsEip1559Supported(string chainId)
+    {
+
+        switch (chainId)
+        {
+            // BNB Mainnet
+            case "56":
+            // BNB Testnet
+            case "97":
+            // opBNB Mainnet
+            case "204":
+            // opBNB Testnet
+            case "5611":
+            // Oasys Mainnet
+            case "248":
+            // Oasys Testnet
+            case "9372":
+            // Vanar Mainnet
+            case "2040":
+            // Vanar Testnet (Vanguard)
+            case "78600":
+            // Taraxa Mainnet
+            case "841":
+            // Taraxa Testnet
+            case "842":
+                return false;
+            default:
+                return true;
         }
     }
 }

@@ -1,10 +1,9 @@
-namespace Thirdweb.EWS
+﻿namespace Thirdweb.EWS;
+
+internal partial class EmbeddedWallet
 {
-    internal partial class EmbeddedWallet
+    public async Task<Server.VerifyResult> SignInWithJwtAsync(string jwt)
     {
-        public async Task<Server.VerifyResult> SignInWithJwtAsync(string jwt)
-        {
-            return await server.VerifyJwtAsync(jwt).ConfigureAwait(false);
-        }
+        return await this._server.VerifyJwtAsync(jwt).ConfigureAwait(false);
     }
 }

@@ -1,17 +1,14 @@
-using Newtonsoft.Json;
+namespace Thirdweb.EWS;
 
-namespace Thirdweb.EWS
+internal partial class EmbeddedWallet
 {
-    internal partial class EmbeddedWallet
+    public async Task<Server.VerifyResult> SignInWithOauthAsync(string authProvider, string authResult)
     {
-        public async Task<Server.VerifyResult> SignInWithOauthAsync(string authProvider, string authResult)
-        {
-            return await server.VerifyOAuthAsync(authResult).ConfigureAwait(false);
-        }
+        return await this._server.VerifyOAuthAsync(authResult).ConfigureAwait(false);
+    }
 
-        public async Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform)
-        {
-            return await server.FetchHeadlessOauthLoginLinkAsync(authProvider, platform).ConfigureAwait(false);
-        }
+    public async Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform)
+    {
+        return await this._server.FetchHeadlessOauthLoginLinkAsync(authProvider, platform).ConfigureAwait(false);
     }
 }

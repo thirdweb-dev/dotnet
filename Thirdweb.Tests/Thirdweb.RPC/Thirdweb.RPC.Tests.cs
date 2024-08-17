@@ -3,15 +3,12 @@ using System.Reflection;
 
 namespace Thirdweb.Tests.RPC;
 
-public class RpcTests : BaseTests
+public class RpcTests(ITestOutputHelper output) : BaseTests(output)
 {
-    public RpcTests(ITestOutputHelper output)
-        : base(output) { }
-
     [Fact(Timeout = 120000)]
     public async Task GetBlockNumber()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 10000));
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 10000));
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var blockNumber = await rpc.SendRequestAsync<string>("eth_blockNumber");
         Assert.NotNull(blockNumber);
@@ -29,7 +26,7 @@ public class RpcTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TestTimeout()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 0));
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey, fetchTimeoutOptions: new TimeoutOptions(rpc: 0));
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         _ = await Assert.ThrowsAsync<TimeoutException>(async () => await rpc.SendRequestAsync<string>("eth_chainId"));
     }
@@ -37,7 +34,7 @@ public class RpcTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TestBatch()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var req = rpc.SendRequestAsync<string>("eth_blockNumber");
         _ = await rpc.SendRequestAsync<string>("eth_chainId");
@@ -55,7 +52,7 @@ public class RpcTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TestDeserialization()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await rpc.SendRequestAsync<BigInteger>("eth_blockNumber"));
         Assert.Equal("Failed to deserialize RPC response.", exception.Message);
@@ -66,14 +63,14 @@ public class RpcTests : BaseTests
     {
         var clientException = Assert.Throws<ArgumentNullException>(() => ThirdwebRPC.GetRpcInstance(null, 0));
         Assert.Equal("client", clientException.ParamName);
-        var chainIdException = Assert.Throws<ArgumentException>(() => ThirdwebRPC.GetRpcInstance(ThirdwebClient.Create(secretKey: _secretKey), 0));
+        var chainIdException = Assert.Throws<ArgumentException>(() => ThirdwebRPC.GetRpcInstance(ThirdwebClient.Create(secretKey: this.SecretKey), 0));
         Assert.Equal("Invalid Chain ID", chainIdException.Message);
     }
 
     [Fact(Timeout = 120000)]
     public async Task TestBundleIdRpc()
     {
-        var client = ThirdwebClient.Create(clientId: _clientIdBundleIdOnly, bundleId: _bundleIdBundleIdOnly);
+        var client = ThirdwebClient.Create(clientId: this.ClientIdBundleIdOnly, bundleId: this.BundleIdBundleIdOnly);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var blockNumber = await rpc.SendRequestAsync<string>("eth_blockNumber");
         Assert.NotNull(blockNumber);
@@ -83,7 +80,7 @@ public class RpcTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TestRpcError()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var exception = await Assert.ThrowsAsync<Exception>(async () => await rpc.SendRequestAsync<string>("eth_invalidMethod"));
         Assert.Contains("RPC Error for request", exception.Message);
@@ -92,7 +89,7 @@ public class RpcTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TestCache()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var blockNumber1 = await rpc.SendRequestAsync<string>("eth_blockNumber");
         await Task.Delay(100);
@@ -103,7 +100,7 @@ public class RpcTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TestBatchSizeLimit()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var blockNumberTasks = new List<Task<string>>();
         for (var i = 0; i < 101; i++)
@@ -150,20 +147,10 @@ public class RpcTests : BaseTests
         Assert.False(IsTimerRunning(timer));
     }
 
-    private bool IsTimerRunning(ThirdwebRPCTimer timer)
+    private static bool IsTimerRunning(ThirdwebRPCTimer timer)
     {
-        var fieldInfo = typeof(ThirdwebRPCTimer).GetField("_isRunning", BindingFlags.NonPublic | BindingFlags.Instance);
-        if (fieldInfo == null)
-        {
-            throw new InvalidOperationException("The field '_isRunning' was not found.");
-        }
-
+        var fieldInfo = typeof(ThirdwebRPCTimer).GetField("_isRunning", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException("The field '_isRunning' was not found.");
         var value = fieldInfo.GetValue(timer);
-        if (value == null)
-        {
-            throw new InvalidOperationException("The field '_isRunning' value is null.");
-        }
-
-        return (bool)value;
+        return value == null ? throw new InvalidOperationException("The field '_isRunning' value is null.") : (bool)value;
     }
 }

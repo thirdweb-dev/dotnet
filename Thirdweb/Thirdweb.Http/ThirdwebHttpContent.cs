@@ -1,89 +1,81 @@
 using System.Text;
 
-namespace Thirdweb
+namespace Thirdweb;
+
+/// <summary>
+/// Represents HTTP content used in the Thirdweb SDK.
+/// </summary>
+public class ThirdwebHttpContent
 {
+    private readonly byte[] content;
+
     /// <summary>
-    /// Represents HTTP content used in the Thirdweb SDK.
+    /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a string.
     /// </summary>
-    public class ThirdwebHttpContent
+    /// <param name="content">The content string.</param>
+    /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
+    public ThirdwebHttpContent(string content)
     {
-        private readonly byte[] content;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a string.
-        /// </summary>
-        /// <param name="content">The content string.</param>
-        /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
-        public ThirdwebHttpContent(string content)
+        if (content == null)
         {
-            if (content == null)
-            {
-                throw new ArgumentNullException(nameof(content));
-            }
-
-            this.content = Encoding.UTF8.GetBytes(content);
+            throw new ArgumentNullException(nameof(content));
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a byte array.
-        /// </summary>
-        /// <param name="content">The content byte array.</param>
-        /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
-        public ThirdwebHttpContent(byte[] content)
-        {
-            if (content == null)
-            {
-                throw new ArgumentNullException(nameof(content));
-            }
+        this.content = Encoding.UTF8.GetBytes(content);
+    }
 
-            this.content = content;
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a byte array.
+    /// </summary>
+    /// <param name="content">The content byte array.</param>
+    /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
+    public ThirdwebHttpContent(byte[] content)
+    {
+        this.content = content ?? throw new ArgumentNullException(nameof(content));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a stream.
+    /// </summary>
+    /// <param name="content">The content stream.</param>
+    /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
+    public ThirdwebHttpContent(Stream content)
+    {
+        if (content == null)
+        {
+            throw new ArgumentNullException(nameof(content));
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a stream.
-        /// </summary>
-        /// <param name="content">The content stream.</param>
-        /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
-        public ThirdwebHttpContent(Stream content)
-        {
-            if (content == null)
-            {
-                throw new ArgumentNullException(nameof(content));
-            }
+        using var memoryStream = new MemoryStream();
+        content.CopyTo(memoryStream);
+        this.content = memoryStream.ToArray();
+    }
 
-            using (var memoryStream = new MemoryStream())
-            {
-                content.CopyTo(memoryStream);
-                this.content = memoryStream.ToArray();
-            }
-        }
+    /// <summary>
+    /// Reads the content as a string.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the content string.</returns>
+    public Task<string> ReadAsStringAsync()
+    {
+        return Task.FromResult(Encoding.UTF8.GetString(this.content));
+    }
 
-        /// <summary>
-        /// Reads the content as a string.
-        /// </summary>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the content string.</returns>
-        public Task<string> ReadAsStringAsync()
-        {
-            return Task.FromResult(Encoding.UTF8.GetString(content));
-        }
+    /// <summary>
+    /// Reads the content as a byte array.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the content byte array.</returns>
+    public Task<byte[]> ReadAsByteArrayAsync()
+    {
+        return Task.FromResult(this.content);
+    }
 
-        /// <summary>
-        /// Reads the content as a byte array.
-        /// </summary>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the content byte array.</returns>
-        public Task<byte[]> ReadAsByteArrayAsync()
-        {
-            return Task.FromResult(content);
-        }
-
-        /// <summary>
-        /// Reads the content as a stream.
-        /// </summary>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the content stream.</returns>
-        public Task<Stream> ReadAsStreamAsync()
-        {
-            var stream = new MemoryStream(content);
-            return Task.FromResult<Stream>(stream);
-        }
+    /// <summary>
+    /// Reads the content as a stream.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the content stream.</returns>
+    public Task<Stream> ReadAsStreamAsync()
+    {
+        var stream = new MemoryStream(this.content);
+        return Task.FromResult<Stream>(stream);
     }
 }

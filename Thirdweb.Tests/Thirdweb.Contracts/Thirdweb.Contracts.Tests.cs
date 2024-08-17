@@ -1,16 +1,13 @@
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace Thirdweb.Tests.Contracts;
 
-public class ContractsTests : BaseTests
+public class ContractsTests(ITestOutputHelper output) : BaseTests(output)
 {
-    public ContractsTests(ITestOutputHelper output)
-        : base(output) { }
-
     [Fact(Timeout = 120000)]
     public async Task FetchAbi()
     {
-        var abi = await ThirdwebContract.FetchAbi(client: ThirdwebClient.Create(secretKey: _secretKey), address: "0x1320Cafa93fb53Ed9068E3272cb270adbBEf149C", chainId: 84532);
+        var abi = await ThirdwebContract.FetchAbi(client: ThirdwebClient.Create(secretKey: this.SecretKey), address: "0x1320Cafa93fb53Ed9068E3272cb270adbBEf149C", chainId: 84532);
         Assert.NotNull(abi);
         Assert.NotEmpty(abi);
     }
@@ -25,28 +22,28 @@ public class ContractsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task InitTest_NullAddress()
     {
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: _secretKey), null, 1, "[]"));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: this.SecretKey), null, 1, "[]"));
         Assert.Contains("Address must be provided", exception.Message);
     }
 
     [Fact(Timeout = 120000)]
     public async Task InitTest_ZeroChain()
     {
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: _secretKey), "0x123", 0, "[]"));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: this.SecretKey), "0x123", 0, "[]"));
         Assert.Contains("Chain must be provided", exception.Message);
     }
 
     [Fact(Timeout = 120000)]
     public async Task InitTest_NullAbi()
     {
-        var res = await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: _secretKey), "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", 421614, null);
+        var res = await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: this.SecretKey), "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", 421614, null);
         Assert.NotNull(res);
     }
 
     [Fact(Timeout = 120000)]
     public async Task ReadTest_String()
     {
-        var contract = await GetContract();
+        var contract = await this.GetContract();
         var result = await ThirdwebContract.Read<string>(contract, "name");
         Assert.Equal("Kitty DropERC20", result);
     }
@@ -54,25 +51,25 @@ public class ContractsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ReadTest_BigInteger()
     {
-        var contract = await GetContract();
+        var contract = await this.GetContract();
         var result = await ThirdwebContract.Read<BigInteger>(contract, "decimals");
         Assert.Equal(18, result);
     }
 
     [Nethereum.ABI.FunctionEncoding.Attributes.FunctionOutput]
-    private class GetPlatformFeeInfoOutputDTO : Nethereum.ABI.FunctionEncoding.Attributes.IFunctionOutputDTO
+    private sealed class GetPlatformFeeInfoOutputDTO : Nethereum.ABI.FunctionEncoding.Attributes.IFunctionOutputDTO
     {
         [Nethereum.ABI.FunctionEncoding.Attributes.Parameter("address", "", 1)]
-        public virtual required string ReturnValue1 { get; set; }
+        public required string ReturnValue1 { get; set; }
 
         [Nethereum.ABI.FunctionEncoding.Attributes.Parameter("uint16", "", 2)]
-        public virtual required ushort ReturnValue2 { get; set; }
+        public required ushort ReturnValue2 { get; set; }
     }
 
     [Fact(Timeout = 120000)]
     public async Task ReadTest_Tuple()
     {
-        var contract = await GetContract();
+        var contract = await this.GetContract();
         var result = await ThirdwebContract.Read<GetPlatformFeeInfoOutputDTO>(contract, "getPlatformFeeInfo");
         Assert.Equal("0xDaaBDaaC8073A7dAbdC96F6909E8476ab4001B34", result.ReturnValue1);
         Assert.Equal(0, result.ReturnValue2);
@@ -81,7 +78,7 @@ public class ContractsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ReadTest_FullSig()
     {
-        var contract = await GetContract();
+        var contract = await this.GetContract();
         var result = await ThirdwebContract.Read<string>(contract, "function name() view returns (string)");
         Assert.Equal("Kitty DropERC20", result);
     }
@@ -89,14 +86,14 @@ public class ContractsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ReadTest_PartialSig()
     {
-        var contract = await GetContract();
+        var contract = await this.GetContract();
         var result = await ThirdwebContract.Read<string>(contract, "name()");
         Assert.Equal("Kitty DropERC20", result);
     }
 
-    private class AllowlistProof
+    private sealed class AllowlistProof
     {
-        public List<byte[]> Proof { get; set; } = new();
+        public List<byte[]> Proof { get; set; } = [];
         public BigInteger QuantityLimitPerWallet { get; set; } = BigInteger.Zero;
         public BigInteger PricePerToken { get; set; } = BigInteger.Zero;
         public string Currency { get; set; } = Constants.ADDRESS_ZERO;
@@ -105,14 +102,14 @@ public class ContractsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task WriteTest_SmartAccount()
     {
-        var contract = await GetContract();
-        var smartAccount = await GetAccount();
+        var contract = await this.GetContract();
+        var smartAccount = await this.GetAccount();
         var receiver = await smartAccount.GetAddress();
         var quantity = BigInteger.One;
         var currency = Constants.NATIVE_TOKEN_ADDRESS;
         var pricePerToken = BigInteger.Zero;
-        var allowlistProof = new object[] { new byte[] { }, BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
-        var data = new byte[] { };
+        var allowlistProof = new object[] { Array.Empty<byte>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        var data = Array.Empty<byte>();
         var result = await ThirdwebContract.Write(smartAccount, contract, "claim", 0, receiver, quantity, currency, pricePerToken, allowlistProof, data);
         Assert.NotNull(result);
         var receipt = await ThirdwebTransaction.WaitForTransactionReceipt(contract.Client, contract.Chain, result.TransactionHash);
@@ -123,14 +120,14 @@ public class ContractsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task WriteTest_SmartAccount_FullSig()
     {
-        var contract = await GetContract();
-        var smartAccount = await GetAccount();
+        var contract = await this.GetContract();
+        var smartAccount = await this.GetAccount();
         var receiver = await smartAccount.GetAddress();
         var quantity = BigInteger.One;
         var currency = Constants.NATIVE_TOKEN_ADDRESS;
         var pricePerToken = BigInteger.Zero;
-        var allowlistProof = new object[] { new byte[] { }, BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
-        var data = new byte[] { };
+        var allowlistProof = new object[] { Array.Empty<byte>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        var data = Array.Empty<byte>();
         var result = await ThirdwebContract.Write(
             smartAccount,
             contract,
@@ -152,14 +149,14 @@ public class ContractsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task WriteTest_PrivateKeyAccount()
     {
-        var contract = await GetContract();
+        var contract = await this.GetContract();
         var privateKeyAccount = await PrivateKeyWallet.Generate(contract.Client);
         var receiver = await privateKeyAccount.GetAddress();
         var quantity = BigInteger.One;
         var currency = Constants.NATIVE_TOKEN_ADDRESS;
         var pricePerToken = BigInteger.Zero;
-        var allowlistProof = new object[] { new byte[] { }, BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
-        var data = new byte[] { };
+        var allowlistProof = new object[] { Array.Empty<byte>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        var data = Array.Empty<byte>();
         try
         {
             var res = await ThirdwebContract.Write(privateKeyAccount, contract, "claim", 0, receiver, quantity, currency, pricePerToken, allowlistProof, data);
@@ -176,7 +173,7 @@ public class ContractsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task SignatureMint_Generate()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var signer = await PrivateKeyWallet.Generate(client);
 
         var randomDomain = "Test";
@@ -254,7 +251,7 @@ public class ContractsTests : BaseTests
 
     private async Task<SmartWallet> GetAccount()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
@@ -262,7 +259,7 @@ public class ContractsTests : BaseTests
 
     private async Task<ThirdwebContract> GetContract()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var contract = await ThirdwebContract.Create(client: client, address: "0xEBB8a39D865465F289fa349A67B3391d8f910da9", chain: 421614);
         return contract;
     }

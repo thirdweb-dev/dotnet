@@ -1,10 +1,9 @@
-namespace Thirdweb.EWS
+﻿namespace Thirdweb.EWS;
+
+internal enum UserStatus
 {
-    internal enum UserStatus
-    {
-        SignedOut = 10,
-        SignedInWalletUninitialized = 31,
-        SignedInNewDevice = 21,
-        SignedInWalletInitialized = 29,
-    }
+    SignedOut = 10,
+    SignedInWalletUninitialized = 31,
+    SignedInNewDevice = 21,
+    SignedInWalletInitialized = 29,
 }

@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using Nethereum.Util;
 
 namespace Thirdweb.Tests.Extensions;
@@ -18,43 +18,43 @@ public class ExtensionsTests : BaseTests
     public ExtensionsTests(ITestOutputHelper output)
         : base(output)
     {
-        _client = ThirdwebClient.Create(secretKey: _secretKey);
+        this._client = ThirdwebClient.Create(secretKey: this.SecretKey);
     }
 
     private async Task<IThirdwebWallet> GetSmartWallet()
     {
-        var privateKeyWallet = await PrivateKeyWallet.Generate(_client);
+        var privateKeyWallet = await PrivateKeyWallet.Generate(this._client);
         return await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614);
     }
 
     private async Task<ThirdwebContract> GetTokenERC20Contract()
     {
-        return await ThirdwebContract.Create(_client, _tokenErc20ContractAddress, _chainId);
+        return await ThirdwebContract.Create(this._client, this._tokenErc20ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetTokenERC721Contract()
     {
-        return await ThirdwebContract.Create(_client, _tokenErc721ContractAddress, _chainId);
+        return await ThirdwebContract.Create(this._client, this._tokenErc721ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetTokenERC1155Contract()
     {
-        return await ThirdwebContract.Create(_client, _tokenErc1155ContractAddress, _chainId);
+        return await ThirdwebContract.Create(this._client, this._tokenErc1155ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetDrop20Contract()
     {
-        return await ThirdwebContract.Create(_client, _dropErc20ContractAddress, _chainId);
+        return await ThirdwebContract.Create(this._client, this._dropErc20ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetDrop721Contract()
     {
-        return await ThirdwebContract.Create(_client, _dropErc721ContractAddress, _chainId);
+        return await ThirdwebContract.Create(this._client, this._dropErc721ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetDrop1155Contract()
     {
-        return await ThirdwebContract.Create(_client, _dropErc1155ContractAddress, _chainId);
+        return await ThirdwebContract.Create(this._client, this._dropErc1155ContractAddress, this._chainId);
     }
 
     #region Common
@@ -62,9 +62,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _tokenErc20ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._tokenErc20ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var testNFT = new NFT { Metadata = new NFTMetadata { Image = "image_url" } };
         var validAddress = "0x0000000000000000000000000000000000000000";
 
@@ -81,28 +81,28 @@ public class ExtensionsTests : BaseTests
         _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.GetPrimarySaleRecipient(null));
 
         // GetBalanceRaw
-        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.GetBalanceRaw(null, _chainId, validAddress));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.GetBalanceRaw(null, this._chainId, validAddress));
         _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => ThirdwebExtensions.GetBalanceRaw(client, 0, validAddress));
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebExtensions.GetBalanceRaw(client, _chainId, null));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebExtensions.GetBalanceRaw(client, this._chainId, null));
 
         // GetBalance (contract)
         _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.GetBalance(null));
 
         // GetBalance (wallet)
-        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.GetBalance(null, _chainId));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.GetBalance(null, this._chainId));
         _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => ThirdwebExtensions.GetBalance(wallet, 0));
 
         // Transfer
-        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.Transfer(null, _chainId, validAddress, 0));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.Transfer(null, this._chainId, validAddress, 0));
         _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => ThirdwebExtensions.Transfer(wallet, 0, validAddress, 0));
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebExtensions.Transfer(wallet, _chainId, null, 0));
-        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => ThirdwebExtensions.Transfer(wallet, _chainId, validAddress, -1));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebExtensions.Transfer(wallet, this._chainId, null, 0));
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => ThirdwebExtensions.Transfer(wallet, this._chainId, validAddress, -1));
     }
 
     [Fact(Timeout = 120000)]
     public async Task GetMetadata()
     {
-        var contract = await GetTokenERC20Contract();
+        var contract = await this.GetTokenERC20Contract();
         var metadata = await contract.GetMetadata();
         Assert.NotNull(metadata);
         Assert.NotNull(metadata.Name);
@@ -118,7 +118,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetNFTBytes_721()
     {
-        var contract = await GetDrop721Contract();
+        var contract = await this.GetDrop721Contract();
         var nft = await contract.ERC721_GetNFT(0);
         var bytes = await nft.GetNFTImageBytes(contract.Client);
         Assert.NotNull(bytes);
@@ -128,7 +128,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetNFTBytes_1155()
     {
-        var contract = await GetDrop1155Contract();
+        var contract = await this.GetDrop1155Contract();
         var nft = await contract.ERC1155_GetNFT(0);
         var bytes = await nft.GetNFTImageBytes(contract.Client);
         Assert.NotNull(bytes);
@@ -138,7 +138,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetPrimarySaleRecipient()
     {
-        var contract = await GetTokenERC20Contract();
+        var contract = await this.GetTokenERC20Contract();
         var primarySaleRecipient = await contract.GetPrimarySaleRecipient();
         Assert.NotNull(primarySaleRecipient);
         Assert.NotEmpty(primarySaleRecipient);
@@ -149,7 +149,7 @@ public class ExtensionsTests : BaseTests
     {
         var address = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik.eth
         var chainId = BigInteger.One;
-        var balance = await ThirdwebExtensions.GetBalanceRaw(_client, chainId, address);
+        var balance = await ThirdwebExtensions.GetBalanceRaw(this._client, chainId, address);
         Assert.True(balance >= 0);
     }
 
@@ -157,16 +157,16 @@ public class ExtensionsTests : BaseTests
     public async Task GetBalanceRaw_WithERC20()
     {
         var address = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik.eth
-        var chainId = _chainId;
-        var contractAddress = _tokenErc20ContractAddress;
-        var balance = await ThirdwebExtensions.GetBalanceRaw(_client, chainId, address, contractAddress);
+        var chainId = this._chainId;
+        var contractAddress = this._tokenErc20ContractAddress;
+        var balance = await ThirdwebExtensions.GetBalanceRaw(this._client, chainId, address, contractAddress);
         Assert.True(balance >= 0);
     }
 
     [Fact(Timeout = 120000)]
     public async Task GetBalance_Contract()
     {
-        var contract = await GetTokenERC20Contract();
+        var contract = await this.GetTokenERC20Contract();
         var balance = await contract.GetBalance();
         Assert.True(balance >= 0);
     }
@@ -174,51 +174,50 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetBalance_Contract_WithERC20()
     {
-        var contract = await GetTokenERC20Contract();
-        var balance = await contract.GetBalance(_tokenErc20ContractAddress);
+        var contract = await this.GetTokenERC20Contract();
+        var balance = await contract.GetBalance(this._tokenErc20ContractAddress);
         Assert.True(balance >= 0);
     }
 
     [Fact(Timeout = 120000)]
     public async Task GetBalance_Wallet()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await GetSmartWallet();
-        var balance = await wallet.GetBalance(_chainId);
+        _ = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var wallet = await this.GetSmartWallet();
+        var balance = await wallet.GetBalance(this._chainId);
         Assert.True(balance >= 0);
     }
 
     [Fact(Timeout = 120000)]
     public async Task GetBalance_Wallet_WithERC20()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await GetSmartWallet();
-        var balance = await wallet.GetBalance(_chainId, _tokenErc20ContractAddress);
+        _ = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var wallet = await this.GetSmartWallet();
+        var balance = await wallet.GetBalance(this._chainId, this._tokenErc20ContractAddress);
         Assert.True(balance >= 0);
     }
 
     [Fact(Timeout = 120000)]
     public async Task Transfer()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var wallet = await GetSmartWallet();
+        _ = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var wallet = await this.GetSmartWallet();
         var toAddress = await wallet.GetAddress();
-        var receipt = await wallet.Transfer(_chainId, toAddress, BigInteger.Zero);
+        var receipt = await wallet.Transfer(this._chainId, toAddress, BigInteger.Zero);
         Assert.NotNull(receipt);
         Assert.True(receipt.TransactionHash.Length == 66);
     }
 
     #endregion
 
-
     #region ERC20
 
     [Fact(Timeout = 120000)]
     public async Task ERC20_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _tokenErc20ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._tokenErc20ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var validAddress = "0x0000000000000000000000000000000000000000";
 
         // ERC20_BalanceOf
@@ -273,7 +272,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC20_BalanceOf()
     {
-        var contract = await GetTokenERC20Contract();
+        var contract = await this.GetTokenERC20Contract();
         var ownerAddress = Constants.ADDRESS_ZERO;
         var balance = await contract.ERC20_BalanceOf(ownerAddress);
         Assert.True(balance >= 0);
@@ -282,7 +281,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC20_TotalSupply()
     {
-        var contract = await GetTokenERC20Contract();
+        var contract = await this.GetTokenERC20Contract();
         var totalSupply = await contract.ERC20_TotalSupply();
         Assert.True(totalSupply > 0);
     }
@@ -290,7 +289,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC20_Decimals()
     {
-        var contract = await GetTokenERC20Contract();
+        var contract = await this.GetTokenERC20Contract();
         var decimals = await contract.ERC20_Decimals();
         Assert.InRange(decimals, 0, 18);
     }
@@ -298,7 +297,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC20_Symbol()
     {
-        var contract = await GetTokenERC20Contract();
+        var contract = await this.GetTokenERC20Contract();
         var symbol = await contract.ERC20_Symbol();
         Assert.False(string.IsNullOrEmpty(symbol));
     }
@@ -306,7 +305,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC20_Name()
     {
-        var contract = await GetTokenERC20Contract();
+        var contract = await this.GetTokenERC20Contract();
         var name = await contract.ERC20_Name();
         Assert.False(string.IsNullOrEmpty(name));
     }
@@ -314,7 +313,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC20_Allowance()
     {
-        var contract = await GetTokenERC20Contract();
+        var contract = await this.GetTokenERC20Contract();
         var ownerAddress = Constants.ADDRESS_ZERO;
         var spenderAddress = contract.Address;
         var allowance = await contract.ERC20_Allowance(ownerAddress, spenderAddress);
@@ -324,8 +323,8 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC20_Approve()
     {
-        var contract = await GetTokenERC20Contract();
-        var wallet = await GetSmartWallet();
+        var contract = await this.GetTokenERC20Contract();
+        var wallet = await this.GetSmartWallet();
         var spenderAddress = contract.Address;
         var amount = BigInteger.Parse("1000000000000000000");
         var receipt = await contract.ERC20_Approve(wallet, spenderAddress, amount);
@@ -339,9 +338,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _tokenErc721ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._tokenErc721ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var validAddress = "0x0000000000000000000000000000000000000000";
 
         // ERC721_BalanceOf
@@ -419,8 +418,8 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_BalanceOf()
     {
-        var contract = await GetTokenERC721Contract();
-        var wallet = await GetSmartWallet();
+        var contract = await this.GetTokenERC721Contract();
+        var wallet = await this.GetSmartWallet();
         var ownerAddress = await wallet.GetAddress();
         var balance = await contract.ERC721_BalanceOf(ownerAddress);
         Assert.True(balance >= 0);
@@ -429,7 +428,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_OwnerOf()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var tokenId = BigInteger.Parse("1");
         var owner = await contract.ERC721_OwnerOf(tokenId);
         Assert.False(string.IsNullOrEmpty(owner));
@@ -438,7 +437,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_Name()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var name = await contract.ERC721_Name();
         Assert.False(string.IsNullOrEmpty(name));
     }
@@ -446,7 +445,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_Symbol()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var symbol = await contract.ERC721_Symbol();
         Assert.False(string.IsNullOrEmpty(symbol));
     }
@@ -454,7 +453,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_TokenURI()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var tokenId = BigInteger.Parse("1");
         var uri = await contract.ERC721_TokenURI(tokenId);
         Assert.False(string.IsNullOrEmpty(uri));
@@ -463,7 +462,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_GetApproved()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var tokenId = BigInteger.Parse("1");
         var approved = await contract.ERC721_GetApproved(tokenId);
         Assert.False(string.IsNullOrEmpty(approved));
@@ -472,7 +471,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_IsApprovedForAll()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var ownerAddress = Constants.ADDRESS_ZERO;
         var operatorAddress = contract.Address;
         var isApproved = await contract.ERC721_IsApprovedForAll(ownerAddress, operatorAddress);
@@ -482,7 +481,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_TotalSupply()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var totalSupply = await contract.ERC721_TotalSupply();
         Assert.True(totalSupply >= 0);
     }
@@ -490,7 +489,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_TokenOfOwnerByIndex()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var ownerAddress = "0xE33653ce510Ee767d8824b5EcDeD27125D49889D";
         var index = BigInteger.Zero;
         var tokenId = await contract.ERC721_TokenOfOwnerByIndex(ownerAddress, index);
@@ -500,8 +499,8 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721_SetApprovalForAll()
     {
-        var contract = await GetTokenERC721Contract();
-        var wallet = await GetSmartWallet();
+        var contract = await this.GetTokenERC721Contract();
+        var wallet = await this.GetSmartWallet();
         var operatorAddress = contract.Address;
         var approved = true;
         var receipt = await contract.ERC721_SetApprovalForAll(wallet, operatorAddress, approved);
@@ -515,13 +514,13 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC1155_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _tokenErc1155ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._tokenErc1155ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var validAddress = "0x0000000000000000000000000000000000000000";
         var validTokenId = BigInteger.One;
         var validAmount = BigInteger.One;
-        var validData = new byte[] { };
+        var validData = Array.Empty<byte>();
 
         // ERC1155_BalanceOf
         _ = await Assert.ThrowsAsync<ArgumentException>(async () => await contract.ERC1155_BalanceOf(null, validTokenId));
@@ -608,8 +607,8 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC1155_BalanceOf()
     {
-        var contract = await GetTokenERC1155Contract();
-        var wallet = await GetSmartWallet();
+        var contract = await this.GetTokenERC1155Contract();
+        var wallet = await this.GetSmartWallet();
         var ownerAddress = await wallet.GetAddress();
         var tokenId = BigInteger.Parse("1");
         var balance = await contract.ERC1155_BalanceOf(ownerAddress, tokenId);
@@ -619,8 +618,8 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC1155_BalanceOfBatch()
     {
-        var contract = await GetTokenERC1155Contract();
-        var wallet = await GetSmartWallet();
+        var contract = await this.GetTokenERC1155Contract();
+        var wallet = await this.GetSmartWallet();
         var ownerAddresses = new string[] { await wallet.GetAddress(), await wallet.GetAddress() };
         var tokenIds = new BigInteger[] { BigInteger.Parse("1"), BigInteger.Parse("2") };
         var balances = await contract.ERC1155_BalanceOfBatch(ownerAddresses, tokenIds);
@@ -630,7 +629,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC1155_IsApprovedForAll()
     {
-        var contract = await GetTokenERC1155Contract();
+        var contract = await this.GetTokenERC1155Contract();
         var ownerAddress = Constants.ADDRESS_ZERO;
         var operatorAddress = contract.Address;
         var isApproved = await contract.ERC1155_IsApprovedForAll(ownerAddress, operatorAddress);
@@ -640,7 +639,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC1155_URI()
     {
-        var contract = await GetTokenERC1155Contract();
+        var contract = await this.GetTokenERC1155Contract();
         var tokenId = BigInteger.Parse("1");
         var uri = await contract.ERC1155_URI(tokenId);
         Assert.False(string.IsNullOrEmpty(uri));
@@ -649,8 +648,8 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC1155_SetApprovalForAll()
     {
-        var contract = await GetTokenERC1155Contract();
-        var wallet = await GetSmartWallet();
+        var contract = await this.GetTokenERC1155Contract();
+        var wallet = await this.GetSmartWallet();
         var operatorAddress = contract.Address;
         var approved = true;
         var receipt = await contract.ERC1155_SetApprovalForAll(wallet, operatorAddress, approved);
@@ -660,7 +659,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC1155_TotalSupply()
     {
-        var contract = await GetTokenERC1155Contract();
+        var contract = await this.GetTokenERC1155Contract();
         var totalSupply = await contract.ERC1155_TotalSupply();
         Assert.True(totalSupply >= 0);
     }
@@ -668,7 +667,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC1155_TotalSupply_WithTokenId()
     {
-        var contract = await GetTokenERC1155Contract();
+        var contract = await this.GetTokenERC1155Contract();
         var tokenId = BigInteger.Parse("1");
         var totalSupply = await contract.ERC1155_TotalSupply(tokenId);
         Assert.True(totalSupply >= 0);
@@ -681,9 +680,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task NFT_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract721 = await GetTokenERC721Contract();
-        var contract1155 = await GetTokenERC1155Contract();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract721 = await this.GetTokenERC721Contract();
+        var contract1155 = await this.GetTokenERC1155Contract();
 
         // ERC721 Null Checks
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await ThirdwebExtensions.ERC721_GetNFT(null, BigInteger.Zero));
@@ -720,7 +719,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetNFT_721()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var nft = await contract.ERC721_GetNFT(0);
         Assert.NotNull(nft.Owner);
         Assert.NotEmpty(nft.Owner);
@@ -732,7 +731,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetAllNFTs_721()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var nfts = await contract.ERC721_GetAllNFTs();
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
@@ -741,7 +740,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetAllNFTs_721_WithRange()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var nfts = await contract.ERC721_GetAllNFTs(1, 2);
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
@@ -751,7 +750,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetOwnedNFTs_721()
     {
-        var contract = await GetTokenERC721Contract();
+        var contract = await this.GetTokenERC721Contract();
         var ownerAddress = contract.Address;
         var nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress);
         Assert.NotNull(nfts);
@@ -760,7 +759,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetNFT_1155()
     {
-        var contract = await GetTokenERC1155Contract();
+        var contract = await this.GetTokenERC1155Contract();
         var nft = await contract.ERC1155_GetNFT(0);
         Assert.Equal(NFTType.ERC1155, nft.Type);
         Assert.True(nft.Supply >= 0);
@@ -769,7 +768,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetAllNFTs_1155()
     {
-        var contract = await GetTokenERC1155Contract();
+        var contract = await this.GetTokenERC1155Contract();
         var nfts = await contract.ERC1155_GetAllNFTs();
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
@@ -778,7 +777,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetAllNFTs_1155_WithRange()
     {
-        var contract = await GetTokenERC1155Contract();
+        var contract = await this.GetTokenERC1155Contract();
         var nfts = await contract.ERC1155_GetAllNFTs(1, 2);
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
@@ -788,7 +787,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetOwnedNFTs_1155()
     {
-        var contract = await GetTokenERC1155Contract();
+        var contract = await this.GetTokenERC1155Contract();
         var ownerAddress = contract.Address;
         var nfts = await contract.ERC1155_GetOwnedNFTs(ownerAddress);
         Assert.NotNull(nfts);
@@ -801,9 +800,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC20_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _dropErc20ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._dropErc20ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var validAddress = "0x0000000000000000000000000000000000000000";
         var validAmount = "10";
         var validClaimConditionId = BigInteger.One;
@@ -838,8 +837,8 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC20_Claim()
     {
-        var contract = await GetDrop20Contract();
-        var wallet = await GetSmartWallet();
+        var contract = await this.GetDrop20Contract();
+        var wallet = await this.GetSmartWallet();
         var receiverAddress = await wallet.GetAddress();
         var balanceBefore = await contract.ERC20_BalanceOf(receiverAddress);
         var receipt = await contract.DropERC20_Claim(wallet, receiverAddress, "1.5");
@@ -852,7 +851,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC20_GetActiveClaimConditionId()
     {
-        var contract = await GetDrop20Contract();
+        var contract = await this.GetDrop20Contract();
         var conditionId = await contract.DropERC20_GetActiveClaimConditionId();
         Assert.True(conditionId >= 0);
     }
@@ -860,7 +859,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC20_GetClaimConditionById()
     {
-        var contract = await GetDrop20Contract();
+        var contract = await this.GetDrop20Contract();
         var conditionId = await contract.DropERC20_GetActiveClaimConditionId();
         var condition = await contract.DropERC20_GetClaimConditionById(conditionId);
         Assert.NotNull(condition);
@@ -870,7 +869,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC20_GetActiveClaimCondition()
     {
-        var contract = await GetDrop20Contract();
+        var contract = await this.GetDrop20Contract();
         var condition = await contract.DropERC20_GetActiveClaimCondition();
         Assert.NotNull(condition);
         Assert.True(condition.Currency.Length == 42);
@@ -888,9 +887,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC721_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _dropErc721ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._dropErc721ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var validAddress = "0x0000000000000000000000000000000000000000";
         var validQuantity = BigInteger.One;
         var invalidQuantity = BigInteger.Zero;
@@ -934,7 +933,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC721_GetActiveClaimConditionId()
     {
-        var contract = await GetDrop721Contract();
+        var contract = await this.GetDrop721Contract();
         var conditionId = await contract.DropERC721_GetActiveClaimConditionId();
         Assert.True(conditionId >= 0);
     }
@@ -942,7 +941,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC721_GetClaimConditionById()
     {
-        var contract = await GetDrop721Contract();
+        var contract = await this.GetDrop721Contract();
         var conditionId = await contract.DropERC721_GetActiveClaimConditionId();
         var condition = await contract.DropERC721_GetClaimConditionById(conditionId);
         Assert.NotNull(condition);
@@ -952,7 +951,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC721_GetActiveClaimCondition()
     {
-        var contract = await GetDrop721Contract();
+        var contract = await this.GetDrop721Contract();
         var condition = await contract.DropERC721_GetActiveClaimCondition();
         Assert.NotNull(condition);
         Assert.True(condition.Currency.Length == 42);
@@ -970,9 +969,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC1155_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _dropErc1155ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._dropErc1155ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var validAddress = "0x0000000000000000000000000000000000000000";
         var validTokenId = BigInteger.One;
         var invalidTokenId = BigInteger.MinusOne;
@@ -1013,8 +1012,8 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC1155_Claim()
     {
-        var contract = await GetDrop1155Contract();
-        var wallet = await GetSmartWallet();
+        var contract = await this.GetDrop1155Contract();
+        var wallet = await this.GetSmartWallet();
         var tokenId = 0;
         var quantity = 10;
         var receiverAddress = await wallet.GetAddress();
@@ -1030,7 +1029,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC1155_GetActiveClaimConditionId()
     {
-        var contract = await GetDrop1155Contract();
+        var contract = await this.GetDrop1155Contract();
         var tokenId = 0;
         var conditionId = await contract.DropERC1155_GetActiveClaimConditionId(tokenId);
         Assert.True(conditionId >= 0);
@@ -1039,7 +1038,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC1155_GetClaimConditionById()
     {
-        var contract = await GetDrop1155Contract();
+        var contract = await this.GetDrop1155Contract();
         var tokenId = 0;
         var conditionId = await contract.DropERC1155_GetActiveClaimConditionId(tokenId);
         var condition = await contract.DropERC1155_GetClaimConditionById(tokenId, conditionId);
@@ -1050,7 +1049,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task DropERC1155_GetActiveClaimCondition()
     {
-        var contract = await GetDrop1155Contract();
+        var contract = await this.GetDrop1155Contract();
         var tokenId = 0;
         var condition = await contract.DropERC1155_GetActiveClaimCondition(tokenId);
         Assert.NotNull(condition);
@@ -1069,9 +1068,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TokenERC20_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _tokenErc20ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._tokenErc20ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var validAddress = "0x0000000000000000000000000000000000000000";
         var validAmount = "100";
         var invalidAmount = string.Empty;
@@ -1131,9 +1130,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TokenERC20_GenerateMintSignature_WithVerify()
     {
-        var contract = await GetTokenERC20Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
-        var randomReceiver = await PrivateKeyWallet.Generate(_client);
+        var contract = await this.GetTokenERC20Contract();
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
         var mintRequest = new TokenERC20_MintRequest { To = await randomReceiver.GetAddress(), Quantity = BigInteger.Parse("1.5".ToWei()), };
 
         (var payload, var signature) = await contract.TokenERC20_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
@@ -1169,9 +1168,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TokenERC721_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _tokenErc721ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._tokenErc721ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var validAddress = "0x0000000000000000000000000000000000000000";
         var validTokenId = BigInteger.One;
         var invalidTokenId = BigInteger.MinusOne;
@@ -1241,9 +1240,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TokenERC721_GenerateMintSignature_WithUri_WithVerify()
     {
-        var contract = await GetTokenERC721Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
-        var randomReceiver = await PrivateKeyWallet.Generate(_client);
+        var contract = await this.GetTokenERC721Contract();
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
         var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress(), Uri = "", };
 
         (var payload, var signature) = await contract.TokenERC721_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
@@ -1276,9 +1275,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TokenERC721_GenerateMintSignature_WithNFTMetadata_WithVerify()
     {
-        var contract = await GetTokenERC721Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
-        var randomReceiver = await PrivateKeyWallet.Generate(_client);
+        var contract = await this.GetTokenERC721Contract();
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
         var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress() };
 
         (var payload, var signature) = await contract.TokenERC721_GenerateMintSignature(
@@ -1328,9 +1327,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TokenERC1155_NullChecks()
     {
-        var client = ThirdwebClient.Create(secretKey: _secretKey);
-        var contract = await ThirdwebContract.Create(client, _tokenErc1155ContractAddress, _chainId);
-        var wallet = await GetSmartWallet();
+        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var contract = await ThirdwebContract.Create(client, this._tokenErc1155ContractAddress, this._chainId);
+        var wallet = await this.GetSmartWallet();
         var validAddress = "0x0000000000000000000000000000000000000000";
         var validTokenId = BigInteger.One;
         var invalidTokenId = BigInteger.MinusOne;
@@ -1409,9 +1408,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TokenERC1155_GenerateMintSignature_WithUri_WithVerify()
     {
-        var contract = await GetTokenERC1155Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
-        var randomReceiver = await PrivateKeyWallet.Generate(_client);
+        var contract = await this.GetTokenERC1155Contract();
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
         var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress(), Uri = "", };
 
         (var payload, var signature) = await contract.TokenERC1155_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
@@ -1446,9 +1445,9 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task TokenERC1155_GenerateMintSignature_WithNFTMetadata_WithVerify()
     {
-        var contract = await GetTokenERC1155Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(_client);
-        var randomReceiver = await PrivateKeyWallet.Generate(_client);
+        var contract = await this.GetTokenERC1155Contract();
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
         var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress() };
 
         (var payload, var signature) = await contract.TokenERC1155_GenerateMintSignature(
