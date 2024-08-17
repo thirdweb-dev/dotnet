@@ -32,7 +32,7 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 
 #region AA 0.6
 
-// var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11155111, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V06);
+// var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 660279, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V06);
 
 // var hash06 = await smartWallet06.SendTransaction(
 //     new ThirdwebTransactionInput()
@@ -108,14 +108,14 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 // }
 // Console.WriteLine($"Main InAppWallet address: {await inAppWalletMain.GetAddress()}");
 
-// var inAppWalletToLink = await InAppWallet.Create(client: client, email: "firekeeper+toLink3@thirdweb.com");
+// var inAppWalletToLink = await InAppWallet.Create(client: client, authProvider: AuthProvider.Siwe, siweSigner: privateKeyWallet);
 // _ = inAppWalletToLink.SendOTP();
 // Console.WriteLine("Enter OTP:");
 // var otp = Console.ReadLine();
 // _ = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink, otp: otp);
 
 // var linkedAccounts = await inAppWalletMain.GetLinkedAccounts();
-// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts)}");
+// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
 
 #endregion
 
@@ -127,7 +127,7 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 //     gasless: true,
 //     factoryAddress: "0xEc87d96E3F324Dcc828750b52994C6DC69C8162b",
 //     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07,
-//     erc20PaymasterAddress: "0x34013B37A6EE4F353F9443102d1d17dD93B0c40D", // TokenPaymaster
+//     erc20PaymasterAddress: "0xb867732eD7f59c77F0D9afB94cE28aEb2B43fada", // TokenPaymaster
 //     erc20PaymasterToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" // USDC
 // );
 // var erc20SmartWalletSepoliaAddress = await erc20SmartWalletSepolia.GetAddress();

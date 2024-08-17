@@ -1,12 +1,14 @@
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+using Nethereum.ABI;
 using Nethereum.ABI.EIP712;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Util;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Thirdweb.AccountAbstraction;
 
 namespace Thirdweb
@@ -332,7 +334,7 @@ namespace Thirdweb
 
                 // Update paymaster data if any
 
-                var res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
+                var res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), true);
                 partialUserOp.Paymaster = res.Paymaster;
                 partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? new byte[] { };
                 partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0").Value;
@@ -344,14 +346,33 @@ namespace Thirdweb
                 // Estimate gas
 
                 if (
-                    partialUserOp.PreVerificationGas.IsZero
+                    (UseERC20Paymaster && !_isApproving)
+                    || partialUserOp.PreVerificationGas.IsZero
                     || partialUserOp.VerificationGasLimit.IsZero
                     || partialUserOp.CallGasLimit.IsZero
                     || partialUserOp.PaymasterVerificationGasLimit.IsZero
                     || partialUserOp.PaymasterPostOpGasLimit.IsZero
                 )
                 {
-                    var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(Client, _bundlerUrl, requestId, EncodeUserOperation(partialUserOp), _entryPointContract.Address);
+                    Dictionary<string, object> stateDict = null;
+                    if (UseERC20Paymaster && !_isApproving)
+                    {
+                        var abiEncoder = new ABIEncode();
+                        var slotBytes = abiEncoder.GetABIEncoded(new ABIValue("address", this._accountContract.Address), new ABIValue("uint256", new BigInteger(9)));
+                        var desiredBalance = BigInteger.Pow(2, 96) - 1;
+                        var storageDict = new Dictionary<string, string>
+                        {
+                            { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex().ToString(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() }
+                        };
+                        stateDict = new Dictionary<string, object> { { _erc20PaymasterToken, new { stateDiff = storageDict } } };
+                        Console.WriteLine(JsonConvert.SerializeObject(stateDict));
+
+                        res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
+                        partialUserOp.Paymaster = res.Paymaster;
+                        partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
+                    }
+
+                    var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(Client, _bundlerUrl, requestId, EncodeUserOperation(partialUserOp), _entryPointContract.Address, stateDict);
                     partialUserOp.CallGasLimit = 21000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
                     partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
                     partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;

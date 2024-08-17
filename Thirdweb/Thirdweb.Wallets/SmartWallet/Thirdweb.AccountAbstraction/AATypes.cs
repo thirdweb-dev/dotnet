@@ -273,6 +273,22 @@ namespace Thirdweb.AccountAbstraction
         public virtual byte[] RevertReason { get; set; }
     }
 
+    [Event("PostOpRevertReason")]
+    public class PostOpRevertReasonEventDTO : IEventDTO
+    {
+        [Parameter("bytes32", "userOpHash", 1, true)]
+        public virtual byte[] UserOpHash { get; set; }
+
+        [Parameter("address", "sender", 2, true)]
+        public virtual string Sender { get; set; }
+
+        [Parameter("uint256", "nonce", 3, false)]
+        public virtual BigInteger Nonce { get; set; }
+
+        [Parameter("bytes", "revertReason", 4, false)]
+        public virtual byte[] RevertReason { get; set; }
+    }
+
     [Struct("SignerPermissionRequest")]
     public class SignerPermissionRequest
     {

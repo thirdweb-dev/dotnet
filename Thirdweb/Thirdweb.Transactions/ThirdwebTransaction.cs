@@ -478,9 +478,16 @@ namespace Thirdweb
                 if (userOpEvent != null && userOpEvent.Count > 0 && !userOpEvent[0].Event.Success)
                 {
                     var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
+                    var postOpRevertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.PostOpRevertReasonEventDTO>();
                     if (revertReasonEvent != null && revertReasonEvent.Count > 0)
                     {
                         var revertReason = revertReasonEvent[0].Event.RevertReason;
+                        var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
+                        throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
+                    }
+                    else if (postOpRevertReasonEvent != null && postOpRevertReasonEvent.Count > 0)
+                    {
+                        var revertReason = postOpRevertReasonEvent[0].Event.RevertReason;
                         var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
                         throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
                     }

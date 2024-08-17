@@ -19,9 +19,16 @@ namespace Thirdweb.AccountAbstraction
             return response.Result.ToString();
         }
 
-        public static async Task<EthEstimateUserOperationGasResponse> EthEstimateUserOperationGas(ThirdwebClient client, string bundlerUrl, object requestId, object userOp, string entryPoint)
+        public static async Task<EthEstimateUserOperationGasResponse> EthEstimateUserOperationGas(
+            ThirdwebClient client,
+            string bundlerUrl,
+            object requestId,
+            object userOp,
+            string entryPoint,
+            object stateOverrides = null
+        )
         {
-            var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_estimateUserOperationGas", userOp, entryPoint);
+            var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_estimateUserOperationGas", userOp, entryPoint, stateOverrides);
             return JsonConvert.DeserializeObject<EthEstimateUserOperationGasResponse>(response.Result.ToString());
         }
 
