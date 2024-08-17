@@ -1,4 +1,4 @@
-namespace Thirdweb.Tests.Wallets;
+﻿namespace Thirdweb.Tests.Wallets;
 
 public class ZkSmartWalletTests : BaseTests
 {
@@ -7,12 +7,12 @@ public class ZkSmartWalletTests : BaseTests
     public ZkSmartWalletTests(ITestOutputHelper output)
         : base(output)
     {
-        _zkClient = ThirdwebClient.Create(secretKey: _secretKey);
+        this._zkClient = ThirdwebClient.Create(secretKey: this.SecretKey);
     }
 
     private async Task<SmartWallet> GetSmartAccount(int zkChainId = 300, bool gasless = true)
     {
-        var privateKeyAccount = await PrivateKeyWallet.Generate(_zkClient);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(this._zkClient);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, gasless: gasless, chainId: zkChainId);
         return smartAccount;
     }
@@ -20,14 +20,14 @@ public class ZkSmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetAddress_Success()
     {
-        var account = await GetSmartAccount();
+        var account = await this.GetSmartAccount();
         Assert.NotNull(await account.GetAddress());
     }
 
     [Fact(Timeout = 120000)]
     public async Task PersonalSign_Success()
     {
-        var account = await GetSmartAccount(zkChainId: 302);
+        var account = await this.GetSmartAccount(zkChainId: 302);
         var message = "Hello, World!";
         var signature = await account.PersonalSign(message);
         Assert.NotNull(signature);
@@ -37,12 +37,12 @@ public class ZkSmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task CreateSessionKey_Throws()
     {
-        var account = await GetSmartAccount();
+        var account = await this.GetSmartAccount();
         _ = await Assert.ThrowsAsync<InvalidOperationException>(
             async () =>
                 await account.CreateSessionKey(
                     signerAddress: await account.GetAddress(),
-                    approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
+                    approvedTargets: [Constants.ADDRESS_ZERO],
                     nativeTokenLimitPerTransactionInWei: "0",
                     permissionStartTimestamp: "0",
                     permissionEndTimestamp: (Utils.GetUnixTimeStampNow() + 86400).ToString(),
@@ -55,28 +55,28 @@ public class ZkSmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task AddAdmin_Throws()
     {
-        var account = await GetSmartAccount();
+        var account = await this.GetSmartAccount();
         _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => await account.AddAdmin(Constants.ADDRESS_ZERO));
     }
 
     [Fact(Timeout = 120000)]
     public async Task RemoveAdmin_Throws()
     {
-        var account = await GetSmartAccount();
+        var account = await this.GetSmartAccount();
         _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => await account.RemoveAdmin(Constants.ADDRESS_ZERO));
     }
 
     [Fact(Timeout = 120000)]
     public async Task IsDeployed_ReturnsTrue()
     {
-        var account = await GetSmartAccount();
+        var account = await this.GetSmartAccount();
         Assert.True(await account.IsDeployed());
     }
 
     [Fact(Timeout = 120000)]
     public async Task SendGaslessZkTx_Success()
     {
-        var account = await GetSmartAccount();
+        var account = await this.GetSmartAccount();
         var hash = await account.SendTransaction(
             new ThirdwebTransactionInput()
             {
@@ -110,7 +110,7 @@ public class ZkSmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task SendGaslessZkTx_Abstract_Success()
     {
-        var account = await GetSmartAccount(zkChainId: 11124);
+        var account = await this.GetSmartAccount(zkChainId: 11124);
         var hash = await account.SendTransaction(
             new ThirdwebTransactionInput()
             {

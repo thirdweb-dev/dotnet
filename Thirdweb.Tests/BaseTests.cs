@@ -4,25 +4,25 @@ namespace Thirdweb.Tests;
 
 public class BaseTests
 {
-    protected readonly ITestOutputHelper _output;
-    protected readonly string? _secretKey;
-    protected readonly string? _clientIdBundleIdOnly;
-    protected readonly string? _bundleIdBundleIdOnly;
+    protected ITestOutputHelper Output { get; }
+    protected string? SecretKey { get; }
+    protected string? ClientIdBundleIdOnly { get; }
+    protected string? BundleIdBundleIdOnly { get; }
 
     public BaseTests(ITestOutputHelper output)
     {
         DotEnv.Load();
-        _output = output;
-        _secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
-        _clientIdBundleIdOnly = Environment.GetEnvironmentVariable("THIRDWEB_CLIENT_ID_BUNDLE_ID_ONLY");
-        _bundleIdBundleIdOnly = Environment.GetEnvironmentVariable("THIRDWEB_BUNDLE_ID_BUNDLE_ID_ONLY");
+        this.Output = output;
+        this.SecretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
+        this.ClientIdBundleIdOnly = Environment.GetEnvironmentVariable("THIRDWEB_CLIENT_ID_BUNDLE_ID_ONLY");
+        this.BundleIdBundleIdOnly = Environment.GetEnvironmentVariable("THIRDWEB_BUNDLE_ID_BUNDLE_ID_ONLY");
 
-        _output.WriteLine($"Started {GetType().FullName}");
+        this.Output.WriteLine($"Started {this.GetType().FullName}");
     }
 
     [Fact(Timeout = 120000)]
     public void DotEnvTest()
     {
-        Assert.NotNull(_secretKey);
+        Assert.NotNull(this.SecretKey);
     }
 }

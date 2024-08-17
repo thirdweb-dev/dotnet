@@ -1,952 +1,950 @@
-using System.Numerics;
+﻿using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using Nethereum.ABI;
 using Nethereum.ABI.EIP712;
 using Nethereum.Contracts;
-using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Util;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Thirdweb.AccountAbstraction;
 
-namespace Thirdweb
+namespace Thirdweb;
+
+public class SmartWallet : IThirdwebWallet
 {
-    public class SmartWallet : IThirdwebWallet
+    public ThirdwebClient Client
     {
-        public ThirdwebClient Client { get; }
+        get;
+    }
 
-        public ThirdwebAccountType AccountType => ThirdwebAccountType.SmartAccount;
+    public ThirdwebAccountType AccountType => ThirdwebAccountType.SmartAccount;
 
-        public bool IsDeploying { get; private set; }
+    public bool IsDeploying
+    {
+        get; private set;
+    }
 
-        private IThirdwebWallet _personalAccount;
-        private bool _gasless;
-        private ThirdwebContract _factoryContract;
-        private ThirdwebContract _accountContract;
-        private ThirdwebContract _entryPointContract;
-        private BigInteger _chainId;
-        private string _bundlerUrl;
-        private string _paymasterUrl;
-        private string _erc20PaymasterAddress;
-        private string _erc20PaymasterToken;
-        private bool _isApproving;
-        private bool _isApproved;
+    private readonly IThirdwebWallet _personalAccount;
+    private readonly bool _gasless;
+    private readonly ThirdwebContract _factoryContract;
+    private ThirdwebContract _accountContract;
+    private readonly ThirdwebContract _entryPointContract;
+    private readonly BigInteger _chainId;
+    private readonly string _bundlerUrl;
+    private readonly string _paymasterUrl;
+    private readonly string _erc20PaymasterAddress;
+    private readonly string _erc20PaymasterToken;
+    private bool _isApproving;
+    private bool _isApproved;
 
-        private bool UseERC20Paymaster => !string.IsNullOrEmpty(_erc20PaymasterAddress) && !string.IsNullOrEmpty(_erc20PaymasterToken);
+    private bool UseERC20Paymaster => !string.IsNullOrEmpty(this._erc20PaymasterAddress) && !string.IsNullOrEmpty(this._erc20PaymasterToken);
 
-        protected SmartWallet(
-            IThirdwebWallet personalAccount,
-            bool gasless,
-            BigInteger chainId,
-            string bundlerUrl,
-            string paymasterUrl,
-            ThirdwebContract entryPointContract,
-            ThirdwebContract factoryContract,
-            ThirdwebContract accountContract,
-            string erc20PaymasterAddress,
-            string erc20PaymasterToken
-        )
+    protected SmartWallet(
+        IThirdwebWallet personalAccount,
+        bool gasless,
+        BigInteger chainId,
+        string bundlerUrl,
+        string paymasterUrl,
+        ThirdwebContract entryPointContract,
+        ThirdwebContract factoryContract,
+        ThirdwebContract accountContract,
+        string erc20PaymasterAddress,
+        string erc20PaymasterToken
+    )
+    {
+        this.Client = personalAccount.Client;
+
+        this._personalAccount = personalAccount;
+        this._gasless = gasless;
+        this._chainId = chainId;
+        this._bundlerUrl = bundlerUrl;
+        this._paymasterUrl = paymasterUrl;
+        this._entryPointContract = entryPointContract;
+        this._factoryContract = factoryContract;
+        this._accountContract = accountContract;
+        this._erc20PaymasterAddress = erc20PaymasterAddress;
+        this._erc20PaymasterToken = erc20PaymasterToken;
+    }
+
+    public static async Task<SmartWallet> Create(
+        IThirdwebWallet personalWallet,
+        BigInteger chainId,
+        bool gasless = true,
+        string factoryAddress = null,
+        string accountAddressOverride = null,
+        string entryPoint = null,
+        string bundlerUrl = null,
+        string paymasterUrl = null,
+        string erc20PaymasterAddress = null,
+        string erc20PaymasterToken = null
+    )
+    {
+        if (!await personalWallet.IsConnected())
         {
-            Client = personalAccount.Client;
-
-            _personalAccount = personalAccount;
-            _gasless = gasless;
-            _chainId = chainId;
-            _bundlerUrl = bundlerUrl;
-            _paymasterUrl = paymasterUrl;
-            _entryPointContract = entryPointContract;
-            _factoryContract = factoryContract;
-            _accountContract = accountContract;
-            _erc20PaymasterAddress = erc20PaymasterAddress;
-            _erc20PaymasterToken = erc20PaymasterToken;
+            throw new InvalidOperationException("SmartAccount.Connect: Personal account must be connected.");
         }
 
-        public static async Task<SmartWallet> Create(
-            IThirdwebWallet personalWallet,
-            BigInteger chainId,
-            bool gasless = true,
-            string factoryAddress = null,
-            string accountAddressOverride = null,
-            string entryPoint = null,
-            string bundlerUrl = null,
-            string paymasterUrl = null,
-            string erc20PaymasterAddress = null,
-            string erc20PaymasterToken = null
-        )
+        entryPoint ??= Constants.ENTRYPOINT_ADDRESS_V06;
+
+        var entryPointVersion = Utils.GetEntryPointVersion(entryPoint);
+
+        bundlerUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
+        paymasterUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
+        factoryAddress ??= entryPointVersion == 6 ? Constants.DEFAULT_FACTORY_ADDRESS_V06 : Constants.DEFAULT_FACTORY_ADDRESS_V07;
+
+        ThirdwebContract entryPointContract = null;
+        ThirdwebContract factoryContract = null;
+        ThirdwebContract accountContract = null;
+
+        if (!Utils.IsZkSync(chainId))
         {
-            if (!await personalWallet.IsConnected())
-            {
-                throw new InvalidOperationException("SmartAccount.Connect: Personal account must be connected.");
-            }
+            var entryPointAbi = entryPointVersion == 6 ? Constants.ENTRYPOINT_V06_ABI : Constants.ENTRYPOINT_V07_ABI;
+            var factoryAbi = entryPointVersion == 6 ? Constants.FACTORY_V06_ABI : Constants.FACTORY_V07_ABI;
+            var accountAbi = entryPointVersion == 6 ? Constants.ACCOUNT_V06_ABI : Constants.ACCOUNT_V07_ABI;
 
-            entryPoint ??= Constants.ENTRYPOINT_ADDRESS_V06;
+            entryPointContract = await ThirdwebContract.Create(personalWallet.Client, entryPoint, chainId, entryPointAbi);
+            factoryContract = await ThirdwebContract.Create(personalWallet.Client, factoryAddress, chainId, factoryAbi);
 
-            var entryPointVersion = Utils.GetEntryPointVersion(entryPoint);
+            var personalAddress = await personalWallet.GetAddress();
+            var accountAddress = accountAddressOverride ?? await ThirdwebContract.Read<string>(factoryContract, "getAddress", personalAddress, Array.Empty<byte>());
 
-            bundlerUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
-            paymasterUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
-            factoryAddress ??= entryPointVersion == 6 ? Constants.DEFAULT_FACTORY_ADDRESS_V06 : Constants.DEFAULT_FACTORY_ADDRESS_V07;
-
-            ThirdwebContract entryPointContract = null;
-            ThirdwebContract factoryContract = null;
-            ThirdwebContract accountContract = null;
-
-            if (!Utils.IsZkSync(chainId))
-            {
-                var entryPointAbi = entryPointVersion == 6 ? Constants.ENTRYPOINT_V06_ABI : Constants.ENTRYPOINT_V07_ABI;
-                var factoryAbi = entryPointVersion == 6 ? Constants.FACTORY_V06_ABI : Constants.FACTORY_V07_ABI;
-                var accountAbi = entryPointVersion == 6 ? Constants.ACCOUNT_V06_ABI : Constants.ACCOUNT_V07_ABI;
-
-                entryPointContract = await ThirdwebContract.Create(personalWallet.Client, entryPoint, chainId, entryPointAbi);
-                factoryContract = await ThirdwebContract.Create(personalWallet.Client, factoryAddress, chainId, factoryAbi);
-
-                var personalAddress = await personalWallet.GetAddress();
-                var accountAddress = accountAddressOverride ?? await ThirdwebContract.Read<string>(factoryContract, "getAddress", personalAddress, new byte[0]);
-
-                accountContract = await ThirdwebContract.Create(personalWallet.Client, accountAddress, chainId, accountAbi);
-            }
-
-            return new SmartWallet(personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract, erc20PaymasterAddress, erc20PaymasterToken);
+            accountContract = await ThirdwebContract.Create(personalWallet.Client, accountAddress, chainId, accountAbi);
         }
 
-        public async Task<bool> IsDeployed()
-        {
-            if (Utils.IsZkSync(_chainId))
-            {
-                return true;
-            }
+        return new SmartWallet(personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract, erc20PaymasterAddress, erc20PaymasterToken);
+    }
 
-            var code = await ThirdwebRPC.GetRpcInstance(Client, _chainId).SendRequestAsync<string>("eth_getCode", _accountContract.Address, "latest");
-            return code != "0x";
+    public async Task<bool> IsDeployed()
+    {
+        if (Utils.IsZkSync(this._chainId))
+        {
+            return true;
         }
 
-        public async Task<string> SendTransaction(ThirdwebTransactionInput transactionInput)
+        var code = await ThirdwebRPC.GetRpcInstance(this.Client, this._chainId).SendRequestAsync<string>("eth_getCode", this._accountContract.Address, "latest");
+        return code != "0x";
+    }
+
+    public async Task<string> SendTransaction(ThirdwebTransactionInput transactionInput)
+    {
+        if (transactionInput == null)
         {
-            if (transactionInput == null)
-            {
-                throw new InvalidOperationException("SmartAccount.SendTransaction: Transaction input is required.");
-            }
+            throw new InvalidOperationException("SmartAccount.SendTransaction: Transaction input is required.");
+        }
 
-            var transaction = await ThirdwebTransaction.Create(Utils.IsZkSync(_chainId) ? _personalAccount : this, transactionInput, _chainId);
-            transaction = await ThirdwebTransaction.Prepare(transaction);
-            transactionInput = transaction.Input;
+        var transaction = await ThirdwebTransaction.Create(Utils.IsZkSync(this._chainId) ? this._personalAccount : this, transactionInput, this._chainId);
+        transaction = await ThirdwebTransaction.Prepare(transaction);
+        transactionInput = transaction.Input;
 
-            if (Utils.IsZkSync(_chainId))
+        if (Utils.IsZkSync(this._chainId))
+        {
+            if (this._gasless)
             {
-                if (_gasless)
-                {
-                    (var paymaster, var paymasterInput) = await ZkPaymasterData(transactionInput);
-                    transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
-                    var zkTx = await ThirdwebTransaction.ConvertToZkSyncTransaction(transaction);
-                    var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, this);
-                    // Match bundler ZkTransactionInput type without recreating
-                    var hash = await ZkBroadcastTransaction(
-                        new
-                        {
-                            nonce = zkTx.Nonce.ToString(),
-                            from = zkTx.From,
-                            to = zkTx.To,
-                            gas = zkTx.GasLimit.ToString(),
-                            gasPrice = string.Empty,
-                            value = zkTx.Value.ToString(),
-                            data = Utils.BytesToHex(zkTx.Data),
-                            maxFeePerGas = zkTx.MaxFeePerGas.ToString(),
-                            maxPriorityFeePerGas = zkTx.MaxPriorityFeePerGas.ToString(),
-                            chainId = _chainId.ToString(),
-                            signedTransaction = zkTxSigned,
-                            paymaster = paymaster
-                        }
-                    );
-                    return hash;
-                }
-                else
-                {
-                    return await ThirdwebTransaction.Send(transaction);
-                }
+                (var paymaster, var paymasterInput) = await this.ZkPaymasterData(transactionInput);
+                transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
+                var zkTx = await ThirdwebTransaction.ConvertToZkSyncTransaction(transaction);
+                var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, this);
+                // Match bundler ZkTransactionInput type without recreating
+                var hash = await this.ZkBroadcastTransaction(
+                    new
+                    {
+                        nonce = zkTx.Nonce.ToString(),
+                        from = zkTx.From,
+                        to = zkTx.To,
+                        gas = zkTx.GasLimit.ToString(),
+                        gasPrice = string.Empty,
+                        value = zkTx.Value.ToString(),
+                        data = Utils.BytesToHex(zkTx.Data),
+                        maxFeePerGas = zkTx.MaxFeePerGas.ToString(),
+                        maxPriorityFeePerGas = zkTx.MaxPriorityFeePerGas.ToString(),
+                        chainId = this._chainId.ToString(),
+                        signedTransaction = zkTxSigned,
+                        paymaster
+                    }
+                );
+                return hash;
             }
             else
             {
-                var signedOp = await SignUserOp(transactionInput);
-                return await SendUserOp(signedOp);
+                return await ThirdwebTransaction.Send(transaction);
             }
         }
-
-        public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
+        else
         {
-            var txHash = await SendTransaction(transactionInput);
-            return await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
+            var signedOp = await this.SignUserOp(transactionInput);
+            return await this.SendUserOp(signedOp);
+        }
+    }
+
+    public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
+    {
+        var txHash = await this.SendTransaction(transactionInput);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+    }
+
+    private async Task<(byte[] initCode, string factory, string factoryData)> GetInitCode()
+    {
+        if (await this.IsDeployed())
+        {
+            return (Array.Empty<byte>(), null, null);
         }
 
-        private async Task<(byte[] initCode, string factory, string factoryData)> GetInitCode()
+        var personalAccountAddress = await this._personalAccount.GetAddress();
+        var factoryContract = new Contract(null, this._factoryContract.Abi, this._factoryContract.Address);
+        var createFunction = factoryContract.GetFunction("createAccount");
+        var data = createFunction.GetData(personalAccountAddress, Array.Empty<byte>());
+        return (Utils.HexConcat(this._factoryContract.Address, data).HexToBytes(), this._factoryContract.Address, data);
+    }
+
+    private async Task<object> SignUserOp(ThirdwebTransactionInput transactionInput, int? requestId = null, bool simulation = false)
+    {
+        requestId ??= 1;
+
+        (var initCode, var factory, var factoryData) = await this.GetInitCode();
+
+        // Approve tokens if ERC20Paymaster
+        if (this.UseERC20Paymaster && !this._isApproving && !this._isApproved && !simulation)
         {
-            if (await IsDeployed())
+            try
             {
-                return (new byte[] { }, null, null);
-            }
-
-            var personalAccountAddress = await _personalAccount.GetAddress();
-            var factoryContract = new Contract(null, _factoryContract.Abi, _factoryContract.Address);
-            var createFunction = factoryContract.GetFunction("createAccount");
-            var data = createFunction.GetData(personalAccountAddress, new byte[] { });
-            return (Utils.HexConcat(_factoryContract.Address, data).HexToBytes(), _factoryContract.Address, data);
-        }
-
-        private async Task<object> SignUserOp(ThirdwebTransactionInput transactionInput, int? requestId = null, bool simulation = false)
-        {
-            requestId ??= 1;
-
-            (var initCode, var factory, var factoryData) = await GetInitCode();
-
-            // Approve tokens if ERC20Paymaster
-            if (UseERC20Paymaster && !_isApproving && !_isApproved && !simulation)
-            {
-                try
+                this._isApproving = true;
+                var tokenContract = await ThirdwebContract.Create(this.Client, this._erc20PaymasterToken, this._chainId);
+                var approvedAmount = await tokenContract.ERC20_Allowance(this._accountContract.Address, this._erc20PaymasterAddress);
+                if (approvedAmount == 0)
                 {
-                    _isApproving = true;
-                    var tokenContract = await ThirdwebContract.Create(Client, _erc20PaymasterToken, _chainId);
-                    var approvedAmount = await tokenContract.ERC20_Allowance(_accountContract.Address, _erc20PaymasterAddress);
-                    if (approvedAmount == 0)
+                    _ = await tokenContract.ERC20_Approve(this, this._erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1);
+                }
+                this._isApproved = true;
+                (initCode, factory, factoryData) = await this.GetInitCode();
+            }
+            catch (Exception e)
+            {
+                this._isApproved = false;
+                throw new Exception($"Approving tokens for ERC20Paymaster spending failed: {e.Message}");
+            }
+            finally
+            {
+                this._isApproving = false;
+            }
+        }
+
+        // Wait until deployed to avoid double initCode
+        if (!simulation)
+        {
+            if (this.IsDeploying)
+            {
+                initCode = Array.Empty<byte>();
+            }
+
+            while (this.IsDeploying)
+            {
+                await Task.Delay(1000); // Wait for the deployment to finish
+            }
+
+            this.IsDeploying = initCode.Length > 0;
+        }
+
+        // Create the user operation and its safe (hexified) version
+
+        var fees = await BundlerClient.ThirdwebGetUserOperationGasPrice(this.Client, this._bundlerUrl, requestId);
+        var maxFee = new HexBigInteger(fees.MaxFeePerGas).Value;
+        var maxPriorityFee = new HexBigInteger(fees.MaxPriorityFeePerGas).Value;
+
+        var entryPointVersion = Utils.GetEntryPointVersion(this._entryPointContract.Address);
+
+        if (entryPointVersion == 6)
+        {
+            var executeFn = new ExecuteFunction
+            {
+                Target = transactionInput.To,
+                Value = transactionInput.Value.Value,
+                Calldata = transactionInput.Data.HexToBytes(),
+                FromAddress = await this.GetAddress(),
+            };
+            var executeInput = executeFn.CreateTransactionInput(await this.GetAddress());
+
+            var partialUserOp = new UserOperationV6()
+            {
+                Sender = this._accountContract.Address,
+                Nonce = await this.GetNonce(),
+                InitCode = initCode,
+                CallData = executeInput.Data.HexToBytes(),
+                CallGasLimit = 0,
+                VerificationGasLimit = 0,
+                PreVerificationGas = 0,
+                MaxFeePerGas = maxFee,
+                MaxPriorityFeePerGas = maxPriorityFee,
+                PaymasterAndData = Array.Empty<byte>(),
+                Signature = Constants.DUMMY_SIG.HexToBytes(),
+            };
+
+            // Update paymaster data if any
+
+            partialUserOp.PaymasterAndData = (await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation)).PaymasterAndData.HexToBytes();
+
+            // Estimate gas
+
+            var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address);
+            partialUserOp.CallGasLimit = 50000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
+            partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
+            partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
+
+            // Update paymaster data if any
+
+            partialUserOp.PaymasterAndData = (await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation)).PaymasterAndData.HexToBytes();
+
+            // Hash, sign and encode the user operation
+
+            partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, this._entryPointContract);
+
+            return partialUserOp;
+        }
+        else
+        {
+            var executeFn = new ExecuteFunction
+            {
+                Target = transactionInput.To,
+                Value = transactionInput.Value.Value,
+                Calldata = transactionInput.Data.HexToBytes(),
+                FromAddress = await this.GetAddress(),
+            };
+            var executeInput = executeFn.CreateTransactionInput(await this.GetAddress());
+
+            var partialUserOp = new UserOperationV7()
+            {
+                Sender = this._accountContract.Address,
+                Nonce = await this.GetNonce(),
+                Factory = factory,
+                FactoryData = factoryData.HexToBytes(),
+                CallData = executeInput.Data.HexToBytes(),
+                CallGasLimit = 0,
+                VerificationGasLimit = 0,
+                PreVerificationGas = 0,
+                MaxFeePerGas = maxFee,
+                MaxPriorityFeePerGas = maxPriorityFee,
+                Paymaster = null,
+                PaymasterVerificationGasLimit = 0,
+                PaymasterPostOpGasLimit = 0,
+                PaymasterData = Array.Empty<byte>(),
+                Signature = Constants.DUMMY_SIG.HexToBytes(),
+            };
+
+            // Update paymaster data if any
+
+            var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), true);
+            partialUserOp.Paymaster = res.Paymaster;
+            partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? Array.Empty<byte>();
+            partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0").Value;
+            partialUserOp.VerificationGasLimit = new HexBigInteger(res.VerificationGasLimit ?? "0").Value;
+            partialUserOp.CallGasLimit = new HexBigInteger(res.CallGasLimit ?? "0").Value;
+            partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(res.PaymasterVerificationGasLimit ?? "0").Value;
+            partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(res.PaymasterPostOpGasLimit ?? "0").Value;
+
+            // Estimate gas
+
+            if (
+                (this.UseERC20Paymaster && !this._isApproving)
+                || partialUserOp.PreVerificationGas.IsZero
+                || partialUserOp.VerificationGasLimit.IsZero
+                || partialUserOp.CallGasLimit.IsZero
+                || partialUserOp.PaymasterVerificationGasLimit.IsZero
+                || partialUserOp.PaymasterPostOpGasLimit.IsZero
+            )
+            {
+                Dictionary<string, object> stateDict = null;
+                if (this.UseERC20Paymaster && !this._isApproving)
+                {
+                    var abiEncoder = new ABIEncode();
+                    var slotBytes = abiEncoder.GetABIEncoded(new ABIValue("address", this._accountContract.Address), new ABIValue("uint256", new BigInteger(9)));
+                    var desiredBalance = BigInteger.Pow(2, 96) - 1;
+                    var storageDict = new Dictionary<string, string>
                     {
-                        _ = await tokenContract.ERC20_Approve(this, _erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1);
-                    }
-                    _isApproved = true;
-                    (initCode, factory, factoryData) = await GetInitCode();
-                }
-                catch (Exception e)
-                {
-                    _isApproved = false;
-                    throw new Exception($"Approving tokens for ERC20Paymaster spending failed: {e.Message}");
-                }
-                finally
-                {
-                    _isApproving = false;
-                }
-            }
-
-            // Wait until deployed to avoid double initCode
-            if (!simulation)
-            {
-                if (IsDeploying)
-                {
-                    initCode = new byte[] { };
-                }
-
-                while (IsDeploying)
-                {
-                    await Task.Delay(1000); // Wait for the deployment to finish
-                }
-
-                IsDeploying = initCode.Length > 0;
-            }
-
-            // Create the user operation and its safe (hexified) version
-
-            var fees = await BundlerClient.ThirdwebGetUserOperationGasPrice(Client, _bundlerUrl, requestId);
-            var maxFee = new HexBigInteger(fees.MaxFeePerGas).Value;
-            var maxPriorityFee = new HexBigInteger(fees.MaxPriorityFeePerGas).Value;
-
-            var entryPointVersion = Utils.GetEntryPointVersion(_entryPointContract.Address);
-
-            if (entryPointVersion == 6)
-            {
-                var executeFn = new ExecuteFunction
-                {
-                    Target = transactionInput.To,
-                    Value = transactionInput.Value.Value,
-                    Calldata = transactionInput.Data.HexToBytes(),
-                    FromAddress = await GetAddress(),
-                };
-                var executeInput = executeFn.CreateTransactionInput(await GetAddress());
-
-                var partialUserOp = new UserOperationV6()
-                {
-                    Sender = _accountContract.Address,
-                    Nonce = await GetNonce(),
-                    InitCode = initCode,
-                    CallData = executeInput.Data.HexToBytes(),
-                    CallGasLimit = 0,
-                    VerificationGasLimit = 0,
-                    PreVerificationGas = 0,
-                    MaxFeePerGas = maxFee,
-                    MaxPriorityFeePerGas = maxPriorityFee,
-                    PaymasterAndData = new byte[] { },
-                    Signature = Constants.DUMMY_SIG.HexToBytes(),
-                };
-
-                // Update paymaster data if any
-
-                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation)).PaymasterAndData.HexToBytes();
-
-                // Estimate gas
-
-                var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(Client, _bundlerUrl, requestId, EncodeUserOperation(partialUserOp), _entryPointContract.Address);
-                partialUserOp.CallGasLimit = 50000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
-                partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
-                partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
-
-                // Update paymaster data if any
-
-                partialUserOp.PaymasterAndData = (await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation)).PaymasterAndData.HexToBytes();
-
-                // Hash, sign and encode the user operation
-
-                partialUserOp.Signature = await HashAndSignUserOp(partialUserOp, _entryPointContract);
-
-                return partialUserOp;
-            }
-            else
-            {
-                var executeFn = new ExecuteFunction
-                {
-                    Target = transactionInput.To,
-                    Value = transactionInput.Value.Value,
-                    Calldata = transactionInput.Data.HexToBytes(),
-                    FromAddress = await GetAddress(),
-                };
-                var executeInput = executeFn.CreateTransactionInput(await GetAddress());
-
-                var partialUserOp = new UserOperationV7()
-                {
-                    Sender = _accountContract.Address,
-                    Nonce = await GetNonce(),
-                    Factory = factory,
-                    FactoryData = factoryData.HexToBytes(),
-                    CallData = executeInput.Data.HexToBytes(),
-                    CallGasLimit = 0,
-                    VerificationGasLimit = 0,
-                    PreVerificationGas = 0,
-                    MaxFeePerGas = maxFee,
-                    MaxPriorityFeePerGas = maxPriorityFee,
-                    Paymaster = null,
-                    PaymasterVerificationGasLimit = 0,
-                    PaymasterPostOpGasLimit = 0,
-                    PaymasterData = new byte[] { },
-                    Signature = Constants.DUMMY_SIG.HexToBytes(),
-                };
-
-                // Update paymaster data if any
-
-                var res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), true);
-                partialUserOp.Paymaster = res.Paymaster;
-                partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? new byte[] { };
-                partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0").Value;
-                partialUserOp.VerificationGasLimit = new HexBigInteger(res.VerificationGasLimit ?? "0").Value;
-                partialUserOp.CallGasLimit = new HexBigInteger(res.CallGasLimit ?? "0").Value;
-                partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(res.PaymasterVerificationGasLimit ?? "0").Value;
-                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(res.PaymasterPostOpGasLimit ?? "0").Value;
-
-                // Estimate gas
-
-                if (
-                    (UseERC20Paymaster && !_isApproving)
-                    || partialUserOp.PreVerificationGas.IsZero
-                    || partialUserOp.VerificationGasLimit.IsZero
-                    || partialUserOp.CallGasLimit.IsZero
-                    || partialUserOp.PaymasterVerificationGasLimit.IsZero
-                    || partialUserOp.PaymasterPostOpGasLimit.IsZero
-                )
-                {
-                    Dictionary<string, object> stateDict = null;
-                    if (UseERC20Paymaster && !_isApproving)
-                    {
-                        var abiEncoder = new ABIEncode();
-                        var slotBytes = abiEncoder.GetABIEncoded(new ABIValue("address", this._accountContract.Address), new ABIValue("uint256", new BigInteger(9)));
-                        var desiredBalance = BigInteger.Pow(2, 96) - 1;
-                        var storageDict = new Dictionary<string, string>
-                        {
-                            { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex().ToString(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() }
-                        };
-                        stateDict = new Dictionary<string, object> { { _erc20PaymasterToken, new { stateDiff = storageDict } } };
-                        Console.WriteLine(JsonConvert.SerializeObject(stateDict));
-
-                        res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
-                        partialUserOp.Paymaster = res.Paymaster;
-                        partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
-                    }
-
-                    var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(Client, _bundlerUrl, requestId, EncodeUserOperation(partialUserOp), _entryPointContract.Address, stateDict);
-                    partialUserOp.CallGasLimit = 21000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
-                    partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
-                    partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
-                    partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(gasEstimates.PaymasterVerificationGasLimit).Value;
-                    partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(gasEstimates.PaymasterPostOpGasLimit).Value;
-
-                    // Update paymaster data if any
-
-                    res = await GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
+                        { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex().ToString(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() }
+                    };
+                    stateDict = new Dictionary<string, object> { { this._erc20PaymasterToken, new { stateDiff = storageDict } } };
+                    res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
                     partialUserOp.Paymaster = res.Paymaster;
                     partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
                 }
 
-                // Hash, sign and encode the user operation
+                var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address, stateDict);
+                partialUserOp.CallGasLimit = 21000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
+                partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
+                partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
+                partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(gasEstimates.PaymasterVerificationGasLimit).Value;
+                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(gasEstimates.PaymasterPostOpGasLimit).Value;
 
-                partialUserOp.Signature = await HashAndSignUserOp(partialUserOp, _entryPointContract);
+                // Update paymaster data if any
 
-                return partialUserOp;
+                res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
+                partialUserOp.Paymaster = res.Paymaster;
+                partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
             }
+
+            // Hash, sign and encode the user operation
+
+            partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, this._entryPointContract);
+
+            return partialUserOp;
+        }
+    }
+
+    private async Task<string> SendUserOp(object userOperation, int? requestId = null)
+    {
+        requestId ??= 1;
+
+        // Encode op
+
+        object encodedOp;
+        if (userOperation is UserOperationV6)
+        {
+            encodedOp = EncodeUserOperation(userOperation as UserOperationV6);
+        }
+        else
+        {
+            encodedOp = userOperation is UserOperationV7
+                ? (object)EncodeUserOperation(userOperation as UserOperationV7)
+                : throw new Exception("Invalid signed operation type");
         }
 
-        private async Task<string> SendUserOp(object userOperation, int? requestId = null)
+        // Send the user operation
+
+        var userOpHash = await BundlerClient.EthSendUserOperation(this.Client, this._bundlerUrl, requestId, encodedOp, this._entryPointContract.Address);
+
+        // Wait for the transaction to be mined
+
+        string txHash = null;
+        while (txHash == null)
         {
-            requestId ??= 1;
-
-            // Encode op
-
-            object encodedOp;
-            if (userOperation is UserOperationV6)
-            {
-                encodedOp = EncodeUserOperation(userOperation as UserOperationV6);
-            }
-            else if (userOperation is UserOperationV7)
-            {
-                encodedOp = EncodeUserOperation(userOperation as UserOperationV7);
-            }
-            else
-            {
-                throw new Exception("Invalid signed operation type");
-            }
-
-            // Send the user operation
-
-            var userOpHash = await BundlerClient.EthSendUserOperation(Client, _bundlerUrl, requestId, encodedOp, _entryPointContract.Address);
-
-            // Wait for the transaction to be mined
-
-            string txHash = null;
-            while (txHash == null)
-            {
-                var userOpReceipt = await BundlerClient.EthGetUserOperationReceipt(Client, _bundlerUrl, requestId, userOpHash);
-                txHash = userOpReceipt?.Receipt?.TransactionHash;
-                await Task.Delay(1000).ConfigureAwait(false);
-            }
-
-            IsDeploying = false;
-            return txHash;
+            var userOpReceipt = await BundlerClient.EthGetUserOperationReceipt(this.Client, this._bundlerUrl, requestId, userOpHash);
+            txHash = userOpReceipt?.Receipt?.TransactionHash;
+            await Task.Delay(1000).ConfigureAwait(false);
         }
 
-        private async Task<BigInteger> GetNonce()
+        this.IsDeploying = false;
+        return txHash;
+    }
+
+    private async Task<BigInteger> GetNonce()
+    {
+        var randomBytes = new byte[24];
+        RandomNumberGenerator.Fill(randomBytes);
+        BigInteger randomInt192 = new(randomBytes);
+        randomInt192 = BigInteger.Abs(randomInt192) % (BigInteger.One << 192);
+        return await ThirdwebContract.Read<BigInteger>(this._entryPointContract, "getNonce", await this.GetAddress(), randomInt192);
+    }
+
+    private async Task<(string, string)> ZkPaymasterData(ThirdwebTransactionInput transactionInput)
+    {
+        if (this._gasless)
         {
-            var randomBytes = new byte[24];
-            RandomNumberGenerator.Fill(randomBytes);
-            BigInteger randomInt192 = new(randomBytes);
-            randomInt192 = BigInteger.Abs(randomInt192) % (BigInteger.One << 192);
-            return await ThirdwebContract.Read<BigInteger>(_entryPointContract, "getNonce", await GetAddress(), randomInt192);
+            var result = await BundlerClient.ZkPaymasterData(this.Client, this._paymasterUrl, 1, transactionInput);
+            return (result.Paymaster, result.PaymasterInput);
         }
-
-        private async Task<(string, string)> ZkPaymasterData(ThirdwebTransactionInput transactionInput)
+        else
         {
-            if (_gasless)
-            {
-                var result = await BundlerClient.ZkPaymasterData(Client, _paymasterUrl, 1, transactionInput);
-                return (result.Paymaster, result.PaymasterInput);
-            }
-            else
-            {
-                return (null, null);
-            }
+            return (null, null);
         }
+    }
 
-        private async Task<string> ZkBroadcastTransaction(object transactionInput)
+    private async Task<string> ZkBroadcastTransaction(object transactionInput)
+    {
+        var result = await BundlerClient.ZkBroadcastTransaction(this.Client, this._bundlerUrl, 1, transactionInput);
+        return result.TransactionHash;
+    }
+
+    private async Task<PMSponsorOperationResponse> GetPaymasterAndData(object requestId, object userOp, bool simulation)
+    {
+        if (this.UseERC20Paymaster && !this._isApproving && !simulation)
         {
-            var result = await BundlerClient.ZkBroadcastTransaction(Client, _bundlerUrl, 1, transactionInput);
-            return result.TransactionHash;
-        }
-
-        private async Task<PMSponsorOperationResponse> GetPaymasterAndData(object requestId, object userOp, bool simulation)
-        {
-            if (UseERC20Paymaster && !_isApproving && !simulation)
+            return new PMSponsorOperationResponse()
             {
-                return new PMSponsorOperationResponse()
-                {
-                    PaymasterAndData = Utils.HexConcat(_erc20PaymasterAddress, _erc20PaymasterToken),
-                    Paymaster = _erc20PaymasterAddress,
-                    PaymasterData = "0x",
-                };
-            }
-            else if (_gasless)
-            {
-                return await BundlerClient.PMSponsorUserOperation(Client, _paymasterUrl, requestId, userOp, _entryPointContract.Address);
-            }
-            else
-            {
-                return new PMSponsorOperationResponse();
-            }
-        }
-
-        private async Task<byte[]> HashAndSignUserOp(UserOperationV6 userOp, ThirdwebContract entryPointContract)
-        {
-            var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
-            var sig =
-                _personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await _personalAccount.PersonalSign(userOpHash.BytesToHex()) : await _personalAccount.PersonalSign(userOpHash);
-            return sig.HexToBytes();
-        }
-
-        private async Task<byte[]> HashAndSignUserOp(UserOperationV7 userOp, ThirdwebContract entryPointContract)
-        {
-            var factoryBytes = userOp.Factory.HexToBytes();
-            var factoryDataBytes = userOp.FactoryData;
-            var initCodeBuffer = new byte[factoryBytes.Length + factoryDataBytes.Length];
-            Buffer.BlockCopy(factoryBytes, 0, initCodeBuffer, 0, factoryBytes.Length);
-            Buffer.BlockCopy(factoryDataBytes, 0, initCodeBuffer, factoryBytes.Length, factoryDataBytes.Length);
-
-            var verificationGasLimitBytes = userOp.VerificationGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
-            var callGasLimitBytes = userOp.CallGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
-            var accountGasLimitsBuffer = new byte[32];
-            Buffer.BlockCopy(verificationGasLimitBytes, 0, accountGasLimitsBuffer, 0, 16);
-            Buffer.BlockCopy(callGasLimitBytes, 0, accountGasLimitsBuffer, 16, 16);
-
-            var maxPriorityFeePerGasBytes = userOp.MaxPriorityFeePerGas.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
-            var maxFeePerGasBytes = userOp.MaxFeePerGas.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
-            var gasFeesBuffer = new byte[32];
-            Buffer.BlockCopy(maxPriorityFeePerGasBytes, 0, gasFeesBuffer, 0, 16);
-            Buffer.BlockCopy(maxFeePerGasBytes, 0, gasFeesBuffer, 16, 16);
-
-            var paymasterBytes = userOp.Paymaster.HexToBytes();
-            var paymasterVerificationGasLimitBytes = userOp.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
-            var paymasterPostOpGasLimitBytes = userOp.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
-            var paymasterDataBytes = userOp.PaymasterData;
-            var paymasterAndDataBuffer = new byte[20 + 16 + 16 + paymasterDataBytes.Length];
-            Buffer.BlockCopy(paymasterBytes, 0, paymasterAndDataBuffer, 0, 20);
-            Buffer.BlockCopy(paymasterVerificationGasLimitBytes, 0, paymasterAndDataBuffer, 20, 16);
-            Buffer.BlockCopy(paymasterPostOpGasLimitBytes, 0, paymasterAndDataBuffer, 20 + 16, 16);
-            Buffer.BlockCopy(paymasterDataBytes, 0, paymasterAndDataBuffer, 20 + 16 + 16, paymasterDataBytes.Length);
-
-            var packedOp = new PackedUserOperation()
-            {
-                Sender = userOp.Sender,
-                Nonce = userOp.Nonce,
-                InitCode = initCodeBuffer,
-                CallData = userOp.CallData,
-                AccountGasLimits = accountGasLimitsBuffer,
-                PreVerificationGas = userOp.PreVerificationGas,
-                GasFees = gasFeesBuffer,
-                PaymasterAndData = paymasterAndDataBuffer,
-                Signature = userOp.Signature
-            };
-
-            var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp);
-
-            var sig =
-                _personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await _personalAccount.PersonalSign(userOpHash.BytesToHex()) : await _personalAccount.PersonalSign(userOpHash);
-
-            return sig.HexToBytes();
-        }
-
-        private UserOperationHexifiedV6 EncodeUserOperation(UserOperationV6 userOperation)
-        {
-            return new UserOperationHexifiedV6()
-            {
-                sender = userOperation.Sender,
-                nonce = userOperation.Nonce.ToHexBigInteger().HexValue,
-                initCode = userOperation.InitCode.BytesToHex(),
-                callData = userOperation.CallData.BytesToHex(),
-                callGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
-                verificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
-                preVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
-                maxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
-                maxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
-                paymasterAndData = userOperation.PaymasterAndData.BytesToHex(),
-                signature = userOperation.Signature.BytesToHex()
+                PaymasterAndData = Utils.HexConcat(this._erc20PaymasterAddress, this._erc20PaymasterToken),
+                Paymaster = this._erc20PaymasterAddress,
+                PaymasterData = "0x",
             };
         }
-
-        private UserOperationHexifiedV7 EncodeUserOperation(UserOperationV7 userOperation)
+        else
         {
-            return new UserOperationHexifiedV7()
-            {
-                sender = userOperation.Sender,
-                nonce = Utils.HexConcat(Constants.ADDRESS_ZERO, userOperation.Nonce.ToHexBigInteger().HexValue),
-                factory = userOperation.Factory,
-                factoryData = userOperation.FactoryData.BytesToHex(),
-                callData = userOperation.CallData.BytesToHex(),
-                callGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
-                verificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
-                preVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
-                maxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
-                maxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
-                paymaster = userOperation.Paymaster,
-                paymasterVerificationGasLimit = userOperation.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue,
-                paymasterPostOpGasLimit = userOperation.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue,
-                paymasterData = userOperation.PaymasterData.BytesToHex(),
-                signature = userOperation.Signature.BytesToHex()
-            };
+            return this._gasless
+                ? await BundlerClient.PMSponsorUserOperation(this.Client, this._paymasterUrl, requestId, userOp, this._entryPointContract.Address)
+                : new PMSponsorOperationResponse();
+        }
+    }
+
+    private async Task<byte[]> HashAndSignUserOp(UserOperationV6 userOp, ThirdwebContract entryPointContract)
+    {
+        var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
+        var sig =
+            this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex()) : await this._personalAccount.PersonalSign(userOpHash);
+        return sig.HexToBytes();
+    }
+
+    private async Task<byte[]> HashAndSignUserOp(UserOperationV7 userOp, ThirdwebContract entryPointContract)
+    {
+        var factoryBytes = userOp.Factory.HexToBytes();
+        var factoryDataBytes = userOp.FactoryData;
+        var initCodeBuffer = new byte[factoryBytes.Length + factoryDataBytes.Length];
+        Buffer.BlockCopy(factoryBytes, 0, initCodeBuffer, 0, factoryBytes.Length);
+        Buffer.BlockCopy(factoryDataBytes, 0, initCodeBuffer, factoryBytes.Length, factoryDataBytes.Length);
+
+        var verificationGasLimitBytes = userOp.VerificationGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+        var callGasLimitBytes = userOp.CallGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+        var accountGasLimitsBuffer = new byte[32];
+        Buffer.BlockCopy(verificationGasLimitBytes, 0, accountGasLimitsBuffer, 0, 16);
+        Buffer.BlockCopy(callGasLimitBytes, 0, accountGasLimitsBuffer, 16, 16);
+
+        var maxPriorityFeePerGasBytes = userOp.MaxPriorityFeePerGas.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+        var maxFeePerGasBytes = userOp.MaxFeePerGas.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+        var gasFeesBuffer = new byte[32];
+        Buffer.BlockCopy(maxPriorityFeePerGasBytes, 0, gasFeesBuffer, 0, 16);
+        Buffer.BlockCopy(maxFeePerGasBytes, 0, gasFeesBuffer, 16, 16);
+
+        var paymasterBytes = userOp.Paymaster.HexToBytes();
+        var paymasterVerificationGasLimitBytes = userOp.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+        var paymasterPostOpGasLimitBytes = userOp.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+        var paymasterDataBytes = userOp.PaymasterData;
+        var paymasterAndDataBuffer = new byte[20 + 16 + 16 + paymasterDataBytes.Length];
+        Buffer.BlockCopy(paymasterBytes, 0, paymasterAndDataBuffer, 0, 20);
+        Buffer.BlockCopy(paymasterVerificationGasLimitBytes, 0, paymasterAndDataBuffer, 20, 16);
+        Buffer.BlockCopy(paymasterPostOpGasLimitBytes, 0, paymasterAndDataBuffer, 20 + 16, 16);
+        Buffer.BlockCopy(paymasterDataBytes, 0, paymasterAndDataBuffer, 20 + 16 + 16, paymasterDataBytes.Length);
+
+        var packedOp = new PackedUserOperation()
+        {
+            Sender = userOp.Sender,
+            Nonce = userOp.Nonce,
+            InitCode = initCodeBuffer,
+            CallData = userOp.CallData,
+            AccountGasLimits = accountGasLimitsBuffer,
+            PreVerificationGas = userOp.PreVerificationGas,
+            GasFees = gasFeesBuffer,
+            PaymasterAndData = paymasterAndDataBuffer,
+            Signature = userOp.Signature
+        };
+
+        var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp);
+
+        var sig =
+            this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex()) : await this._personalAccount.PersonalSign(userOpHash);
+
+        return sig.HexToBytes();
+    }
+
+    private static UserOperationHexifiedV6 EncodeUserOperation(UserOperationV6 userOperation)
+    {
+        return new UserOperationHexifiedV6()
+        {
+            sender = userOperation.Sender,
+            nonce = userOperation.Nonce.ToHexBigInteger().HexValue,
+            initCode = userOperation.InitCode.BytesToHex(),
+            callData = userOperation.CallData.BytesToHex(),
+            callGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
+            verificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
+            preVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
+            maxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
+            maxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
+            paymasterAndData = userOperation.PaymasterAndData.BytesToHex(),
+            signature = userOperation.Signature.BytesToHex()
+        };
+    }
+
+    private static UserOperationHexifiedV7 EncodeUserOperation(UserOperationV7 userOperation)
+    {
+        return new UserOperationHexifiedV7()
+        {
+            sender = userOperation.Sender,
+            nonce = Utils.HexConcat(Constants.ADDRESS_ZERO, userOperation.Nonce.ToHexBigInteger().HexValue),
+            factory = userOperation.Factory,
+            factoryData = userOperation.FactoryData.BytesToHex(),
+            callData = userOperation.CallData.BytesToHex(),
+            callGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
+            verificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
+            preVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
+            maxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
+            maxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
+            paymaster = userOperation.Paymaster,
+            paymasterVerificationGasLimit = userOperation.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue,
+            paymasterPostOpGasLimit = userOperation.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue,
+            paymasterData = userOperation.PaymasterData.BytesToHex(),
+            signature = userOperation.Signature.BytesToHex()
+        };
+    }
+
+    public async Task ForceDeploy()
+    {
+        if (Utils.IsZkSync(this._chainId))
+        {
+            return;
         }
 
-        public async Task ForceDeploy()
+        if (await this.IsDeployed())
         {
-            if (Utils.IsZkSync(_chainId))
+            return;
+        }
+
+        if (this.IsDeploying)
+        {
+            throw new InvalidOperationException("SmartAccount.ForceDeploy: Account is already deploying.");
+        }
+
+        var input = new ThirdwebTransactionInput()
+        {
+            Data = "0x",
+            To = this._accountContract.Address,
+            Value = new HexBigInteger(0)
+        };
+        var txHash = await this.SendTransaction(input);
+        _ = await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+    }
+
+    public Task<IThirdwebWallet> GetPersonalWallet()
+    {
+        return Task.FromResult(this._personalAccount);
+    }
+
+    public async Task<string> GetAddress()
+    {
+        return Utils.IsZkSync(this._chainId) ? await this._personalAccount.GetAddress() : this._accountContract.Address.ToChecksumAddress();
+    }
+
+    public Task<string> EthSign(byte[] rawMessage)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<string> EthSign(string message)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<string> RecoverAddressFromEthSign(string message, string signature)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<string> PersonalSign(byte[] rawMessage)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<string> PersonalSign(string message)
+    {
+        if (Utils.IsZkSync(this._chainId))
+        {
+            return await this._personalAccount.PersonalSign(message);
+        }
+
+        if (!await this.IsDeployed())
+        {
+            while (this.IsDeploying)
             {
-                return;
+                await Task.Delay(1000); // Wait for the deployment to finish
             }
-
-            if (await IsDeployed())
-            {
-                return;
-            }
-
-            if (IsDeploying)
-            {
-                throw new InvalidOperationException("SmartAccount.ForceDeploy: Account is already deploying.");
-            }
-
-            var input = new ThirdwebTransactionInput()
-            {
-                Data = "0x",
-                To = _accountContract.Address,
-                Value = new HexBigInteger(0)
-            };
-            var txHash = await SendTransaction(input);
-            _ = await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
+            await this.ForceDeploy();
         }
 
-        public Task<IThirdwebWallet> GetPersonalWallet()
+        if (await this.IsDeployed())
         {
-            return Task.FromResult(_personalAccount);
-        }
-
-        public async Task<string> GetAddress()
-        {
-            return Utils.IsZkSync(_chainId) ? await _personalAccount.GetAddress() : _accountContract.Address.ToChecksumAddress();
-        }
-
-        public Task<string> EthSign(byte[] rawMessage)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<string> EthSign(string message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<string> RecoverAddressFromEthSign(string message, string signature)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<string> PersonalSign(byte[] rawMessage)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<string> PersonalSign(string message)
-        {
-            if (Utils.IsZkSync(_chainId))
-            {
-                return await _personalAccount.PersonalSign(message);
-            }
-
-            if (!await IsDeployed())
-            {
-                while (IsDeploying)
-                {
-                    await Task.Delay(1000); // Wait for the deployment to finish
-                }
-                await ForceDeploy();
-            }
-
-            if (await IsDeployed())
-            {
-                var originalMsgHash = System.Text.Encoding.UTF8.GetBytes(message).HashPrefixedMessage();
-                bool factorySupports712;
-                try
-                {
-                    _ = await ThirdwebContract.Read<byte[]>(_accountContract, "getMessageHash", originalMsgHash);
-                    factorySupports712 = true;
-                }
-                catch
-                {
-                    factorySupports712 = false;
-                }
-
-                var sig = factorySupports712
-                    ? await EIP712.GenerateSignature_SmartAccount_AccountMessage("Account", "1", _chainId, await GetAddress(), originalMsgHash, _personalAccount)
-                    : await _personalAccount.PersonalSign(originalMsgHash);
-
-                var isValid = await IsValidSignature(message, sig);
-                return isValid ? sig : throw new Exception("Invalid signature.");
-            }
-            else
-            {
-                throw new Exception("Smart account could not be deployed, unable to sign message.");
-            }
-        }
-
-        public async Task<string> RecoverAddressFromPersonalSign(string message, string signature)
-        {
-            if (!await IsValidSignature(message, signature))
-            {
-                return await _personalAccount.RecoverAddressFromPersonalSign(message, signature);
-            }
-            else
-            {
-                return await GetAddress();
-            }
-        }
-
-        public async Task<bool> IsValidSignature(string message, string signature)
-        {
+            var originalMsgHash = Encoding.UTF8.GetBytes(message).HashPrefixedMessage();
+            bool factorySupports712;
             try
             {
-                var magicValue = await ThirdwebContract.Read<byte[]>(_accountContract, "isValidSignature", message.HashPrefixedMessage().HexToBytes(), signature.HexToBytes());
-                return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
+                _ = await ThirdwebContract.Read<byte[]>(this._accountContract, "getMessageHash", originalMsgHash);
+                factorySupports712 = true;
             }
             catch
             {
-                return false;
+                factorySupports712 = false;
             }
-        }
 
-        public async Task<List<string>> GetAllAdmins()
+            var sig = factorySupports712
+                ? await EIP712.GenerateSignature_SmartAccount_AccountMessage("Account", "1", this._chainId, await this.GetAddress(), originalMsgHash, this._personalAccount)
+                : await this._personalAccount.PersonalSign(originalMsgHash);
+
+            var isValid = await this.IsValidSignature(message, sig);
+            return isValid ? sig : throw new Exception("Invalid signature.");
+        }
+        else
         {
-            if (Utils.IsZkSync(_chainId))
-            {
-                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-            }
-
-            var result = await ThirdwebContract.Read<List<string>>(_accountContract, "getAllAdmins");
-            return result ?? new List<string>();
+            throw new Exception("Smart account could not be deployed, unable to sign message.");
         }
+    }
 
-        public async Task<List<SignerPermissions>> GetAllActiveSigners()
+    public async Task<string> RecoverAddressFromPersonalSign(string message, string signature)
+    {
+        return !await this.IsValidSignature(message, signature)
+            ? await this._personalAccount.RecoverAddressFromPersonalSign(message, signature)
+            : await this.GetAddress();
+    }
+
+    public async Task<bool> IsValidSignature(string message, string signature)
+    {
+        try
         {
-            if (Utils.IsZkSync(_chainId))
-            {
-                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-            }
-
-            var result = await ThirdwebContract.Read<List<SignerPermissions>>(_accountContract, "getAllActiveSigners");
-            return result ?? new List<SignerPermissions>();
+            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", message.HashPrefixedMessage().HexToBytes(), signature.HexToBytes());
+            return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
         }
-
-        public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
-            string signerAddress,
-            List<string> approvedTargets,
-            string nativeTokenLimitPerTransactionInWei,
-            string permissionStartTimestamp,
-            string permissionEndTimestamp,
-            string reqValidityStartTimestamp,
-            string reqValidityEndTimestamp
-        )
+        catch
         {
-            if (Utils.IsZkSync(_chainId))
-            {
-                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-            }
-
-            var request = new SignerPermissionRequest()
-            {
-                Signer = signerAddress,
-                IsAdmin = 0,
-                ApprovedTargets = approvedTargets,
-                NativeTokenLimitPerTransaction = BigInteger.Parse(nativeTokenLimitPerTransactionInWei),
-                PermissionStartTimestamp = BigInteger.Parse(permissionStartTimestamp),
-                PermissionEndTimestamp = BigInteger.Parse(permissionEndTimestamp),
-                ReqValidityStartTimestamp = BigInteger.Parse(reqValidityStartTimestamp),
-                ReqValidityEndTimestamp = BigInteger.Parse(reqValidityEndTimestamp),
-                Uid = Guid.NewGuid().ToByteArray()
-            };
-
-            var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
-            // Do it this way to avoid triggering an extra sig from estimation
-            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-            var txInput = new ThirdwebTransactionInput()
-            {
-                To = _accountContract.Address,
-                Value = new HexBigInteger(0),
-                Data = data
-            };
-            var txHash = await SendTransaction(txInput);
-            return await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
+            return false;
         }
+    }
 
-        public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
+    public async Task<List<string>> GetAllAdmins()
+    {
+        if (Utils.IsZkSync(this._chainId))
         {
-            if (Utils.IsZkSync(_chainId))
-            {
-                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-            }
-
-            return await CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString());
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
 
-        public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
+        var result = await ThirdwebContract.Read<List<string>>(this._accountContract, "getAllAdmins");
+        return result ?? [];
+    }
+
+    public async Task<List<SignerPermissions>> GetAllActiveSigners()
+    {
+        if (Utils.IsZkSync(this._chainId))
         {
-            if (Utils.IsZkSync(_chainId))
-            {
-                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-            }
-
-            var request = new SignerPermissionRequest()
-            {
-                Signer = admin,
-                IsAdmin = 1,
-                ApprovedTargets = new List<string>(),
-                NativeTokenLimitPerTransaction = 0,
-                PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-                PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-                ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-                ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-                Uid = Guid.NewGuid().ToByteArray()
-            };
-
-            var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
-            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-            var txInput = new ThirdwebTransactionInput()
-            {
-                To = _accountContract.Address,
-                Value = new HexBigInteger(0),
-                Data = data
-            };
-            var txHash = await SendTransaction(txInput);
-            return await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
 
-        public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
+        var result = await ThirdwebContract.Read<List<SignerPermissions>>(this._accountContract, "getAllActiveSigners");
+        return result ?? [];
+    }
+
+    public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
+        string signerAddress,
+        List<string> approvedTargets,
+        string nativeTokenLimitPerTransactionInWei,
+        string permissionStartTimestamp,
+        string permissionEndTimestamp,
+        string reqValidityStartTimestamp,
+        string reqValidityEndTimestamp
+    )
+    {
+        if (Utils.IsZkSync(this._chainId))
         {
-            if (Utils.IsZkSync(_chainId))
-            {
-                throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-            }
-
-            var request = new SignerPermissionRequest()
-            {
-                Signer = admin,
-                IsAdmin = 2,
-                ApprovedTargets = new List<string>(),
-                NativeTokenLimitPerTransaction = 0,
-                PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-                PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-                ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-                ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-                Uid = Guid.NewGuid().ToByteArray()
-            };
-
-            var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", _chainId, await GetAddress(), request, _personalAccount);
-            var data = new Contract(null, _accountContract.Abi, _accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-            var txInput = new ThirdwebTransactionInput()
-            {
-                To = _accountContract.Address,
-                Value = new HexBigInteger(0),
-                Data = data
-            };
-            var txHash = await SendTransaction(txInput);
-            return await ThirdwebTransaction.WaitForTransactionReceipt(Client, _chainId, txHash);
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
 
-        public Task<string> SignTypedDataV4(string json)
+        var request = new SignerPermissionRequest()
         {
-            return _personalAccount.SignTypedDataV4(json);
-        }
+            Signer = signerAddress,
+            IsAdmin = 0,
+            ApprovedTargets = approvedTargets,
+            NativeTokenLimitPerTransaction = BigInteger.Parse(nativeTokenLimitPerTransactionInWei),
+            PermissionStartTimestamp = BigInteger.Parse(permissionStartTimestamp),
+            PermissionEndTimestamp = BigInteger.Parse(permissionEndTimestamp),
+            ReqValidityStartTimestamp = BigInteger.Parse(reqValidityStartTimestamp),
+            ReqValidityEndTimestamp = BigInteger.Parse(reqValidityEndTimestamp),
+            Uid = Guid.NewGuid().ToByteArray()
+        };
 
-        public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
-            where TDomain : IDomain
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount);
+        // Do it this way to avoid triggering an extra sig from estimation
+        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var txInput = new ThirdwebTransactionInput()
         {
-            return _personalAccount.SignTypedDataV4(data, typedData);
-        }
+            To = this._accountContract.Address,
+            Value = new HexBigInteger(0),
+            Data = data
+        };
+        var txHash = await this.SendTransaction(txInput);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+    }
 
-        public Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
-            where TDomain : IDomain
+    public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
+    {
+        return Utils.IsZkSync(this._chainId)
+            ? throw new InvalidOperationException("Account Permissions are not supported in ZkSync")
+            : await this.CreateSessionKey(signerAddress, [], "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString());
+    }
+
+    public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
+    {
+        if (Utils.IsZkSync(this._chainId))
         {
-            return _personalAccount.RecoverAddressFromTypedDataV4(data, typedData, signature);
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
 
-        public async Task<BigInteger> EstimateUserOperationGas(ThirdwebTransactionInput transaction, BigInteger chainId)
+        var request = new SignerPermissionRequest()
         {
-            if (Utils.IsZkSync(_chainId))
-            {
-                throw new Exception("User Operations are not supported in ZkSync");
-            }
+            Signer = admin,
+            IsAdmin = 1,
+            ApprovedTargets = [],
+            NativeTokenLimitPerTransaction = 0,
+            PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+            PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+            ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            Uid = Guid.NewGuid().ToByteArray()
+        };
 
-            var signedOp = await SignUserOp(transaction, null, simulation: true);
-            if (signedOp is UserOperationV6)
-            {
-                var castSignedOp = signedOp as UserOperationV6;
-                var cost = castSignedOp.CallGasLimit + castSignedOp.VerificationGasLimit + castSignedOp.PreVerificationGas;
-                return cost;
-            }
-            else if (signedOp is UserOperationV7)
-            {
-                var castSignedOp = signedOp as UserOperationV7;
-                var cost =
-                    castSignedOp.CallGasLimit + castSignedOp.VerificationGasLimit + castSignedOp.PreVerificationGas + castSignedOp.PaymasterVerificationGasLimit + castSignedOp.PaymasterPostOpGasLimit;
-                return cost;
-            }
-            else
-            {
-                throw new Exception("Invalid signed operation type");
-            }
-        }
-
-        public async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount);
+        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var txInput = new ThirdwebTransactionInput()
         {
-            if (Utils.IsZkSync(_chainId))
-            {
-                throw new Exception("Offline Signing is not supported in ZkSync");
-            }
+            To = this._accountContract.Address,
+            Value = new HexBigInteger(0),
+            Data = data
+        };
+        var txHash = await this.SendTransaction(txInput);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+    }
 
-            var signedOp = await SignUserOp(transaction);
-            if (signedOp is UserOperationV6)
-            {
-                var encodedOp = EncodeUserOperation(signedOp as UserOperationV6);
-                return JsonConvert.SerializeObject(encodedOp);
-            }
-            else if (signedOp is UserOperationV7)
-            {
-                var encodedOp = EncodeUserOperation(signedOp as UserOperationV7);
-                return JsonConvert.SerializeObject(encodedOp);
-            }
-            else
-            {
-                throw new Exception("Invalid signed operation type");
-            }
-        }
-
-        public async Task<bool> IsConnected()
+    public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
+    {
+        if (Utils.IsZkSync(this._chainId))
         {
-            return Utils.IsZkSync(_chainId) ? await _personalAccount.IsConnected() : _accountContract != null;
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
 
-        public Task Disconnect()
+        var request = new SignerPermissionRequest()
         {
-            _accountContract = null;
-            return Task.CompletedTask;
-        }
+            Signer = admin,
+            IsAdmin = 2,
+            ApprovedTargets = [],
+            NativeTokenLimitPerTransaction = 0,
+            PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+            PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+            ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            Uid = Guid.NewGuid().ToByteArray()
+        };
 
-        public async Task<string> Authenticate(
-            string domain,
-            BigInteger chainId,
-            string authPayloadPath = "/auth/payload",
-            string authLoginPath = "/auth/login",
-            IThirdwebHttpClient httpClientOverride = null
-        )
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount);
+        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var txInput = new ThirdwebTransactionInput()
         {
-            var payloadURL = domain + authPayloadPath;
-            var loginURL = domain + authLoginPath;
+            To = this._accountContract.Address,
+            Value = new HexBigInteger(0),
+            Data = data
+        };
+        var txHash = await this.SendTransaction(txInput);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+    }
 
-            var payloadBodyRaw = new { address = await GetAddress(), chainId = chainId.ToString() };
-            var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
+    public Task<string> SignTypedDataV4(string json)
+    {
+        return this._personalAccount.SignTypedDataV4(json);
+    }
 
-            var httpClient = httpClientOverride ?? Client.HttpClient;
+    public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
+        where TDomain : IDomain
+    {
+        return this._personalAccount.SignTypedDataV4(data, typedData);
+    }
 
-            var payloadContent = new StringContent(payloadBody, Encoding.UTF8, "application/json");
-            var payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);
-            _ = payloadResponse.EnsureSuccessStatusCode();
-            var payloadString = await payloadResponse.Content.ReadAsStringAsync();
+    public Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
+        where TDomain : IDomain
+    {
+        return this._personalAccount.RecoverAddressFromTypedDataV4(data, typedData, signature);
+    }
 
-            var loginBodyRaw = JsonConvert.DeserializeObject<LoginPayload>(payloadString);
-            var payloadToSign = Utils.GenerateSIWE(loginBodyRaw.payload);
-
-            loginBodyRaw.signature = await PersonalSign(payloadToSign);
-            var loginBody = JsonConvert.SerializeObject(new { payload = loginBodyRaw });
-
-            var loginContent = new StringContent(loginBody, Encoding.UTF8, "application/json");
-            var loginResponse = await httpClient.PostAsync(loginURL, loginContent);
-            _ = loginResponse.EnsureSuccessStatusCode();
-            var responseString = await loginResponse.Content.ReadAsStringAsync();
-            return responseString;
+    public async Task<BigInteger> EstimateUserOperationGas(ThirdwebTransactionInput transaction)
+    {
+        if (Utils.IsZkSync(this._chainId))
+        {
+            throw new Exception("User Operations are not supported in ZkSync");
         }
+
+        var signedOp = await this.SignUserOp(transaction, null, simulation: true);
+        if (signedOp is UserOperationV6)
+        {
+            var castSignedOp = signedOp as UserOperationV6;
+            var cost = castSignedOp.CallGasLimit + castSignedOp.VerificationGasLimit + castSignedOp.PreVerificationGas;
+            return cost;
+        }
+        else if (signedOp is UserOperationV7)
+        {
+            var castSignedOp = signedOp as UserOperationV7;
+            var cost =
+                castSignedOp.CallGasLimit + castSignedOp.VerificationGasLimit + castSignedOp.PreVerificationGas + castSignedOp.PaymasterVerificationGasLimit + castSignedOp.PaymasterPostOpGasLimit;
+            return cost;
+        }
+        else
+        {
+            throw new Exception("Invalid signed operation type");
+        }
+    }
+
+    public async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
+    {
+        if (Utils.IsZkSync(this._chainId))
+        {
+            throw new Exception("Offline Signing is not supported in ZkSync");
+        }
+
+        var signedOp = await this.SignUserOp(transaction);
+        if (signedOp is UserOperationV6)
+        {
+
+            var encodedOp = EncodeUserOperation(signedOp as UserOperationV6);
+            return JsonConvert.SerializeObject(encodedOp);
+        }
+        else if (signedOp is UserOperationV7)
+        {
+
+            var encodedOp = EncodeUserOperation(signedOp as UserOperationV7);
+            return JsonConvert.SerializeObject(encodedOp);
+        }
+        else
+        {
+            throw new Exception("Invalid signed operation type");
+        }
+    }
+
+    public async Task<bool> IsConnected()
+    {
+        return Utils.IsZkSync(this._chainId) ? await this._personalAccount.IsConnected() : this._accountContract != null;
+    }
+
+    public Task Disconnect()
+    {
+        this._accountContract = null;
+        return Task.CompletedTask;
+    }
+
+    public async Task<string> Authenticate(
+        string domain,
+        BigInteger chainId,
+        string authPayloadPath = "/auth/payload",
+        string authLoginPath = "/auth/login",
+        IThirdwebHttpClient httpClientOverride = null
+    )
+    {
+        var payloadURL = domain + authPayloadPath;
+        var loginURL = domain + authLoginPath;
+
+        var payloadBodyRaw = new
+        {
+            address = await this.GetAddress(),
+            chainId = chainId.ToString()
+        };
+        var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
+
+        var httpClient = httpClientOverride ?? this.Client.HttpClient;
+
+        var payloadContent = new StringContent(payloadBody, Encoding.UTF8, "application/json");
+        var payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);
+        _ = payloadResponse.EnsureSuccessStatusCode();
+        var payloadString = await payloadResponse.Content.ReadAsStringAsync();
+
+        var loginBodyRaw = JsonConvert.DeserializeObject<LoginPayload>(payloadString);
+        var payloadToSign = Utils.GenerateSIWE(loginBodyRaw.Payload);
+
+        loginBodyRaw.Signature = await this.PersonalSign(payloadToSign);
+        var loginBody = JsonConvert.SerializeObject(new
+        {
+            payload = loginBodyRaw
+        });
+
+        var loginContent = new StringContent(loginBody, Encoding.UTF8, "application/json");
+        var loginResponse = await httpClient.PostAsync(loginURL, loginContent);
+        _ = loginResponse.EnsureSuccessStatusCode();
+        var responseString = await loginResponse.Content.ReadAsStringAsync();
+        return responseString;
     }
 }

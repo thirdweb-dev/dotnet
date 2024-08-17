@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <PropertyGroup>
-        <DefaultVersion>1.4.0</DefaultVersion>
-        <DefaultTargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0</DefaultTargetFrameworks>
-    </PropertyGroup>
-    <PropertyGroup Label="C#">
-        <LangVersion>latest</LangVersion>
-        <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-        <ImplicitUsings>enable</ImplicitUsings>
-    </PropertyGroup>
+  <PropertyGroup>
+    <DefaultVersion>1.4.0</DefaultVersion>
+    <DefaultTargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0</DefaultTargetFrameworks>
+  </PropertyGroup>
 
-    <PropertyGroup>
-        <DefaultAssemblyVersion>$(DefaultVersion)</DefaultAssemblyVersion>
-        <DefaultPackageVersion>$(DefaultVersion)</DefaultPackageVersion>
-        <DefaultFileVersion>$(DefaultVersion)</DefaultFileVersion>
-    </PropertyGroup>
+  <PropertyGroup Label="C#">
+    <LangVersion>latest</LangVersion>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefaultAssemblyVersion>$(DefaultVersion)</DefaultAssemblyVersion>
+    <DefaultPackageVersion>$(DefaultVersion)</DefaultPackageVersion>
+    <DefaultFileVersion>$(DefaultVersion)</DefaultFileVersion>
+  </PropertyGroup>
 </Project>

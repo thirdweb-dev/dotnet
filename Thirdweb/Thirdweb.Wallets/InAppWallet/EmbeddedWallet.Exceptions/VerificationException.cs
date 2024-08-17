@@ -1,13 +1,7 @@
-﻿namespace Thirdweb.EWS
-{
-    internal class VerificationException : Exception
-    {
-        internal bool CanRetry { get; }
+﻿namespace Thirdweb.EWS;
 
-        public VerificationException(string message, bool canRetry)
-            : base(message)
-        {
-            CanRetry = canRetry;
-        }
-    }
+internal class VerificationException
+(bool canRetry) : Exception
+{
+    internal bool CanRetry { get; } = canRetry;
 }

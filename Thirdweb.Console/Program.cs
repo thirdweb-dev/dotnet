@@ -1,4 +1,7 @@
-﻿using Thirdweb;
+﻿#pragma warning disable IDE0005
+#pragma warning disable IDE0059
+
+using Thirdweb;
 using dotenv.net;
 using System.Diagnostics;
 using Thirdweb.Pay;
