@@ -73,22 +73,22 @@ public class ZkSmartWalletTests : BaseTests
         Assert.True(await account.IsDeployed());
     }
 
-    // [Fact(Timeout = 120000)]
-    // public async Task SendGaslessZkTx_Success()
-    // {
-    //     var account = await GetSmartAccount();
-    //     var hash = await account.SendTransaction(
-    //         new ThirdwebTransactionInput()
-    //         {
-    //             From = await account.GetAddress(),
-    //             To = await account.GetAddress(),
-    //             Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
-    //             Data = "0x"
-    //         }
-    //     );
-    //     Assert.NotNull(hash);
-    //     Assert.True(hash.Length == 66);
-    // }
+    [Fact(Timeout = 120000)]
+    public async Task SendGaslessZkTx_Success()
+    {
+        var account = await GetSmartAccount();
+        var hash = await account.SendTransaction(
+            new ThirdwebTransactionInput()
+            {
+                From = await account.GetAddress(),
+                To = await account.GetAddress(),
+                Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                Data = "0x"
+            }
+        );
+        Assert.NotNull(hash);
+        Assert.True(hash.Length == 66);
+    }
 
     // [Fact(Timeout = 120000)]
     // public async Task SendGaslessZkTx_ZkCandy_Success()
@@ -106,4 +106,21 @@ public class ZkSmartWalletTests : BaseTests
     //     Assert.NotNull(hash);
     //     Assert.True(hash.Length == 66);
     // }
+
+    [Fact(Timeout = 120000)]
+    public async Task SendGaslessZkTx_Abstract_Success()
+    {
+        var account = await GetSmartAccount(zkChainId: 11124);
+        var hash = await account.SendTransaction(
+            new ThirdwebTransactionInput()
+            {
+                From = await account.GetAddress(),
+                To = await account.GetAddress(),
+                Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                Data = "0x"
+            }
+        );
+        Assert.NotNull(hash);
+        Assert.True(hash.Length == 66);
+    }
 }
