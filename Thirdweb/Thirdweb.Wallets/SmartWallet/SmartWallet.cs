@@ -47,6 +47,7 @@ public class SmartWallet : IThirdwebWallet
 
     private struct TokenPaymasterConfig()
     {
+        public BigInteger ChainId;
         public string PaymasterAddress;
         public string TokenAddress;
         public BigInteger BalanceStorageSlot;
@@ -57,16 +58,18 @@ public class SmartWallet : IThirdwebWallet
         {
             TokenPaymaster.NONE,
             new TokenPaymasterConfig()
-                {
-                    PaymasterAddress = null,
-                    TokenAddress = null,
-                    BalanceStorageSlot = 0
-                }
+            {
+                ChainId = 0,
+                PaymasterAddress = null,
+                TokenAddress = null,
+                BalanceStorageSlot = 0
+            }
         },
         {
             TokenPaymaster.BASE_USDC,
             new TokenPaymasterConfig()
             {
+                ChainId = 8453,
                 PaymasterAddress = "0x0c6199eE133EB4ff8a6bbD03370336C5A5d9D536",
                 TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
                 BalanceStorageSlot =9
@@ -149,12 +152,20 @@ public class SmartWallet : IThirdwebWallet
             accountContract = await ThirdwebContract.Create(personalWallet.Client, accountAddress, chainId, accountAbi);
         }
 
-        if (entryPointVersion == 6 && tokenPaymaster != TokenPaymaster.NONE)
+        var erc20PmInfo = _tokenPaymasterConfig[tokenPaymaster];
+
+        if (tokenPaymaster != TokenPaymaster.NONE)
         {
-            throw new InvalidOperationException("Token paymasters are only supported in entry point version 7.");
+            if (entryPointVersion != 7)
+            {
+                throw new InvalidOperationException("Token paymasters are only supported in entry point version 7.");
+            }
+            if (erc20PmInfo.ChainId != chainId)
+            {
+                throw new InvalidOperationException("Token paymaster chain ID does not match the smart account chain ID.");
+            }
         }
 
-        var erc20PmInfo = _tokenPaymasterConfig[tokenPaymaster];
         return new SmartWallet(personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract, erc20PmInfo.PaymasterAddress, erc20PmInfo.TokenAddress, erc20PmInfo.BalanceStorageSlot);
     }
 
