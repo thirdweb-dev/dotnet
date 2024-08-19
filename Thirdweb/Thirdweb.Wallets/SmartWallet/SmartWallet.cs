@@ -111,7 +111,7 @@ public class SmartWallet : IThirdwebWallet
         bool gasless = true,
         string factoryAddress = null,
         string accountAddressOverride = null,
-        string entryPoint = Constants.ENTRYPOINT_ADDRESS_V06,
+        string entryPoint = null,
         string bundlerUrl = null,
         string paymasterUrl = null,
         TokenPaymaster tokenPaymaster = TokenPaymaster.NONE
