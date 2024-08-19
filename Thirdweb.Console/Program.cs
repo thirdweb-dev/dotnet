@@ -150,7 +150,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Chain Data Fetching
 
-// var chainData = await Utils.FetchThirdwebChainDataAsync(client, 421614);
+// var chainData = await Utils.GetChainMetadata(client, 421614);
 // Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
 
 #endregion

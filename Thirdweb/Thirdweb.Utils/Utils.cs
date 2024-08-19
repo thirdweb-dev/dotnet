@@ -336,7 +336,13 @@ public static partial class Utils
         return value;
     }
 
+    [Obsolete("Use Utils.GetChainMetadata instead.")]
     public static async Task<ThirdwebChainData> FetchThirdwebChainDataAsync(ThirdwebClient client, BigInteger chainId)
+    {
+        return await GetChainMetadata(client, chainId);
+    }
+
+    public static async Task<ThirdwebChainData> GetChainMetadata(ThirdwebClient client, BigInteger chainId)
     {
         if (_chainDataCache.TryGetValue(chainId, out var value))
         {

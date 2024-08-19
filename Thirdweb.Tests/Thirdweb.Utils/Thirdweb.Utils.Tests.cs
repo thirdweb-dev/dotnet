@@ -440,7 +440,7 @@ public class UtilsTests : BaseTests
         var timer = System.Diagnostics.Stopwatch.StartNew();
         var chainId = new BigInteger(1);
 
-        var chainData = await Utils.FetchThirdwebChainDataAsync(this._client, chainId);
+        var chainData = await Utils.GetChainMetadata(this._client, chainId);
         Assert.NotNull(chainData);
         _ = Assert.IsType<ThirdwebChainData>(chainData);
 
@@ -462,7 +462,7 @@ public class UtilsTests : BaseTests
         var timeAttempt1 = timer.ElapsedMilliseconds;
 
         timer.Restart();
-        var chainData2 = await Utils.FetchThirdwebChainDataAsync(this._client, chainId);
+        var chainData2 = await Utils.GetChainMetadata(this._client, chainId);
         Assert.NotNull(chainData2);
         _ = Assert.IsType<ThirdwebChainData>(chainData);
 
@@ -475,7 +475,7 @@ public class UtilsTests : BaseTests
     {
         var chainId = 123124125418928133;
 
-        var exception = await Assert.ThrowsAsync<Exception>(async () => await Utils.FetchThirdwebChainDataAsync(this._client, chainId));
+        var exception = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetChainMetadata(this._client, chainId));
 
         Assert.Contains("Failed to fetch chain data", exception.Message);
     }
@@ -485,7 +485,7 @@ public class UtilsTests : BaseTests
     {
         var chainId = BigInteger.Zero;
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await Utils.FetchThirdwebChainDataAsync(this._client, chainId));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await Utils.GetChainMetadata(this._client, chainId));
 
         Assert.Contains("Invalid chain", exception.Message);
     }
