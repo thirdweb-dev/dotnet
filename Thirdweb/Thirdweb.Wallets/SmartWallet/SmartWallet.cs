@@ -330,43 +330,23 @@ public class SmartWallet : IThirdwebWallet
                 Signature = Constants.DUMMY_SIG.HexToBytes(),
             };
 
-            // Update paymaster data if any
-
-            var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), true);
-            partialUserOp.Paymaster = res.Paymaster;
-            partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? Array.Empty<byte>();
-            partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0").Value;
-            partialUserOp.VerificationGasLimit = new HexBigInteger(res.VerificationGasLimit ?? "0").Value;
-            partialUserOp.CallGasLimit = new HexBigInteger(res.CallGasLimit ?? "0").Value;
-            partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(res.PaymasterVerificationGasLimit ?? "0").Value;
-            partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(res.PaymasterPostOpGasLimit ?? "0").Value;
-
-            // Estimate gas
+            // Update Paymaster Data / Estimate gas
 
             if (
-                (this.UseERC20Paymaster && !this._isApproving)
-                || partialUserOp.PreVerificationGas.IsZero
-                || partialUserOp.VerificationGasLimit.IsZero
-                || partialUserOp.CallGasLimit.IsZero
-                || partialUserOp.PaymasterVerificationGasLimit.IsZero
-                || partialUserOp.PaymasterPostOpGasLimit.IsZero
+                this.UseERC20Paymaster && !this._isApproving
             )
             {
-                Dictionary<string, object> stateDict = null;
-                if (this.UseERC20Paymaster && !this._isApproving)
-                {
-                    var abiEncoder = new ABIEncode();
-                    var slotBytes = abiEncoder.GetABIEncoded(new ABIValue("address", this._accountContract.Address), new ABIValue("uint256", new BigInteger(9)));
-                    var desiredBalance = BigInteger.Pow(2, 96) - 1;
-                    var storageDict = new Dictionary<string, string>
+                var abiEncoder = new ABIEncode();
+                var slotBytes = abiEncoder.GetABIEncoded(new ABIValue("address", this._accountContract.Address), new ABIValue("uint256", new BigInteger(9)));
+                var desiredBalance = BigInteger.Pow(2, 96) - 1;
+                var storageDict = new Dictionary<string, string>
                     {
                         { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex().ToString(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() }
                     };
-                    stateDict = new Dictionary<string, object> { { this._erc20PaymasterToken, new { stateDiff = storageDict } } };
-                    res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
-                    partialUserOp.Paymaster = res.Paymaster;
-                    partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
-                }
+                var stateDict = new Dictionary<string, object> { { this._erc20PaymasterToken, new { stateDiff = storageDict } } };
+                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
+                partialUserOp.Paymaster = res.Paymaster;
+                partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
 
                 var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address, stateDict);
                 partialUserOp.CallGasLimit = 21000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
@@ -374,12 +354,18 @@ public class SmartWallet : IThirdwebWallet
                 partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
                 partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(gasEstimates.PaymasterVerificationGasLimit).Value;
                 partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(gasEstimates.PaymasterPostOpGasLimit).Value;
+            }
+            else
+            {
 
-                // Update paymaster data if any
-
-                res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
+                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), true);
                 partialUserOp.Paymaster = res.Paymaster;
-                partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
+                partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? Array.Empty<byte>();
+                partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0").Value;
+                partialUserOp.VerificationGasLimit = new HexBigInteger(res.VerificationGasLimit ?? "0").Value;
+                partialUserOp.CallGasLimit = new HexBigInteger(res.CallGasLimit ?? "0").Value;
+                partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(res.PaymasterVerificationGasLimit ?? "0").Value;
+                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(res.PaymasterPostOpGasLimit ?? "0").Value;
             }
 
             // Hash, sign and encode the user operation
