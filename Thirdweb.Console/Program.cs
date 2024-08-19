@@ -121,26 +121,25 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region ERC20 Smart Wallet - Base USDC
 
-// var erc20SmartWalletSepolia = await SmartWallet.Create(
+// var erc20SmartWallet = await SmartWallet.Create(
 //     personalWallet: privateKeyWallet,
 //     chainId: 8453, // base mainnet
 //     gasless: true,
 //     factoryAddress: "0xEc87d96E3F324Dcc828750b52994C6DC69C8162b",
 //     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07,
-//     erc20PaymasterAddress: "0xb867732eD7f59c77F0D9afB94cE28aEb2B43fada", // TokenPaymaster
-//     erc20PaymasterToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" // USDC
+//     tokenPaymaster: TokenPaymaster.BASE_USDC
 // );
-// var erc20SmartWalletSepoliaAddress = await erc20SmartWalletSepolia.GetAddress();
-// Console.WriteLine($"ERC20 Smart Wallet address: {erc20SmartWalletSepoliaAddress}");
+// var erc20SmartWalletAddress = await erc20SmartWallet.GetAddress();
+// Console.WriteLine($"ERC20 Smart Wallet address: {erc20SmartWalletAddress}");
 
 // var selfTransfer = await ThirdwebTransaction.Create(
-//     wallet: erc20SmartWalletSepolia,
-//     txInput: new ThirdwebTransactionInput() { To = erc20SmartWalletSepoliaAddress, },
+//     wallet: erc20SmartWallet,
+//     txInput: new ThirdwebTransactionInput() { To = erc20SmartWalletAddress, },
 //     chainId: 8453
 // );
 
 // var estimateGas = await ThirdwebTransaction.EstimateGasCosts(selfTransfer);
-// Console.WriteLine($"Self transfer gas estimate: {estimateGas.ether}");
+// Console.WriteLine($"Self transfer gas estimate: {estimateGas.Ether}");
 // Console.WriteLine("Make sure you have enough USDC!");
 // Console.ReadLine();
 
