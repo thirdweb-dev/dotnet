@@ -127,8 +127,7 @@ var erc20SmartWalletSepolia = await SmartWallet.Create(
     gasless: true,
     factoryAddress: "0xEc87d96E3F324Dcc828750b52994C6DC69C8162b",
     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07,
-    erc20PaymasterAddress: "0x0c6199eE133EB4ff8a6bbD03370336C5A5d9D536", // TokenPaymaster
-    erc20PaymasterToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" // USDC
+    tokenPaymaster: TokenPaymaster.BASE_USDC
 );
 var erc20SmartWalletSepoliaAddress = await erc20SmartWalletSepolia.GetAddress();
 Console.WriteLine($"ERC20 Smart Wallet address: {erc20SmartWalletSepoliaAddress}");
