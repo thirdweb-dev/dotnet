@@ -426,7 +426,7 @@ public class SmartWallet : IThirdwebWallet
             }
             else
             {
-                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), true);
+                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
                 partialUserOp.Paymaster = res.Paymaster;
                 partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? Array.Empty<byte>();
                 partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0").Value;
@@ -718,7 +718,7 @@ public class SmartWallet : IThirdwebWallet
                 : await this._personalAccount.PersonalSign(originalMsgHash);
 
             var isValid = await this.IsValidSignature(message, sig);
-            return isValid ? sig : throw new Exception("Invalid signature.");
+            return isValid ? sig : throw new Exception("Invalid signature. Outside of the signer being incorrect, this can happen if the caller if not an approved target.");
         }
         else
         {
@@ -733,16 +733,13 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<bool> IsValidSignature(string message, string signature)
     {
-        Console.WriteLine($"IsValidSignature: {message}, {signature}");
-
         try
         {
             var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", Encoding.UTF8.GetBytes(message).HashPrefixedMessage(), signature.HexToBytes());
             return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
         }
-        catch (Exception e)
+        catch
         {
-            Console.WriteLine("Error calling isValidSignature: " + e.Message);
             return false;
         }
     }

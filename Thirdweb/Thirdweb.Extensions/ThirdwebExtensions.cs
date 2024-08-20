@@ -274,7 +274,6 @@ public static class ThirdwebExtensions
 
         _ = payloadResponse.EnsureSuccessStatusCode();
         var payloadString = await payloadResponse.Content.ReadAsStringAsync();
-        Console.WriteLine(payloadString);
 
         var loginBodyRaw = JsonConvert.DeserializeObject<LoginPayload>(payloadString);
         if (loginBodyRaw.Payload == null)
