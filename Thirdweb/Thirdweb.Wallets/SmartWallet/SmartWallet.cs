@@ -19,17 +19,11 @@ public enum TokenPaymaster
 
 public class SmartWallet : IThirdwebWallet
 {
-    public ThirdwebClient Client
-    {
-        get;
-    }
+    public ThirdwebClient Client { get; }
 
     public ThirdwebAccountType AccountType => ThirdwebAccountType.SmartAccount;
 
-    public bool IsDeploying
-    {
-        get; private set;
-    }
+    public bool IsDeploying { get; private set; }
 
     private readonly IThirdwebWallet _personalAccount;
     private readonly bool _gasless;
@@ -45,7 +39,7 @@ public class SmartWallet : IThirdwebWallet
     private bool _isApproving;
     private bool _isApproved;
 
-    private struct TokenPaymasterConfig()
+    private struct TokenPaymasterConfig
     {
         public BigInteger ChainId;
         public string PaymasterAddress;
@@ -53,29 +47,30 @@ public class SmartWallet : IThirdwebWallet
         public BigInteger BalanceStorageSlot;
     }
 
-    private static readonly Dictionary<TokenPaymaster, TokenPaymasterConfig> _tokenPaymasterConfig = new()
-    {
+    private static readonly Dictionary<TokenPaymaster, TokenPaymasterConfig> _tokenPaymasterConfig =
+        new()
         {
-            TokenPaymaster.NONE,
-            new TokenPaymasterConfig()
             {
-                ChainId = 0,
-                PaymasterAddress = null,
-                TokenAddress = null,
-                BalanceStorageSlot = 0
-            }
-        },
-        {
-            TokenPaymaster.BASE_USDC,
-            new TokenPaymasterConfig()
+                TokenPaymaster.NONE,
+                new TokenPaymasterConfig()
+                {
+                    ChainId = 0,
+                    PaymasterAddress = null,
+                    TokenAddress = null,
+                    BalanceStorageSlot = 0
+                }
+            },
             {
-                ChainId = 8453,
-                PaymasterAddress = "0x0c6199eE133EB4ff8a6bbD03370336C5A5d9D536",
-                TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                BalanceStorageSlot =9
+                TokenPaymaster.BASE_USDC,
+                new TokenPaymasterConfig()
+                {
+                    ChainId = 8453,
+                    PaymasterAddress = "0x0c6199eE133EB4ff8a6bbD03370336C5A5d9D536",
+                    TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                    BalanceStorageSlot = 9
+                }
             }
-        }
-    };
+        };
 
     private bool UseERC20Paymaster => !string.IsNullOrEmpty(this._erc20PaymasterAddress) && !string.IsNullOrEmpty(this._erc20PaymasterToken);
 
@@ -166,7 +161,19 @@ public class SmartWallet : IThirdwebWallet
             }
         }
 
-        return new SmartWallet(personalWallet, gasless, chainId, bundlerUrl, paymasterUrl, entryPointContract, factoryContract, accountContract, erc20PmInfo.PaymasterAddress, erc20PmInfo.TokenAddress, erc20PmInfo.BalanceStorageSlot);
+        return new SmartWallet(
+            personalWallet,
+            gasless,
+            chainId,
+            bundlerUrl,
+            paymasterUrl,
+            entryPointContract,
+            factoryContract,
+            accountContract,
+            erc20PmInfo.PaymasterAddress,
+            erc20PmInfo.TokenAddress,
+            erc20PmInfo.BalanceStorageSlot
+        );
     }
 
     public async Task<bool> IsDeployed()
@@ -386,23 +393,28 @@ public class SmartWallet : IThirdwebWallet
 
             // Update Paymaster Data / Estimate gas
 
-            if (
-                this.UseERC20Paymaster && !this._isApproving
-            )
+            if (this.UseERC20Paymaster && !this._isApproving)
             {
                 var abiEncoder = new ABIEncode();
                 var slotBytes = abiEncoder.GetABIEncoded(new ABIValue("address", this._accountContract.Address), new ABIValue("uint256", this._erc20PaymasterStorageSlot));
                 var desiredBalance = BigInteger.Pow(2, 96) - 1;
                 var storageDict = new Dictionary<string, string>
-                    {
-                        { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex().ToString(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() }
-                    };
+                {
+                    { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex().ToString(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() }
+                };
                 var stateDict = new Dictionary<string, object> { { this._erc20PaymasterToken, new { stateDiff = storageDict } } };
                 var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
                 partialUserOp.Paymaster = res.Paymaster;
                 partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
 
-                var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address, stateDict);
+                var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(
+                    this.Client,
+                    this._bundlerUrl,
+                    requestId,
+                    EncodeUserOperation(partialUserOp),
+                    this._entryPointContract.Address,
+                    stateDict
+                );
                 partialUserOp.CallGasLimit = 21000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
                 partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
                 partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
@@ -411,7 +423,6 @@ public class SmartWallet : IThirdwebWallet
             }
             else
             {
-
                 var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), true);
                 partialUserOp.Paymaster = res.Paymaster;
                 partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? Array.Empty<byte>();
@@ -443,9 +454,7 @@ public class SmartWallet : IThirdwebWallet
         }
         else
         {
-            encodedOp = userOperation is UserOperationV7
-                ? (object)EncodeUserOperation(userOperation as UserOperationV7)
-                : throw new Exception("Invalid signed operation type");
+            encodedOp = userOperation is UserOperationV7 ? (object)EncodeUserOperation(userOperation as UserOperationV7) : throw new Exception("Invalid signed operation type");
         }
 
         // Send the user operation
@@ -507,9 +516,7 @@ public class SmartWallet : IThirdwebWallet
         }
         else
         {
-            return this._gasless
-                ? await BundlerClient.PMSponsorUserOperation(this.Client, this._paymasterUrl, requestId, userOp, this._entryPointContract.Address)
-                : new PMSponsorOperationResponse();
+            return this._gasless ? await BundlerClient.PMSponsorUserOperation(this.Client, this._paymasterUrl, requestId, userOp, this._entryPointContract.Address) : new PMSponsorOperationResponse();
         }
     }
 
@@ -517,7 +524,9 @@ public class SmartWallet : IThirdwebWallet
     {
         var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
         var sig =
-            this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex()) : await this._personalAccount.PersonalSign(userOpHash);
+            this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount
+                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex())
+                : await this._personalAccount.PersonalSign(userOpHash);
         return sig.HexToBytes();
     }
 
@@ -567,7 +576,9 @@ public class SmartWallet : IThirdwebWallet
         var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp);
 
         var sig =
-            this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex()) : await this._personalAccount.PersonalSign(userOpHash);
+            this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount
+                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex())
+                : await this._personalAccount.PersonalSign(userOpHash);
 
         return sig.HexToBytes();
     }
@@ -714,20 +725,21 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<string> RecoverAddressFromPersonalSign(string message, string signature)
     {
-        return !await this.IsValidSignature(message, signature)
-            ? await this._personalAccount.RecoverAddressFromPersonalSign(message, signature)
-            : await this.GetAddress();
+        return !await this.IsValidSignature(message, signature) ? await this._personalAccount.RecoverAddressFromPersonalSign(message, signature) : await this.GetAddress();
     }
 
     public async Task<bool> IsValidSignature(string message, string signature)
     {
+        Console.WriteLine($"IsValidSignature: {message}, {signature}");
+
         try
         {
-            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", message.HashPrefixedMessage().HexToBytes(), signature.HexToBytes());
+            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", Encoding.UTF8.GetBytes(message).HashPrefixedMessage(), signature.HexToBytes());
             return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
         }
-        catch
+        catch (Exception e)
         {
+            Console.WriteLine("Error calling isValidSignature: " + e.Message);
             return false;
         }
     }
@@ -740,7 +752,7 @@ public class SmartWallet : IThirdwebWallet
         }
 
         var result = await ThirdwebContract.Read<List<string>>(this._accountContract, "getAllAdmins");
-        return result ?? [];
+        return result ?? new List<string>();
     }
 
     public async Task<List<SignerPermissions>> GetAllActiveSigners()
@@ -751,7 +763,7 @@ public class SmartWallet : IThirdwebWallet
         }
 
         var result = await ThirdwebContract.Read<List<SignerPermissions>>(this._accountContract, "getAllActiveSigners");
-        return result ?? [];
+        return result ?? new List<SignerPermissions>();
     }
 
     public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
@@ -799,7 +811,7 @@ public class SmartWallet : IThirdwebWallet
     {
         return Utils.IsZkSync(this._chainId)
             ? throw new InvalidOperationException("Account Permissions are not supported in ZkSync")
-            : await this.CreateSessionKey(signerAddress, [], "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString());
+            : await this.CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString());
     }
 
     public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
@@ -813,7 +825,7 @@ public class SmartWallet : IThirdwebWallet
         {
             Signer = admin,
             IsAdmin = 1,
-            ApprovedTargets = [],
+            ApprovedTargets = new List<string>(),
             NativeTokenLimitPerTransaction = 0,
             PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
             PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
@@ -845,7 +857,7 @@ public class SmartWallet : IThirdwebWallet
         {
             Signer = admin,
             IsAdmin = 2,
-            ApprovedTargets = [],
+            ApprovedTargets = new List<string>(),
             NativeTokenLimitPerTransaction = 0,
             PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
             PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
@@ -920,13 +932,11 @@ public class SmartWallet : IThirdwebWallet
         var signedOp = await this.SignUserOp(transaction);
         if (signedOp is UserOperationV6)
         {
-
             var encodedOp = EncodeUserOperation(signedOp as UserOperationV6);
             return JsonConvert.SerializeObject(encodedOp);
         }
         else if (signedOp is UserOperationV7)
         {
-
             var encodedOp = EncodeUserOperation(signedOp as UserOperationV7);
             return JsonConvert.SerializeObject(encodedOp);
         }
@@ -945,46 +955,5 @@ public class SmartWallet : IThirdwebWallet
     {
         this._accountContract = null;
         return Task.CompletedTask;
-    }
-
-    public async Task<string> Authenticate(
-        string domain,
-        BigInteger chainId,
-        string authPayloadPath = "/auth/payload",
-        string authLoginPath = "/auth/login",
-        IThirdwebHttpClient httpClientOverride = null
-    )
-    {
-        var payloadURL = domain + authPayloadPath;
-        var loginURL = domain + authLoginPath;
-
-        var payloadBodyRaw = new
-        {
-            address = await this.GetAddress(),
-            chainId = chainId.ToString()
-        };
-        var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
-
-        var httpClient = httpClientOverride ?? this.Client.HttpClient;
-
-        var payloadContent = new StringContent(payloadBody, Encoding.UTF8, "application/json");
-        var payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);
-        _ = payloadResponse.EnsureSuccessStatusCode();
-        var payloadString = await payloadResponse.Content.ReadAsStringAsync();
-
-        var loginBodyRaw = JsonConvert.DeserializeObject<LoginPayload>(payloadString);
-        var payloadToSign = Utils.GenerateSIWE(loginBodyRaw.Payload);
-
-        loginBodyRaw.Signature = await this.PersonalSign(payloadToSign);
-        var loginBody = JsonConvert.SerializeObject(new
-        {
-            payload = loginBodyRaw
-        });
-
-        var loginContent = new StringContent(loginBody, Encoding.UTF8, "application/json");
-        var loginResponse = await httpClient.PostAsync(loginURL, loginContent);
-        _ = loginResponse.EnsureSuccessStatusCode();
-        var responseString = await loginResponse.Content.ReadAsStringAsync();
-        return responseString;
     }
 }

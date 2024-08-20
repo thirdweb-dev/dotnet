@@ -170,7 +170,7 @@ public struct ZkSyncOptions
             this.Paymaster = new HexBigInteger(paymaster).Value;
             this.PaymasterInput = paymasterInput.HexToByteArray();
             this.GasPerPubdataByteLimit = gasPerPubdataByteLimit;
-            this.FactoryDeps = factoryDeps ?? [];
+            this.FactoryDeps = factoryDeps ?? new List<byte[]>();
         }
     }
 }

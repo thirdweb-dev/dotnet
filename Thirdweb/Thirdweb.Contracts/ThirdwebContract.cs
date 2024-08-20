@@ -14,7 +14,7 @@ public class ThirdwebContract
     internal BigInteger Chain { get; private set; }
     internal string Abi { get; private set; }
 
-    private static readonly Dictionary<string, string> _contractAbiCache = [];
+    private static readonly Dictionary<string, string> _contractAbiCache = new();
     private static readonly object _cacheLock = new();
 
     private ThirdwebContract(ThirdwebClient client, string address, BigInteger chain, string abi)

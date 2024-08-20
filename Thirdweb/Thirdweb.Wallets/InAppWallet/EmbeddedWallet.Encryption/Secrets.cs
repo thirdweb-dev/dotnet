@@ -205,8 +205,8 @@ internal class Secrets
         //   [ 177, 127, 206 ],
         //   [ 196, 149, 81 ] ]
         var nBits = 0;
-        List<int> x = [];
-        List<List<int>> y = [];
+        List<int> x = new();
+        List<List<int>> y = new();
         foreach (var share in shares.Select(ExtractShareComponents))
         {
             // All shares must have the same bits settings.
@@ -400,7 +400,7 @@ internal class Secrets
         {
             value = PadLeft(value, paddingMultiple);
         }
-        List<int> parts = [];
+        List<int> parts = new();
         int i;
         for (i = value.Length; i > this._config.NBits; i -= this._config.NBits)
         {

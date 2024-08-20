@@ -37,19 +37,19 @@ internal partial class Server : ServerBase
     private const string API_ROOT_PATH_2024 = "/api/2024-05-05";
     private const string API_ROOT_PATH_2023 = "/api/2023-10-20";
 
-    private static readonly MediaTypeHeaderValue jsonContentType = MediaTypeHeaderValue.Parse("application/json");
-    private readonly IThirdwebHttpClient httpClient;
+    private static readonly MediaTypeHeaderValue _jsonContentType = MediaTypeHeaderValue.Parse("application/json");
+    private readonly IThirdwebHttpClient _httpClient;
 
-    private readonly string clientId;
+    private readonly string _clientId;
 
-    private static Type thirdwebHttpClientType = typeof(ThirdwebHttpClient);
+    private static Type _thirdwebHttpClientType = typeof(ThirdwebHttpClient);
 
     internal Server(ThirdwebClient client, IThirdwebHttpClient httpClient)
     {
-        this.clientId = client.ClientId;
-        this.httpClient = httpClient;
+        this._clientId = client.ClientId;
+        this._httpClient = httpClient;
 
-        thirdwebHttpClientType = httpClient.GetType();
+        _thirdwebHttpClientType = httpClient.GetType();
     }
 
     // account/connect
@@ -57,9 +57,9 @@ internal partial class Server : ServerBase
     {
         var uri = MakeUri2024("/account/connect");
         var content = MakeHttpContent(new { accountAuthTokenToConnect = authTokenToConnect });
-        this.httpClient.AddHeader("Authorization", $"Bearer iaw-auth-token:{currentAccountToken}");
-        var response = await this.httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
-        this.httpClient.RemoveHeader("Authorization");
+        this._httpClient.AddHeader("Authorization", $"Bearer iaw-auth-token:{currentAccountToken}");
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        this._httpClient.RemoveHeader("Authorization");
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var res = await DeserializeAsync<AccountConnectResponse>(response).ConfigureAwait(false);
@@ -80,14 +80,14 @@ internal partial class Server : ServerBase
     // embedded-wallet/embedded-wallet-user-details
     internal override async Task<UserWallet> FetchUserDetailsAsync(string emailOrPhone, string authToken)
     {
-        Dictionary<string, string> queryParams = [];
+        Dictionary<string, string> queryParams = new();
         if (emailOrPhone == null && authToken == null)
         {
             throw new InvalidOperationException("Must provide either email address or auth token");
         }
 
         queryParams.Add("email", emailOrPhone ?? "uninitialized");
-        queryParams.Add("clientId", this.clientId);
+        queryParams.Add("clientId", this._clientId);
 
         var uri = MakeUri2023("/embedded-wallet/embedded-wallet-user-details", queryParams);
         var response = await this.SendHttpWithAuthAsync(uri, authToken ?? "").ConfigureAwait(false);
@@ -163,7 +163,7 @@ internal partial class Server : ServerBase
     internal override async Task<LoginPayloadData> FetchSiwePayloadAsync(string address, string chainId)
     {
         var uri = MakeUri2024("/login/siwe", new Dictionary<string, string> { { "address", address }, { "chainId", chainId } });
-        var response = await this.httpClient.GetAsync(uri.ToString()).ConfigureAwait(false);
+        var response = await this._httpClient.GetAsync(uri.ToString()).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         return await DeserializeAsync<LoginPayloadData>(response).ConfigureAwait(false);
@@ -173,7 +173,7 @@ internal partial class Server : ServerBase
     {
         var uri = MakeUri2024("/login/siwe/callback");
         var content = MakeHttpContent(new { signature, payload });
-        var response = await this.httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
@@ -183,7 +183,7 @@ internal partial class Server : ServerBase
     // login/oauthprovider
     internal override Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform)
     {
-        return Task.FromResult(MakeUri2024($"/login/{authProvider}", new Dictionary<string, string> { { "clientId", this.clientId }, { "platform", platform } }).ToString());
+        return Task.FromResult(MakeUri2024($"/login/{authProvider}", new Dictionary<string, string> { { "clientId", this._clientId }, { "platform", platform } }).ToString());
     }
 
     // login/email
@@ -191,7 +191,7 @@ internal partial class Server : ServerBase
     {
         var uri = MakeUri2024("/login/email");
         var content = MakeHttpContent(new { email = emailAddress });
-        var response = await this.httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var result = await DeserializeAsync<SendEmailOtpReturnType>(response).ConfigureAwait(false);
@@ -203,7 +203,7 @@ internal partial class Server : ServerBase
     {
         var uri = MakeUri2024("/login/email/callback");
         var content = MakeHttpContent(new { email = emailAddress, code = otp });
-        var response = await this.httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
@@ -215,7 +215,7 @@ internal partial class Server : ServerBase
     {
         var uri = MakeUri2024("/login/phone");
         var content = MakeHttpContent(new { phone = phoneNumber });
-        var response = await this.httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var result = await DeserializeAsync<SendPhoneOtpReturnType>(response).ConfigureAwait(false);
@@ -227,7 +227,7 @@ internal partial class Server : ServerBase
     {
         var uri = MakeUri2024("/login/phone/callback");
         var content = MakeHttpContent(new { phone = phoneNumber, code = otp });
-        var response = await this.httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
@@ -237,10 +237,10 @@ internal partial class Server : ServerBase
     // embedded-wallet/validate-custom-jwt
     internal override async Task<VerifyResult> VerifyJwtAsync(string jwtToken)
     {
-        var requestContent = new { jwt = jwtToken, developerClientId = this.clientId };
+        var requestContent = new { jwt = jwtToken, developerClientId = this._clientId };
         var content = MakeHttpContent(requestContent);
         var uri = MakeUri2023("/embedded-wallet/validate-custom-jwt");
-        var response = await this.httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response).ConfigureAwait(false);
@@ -257,10 +257,10 @@ internal partial class Server : ServerBase
     // embedded-wallet/validate-custom-auth-endpoint
     internal override async Task<VerifyResult> VerifyAuthEndpointAsync(string payload)
     {
-        var requestContent = new { payload, developerClientId = this.clientId };
+        var requestContent = new { payload, developerClientId = this._clientId };
         var content = MakeHttpContent(requestContent);
         var uri = MakeUri2023("/embedded-wallet/validate-custom-auth-endpoint");
-        var response = await this.httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response).ConfigureAwait(false);
@@ -288,7 +288,7 @@ internal partial class Server : ServerBase
         var idTokenResponse = await this.FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
 
         var invokePayload = Serialize(new { token = idTokenResponse.LambdaToken });
-        var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idTokenResponse.IdentityId, idTokenResponse.Token, invokePayload, thirdwebHttpClientType).ConfigureAwait(false);
+        var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idTokenResponse.IdentityId, idTokenResponse.Token, invokePayload, _thirdwebHttpClientType).ConfigureAwait(false);
 
         var jsonSerializer = new JsonSerializer();
         var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));
@@ -305,32 +305,32 @@ internal partial class Server : ServerBase
 
     private async Task<ThirdwebHttpResponseMessage> SendHttpWithAuthAsync(HttpRequestMessage httpRequestMessage, string authToken)
     {
-        this.httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{authToken}");
+        this._httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{authToken}");
 
         try
         {
             if (httpRequestMessage.Method == HttpMethod.Get)
             {
-                return await this.httpClient.GetAsync(httpRequestMessage.RequestUri.ToString()).ConfigureAwait(false);
+                return await this._httpClient.GetAsync(httpRequestMessage.RequestUri.ToString()).ConfigureAwait(false);
             }
             else if (httpRequestMessage.Method == HttpMethod.Post)
             {
-                return await this.httpClient.PostAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content).ConfigureAwait(false);
+                return await this._httpClient.PostAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content).ConfigureAwait(false);
             }
             else if (httpRequestMessage.Method == HttpMethod.Put)
             {
-                return await this.httpClient.PutAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content).ConfigureAwait(false);
+                return await this._httpClient.PutAsync(httpRequestMessage.RequestUri.ToString(), httpRequestMessage.Content).ConfigureAwait(false);
             }
             else
             {
                 return httpRequestMessage.Method == HttpMethod.Delete
-                    ? await this.httpClient.DeleteAsync(httpRequestMessage.RequestUri.ToString()).ConfigureAwait(false)
+                    ? await this._httpClient.DeleteAsync(httpRequestMessage.RequestUri.ToString()).ConfigureAwait(false)
                     : throw new InvalidOperationException("Unsupported HTTP method");
             }
         }
         finally
         {
-            this.httpClient.RemoveHeader("Authorization");
+            this._httpClient.RemoveHeader("Authorization");
         }
     }
 
@@ -382,7 +382,7 @@ internal partial class Server : ServerBase
     private static StringContent MakeHttpContent(object data)
     {
         StringContent stringContent = new(Serialize(data));
-        stringContent.Headers.ContentType = jsonContentType;
+        stringContent.Headers.ContentType = _jsonContentType;
         return stringContent;
     }
 

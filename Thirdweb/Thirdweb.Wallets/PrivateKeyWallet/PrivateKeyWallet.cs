@@ -1,4 +1,3 @@
-using System.Numerics;
 using System.Text;
 using Nethereum.ABI.EIP712;
 using Nethereum.Hex.HexConvertors.Extensions;
@@ -6,7 +5,6 @@ using Nethereum.Hex.HexTypes;
 using Nethereum.Model;
 using Nethereum.Signer;
 using Nethereum.Signer.EIP712;
-using Newtonsoft.Json;
 
 namespace Thirdweb;
 
@@ -329,49 +327,6 @@ public class PrivateKeyWallet : IThirdwebWallet
     {
         this.EcKey = null;
         return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Authenticates the user by signing a message with the wallet's private key.
-    /// </summary>
-    /// <param name="domain">The domain for authentication.</param>
-    /// <param name="chainId">The chain ID.</param>
-    /// <param name="authPayloadPath">The authentication payload path.</param>
-    /// <param name="authLoginPath">The authentication login path.</param>
-    /// <param name="httpClientOverride">Optional HTTP client override.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the authentication response.</returns>
-    public virtual async Task<string> Authenticate(
-        string domain,
-        BigInteger chainId,
-        string authPayloadPath = "/auth/payload",
-        string authLoginPath = "/auth/login",
-        IThirdwebHttpClient httpClientOverride = null
-    )
-    {
-        var payloadURL = domain + authPayloadPath;
-        var loginURL = domain + authLoginPath;
-
-        var payloadBodyRaw = new { address = await this.GetAddress(), chainId = chainId.ToString() };
-        var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
-
-        var httpClient = httpClientOverride ?? this.Client.HttpClient;
-
-        var payloadContent = new StringContent(payloadBody, Encoding.UTF8, "application/json");
-        var payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);
-        _ = payloadResponse.EnsureSuccessStatusCode();
-        var payloadString = await payloadResponse.Content.ReadAsStringAsync();
-
-        var loginBodyRaw = JsonConvert.DeserializeObject<LoginPayload>(payloadString);
-        var payloadToSign = Utils.GenerateSIWE(loginBodyRaw.Payload);
-
-        loginBodyRaw.Signature = await this.PersonalSign(payloadToSign);
-        var loginBody = JsonConvert.SerializeObject(new { payload = loginBodyRaw });
-
-        var loginContent = new StringContent(loginBody, Encoding.UTF8, "application/json");
-        var loginResponse = await httpClient.PostAsync(loginURL, loginContent);
-        _ = loginResponse.EnsureSuccessStatusCode();
-        var responseString = await loginResponse.Content.ReadAsStringAsync();
-        return responseString;
     }
 
     /// <summary>

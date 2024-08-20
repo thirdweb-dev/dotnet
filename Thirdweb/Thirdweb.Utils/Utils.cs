@@ -18,8 +18,8 @@ namespace Thirdweb;
 /// </summary>
 public static partial class Utils
 {
-    private static readonly Dictionary<BigInteger, bool> _eip155EnforcedCache = [];
-    private static readonly Dictionary<BigInteger, ThirdwebChainData> _chainDataCache = [];
+    private static readonly Dictionary<BigInteger, bool> _eip155EnforcedCache = new();
+    private static readonly Dictionary<BigInteger, ThirdwebChainData> _chainDataCache = new();
 
     /// <summary>
     /// Computes the client ID from the given secret key.
@@ -347,7 +347,6 @@ public static partial class Utils
         if (_chainDataCache.TryGetValue(chainId, out var value))
         {
             return value;
-
         }
 
         if (client == null)
@@ -596,7 +595,6 @@ public static partial class Utils
 
     public static async Task<bool> IsEip155Enforced(ThirdwebClient client, BigInteger chainId)
     {
-
         if (_eip155EnforcedCache.TryGetValue(chainId, out var value))
         {
             return value;
@@ -652,7 +650,6 @@ public static partial class Utils
 
     public static bool IsEip1559Supported(string chainId)
     {
-
         switch (chainId)
         {
             // BNB Mainnet

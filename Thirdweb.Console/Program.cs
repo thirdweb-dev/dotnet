@@ -8,6 +8,7 @@ using Thirdweb.Pay;
 using Newtonsoft.Json;
 using Nethereum.Hex.HexTypes;
 using System.Numerics;
+using Newtonsoft.Json.Linq;
 
 DotEnv.Load();
 
@@ -22,6 +23,7 @@ var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: ne
 
 // Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
+
 // var walletAddress = await privateKeyWallet.GetAddress();
 // Console.WriteLine($"PK Wallet address: {walletAddress}");
 
@@ -116,6 +118,37 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 // var linkedAccounts = await inAppWalletMain.GetLinkedAccounts();
 // Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
+
+#endregion
+
+#region Smart Wallet - Authenticate
+
+// var appWallet = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+// if (!await appWallet.IsConnected())
+// {
+//     _ = await appWallet.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         "thirdweb://",
+//         new InAppWalletBrowser()
+//     );
+// }
+// var smartWallet = await SmartWallet.Create(appWallet, 37714555429);
+
+// var data = await smartWallet.Authenticate<JObject>(
+//     domain: "https://myepicdomain.com",
+//     chainId: 37714555429,
+//     authPayloadPath: "/my-epic-auth/login",
+//     authLoginPath: "/my-epic-auth/login",
+//     separatePayloadAndSignatureInBody: true,
+//     authPayloadMethod: "GET",
+//     authLoginMethod: "POST"
+// );
+// Console.WriteLine($"Token: {data["token"]}");
 
 #endregion
 
