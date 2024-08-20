@@ -93,7 +93,7 @@ public class ContractsTests(ITestOutputHelper output) : BaseTests(output)
 
     private sealed class AllowlistProof
     {
-        public List<byte[]> Proof { get; set; } = [];
+        public List<byte[]> Proof { get; set; } = new List<byte[]>();
         public BigInteger QuantityLimitPerWallet { get; set; } = BigInteger.Zero;
         public BigInteger PricePerToken { get; set; } = BigInteger.Zero;
         public string Currency { get; set; } = Constants.ADDRESS_ZERO;

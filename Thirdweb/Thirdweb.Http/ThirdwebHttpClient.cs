@@ -19,7 +19,7 @@ public class ThirdwebHttpClient : IThirdwebHttpClient
     public ThirdwebHttpClient()
     {
         this._httpClient = new HttpClient();
-        this.Headers = [];
+        this.Headers = new();
     }
 
     /// <summary>

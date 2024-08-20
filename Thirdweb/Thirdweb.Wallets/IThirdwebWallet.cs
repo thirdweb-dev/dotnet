@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using Nethereum.ABI.EIP712;
+﻿using Nethereum.ABI.EIP712;
 using Newtonsoft.Json;
 
 namespace Thirdweb;
@@ -125,17 +124,6 @@ public interface IThirdwebWallet
     /// <param name="transaction">The transaction to execute.</param>
     /// <returns>The transaction receipt.</returns>
     Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transaction);
-
-    /// <summary>
-    /// Authenticates the wallet.
-    /// </summary>
-    /// <param name="domain">The authentication domain.</param>
-    /// <param name="chainId">The chain ID.</param>
-    /// <param name="authPayloadPath">The authentication payload path.</param>
-    /// <param name="authLoginPath">The authentication login path.</param>
-    /// <param name="httpClientOverride">The HTTP client override.</param>
-    /// <returns>The authentication result.</returns>
-    Task<string> Authenticate(string domain, BigInteger chainId, string authPayloadPath = "/auth/payload", string authLoginPath = "/auth/login", IThirdwebHttpClient httpClientOverride = null);
 
     /// <summary>
     /// Disconnects the wallet (if using InAppWallet, clears session)

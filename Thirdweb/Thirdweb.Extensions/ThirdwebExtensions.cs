@@ -79,7 +79,9 @@ public static class ThirdwebExtensions
     {
         return client == null
             ? throw new ArgumentNullException(nameof(client))
-            : string.IsNullOrEmpty(nft.Metadata.Image) ? Array.Empty<byte>() : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image).ConfigureAwait(false);
+            : string.IsNullOrEmpty(nft.Metadata.Image)
+                ? Array.Empty<byte>()
+                : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -90,9 +92,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<RoyaltyInfoResult> GetDefaultRoyaltyInfo(this ThirdwebContract contract)
     {
-        return contract == null
-            ? throw new ArgumentNullException(nameof(contract))
-            : await ThirdwebContract.Read<RoyaltyInfoResult>(contract, "getDefaultRoyaltyInfo");
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<RoyaltyInfoResult>(contract, "getDefaultRoyaltyInfo");
     }
 
     /// <summary>
@@ -103,9 +103,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<string> GetPrimarySaleRecipient(this ThirdwebContract contract)
     {
-        return contract == null
-            ? throw new ArgumentNullException(nameof(contract))
-            : await ThirdwebContract.Read<string>(contract, "primarySaleRecipient");
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<string>(contract, "primarySaleRecipient");
     }
 
     /// <summary>
@@ -225,6 +223,103 @@ public static class ThirdwebExtensions
         return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Authenticates the wallet.
+    /// </summary>
+    /// <param name="wallet">The wallet that will sign the SIWE payload.</param>
+    /// <param name="domain">The authentication domain.</param>
+    /// <param name="chainId">The chain ID.</param>
+    /// <param name="authPayloadPath">The authentication payload path.</param>
+    /// <param name="authLoginPath">The authentication login path.</param>
+    /// <param name="httpClientOverride">The HTTP client override.</param>
+    /// <param name="authPayloadMethod">The authentication payload method.</param>
+    /// <param name="authLoginMethod">The authentication login method.</param>
+    /// <param name="separatePayloadAndSignatureInBody">Whether to separate the payload and signature in the body.</param>
+    /// <returns>The authentication result.</returns>
+    public static async Task<T> Authenticate<T>(
+        this IThirdwebWallet wallet,
+        string domain,
+        BigInteger chainId,
+        string authPayloadPath = "/auth/payload",
+        string authLoginPath = "/auth/login",
+        string authPayloadMethod = "GET",
+        string authLoginMethod = "POST",
+        bool separatePayloadAndSignatureInBody = false,
+        IThirdwebHttpClient httpClientOverride = null
+    )
+    {
+        var payloadURL = domain + authPayloadPath;
+        var loginURL = domain + authLoginPath;
+
+        var payloadBodyRaw = new { address = await wallet.GetAddress(), chainId = chainId.ToString() };
+        var payloadBody = JsonConvert.SerializeObject(payloadBodyRaw);
+
+        var httpClient = httpClientOverride ?? wallet.Client.HttpClient;
+
+        var payloadContent = new StringContent(payloadBody, System.Text.Encoding.UTF8, "application/json");
+        ThirdwebHttpResponseMessage payloadResponse;
+        if (authPayloadMethod == "GET")
+        {
+            payloadURL += "?address=" + await wallet.GetAddress() + "&chainId=" + chainId.ToString();
+            payloadResponse = await httpClient.GetAsync(payloadURL);
+        }
+        else if (authPayloadMethod == "POST")
+        {
+            payloadResponse = await httpClient.PostAsync(payloadURL, payloadContent);
+        }
+        else
+        {
+            throw new Exception("Unsupported HTTP method for auth payload");
+        }
+
+        _ = payloadResponse.EnsureSuccessStatusCode();
+        var payloadString = await payloadResponse.Content.ReadAsStringAsync();
+        Console.WriteLine(payloadString);
+
+        var loginBodyRaw = JsonConvert.DeserializeObject<LoginPayload>(payloadString);
+        if (loginBodyRaw.Payload == null)
+        {
+            var payloadDataRaw = JsonConvert.DeserializeObject<LoginPayloadData>(payloadString);
+            loginBodyRaw.Payload = payloadDataRaw;
+        }
+
+        var payloadToSign = Utils.GenerateSIWE(loginBodyRaw.Payload);
+        loginBodyRaw.Signature = await wallet.PersonalSign(payloadToSign);
+
+        var loginBody = JsonConvert.SerializeObject(separatePayloadAndSignatureInBody ? new { payload = loginBodyRaw.Payload, signature = loginBodyRaw.Signature } : new { payload = loginBodyRaw });
+
+        var loginContent = new StringContent(loginBody, System.Text.Encoding.UTF8, "application/json");
+        ThirdwebHttpResponseMessage loginResponse;
+        if (authLoginMethod == "GET")
+        {
+            loginURL = loginURL + "?payload=" + JsonConvert.SerializeObject(loginBodyRaw);
+            loginResponse = await httpClient.GetAsync(loginURL);
+        }
+        else if (authLoginMethod == "POST")
+        {
+            loginResponse = await httpClient.PostAsync(loginURL, loginContent);
+        }
+        else
+        {
+            throw new Exception("Unsupported HTTP method for auth login");
+        }
+        _ = loginResponse.EnsureSuccessStatusCode();
+
+        if (typeof(T) == typeof(byte[]))
+        {
+            return (T)(object)await loginResponse.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+        }
+        else if (typeof(T) == typeof(string))
+        {
+            return (T)(object)await loginResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+        }
+        else
+        {
+            var content = await loginResponse.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            return JsonConvert.DeserializeObject<T>(System.Text.Encoding.UTF8.GetString(content));
+        }
+    }
+
     #endregion
 
     #region ERC20
@@ -244,9 +339,7 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(contract));
         }
 
-        return string.IsNullOrEmpty(ownerAddress)
-            ? throw new ArgumentException("Owner address must be provided")
-            : await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress);
+        return string.IsNullOrEmpty(ownerAddress) ? throw new ArgumentException("Owner address must be provided") : await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress);
     }
 
     /// <summary>
@@ -257,9 +350,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<BigInteger> ERC20_TotalSupply(this ThirdwebContract contract)
     {
-        return contract == null
-            ? throw new ArgumentNullException(nameof(contract))
-            : await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
     }
 
     /// <summary>
@@ -281,9 +372,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<string> ERC20_Symbol(this ThirdwebContract contract)
     {
-        return contract == null
-            ? throw new ArgumentNullException(nameof(contract))
-            : await ThirdwebContract.Read<string>(contract, "symbol");
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<string>(contract, "symbol");
     }
 
     /// <summary>
@@ -372,9 +461,7 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(wallet));
         }
 
-        return string.IsNullOrEmpty(toAddress)
-            ? throw new ArgumentException("Recipient address must be provided")
-            : await ThirdwebContract.Write(wallet, contract, "transfer", 0, toAddress, amount);
+        return string.IsNullOrEmpty(toAddress) ? throw new ArgumentException("Recipient address must be provided") : await ThirdwebContract.Write(wallet, contract, "transfer", 0, toAddress, amount);
     }
 
     /// <summary>
@@ -422,9 +509,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<BigInteger> ERC721_TotalSupply(this ThirdwebContract contract)
     {
-        return contract == null
-            ? throw new ArgumentNullException(nameof(contract))
-            : await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
     }
 
     /// <summary>
@@ -457,9 +542,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<BigInteger> ERC721_TokenByIndex(this ThirdwebContract contract, BigInteger index)
     {
-        return contract == null
-            ? throw new ArgumentNullException(nameof(contract))
-            : await ThirdwebContract.Read<BigInteger>(contract, "tokenByIndex", index);
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<BigInteger>(contract, "tokenByIndex", index);
     }
 
     /// <summary>
@@ -477,9 +560,7 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(contract));
         }
 
-        return string.IsNullOrEmpty(ownerAddress)
-            ? throw new ArgumentException("Owner address must be provided")
-            : await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress);
+        return string.IsNullOrEmpty(ownerAddress) ? throw new ArgumentException("Owner address must be provided") : await ThirdwebContract.Read<BigInteger>(contract, "balanceOf", ownerAddress);
     }
 
     /// <summary>
@@ -497,9 +578,7 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(contract));
         }
 
-        return tokenId < 0
-            ? throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0")
-            : await ThirdwebContract.Read<string>(contract, "ownerOf", tokenId);
+        return tokenId < 0 ? throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0") : await ThirdwebContract.Read<string>(contract, "ownerOf", tokenId);
     }
 
     /// <summary>
@@ -521,9 +600,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<string> ERC721_Symbol(this ThirdwebContract contract)
     {
-        return contract == null
-            ? throw new ArgumentNullException(nameof(contract))
-            : await ThirdwebContract.Read<string>(contract, "symbol");
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<string>(contract, "symbol");
     }
 
     /// <summary>
@@ -541,9 +618,7 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(contract));
         }
 
-        return tokenId < 0
-            ? throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0")
-            : await ThirdwebContract.Read<string>(contract, "tokenURI", tokenId);
+        return tokenId < 0 ? throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0") : await ThirdwebContract.Read<string>(contract, "tokenURI", tokenId);
     }
 
     /// <summary>
@@ -568,9 +643,7 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(wallet));
         }
 
-        return string.IsNullOrEmpty(toAddress)
-            ? throw new ArgumentException("Recipient address must be provided")
-            : await ThirdwebContract.Write(wallet, contract, "approve", 0, toAddress, tokenId);
+        return string.IsNullOrEmpty(toAddress) ? throw new ArgumentException("Recipient address must be provided") : await ThirdwebContract.Write(wallet, contract, "approve", 0, toAddress, tokenId);
     }
 
     /// <summary>
@@ -588,9 +661,7 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(contract));
         }
 
-        return tokenId < 0
-            ? throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0")
-            : await ThirdwebContract.Read<string>(contract, "getApproved", tokenId);
+        return tokenId < 0 ? throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0") : await ThirdwebContract.Read<string>(contract, "getApproved", tokenId);
     }
 
     /// <summary>
@@ -929,9 +1000,7 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(contract));
         }
 
-        return tokenId < 0
-            ? throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0")
-            : await ThirdwebContract.Read<string>(contract, "uri", tokenId);
+        return tokenId < 0 ? throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0") : await ThirdwebContract.Read<string>(contract, "uri", tokenId);
     }
 
     /// <summary>
@@ -1283,9 +1352,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<BigInteger> DropERC20_GetActiveClaimConditionId(this ThirdwebContract contract)
     {
-        return contract == null
-            ? throw new ArgumentNullException(nameof(contract))
-            : await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId");
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId");
     }
 
     /// <summary>
@@ -1394,9 +1461,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<BigInteger> DropERC721_GetActiveClaimConditionId(this ThirdwebContract contract)
     {
-        return contract == null
-            ? throw new ArgumentNullException(nameof(contract))
-            : await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId");
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId");
     }
 
     /// <summary>
@@ -1771,9 +1836,7 @@ public static class ThirdwebExtensions
             throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
         }
 
-        return uri == null
-            ? throw new ArgumentException("URI must be provided")
-            : await ThirdwebContract.Write(wallet, contract, "mintTo", 0, receiverAddress, tokenId, uri);
+        return uri == null ? throw new ArgumentException("URI must be provided") : await ThirdwebContract.Write(wallet, contract, "mintTo", 0, receiverAddress, tokenId, uri);
     }
 
     /// <summary>
@@ -1788,13 +1851,7 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract or wallet is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the receiver address is null or empty.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the token ID is less than 0.</exception>
-    public static async Task<ThirdwebTransactionReceipt> TokenERC721_MintTo(
-        this ThirdwebContract contract,
-        IThirdwebWallet wallet,
-        string receiverAddress,
-        BigInteger tokenId,
-        NFTMetadata metadata
-    )
+    public static async Task<ThirdwebTransactionReceipt> TokenERC721_MintTo(this ThirdwebContract contract, IThirdwebWallet wallet, string receiverAddress, BigInteger tokenId, NFTMetadata metadata)
     {
         if (contract == null)
         {
@@ -1835,12 +1892,7 @@ public static class ThirdwebExtensions
     /// <returns>A task representing the asynchronous operation, with a ThirdwebTransactionReceipt result.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the contract, wallet, or mint request is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the signature is null or empty.</exception>
-    public static async Task<ThirdwebTransactionReceipt> TokenERC721_MintWithSignature(
-        this ThirdwebContract contract,
-        IThirdwebWallet wallet,
-        TokenERC721_MintRequest mintRequest,
-        string signature
-    )
+    public static async Task<ThirdwebTransactionReceipt> TokenERC721_MintWithSignature(this ThirdwebContract contract, IThirdwebWallet wallet, TokenERC721_MintRequest mintRequest, string signature)
     {
         if (contract == null)
         {
@@ -1885,7 +1937,6 @@ public static class ThirdwebExtensions
         NFTMetadata? metadataOverride = null
     )
     {
-
         if (contract == null)
         {
             throw new ArgumentNullException(nameof(contract));
@@ -2026,9 +2077,7 @@ public static class ThirdwebExtensions
             throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than 0");
         }
 
-        return uri == null
-            ? throw new ArgumentNullException(nameof(uri))
-            : await ThirdwebContract.Write(wallet, contract, "mintTo", 0, receiverAddress, tokenId, uri, quantity);
+        return uri == null ? throw new ArgumentNullException(nameof(uri)) : await ThirdwebContract.Write(wallet, contract, "mintTo", 0, receiverAddress, tokenId, uri, quantity);
     }
 
     /// <summary>
@@ -2053,9 +2102,7 @@ public static class ThirdwebExtensions
         NFTMetadata metadata
     )
     {
-
         if (contract == null)
-
         {
             throw new ArgumentNullException(nameof(contract));
         }
@@ -2099,12 +2146,7 @@ public static class ThirdwebExtensions
     /// <returns>A task representing the asynchronous operation, with a ThirdwebTransactionReceipt result.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the contract, wallet, or mint request is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the signature is null or empty.</exception>
-    public static async Task<ThirdwebTransactionReceipt> TokenERC1155_MintWithSignature(
-        this ThirdwebContract contract,
-        IThirdwebWallet wallet,
-        TokenERC1155_MintRequest mintRequest,
-        string signature
-    )
+    public static async Task<ThirdwebTransactionReceipt> TokenERC1155_MintWithSignature(this ThirdwebContract contract, IThirdwebWallet wallet, TokenERC1155_MintRequest mintRequest, string signature)
     {
         if (contract == null)
         {
@@ -2150,7 +2192,6 @@ public static class ThirdwebExtensions
         NFTMetadata? metadataOverride = null
     )
     {
-
         if (contract == null)
         {
             throw new ArgumentNullException(nameof(contract));

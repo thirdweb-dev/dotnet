@@ -14,10 +14,10 @@ public class ThirdwebRPC : IDisposable
 
     private readonly Uri _rpcUrl;
     private readonly TimeSpan _rpcTimeout;
-    private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = [];
+    private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new();
     private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(25);
-    private readonly List<RpcRequest> _pendingBatch = [];
-    private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = [];
+    private readonly List<RpcRequest> _pendingBatch = new();
+    private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new();
     private readonly object _batchLock = new();
     private readonly object _responseLock = new();
     private readonly object _cacheLock = new();
@@ -25,7 +25,7 @@ public class ThirdwebRPC : IDisposable
 
     private int _requestIdCounter = 1;
 
-    private static readonly Dictionary<string, ThirdwebRPC> _rpcs = [];
+    private static readonly Dictionary<string, ThirdwebRPC> _rpcs = new();
 
     private readonly IThirdwebHttpClient _httpClient;
 
@@ -77,7 +77,6 @@ public class ThirdwebRPC : IDisposable
     {
         lock (this._cacheLock)
         {
-
             var cacheKey = GetCacheKey(method, parameters);
             if (this._cache.TryGetValue(cacheKey, out var cachedItem) && (DateTime.Now - cachedItem.Timestamp) < this._cacheDuration)
             {
@@ -143,7 +142,6 @@ public class ThirdwebRPC : IDisposable
                 var deserializedResponse = JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(result));
                 lock (this._cacheLock)
                 {
-
                     var cacheKey = GetCacheKey(method, parameters);
                     this._cache[cacheKey] = (deserializedResponse, DateTime.Now);
                 }
