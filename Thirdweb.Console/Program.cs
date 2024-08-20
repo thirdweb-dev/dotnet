@@ -54,13 +54,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region AA 0.7
 
-// var smartWallet07 = await SmartWallet.Create(
-//     personalWallet: privateKeyWallet,
-//     chainId: 11155111,
-//     gasless: true,
-//     factoryAddress: "0xc5A43D081Dc10316EE640504Ea1cBc74666F3874",
-//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
-// );
+// var smartWallet07 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V07);
 
 // var receipt07 = await smartWallet07.ExecuteTransaction(
 //     new ThirdwebTransactionInput()
