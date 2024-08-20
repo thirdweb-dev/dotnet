@@ -159,6 +159,9 @@ public class SmartWallet : IThirdwebWallet
             {
                 throw new InvalidOperationException("Token paymaster chain ID does not match the smart account chain ID.");
             }
+
+            // TODO: Re-enable token paymasters
+            throw new InvalidOperationException("Token paymasters are currently disabled.");
         }
 
         return new SmartWallet(
