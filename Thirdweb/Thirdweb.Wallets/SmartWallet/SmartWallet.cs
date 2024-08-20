@@ -715,10 +715,10 @@ public class SmartWallet : IThirdwebWallet
 
             var sig = factorySupports712
                 ? await EIP712.GenerateSignature_SmartAccount_AccountMessage("Account", "1", this._chainId, await this.GetAddress(), originalMsgHash, this._personalAccount)
-                : await this._personalAccount.PersonalSign(originalMsgHash);
+                : await this._personalAccount.PersonalSign(message);
 
             var isValid = await this.IsValidSignature(message, sig);
-            return isValid ? sig : throw new Exception("Invalid signature. Outside of the signer being incorrect, this can happen if the caller if not an approved target.");
+            return isValid ? sig : throw new Exception("Invalid signature.");
         }
         else
         {
@@ -735,12 +735,20 @@ public class SmartWallet : IThirdwebWallet
     {
         try
         {
-            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", Encoding.UTF8.GetBytes(message).HashPrefixedMessage(), signature.HexToBytes());
+            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", message.StringToHex(), signature.HexToBytes());
             return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
         }
         catch
         {
-            return false;
+            try
+            {
+                var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", Encoding.UTF8.GetBytes(message).HashPrefixedMessage(), signature.HexToBytes());
+                return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 
