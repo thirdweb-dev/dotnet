@@ -3,7 +3,6 @@ using System.Text;
 using System.Web;
 using Nethereum.ABI.EIP712;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Thirdweb.EWS;
 
 namespace Thirdweb;
@@ -122,19 +121,9 @@ public partial class EcosystemWallet : PrivateKeyWallet
             authToken = await embeddedWallet.ResumeEnclaveSession(email, phoneNumber, authproviderStr).ConfigureAwait(false);
             enclaveHttpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{authToken}");
 
-            var url = $"{EnclavePath}/details";
-            var requestContent = new StringContent("", Encoding.UTF8, "application/json");
-
-            var response = await enclaveHttpClient.PostAsync(url, requestContent).ConfigureAwait(false);
-            _ = response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            Console.WriteLine(content);
-            var enclaveResponse = JsonConvert.DeserializeObject<JObject>(content);
-
             return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, authToken)
             {
-                _address = enclaveResponse["address"].Value<string>().ToChecksumAddress()
+                _address = await GetAddressFromEnclave(enclaveHttpClient).ConfigureAwait(false)
             };
         }
         catch (Exception e)
@@ -144,25 +133,37 @@ public partial class EcosystemWallet : PrivateKeyWallet
         }
     }
 
-    private async Task<string> GenerateWallet()
+    private static async Task<string> GetAddressFromEnclave(IThirdwebHttpClient httpClient)
     {
-        var url = $"{EnclavePath}/generate";
-        var requestContent = new StringContent("", Encoding.UTF8, "application/json");
-
-        this._httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{this._authToken}");
-
-        var response = await this._httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
+        var url = $"{EnclavePath}/details";
+        var response = await httpClient.GetAsync(url).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
-
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        Console.WriteLine(content);
-        var enclaveResponse = JsonConvert.DeserializeObject<EnclaveWalletResponse>(content);
+        var enclaveResponse = JsonConvert.DeserializeObject<List<EnclaveWalletResponse>>(content);
+        return enclaveResponse[0].Wallet.Address.ToChecksumAddress();
+    }
 
-        this._address = enclaveResponse.Wallet.Address;
+    private async Task<string> GenerateOrLoadWallet()
+    {
+        try
+        {
+            var url = $"{EnclavePath}/generate";
+            var requestContent = new StringContent("", Encoding.UTF8, "application/json");
+            this._httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{this._authToken}");
+            var response = await this._httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
+            _ = response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var enclaveResponse = JsonConvert.DeserializeObject<EnclaveWalletResponse>(content);
+            this._address = enclaveResponse.Wallet.Address.ToChecksumAddress();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed to generate wallet: {e.Message}");
+            this._address = await GetAddressFromEnclave(this._httpClient).ConfigureAwait(false);
+        }
 
         await this._embeddedWallet.CreateEnclaveSession(this._authToken, this._email, this._phoneNumber, this._authProvider).ConfigureAwait(false);
-
-        return enclaveResponse.Wallet.Address;
+        return this._address;
     }
 
     #endregion
@@ -228,7 +229,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
         this._authToken = serverRes.AuthToken;
 
-        return await this.GenerateWallet().ConfigureAwait(false);
+        return await this.GenerateOrLoadWallet().ConfigureAwait(false);
     }
 
     #endregion
@@ -300,7 +301,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
         this._authToken = serverRes.AuthToken;
 
-        var walletAddress = await this.GenerateWallet().ConfigureAwait(false);
+        var walletAddress = await this.GenerateOrLoadWallet().ConfigureAwait(false);
 
         return walletAddress;
     }
@@ -329,7 +330,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
         this._authToken = serverRes.AuthToken;
 
-        return await this.GenerateWallet().ConfigureAwait(false);
+        return await this.GenerateOrLoadWallet().ConfigureAwait(false);
     }
 
     public async Task<string> LoginWithJWT(string jwt, string encryptionKey)
@@ -346,7 +347,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
         var serverRes = string.IsNullOrEmpty(jwt) ? throw new ArgumentException("JWT cannot be null or empty.", nameof(jwt)) : await this._embeddedWallet.SignInWithJwtAsync(jwt).ConfigureAwait(false);
         this._authToken = serverRes.AuthToken;
-        return await this.GenerateWallet().ConfigureAwait(false);
+        return await this.GenerateOrLoadWallet().ConfigureAwait(false);
     }
 
     public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey)
@@ -367,7 +368,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
         this._authToken = serverRes.AuthToken;
 
-        return await this.GenerateWallet().ConfigureAwait(false);
+        return await this.GenerateOrLoadWallet().ConfigureAwait(false);
     }
 
     #endregion
@@ -483,11 +484,11 @@ public partial class EcosystemWallet : PrivateKeyWallet
                 {
                     value = transaction.Value?.HexValue ?? "0x0",
                     to = transaction.To,
-                    nonce = transaction.Nonce.Value,
+                    nonce = transaction.Nonce.HexValue,
                     gas = transaction.Gas.HexValue,
                     gasPrice = transaction.GasPrice.HexValue,
                     data = transaction.Data ?? "0x",
-                    chainId = transaction.ChainId.Value
+                    chainId = transaction.ChainId.HexValue
                 }
             };
         }
@@ -499,12 +500,12 @@ public partial class EcosystemWallet : PrivateKeyWallet
                 {
                     value = transaction.Value?.HexValue ?? "0x0",
                     to = transaction.To,
-                    nonce = transaction.Nonce.Value,
+                    nonce = transaction.Nonce.HexValue,
                     gas = transaction.Gas.HexValue,
                     maxFeePerGas = transaction.MaxFeePerGas.HexValue,
                     maxPriorityFeePerGas = transaction.MaxPriorityFeePerGas.HexValue,
                     data = transaction.Data ?? "0x",
-                    chainId = transaction.ChainId.Value
+                    chainId = transaction.ChainId.HexValue
                 }
             };
         }
