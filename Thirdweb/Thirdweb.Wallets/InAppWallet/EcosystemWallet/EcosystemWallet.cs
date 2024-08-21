@@ -112,8 +112,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
         }
         enclaveHttpClient.SetHeaders(headers);
 
-        storageDirectoryPath ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Thirdweb", "EcosystemWallet");
-        var embeddedWallet = new EmbeddedWallet(client, storageDirectoryPath, ecosystemId, ecosystemPartnerId);
+        storageDirectoryPath ??= Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var embeddedWallet = new EmbeddedWallet(client, Path.Combine(storageDirectoryPath, "Thirdweb", "EcosystemWallet"), ecosystemId, ecosystemPartnerId);
 
         string authToken = null;
         try
