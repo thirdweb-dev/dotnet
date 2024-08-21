@@ -296,7 +296,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             authResultJson = queryDict["authResult"];
         }
 
-        var serverRes = await this._embeddedWallet.SignInWithOauthAsync(this._authProvider, authResultJson).ConfigureAwait(false);
+        var serverRes = await this._embeddedWallet.SignInWithOauthAsync(authResultJson).ConfigureAwait(false);
 
         this._authToken = serverRes.AuthToken;
 

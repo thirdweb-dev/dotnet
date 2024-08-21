@@ -356,7 +356,7 @@ public class InAppWallet : PrivateKeyWallet
             authResultJson = queryDict["authResult"];
         }
 
-        return await this.EmbeddedWallet.SignInWithOauthAsync(this.AuthProvider, authResultJson);
+        return await this.EmbeddedWallet.SignInWithOauthAsync(authResultJson);
     }
 
     #endregion
