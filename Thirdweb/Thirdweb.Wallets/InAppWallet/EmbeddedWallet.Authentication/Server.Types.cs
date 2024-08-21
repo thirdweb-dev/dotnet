@@ -87,19 +87,19 @@ internal partial class Server
             [DataMember(Name = "authDetails")]
             internal AuthDetailsType AuthDetails { get; set; }
 
-            [DataMember]
+            [DataMember(Name = "authProvider")]
             private string _authProvider;
 
-            [DataMember]
+            [DataMember(Name = "developerClientId")]
             private string _developerClientId;
 
             [DataMember(Name = "isNewUser")]
             internal bool IsNewUser { get; set; }
 
-            [DataMember]
+            [DataMember(Name = "rawToken")]
             private string _rawToken;
 
-            [DataMember]
+            [DataMember(Name = "userId")]
             private string _userId;
         }
     }
