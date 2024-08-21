@@ -320,22 +320,22 @@ public class InAppWallet : PrivateKeyWallet
 
         browser ??= new InAppWalletBrowser();
         var browserResult = await browser.Login(this.Client, loginUrl, redirectUrl, browserOpenAction, cancellationToken);
-        switch (browserResult.status)
+        switch (browserResult.Status)
         {
             case BrowserStatus.Success:
                 break;
             case BrowserStatus.UserCanceled:
-                throw new TaskCanceledException(browserResult.error ?? "LoginWithOauth was cancelled.");
+                throw new TaskCanceledException(browserResult.Error ?? "LoginWithOauth was cancelled.");
             case BrowserStatus.Timeout:
-                throw new TimeoutException(browserResult.error ?? "LoginWithOauth timed out.");
+                throw new TimeoutException(browserResult.Error ?? "LoginWithOauth timed out.");
             case BrowserStatus.UnknownError:
             default:
-                throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.status} | {browserResult.error}");
+                throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}");
         }
         var callbackUrl =
-            browserResult.status != BrowserStatus.Success
-                ? throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.status} | {browserResult.error}")
-                : browserResult.callbackUrl;
+            browserResult.Status != BrowserStatus.Success
+                ? throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}")
+                : browserResult.CallbackUrl;
 
         while (string.IsNullOrEmpty(callbackUrl))
         {
@@ -419,7 +419,9 @@ public class InAppWallet : PrivateKeyWallet
 
         return string.IsNullOrEmpty(this.Email) && string.IsNullOrEmpty(this.PhoneNumber)
             ? throw new Exception("Email or Phone Number is required for OTP login")
-            : this.Email == null ? await this.EmbeddedWallet.VerifyPhoneOtpAsync(this.PhoneNumber, otp) : await this.EmbeddedWallet.VerifyEmailOtpAsync(this.Email, otp);
+            : this.Email == null
+                ? await this.EmbeddedWallet.VerifyPhoneOtpAsync(this.PhoneNumber, otp)
+                : await this.EmbeddedWallet.VerifyEmailOtpAsync(this.Email, otp);
     }
 
     #endregion
@@ -452,9 +454,7 @@ public class InAppWallet : PrivateKeyWallet
             throw new InvalidOperationException("SIWE Signer wallet must be connected as this operation requires it to sign a message.");
         }
 
-        return chainId <= 0
-            ? throw new ArgumentException(nameof(chainId), "Chain ID must be greater than 0.")
-            : await this.EmbeddedWallet.SignInWithSiweAsync(signer, chainId);
+        return chainId <= 0 ? throw new ArgumentException(nameof(chainId), "Chain ID must be greater than 0.") : await this.EmbeddedWallet.SignInWithSiweAsync(signer, chainId);
     }
 
     #endregion
@@ -482,9 +482,7 @@ public class InAppWallet : PrivateKeyWallet
 
     private async Task<Server.VerifyResult> PreAuth_JWT(string jwt)
     {
-        return string.IsNullOrEmpty(jwt)
-            ? throw new ArgumentException(nameof(jwt), "JWT cannot be null or empty.")
-            : await this.EmbeddedWallet.SignInWithJwtAsync(jwt);
+        return string.IsNullOrEmpty(jwt) ? throw new ArgumentException(nameof(jwt), "JWT cannot be null or empty.") : await this.EmbeddedWallet.SignInWithJwtAsync(jwt);
     }
 
     #endregion
@@ -512,9 +510,7 @@ public class InAppWallet : PrivateKeyWallet
 
     private async Task<Server.VerifyResult> PreAuth_AuthEndpoint(string payload)
     {
-        return string.IsNullOrEmpty(payload)
-            ? throw new ArgumentException(nameof(payload), "Payload cannot be null or empty.")
-            : await this.EmbeddedWallet.SignInWithAuthEndpointAsync(payload);
+        return string.IsNullOrEmpty(payload) ? throw new ArgumentException(nameof(payload), "Payload cannot be null or empty.") : await this.EmbeddedWallet.SignInWithAuthEndpointAsync(payload);
     }
 
     #endregion

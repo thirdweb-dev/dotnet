@@ -7,44 +7,44 @@ internal partial class LocalStorage : LocalStorageBase
     [DataContract]
     internal class DataStorage
     {
-        internal string AuthToken => this.authToken;
-        internal string DeviceShare => this.deviceShare;
-        internal string EmailAddress => this.emailAddress;
-        internal string PhoneNumber => this.phoneNumber;
-        internal string WalletUserId => this.walletUserId;
-        internal string AuthProvider => this.authProvider;
+        internal string AuthToken => this._authToken;
+        internal string DeviceShare => this._deviceShare;
+        internal string EmailAddress => this._emailAddress;
+        internal string PhoneNumber => this._phoneNumber;
+        internal string WalletUserId => this._walletUserId;
+        internal string AuthProvider => this._authProvider;
 
         [DataMember]
-        private string authToken;
+        private string _authToken;
 
         [DataMember]
-        private string deviceShare;
+        private string _deviceShare;
 
         [DataMember]
-        private string emailAddress;
+        private string _emailAddress;
 
         [DataMember]
-        private string phoneNumber;
+        private string _phoneNumber;
 
         [DataMember]
-        private string walletUserId;
+        private string _walletUserId;
 
         [DataMember]
-        private string authProvider;
+        private string _authProvider;
 
         internal DataStorage(string authToken, string deviceShare, string emailAddress, string phoneNumber, string walletUserId, string authProvider)
         {
-            this.authToken = authToken;
-            this.deviceShare = deviceShare;
-            this.emailAddress = emailAddress;
-            this.phoneNumber = phoneNumber;
-            this.walletUserId = walletUserId;
-            this.authProvider = authProvider;
+            this._authToken = authToken;
+            this._deviceShare = deviceShare;
+            this._emailAddress = emailAddress;
+            this._phoneNumber = phoneNumber;
+            this._walletUserId = walletUserId;
+            this._authProvider = authProvider;
         }
 
         internal void ClearAuthToken()
         {
-            this.authToken = null;
+            this._authToken = null;
         }
     }
 

@@ -9,6 +9,50 @@ internal partial class EmbeddedWallet
         return this._localStorage.Data?.AuthToken;
     }
 
+    internal async Task CreateEnclaveSession(string authToken, string email, string phone, string authProvider)
+    {
+        await this._localStorage.RemoveAuthTokenAsync();
+        var data = new LocalStorage.DataStorage(authToken, null, email, phone, null, authProvider);
+        await this._localStorage.SaveDataAsync(data).ConfigureAwait(false);
+    }
+
+    internal async Task<string> ResumeEnclaveSession(string email, string phone, string authProvider)
+    {
+        email = email?.ToLower();
+
+        if (this._localStorage.Data?.AuthToken == null)
+        {
+            throw new InvalidOperationException("User is not signed in");
+        }
+
+        var userWallet = await this._server.FetchUserDetailsAsync(null, this._localStorage.Data.AuthToken).ConfigureAwait(false);
+        switch (userWallet.Status)
+        {
+            case "Logged Out":
+                throw new InvalidOperationException("User is logged out");
+            case "Logged In, Wallet Uninitialized":
+            case "Logged In, Wallet Initialized":
+                var emailAddress = userWallet.StoredToken?.AuthDetails.Email;
+                var phoneNumber = userWallet.StoredToken?.AuthDetails.PhoneNumber;
+
+                if ((email != null && email != emailAddress) || (phone != null && phone != phoneNumber))
+                {
+                    throw new InvalidOperationException("User email or phone number do not match");
+                }
+                else if (email == null && this._localStorage.Data.AuthProvider != authProvider)
+                {
+                    throw new InvalidOperationException($"User auth provider does not match. Expected {this._localStorage.Data.AuthProvider}, got {authProvider}");
+                }
+                else
+                {
+                    return this._localStorage.Data.AuthToken;
+                }
+            default:
+                break;
+        }
+        throw new InvalidOperationException($"Unexpected user status '{userWallet.Status}'");
+    }
+
     internal async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)
     {
         var walletUserId = result.WalletUserId;

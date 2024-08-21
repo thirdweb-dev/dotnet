@@ -334,12 +334,18 @@ public class PrivateKeyWallet : IThirdwebWallet
     /// </summary>
     /// <param name="transaction">The transaction to send.</param>
     /// <returns>Throws an InvalidOperationException.</returns>
-    public Task<string> SendTransaction(ThirdwebTransactionInput transaction)
+    public virtual Task<string> SendTransaction(ThirdwebTransactionInput transaction)
     {
         throw new InvalidOperationException("SendTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");
     }
 
-    public Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
+    /// <summary>
+    /// Throws an exception because executing transactions is not supported for private key wallets.
+    /// </summary>
+    /// <param name="transactionInput"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public virtual Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
     {
         throw new InvalidOperationException("ExecuteTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");
     }

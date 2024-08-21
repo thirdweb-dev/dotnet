@@ -590,17 +590,17 @@ public class SmartWallet : IThirdwebWallet
     {
         return new UserOperationHexifiedV6()
         {
-            sender = userOperation.Sender,
-            nonce = userOperation.Nonce.ToHexBigInteger().HexValue,
-            initCode = userOperation.InitCode.BytesToHex(),
-            callData = userOperation.CallData.BytesToHex(),
-            callGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
-            verificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
-            preVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
-            maxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
-            maxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
-            paymasterAndData = userOperation.PaymasterAndData.BytesToHex(),
-            signature = userOperation.Signature.BytesToHex()
+            Sender = userOperation.Sender,
+            Nonce = userOperation.Nonce.ToHexBigInteger().HexValue,
+            InitCode = userOperation.InitCode.BytesToHex(),
+            CallData = userOperation.CallData.BytesToHex(),
+            CallGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
+            VerificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
+            PreVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
+            MaxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
+            MaxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
+            PaymasterAndData = userOperation.PaymasterAndData.BytesToHex(),
+            Signature = userOperation.Signature.BytesToHex()
         };
     }
 
@@ -608,21 +608,21 @@ public class SmartWallet : IThirdwebWallet
     {
         return new UserOperationHexifiedV7()
         {
-            sender = userOperation.Sender,
-            nonce = Utils.HexConcat(Constants.ADDRESS_ZERO, userOperation.Nonce.ToHexBigInteger().HexValue),
-            factory = userOperation.Factory,
-            factoryData = userOperation.FactoryData.BytesToHex(),
-            callData = userOperation.CallData.BytesToHex(),
-            callGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
-            verificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
-            preVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
-            maxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
-            maxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
-            paymaster = userOperation.Paymaster,
-            paymasterVerificationGasLimit = userOperation.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue,
-            paymasterPostOpGasLimit = userOperation.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue,
-            paymasterData = userOperation.PaymasterData.BytesToHex(),
-            signature = userOperation.Signature.BytesToHex()
+            Sender = userOperation.Sender,
+            Nonce = Utils.HexConcat(Constants.ADDRESS_ZERO, userOperation.Nonce.ToHexBigInteger().HexValue),
+            Factory = userOperation.Factory,
+            FactoryData = userOperation.FactoryData.BytesToHex(),
+            CallData = userOperation.CallData.BytesToHex(),
+            CallGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
+            VerificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
+            PreVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
+            MaxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
+            MaxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
+            Paymaster = userOperation.Paymaster,
+            PaymasterVerificationGasLimit = userOperation.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue,
+            PaymasterPostOpGasLimit = userOperation.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue,
+            PaymasterData = userOperation.PaymasterData.BytesToHex(),
+            Signature = userOperation.Signature.BytesToHex()
         };
     }
 

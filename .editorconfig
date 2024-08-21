@@ -47,6 +47,9 @@ dotnet_style_prefer_auto_properties = true:warning
 dotnet_style_prefer_conditional_expression_over_assignment = true:warning
 dotnet_style_prefer_conditional_expression_over_return = true:warning
 
+# Code Quality
+dotnet_code_quality_unused_parameters = all:error
+
 # Namespace preferences
 csharp_style_namespace_declarations = file_scoped:warning
 

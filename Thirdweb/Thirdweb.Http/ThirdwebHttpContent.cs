@@ -7,7 +7,7 @@ namespace Thirdweb;
 /// </summary>
 public class ThirdwebHttpContent
 {
-    private readonly byte[] content;
+    private readonly byte[] _content;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ThirdwebHttpContent"/> class from a string.
@@ -21,7 +21,7 @@ public class ThirdwebHttpContent
             throw new ArgumentNullException(nameof(content));
         }
 
-        this.content = Encoding.UTF8.GetBytes(content);
+        this._content = Encoding.UTF8.GetBytes(content);
     }
 
     /// <summary>
@@ -31,7 +31,7 @@ public class ThirdwebHttpContent
     /// <exception cref="ArgumentNullException">Thrown if the content is null.</exception>
     public ThirdwebHttpContent(byte[] content)
     {
-        this.content = content ?? throw new ArgumentNullException(nameof(content));
+        this._content = content ?? throw new ArgumentNullException(nameof(content));
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public class ThirdwebHttpContent
 
         using var memoryStream = new MemoryStream();
         content.CopyTo(memoryStream);
-        this.content = memoryStream.ToArray();
+        this._content = memoryStream.ToArray();
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public class ThirdwebHttpContent
     /// <returns>A task that represents the asynchronous operation. The task result contains the content string.</returns>
     public Task<string> ReadAsStringAsync()
     {
-        return Task.FromResult(Encoding.UTF8.GetString(this.content));
+        return Task.FromResult(Encoding.UTF8.GetString(this._content));
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public class ThirdwebHttpContent
     /// <returns>A task that represents the asynchronous operation. The task result contains the content byte array.</returns>
     public Task<byte[]> ReadAsByteArrayAsync()
     {
-        return Task.FromResult(this.content);
+        return Task.FromResult(this._content);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public class ThirdwebHttpContent
     /// <returns>A task that represents the asynchronous operation. The task result contains the content stream.</returns>
     public Task<Stream> ReadAsStreamAsync()
     {
-        var stream = new MemoryStream(this.content);
+        var stream = new MemoryStream(this._content);
         return Task.FromResult<Stream>(stream);
     }
 }

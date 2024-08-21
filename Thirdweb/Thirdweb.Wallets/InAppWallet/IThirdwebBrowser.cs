@@ -51,17 +51,17 @@ public class BrowserResult
     /// <summary>
     /// Gets the status of the browser operation.
     /// </summary>
-    public BrowserStatus status { get; }
+    public BrowserStatus Status { get; }
 
     /// <summary>
     /// Gets the callback URL returned from the browser operation.
     /// </summary>
-    public string callbackUrl { get; }
+    public string CallbackUrl { get; }
 
     /// <summary>
     /// Gets the error message, if any, from the browser operation.
     /// </summary>
-    public string error { get; }
+    public string Error { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserResult"/> class with the specified status and callback URL.
@@ -70,8 +70,8 @@ public class BrowserResult
     /// <param name="callbackUrl">The callback URL returned from the browser operation.</param>
     public BrowserResult(BrowserStatus status, string callbackUrl)
     {
-        this.status = status;
-        this.callbackUrl = callbackUrl;
+        this.Status = status;
+        this.CallbackUrl = callbackUrl;
     }
 
     /// <summary>
@@ -82,8 +82,8 @@ public class BrowserResult
     /// <param name="error">The error message from the browser operation.</param>
     public BrowserResult(BrowserStatus status, string callbackUrl, string error)
     {
-        this.status = status;
-        this.callbackUrl = callbackUrl;
-        this.error = error;
+        this.Status = status;
+        this.CallbackUrl = callbackUrl;
+        this.Error = error;
     }
 }

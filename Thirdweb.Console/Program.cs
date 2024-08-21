@@ -19,7 +19,10 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
 // Fetch timeout options are optional, default is 120000ms
-var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000));
+var client = ThirdwebClient.Create(
+    secretKey: "_1xieXygv2AIOIQVkyTCe-zDc6pqLXcCN24gACtZbT1sVoBiD2fZdgKx6CdFeXhv1nabgHU5DcwNSL1O9RQOCQ",
+    fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000)
+);
 
 // Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
@@ -32,6 +35,37 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
 // var readResult = await contract.Read<string>("name");
 // Console.WriteLine($"Contract read result: {readResult}");
+
+#endregion
+
+#region Ecosystem Wallet
+
+var ecosystemWallet = await EcosystemWallet.Create(
+    client: client,
+    ecosystemId: "ecosystem.bonfire-development",
+    ecosystemPartnerId: "02077ab1-59be-4b62-a768-6c6609da7864",
+    email: "firekeeper+enclave16@thirdweb.com"
+);
+
+if (!await ecosystemWallet.IsConnected())
+{
+    _ = await ecosystemWallet.SendOTP();
+    Console.WriteLine("Enter OTP:");
+    var otp = Console.ReadLine();
+    _ = await ecosystemWallet.LoginWithOtp(otp);
+}
+var ecosystemWalletAddress = await ecosystemWallet.GetAddress();
+Console.WriteLine($"Ecosystem Wallet address: {ecosystemWalletAddress}");
+
+var ecosystemPersonalSignature = await ecosystemWallet.PersonalSign("Hello, Thirdweb!");
+Console.WriteLine($"Ecosystem Wallet personal sign: {ecosystemPersonalSignature}");
+
+var ecosystemTx = await ThirdwebTransaction.Create(wallet: ecosystemWallet, txInput: new ThirdwebTransactionInput(to: await ecosystemWallet.GetAddress()), chainId: 421614);
+
+Console.WriteLine("Fund me!");
+Console.ReadLine();
+var hash = await ThirdwebTransaction.Send(ecosystemTx);
+Console.WriteLine($"Ecosystem Wallet transaction hash: {hash}");
 
 #endregion
 

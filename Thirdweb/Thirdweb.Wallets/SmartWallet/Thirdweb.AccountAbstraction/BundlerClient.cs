@@ -48,7 +48,7 @@ public static class BundlerClient
             requestId,
             "pm_sponsorUserOperation",
             userOp,
-            entryPoint == Constants.ENTRYPOINT_ADDRESS_V06 ? new EntryPointWrapper() { entryPoint = entryPoint } : entryPoint
+            entryPoint == Constants.ENTRYPOINT_ADDRESS_V06 ? new EntryPointWrapper() { EntryPoint = entryPoint } : entryPoint
         );
         try
         {

@@ -28,7 +28,7 @@ public struct TotalCosts
 /// </summary>
 public class ThirdwebTransaction
 {
-    internal ThirdwebTransactionInput Input { get; }
+    public ThirdwebTransactionInput Input { get; }
 
     private readonly IThirdwebWallet _wallet;
 
