@@ -150,14 +150,14 @@ public class ThirdwebContract
         }
 
         var data = function.GetData(parameters);
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(chainId: contract.Chain)
         {
             To = contract.Address,
             Data = data,
             Value = new HexBigInteger(weiValue),
         };
 
-        return await ThirdwebTransaction.Create(wallet, transaction, contract.Chain).ConfigureAwait(false);
+        return await ThirdwebTransaction.Create(wallet, transaction).ConfigureAwait(false);
     }
 
     /// <summary>

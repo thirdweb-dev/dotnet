@@ -10,9 +10,13 @@ namespace Thirdweb;
 /// </summary>
 public class ThirdwebTransactionInput
 {
-    public ThirdwebTransactionInput() { }
+    public ThirdwebTransactionInput(BigInteger chainId)
+    {
+        this.ChainId = chainId > 0 ? new HexBigInteger(chainId) : throw new ArgumentException("Invalid Chain ID");
+    }
 
     public ThirdwebTransactionInput(
+        BigInteger chainId,
         string from = null,
         string to = null,
         BigInteger? nonce = null,
@@ -20,12 +24,12 @@ public class ThirdwebTransactionInput
         BigInteger? gasPrice = null,
         BigInteger? value = null,
         string data = null,
-        BigInteger? chainId = null,
         BigInteger? maxFeePerGas = null,
         BigInteger? maxPriorityFeePerGas = null,
         ZkSyncOptions? zkSync = null
     )
     {
+        this.ChainId = chainId > 0 ? new HexBigInteger(chainId) : throw new ArgumentException("Invalid Chain ID");
         this.From = string.IsNullOrEmpty(from) ? Constants.ADDRESS_ZERO : from;
         this.To = string.IsNullOrEmpty(to) ? Constants.ADDRESS_ZERO : to;
         this.Nonce = nonce == null ? null : new HexBigInteger(nonce.Value);
@@ -33,7 +37,6 @@ public class ThirdwebTransactionInput
         this.GasPrice = gasPrice == null ? null : new HexBigInteger(gasPrice.Value);
         this.Value = value == null ? null : new HexBigInteger(value.Value);
         this.Data = string.IsNullOrEmpty(data) ? "0x" : data;
-        this.ChainId = chainId == null ? null : new HexBigInteger(chainId.Value);
         this.MaxFeePerGas = maxFeePerGas == null ? null : new HexBigInteger(maxFeePerGas.Value);
         this.MaxPriorityFeePerGas = maxPriorityFeePerGas == null ? null : new HexBigInteger(maxPriorityFeePerGas.Value);
         this.ZkSync = zkSync;

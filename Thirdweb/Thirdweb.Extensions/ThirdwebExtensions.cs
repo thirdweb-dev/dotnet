@@ -181,8 +181,77 @@ public static class ThirdwebExtensions
         }
 
         var address = await wallet.GetAddress().ConfigureAwait(false);
-
         return await GetBalanceRaw(wallet.Client, chainId, address, erc20ContractAddress).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Retrieves the transaction count (i.e. nonce) of the specified address on the specified chain.
+    /// </summary>
+    /// <param name="client">The client used to retrieve the transaction count.</param>
+    /// <param name="chainId">The chain ID to retrieve the transaction count from.</param>
+    /// <param name="address">The address to retrieve the transaction count for.</param>
+    /// <param name="blocktag">The block tag to retrieve the transaction count at. Defaults to "pending".</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the transaction count.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the client is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the chain ID is less than or equal to 0.</exception>
+    /// <exception cref="ArgumentException">Thrown when the address is null or empty.</exception>
+    public static async Task<BigInteger> GetTransactionCountRaw(ThirdwebClient client, BigInteger chainId, string address, string blocktag = "pending")
+    {
+        if (client == null)
+        {
+            throw new ArgumentNullException(nameof(client));
+        }
+
+        if (chainId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(chainId), "Chain ID must be greater than 0.");
+        }
+
+        if (string.IsNullOrEmpty(address))
+        {
+            throw new ArgumentException("Address must be provided");
+        }
+
+        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+        var balanceHex = await rpc.SendRequestAsync<string>("eth_getTransactionCount", address, blocktag).ConfigureAwait(false);
+        return new HexBigInteger(balanceHex).Value;
+    }
+
+    /// <summary>
+    /// Retrieves the transaction count (i.e. nonce) of the specified contract.
+    /// </summary>
+    /// <param name="contract">The contract to retrieve the transaction count for.</param>
+    /// <param name="blocktag">The block tag to retrieve the transaction count at. Defaults to "pending".</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the transaction count.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
+    public static async Task<BigInteger> GetTransactionCount(this ThirdwebContract contract, string blocktag = "pending")
+    {
+        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await GetTransactionCountRaw(contract.Client, contract.Chain, contract.Address, blocktag).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Retrieves the transaction count (i.e. nonce) of the specified wallet on the specified chain.
+    /// </summary>
+    /// <param name="wallet">The wallet to retrieve the transaction count for.</param>
+    /// <param name="chainId">The chain ID to retrieve the transaction count from.</param>
+    /// <param name="blocktag">The block tag to retrieve the transaction count at. Defaults to "pending".</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the transaction count.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the wallet is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the chain ID is less than or equal to 0.</exception>
+    public static async Task<BigInteger> GetTransactionCount(this IThirdwebWallet wallet, BigInteger chainId, string blocktag = "pending")
+    {
+        if (wallet == null)
+        {
+            throw new ArgumentNullException(nameof(wallet));
+        }
+
+        if (chainId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(chainId), "Chain ID must be greater than 0.");
+        }
+
+        var address = await wallet.GetAddress().ConfigureAwait(false);
+        return await GetTransactionCountRaw(wallet.Client, chainId, address, blocktag).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -218,8 +287,8 @@ public static class ThirdwebExtensions
             throw new ArgumentOutOfRangeException(nameof(weiAmount), "Amount must be 0 or greater.");
         }
 
-        var txInput = new ThirdwebTransactionInput() { To = toAddress, Value = new HexBigInteger(weiAmount) };
-        var tx = await ThirdwebTransaction.Create(wallet, txInput, chainId).ConfigureAwait(false);
+        var txInput = new ThirdwebTransactionInput(chainId) { To = toAddress, Value = new HexBigInteger(weiAmount) };
+        var tx = await ThirdwebTransaction.Create(wallet, txInput).ConfigureAwait(false);
         return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx).ConfigureAwait(false);
     }
 

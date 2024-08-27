@@ -26,7 +26,7 @@ public partial class ThirdwebPay
             }
         }
 
-        var txInput = new ThirdwebTransactionInput()
+        var txInput = new ThirdwebTransactionInput(chainId: buyWithCryptoQuote.TransactionRequest.ChainId)
         {
             To = buyWithCryptoQuote.TransactionRequest.To,
             Data = buyWithCryptoQuote.TransactionRequest.Data,
@@ -35,7 +35,7 @@ public partial class ThirdwebPay
             GasPrice = new HexBigInteger(BigInteger.Parse(buyWithCryptoQuote.TransactionRequest.GasPrice)),
         };
 
-        var tx = await ThirdwebTransaction.Create(wallet, txInput, buyWithCryptoQuote.TransactionRequest.ChainId);
+        var tx = await ThirdwebTransaction.Create(wallet, txInput);
 
         var hash = await ThirdwebTransaction.Send(tx);
 
