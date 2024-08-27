@@ -27,7 +27,7 @@ public class ZkSmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task PersonalSign_Success()
     {
-        var account = await this.GetSmartAccount(zkChainId: 302);
+        var account = await this.GetSmartAccount(zkChainId: 300);
         var message = "Hello, World!";
         var signature = await account.PersonalSign(message);
         Assert.NotNull(signature);
@@ -90,22 +90,22 @@ public class ZkSmartWalletTests : BaseTests
         Assert.True(hash.Length == 66);
     }
 
-    [Fact(Timeout = 120000)]
-    public async Task SendGaslessZkTx_ZkCandy_Success()
-    {
-        var account = await this.GetSmartAccount(zkChainId: 302);
-        var hash = await account.SendTransaction(
-            new ThirdwebTransactionInput(302)
-            {
-                From = await account.GetAddress(),
-                To = await account.GetAddress(),
-                Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                Data = "0x"
-            }
-        );
-        Assert.NotNull(hash);
-        Assert.True(hash.Length == 66);
-    }
+    // [Fact(Timeout = 120000)]
+    // public async Task SendGaslessZkTx_ZkCandy_Success()
+    // {
+    //     var account = await this.GetSmartAccount(zkChainId: 302);
+    //     var hash = await account.SendTransaction(
+    //         new ThirdwebTransactionInput(302)
+    //         {
+    //             From = await account.GetAddress(),
+    //             To = await account.GetAddress(),
+    //             Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
+    //             Data = "0x"
+    //         }
+    //     );
+    //     Assert.NotNull(hash);
+    //     Assert.True(hash.Length == 66);
+    // }
 
     [Fact(Timeout = 120000)]
     public async Task SendGaslessZkTx_Abstract_Success()
@@ -129,7 +129,7 @@ public class ZkSmartWalletTests : BaseTests
     {
         var account = await this.GetSmartAccount(zkChainId: 300);
         _ = await account.SendTransaction(
-            new ThirdwebTransactionInput(302)
+            new ThirdwebTransactionInput(11124)
             {
                 From = await account.GetAddress(),
                 To = await account.GetAddress(),

@@ -201,17 +201,17 @@ public class TransactionTests(ITestOutputHelper output) : BaseTests(output)
         transaction = await this.CreateSampleTransaction();
         _ = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: null, paymasterInput: "0x"));
         Assert.Equal(0, transaction.Input.ZkSync?.Paymaster);
-        Assert.Null(transaction.Input.ZkSync?.PaymasterInput);
+        Assert.Equal(transaction.Input.ZkSync?.PaymasterInput, Array.Empty<byte>());
         Assert.Null(transaction.Input.ZkSync?.GasPerPubdataByteLimit);
-        Assert.Null(transaction.Input.ZkSync?.FactoryDeps);
+        Assert.Equal(transaction.Input.ZkSync?.FactoryDeps, new List<byte[]>());
 
         // PaymasterInput null
         transaction = await this.CreateSampleTransaction();
         _ = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: "0x", paymasterInput: null));
         Assert.Equal(0, transaction.Input.ZkSync?.Paymaster);
-        Assert.Null(transaction.Input.ZkSync?.PaymasterInput);
+        Assert.Equal(transaction.Input.ZkSync?.PaymasterInput, Array.Empty<byte>());
         Assert.Null(transaction.Input.ZkSync?.GasPerPubdataByteLimit);
-        Assert.Null(transaction.Input.ZkSync?.FactoryDeps);
+        Assert.Equal(transaction.Input.ZkSync?.FactoryDeps, new List<byte[]>());
     }
 
     [Fact(Timeout = 120000)]

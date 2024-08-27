@@ -86,6 +86,67 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region Maximum low level zksync tx
+
+// var chainId = 300;
+
+// var zkRawWallet = await PrivateKeyWallet.Generate(client: client);
+// var zkRawAddy = await zkRawWallet.GetAddress();
+// Console.WriteLine($"ZkSync raw address: {zkRawAddy}");
+
+// // Less raw example
+
+// var zkRawTx = await ThirdwebTransaction.Create(
+//     wallet: zkRawWallet,
+//     txInput: new ThirdwebTransactionInput(
+//         chainId: chainId,
+//         from: zkRawAddy,
+//         to: zkRawAddy,
+//         value: 0,
+//         data: "0x",
+//         zkSync: new ZkSyncOptions(paymaster: null, paymasterInput: null, gasPerPubdataByteLimit: 50000)
+//     )
+// );
+
+// zkRawTx = await ThirdwebTransaction.Prepare(zkRawTx);
+
+// Console.WriteLine($"ZkSync raw transaction: {zkRawTx}");
+// Console.WriteLine("Make sure you have enough funds!");
+// Console.ReadLine();
+
+// var hash = await ThirdwebTransaction.Send(zkRawTx);
+// Console.WriteLine($"Transaction hash: {hash}");
+
+// // Extremely raw example
+
+// var zkRawTx = new Thirdweb.AccountAbstraction.ZkSyncAATransaction
+// {
+//     TxType = 0x71,
+//     From = new HexBigInteger(zkRawAddy).Value,
+//     To = new HexBigInteger(zkRawAddy).Value,
+//     GasLimit = 250000,
+//     GasPerPubdataByteLimit = 50000,
+//     MaxFeePerGas = 1000000000,
+//     MaxPriorityFeePerGas = 1000000000,
+//     Paymaster = 0,
+//     Nonce = 0,
+//     Value = 0,
+//     Data = new byte[] { 0x00 },
+//     FactoryDeps = new List<byte[]>(),
+//     PaymasterInput = Array.Empty<byte>(),
+// };
+// var signedZkRawTx = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", chainId, zkRawTx, zkRawWallet);
+
+// Console.WriteLine($"ZkSync raw transaction: {JsonConvert.SerializeObject(zkRawTx, Formatting.Indented)}");
+// Console.WriteLine("Make sure you have enough funds!");
+// Console.ReadLine();
+
+// var rpcInstance = ThirdwebRPC.GetRpcInstance(client, chainId);
+// var hash = await rpcInstance.SendRequestAsync<string>("eth_sendRawTransaction", signedZkRawTx);
+// Console.WriteLine($"Transaction hash: {hash}");
+
+#endregion
+
 #region Account Linking
 
 // var inAppWalletMain = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
