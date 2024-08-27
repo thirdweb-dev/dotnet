@@ -114,8 +114,8 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // Console.WriteLine("Make sure you have enough funds!");
 // Console.ReadLine();
 
-// var hash = await ThirdwebTransaction.Send(zkRawTx);
-// Console.WriteLine($"Transaction hash: {hash}");
+// var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(zkRawTx);
+// Console.WriteLine($"Receipt: {receipt}");
 
 // // Extremely raw example
 

@@ -387,7 +387,7 @@ public static class EIP712
             // add array of rlp encoded paymaster/paymasterinput
             transaction.Paymaster != 0
                 ? RLP.EncodeElement(transaction.Paymaster.ToByteArray(isUnsigned: true, isBigEndian: true)).Concat(RLP.EncodeElement(transaction.PaymasterInput)).ToArray()
-                : Array.Empty<byte>()
+                : new byte[] { 0xc0 }
         };
 
         return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray(), _indexOfListDataItems).ToHex();
