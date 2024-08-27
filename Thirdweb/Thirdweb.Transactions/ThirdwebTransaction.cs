@@ -32,11 +32,10 @@ public class ThirdwebTransaction
 
     private readonly IThirdwebWallet _wallet;
 
-    private ThirdwebTransaction(IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
+    private ThirdwebTransaction(IThirdwebWallet wallet, ThirdwebTransactionInput txInput)
     {
         this.Input = txInput;
         this._wallet = wallet;
-        this.Input.ChainId = chainId.ToHexBigInteger();
     }
 
     /// <summary>
@@ -44,18 +43,12 @@ public class ThirdwebTransaction
     /// </summary>
     /// <param name="wallet">The wallet to use for the transaction.</param>
     /// <param name="txInput">The transaction input.</param>
-    /// <param name="chainId">The chain ID.</param>
     /// <returns>A new Thirdweb transaction.</returns>
-    public static async Task<ThirdwebTransaction> Create(IThirdwebWallet wallet, ThirdwebTransactionInput txInput, BigInteger chainId)
+    public static async Task<ThirdwebTransaction> Create(IThirdwebWallet wallet, ThirdwebTransactionInput txInput)
     {
         if (wallet == null)
         {
             throw new ArgumentException("Wallet must be provided", nameof(wallet));
-        }
-
-        if (chainId == 0)
-        {
-            throw new ArgumentException("Invalid Chain ID", nameof(chainId));
         }
 
         if (txInput.To == null)
@@ -67,7 +60,7 @@ public class ThirdwebTransaction
         txInput.Data ??= "0x";
         txInput.Value ??= new HexBigInteger(0);
 
-        return new ThirdwebTransaction(wallet, txInput, chainId);
+        return new ThirdwebTransaction(wallet, txInput);
     }
 
     /// <summary>
@@ -325,8 +318,7 @@ public class ThirdwebTransaction
     /// <returns>The nonce.</returns>
     public static async Task<BigInteger> GetNonce(ThirdwebTransaction transaction)
     {
-        var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
-        return new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", transaction.Input.From, "pending").ConfigureAwait(false)).Value;
+        return await transaction._wallet.GetTransactionCount(chainId: transaction.Input.ChainId, blocktag: "pending").ConfigureAwait(false);
     }
 
     private static async Task<BigInteger> GetGasPerPubData(ThirdwebTransaction transaction)

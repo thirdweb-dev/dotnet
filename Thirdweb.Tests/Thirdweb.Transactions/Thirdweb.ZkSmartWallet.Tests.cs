@@ -78,7 +78,7 @@ public class ZkSmartWalletTests : BaseTests
     {
         var account = await this.GetSmartAccount();
         var hash = await account.SendTransaction(
-            new ThirdwebTransactionInput()
+            new ThirdwebTransactionInput(300)
             {
                 From = await account.GetAddress(),
                 To = await account.GetAddress(),
@@ -90,29 +90,12 @@ public class ZkSmartWalletTests : BaseTests
         Assert.True(hash.Length == 66);
     }
 
-    // [Fact(Timeout = 120000)]
-    // public async Task SendGaslessZkTx_ZkCandy_Success()
-    // {
-    //     var account = await GetSmartAccount(zkChainId: 302);
-    //     var hash = await account.SendTransaction(
-    //         new ThirdwebTransactionInput()
-    //         {
-    //             From = await account.GetAddress(),
-    //             To = await account.GetAddress(),
-    //             Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
-    //             Data = "0x"
-    //         }
-    //     );
-    //     Assert.NotNull(hash);
-    //     Assert.True(hash.Length == 66);
-    // }
-
     [Fact(Timeout = 120000)]
-    public async Task SendGaslessZkTx_Abstract_Success()
+    public async Task SendGaslessZkTx_ZkCandy_Success()
     {
-        var account = await this.GetSmartAccount(zkChainId: 11124);
+        var account = await this.GetSmartAccount(zkChainId: 302);
         var hash = await account.SendTransaction(
-            new ThirdwebTransactionInput()
+            new ThirdwebTransactionInput(302)
             {
                 From = await account.GetAddress(),
                 To = await account.GetAddress(),
@@ -122,5 +105,37 @@ public class ZkSmartWalletTests : BaseTests
         );
         Assert.NotNull(hash);
         Assert.True(hash.Length == 66);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SendGaslessZkTx_Abstract_Success()
+    {
+        var account = await this.GetSmartAccount(zkChainId: 11124);
+        var hash = await account.SendTransaction(
+            new ThirdwebTransactionInput(11124)
+            {
+                From = await account.GetAddress(),
+                To = await account.GetAddress(),
+                Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                Data = "0x"
+            }
+        );
+        Assert.NotNull(hash);
+        Assert.True(hash.Length == 66);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task ZkSync_Switch()
+    {
+        var account = await this.GetSmartAccount(zkChainId: 300);
+        _ = await account.SendTransaction(
+            new ThirdwebTransactionInput(302)
+            {
+                From = await account.GetAddress(),
+                To = await account.GetAddress(),
+                Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                Data = "0x"
+            }
+        );
     }
 }

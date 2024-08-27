@@ -122,7 +122,7 @@ public class WalletTests : BaseTests
     public async Task SignTransaction()
     {
         var wallet = await this.GetSmartAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             To = await wallet.GetAddress(),
             Data = "0x",
@@ -130,7 +130,6 @@ public class WalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             GasPrice = new HexBigInteger(10000000000),
             Nonce = new HexBigInteger(9999999999999),
-            ChainId = new HexBigInteger(421614),
         };
         _ = ThirdwebRPC.GetRpcInstance(ThirdwebClient.Create(secretKey: this.SecretKey), 421614);
         var signature = await wallet.SignTransaction(transaction);
@@ -174,7 +173,7 @@ public class WalletTests : BaseTests
         var typedData = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 421614, await wallet.GetAddress());
         var accountMessage = new AccountAbstraction.AccountMessage { Message = System.Text.Encoding.UTF8.GetBytes("Hello, world!").HashPrefixedMessage() };
         var signature = await wallet.SignTypedDataV4(accountMessage, typedData);
-        var recoveredAddress = await wallet.RecoverAddressFromTypedDataV4<AccountAbstraction.AccountMessage, Nethereum.ABI.EIP712.Domain>(accountMessage, typedData, signature);
+        var recoveredAddress = await wallet.RecoverAddressFromTypedDataV4(accountMessage, typedData, signature);
         Assert.Equal(await wallet.GetAddress(), recoveredAddress);
     }
 
@@ -232,7 +231,7 @@ public class WalletTests : BaseTests
         );
         _ = await Assert.ThrowsAsync<ArgumentNullException>(
             async () =>
-                await wallet.RecoverAddressFromTypedDataV4<AccountAbstraction.SignerPermissionRequest, Nethereum.ABI.EIP712.Domain>(
+                await wallet.RecoverAddressFromTypedDataV4(
                     new AccountAbstraction.SignerPermissionRequest(),
                     nullTypedData,
                     nullSig
@@ -240,7 +239,7 @@ public class WalletTests : BaseTests
         );
         _ = await Assert.ThrowsAsync<ArgumentNullException>(
             async () =>
-                await wallet.RecoverAddressFromTypedDataV4<AccountAbstraction.SignerPermissionRequest, Nethereum.ABI.EIP712.Domain>(
+                await wallet.RecoverAddressFromTypedDataV4(
                     new AccountAbstraction.SignerPermissionRequest(),
                     new Nethereum.ABI.EIP712.TypedData<Nethereum.ABI.EIP712.Domain>(),
                     nullSig
