@@ -366,7 +366,8 @@ public static class EIP712
             throw new ArgumentException("Chain ID must be provided for EIP712 transactions!");
         }
 
-        var fields = new List<byte[]> {
+        var fields = new List<byte[]>
+        {
             transaction.Nonce == 0 ? Array.Empty<byte>() : transaction.Nonce.ToByteArray(isUnsigned: true, isBigEndian: true),
             transaction.MaxPriorityFeePerGas == 0 ? Array.Empty<byte>() : transaction.MaxPriorityFeePerGas.ToByteArray(isUnsigned: true, isBigEndian: true),
             transaction.MaxFeePerGas.ToByteArray(isUnsigned: true, isBigEndian: true),
@@ -379,13 +380,14 @@ public static class EIP712
             signature.S,
             chainId.ToByteArray(isUnsigned: true, isBigEndian: true),
             transaction.From.ToByteArray(isUnsigned: true, isBigEndian: true),
-
             // Add meta
             transaction.GasPerPubdataByteLimit.ToByteArray(isUnsigned: true, isBigEndian: true),
             Array.Empty<byte>(), // TODO: FactoryDeps
             signature.CreateStringSignature().HexToByteArray(),
             // add array of rlp encoded paymaster/paymasterinput
-            RLP.EncodeElement(transaction.Paymaster.ToByteArray(isUnsigned: true, isBigEndian: true)).Concat(RLP.EncodeElement(transaction.PaymasterInput)).ToArray()
+            transaction.Paymaster != 0
+                ? RLP.EncodeElement(transaction.Paymaster.ToByteArray(isUnsigned: true, isBigEndian: true)).Concat(RLP.EncodeElement(transaction.PaymasterInput)).ToArray()
+                : Array.Empty<byte>()
         };
 
         return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray(), _indexOfListDataItems).ToHex();
