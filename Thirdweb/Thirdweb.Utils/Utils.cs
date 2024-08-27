@@ -392,6 +392,11 @@ public static partial class Utils
 
     public static int GetEntryPointVersion(string address)
     {
+        if (address == null)
+        {
+            return 6; // non-4337
+        }
+
         address = address.ToChecksumAddress();
         return address switch
         {

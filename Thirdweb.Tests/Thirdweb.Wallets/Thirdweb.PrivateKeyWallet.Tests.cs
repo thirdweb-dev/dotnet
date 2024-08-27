@@ -168,7 +168,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     public async Task SignTransaction_Success()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -177,7 +177,6 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
             // Data = "0x",
             Nonce = new HexBigInteger(99999999999),
             GasPrice = new HexBigInteger(10000000000),
-            ChainId = new HexBigInteger(421614)
         };
         var signature = await account.SignTransaction(transaction);
         Assert.NotNull(signature);
@@ -187,7 +186,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     public async Task SignTransaction_NoFrom_Success()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             To = Constants.ADDRESS_ZERO,
             // Value = new HexBigInteger(0),
@@ -195,7 +194,6 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
             GasPrice = new HexBigInteger(10000000000),
-            ChainId = new HexBigInteger(421614)
         };
         var signature = await account.SignTransaction(transaction);
         Assert.NotNull(signature);
@@ -213,7 +211,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     public async Task SignTransaction_NoNonce()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -229,7 +227,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     public async Task SignTransaction_NoGasPrice()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -247,7 +245,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     public async Task SignTransaction_1559_Success()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -257,7 +255,6 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
             Nonce = new HexBigInteger(99999999999),
             MaxFeePerGas = new HexBigInteger(10000000000),
             MaxPriorityFeePerGas = new HexBigInteger(10000000000),
-            ChainId = new HexBigInteger(421614)
         };
         var signature = await account.SignTransaction(transaction);
         Assert.NotNull(signature);
@@ -267,7 +264,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     public async Task SignTransaction_1559_NoMaxFeePerGas()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -276,7 +273,6 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
             MaxPriorityFeePerGas = new HexBigInteger(10000000000),
-            ChainId = new HexBigInteger(421614)
         };
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);
@@ -286,7 +282,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     public async Task SignTransaction_1559_NoMaxPriorityFeePerGas()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -295,7 +291,6 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
             MaxFeePerGas = new HexBigInteger(10000000000),
-            ChainId = new HexBigInteger(421614)
         };
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);
@@ -344,7 +339,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     public async Task SendTransaction_InvalidOperation()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,
@@ -358,7 +353,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     public async Task ExecuteTransaction_InvalidOperation()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput
+        var transaction = new ThirdwebTransactionInput(421614)
         {
             From = await account.GetAddress(),
             To = Constants.ADDRESS_ZERO,

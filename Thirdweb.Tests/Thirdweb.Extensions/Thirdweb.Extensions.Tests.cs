@@ -198,6 +198,59 @@ public class ExtensionsTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task GetTransactionCountRaw()
+    {
+        var address = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik.eth
+        var chainId = BigInteger.One;
+        var transactionCount = await ThirdwebExtensions.GetTransactionCountRaw(this._client, chainId, address);
+        Assert.True(transactionCount >= 0);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetTransactionCountRaw_WithBlockTag()
+    {
+        var address = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik.eth
+        var chainId = this._chainId;
+        var blockTag = "latest";
+        var transactionCount = await ThirdwebExtensions.GetTransactionCountRaw(this._client, chainId, address, blockTag);
+        Assert.True(transactionCount >= 0);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetTransactionCount_Contract()
+    {
+        var contract = await this.GetTokenERC20Contract();
+        var transactionCount = await contract.GetTransactionCount();
+        Assert.True(transactionCount >= 0);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetTransactionCount_Contract_WithBlockTag()
+    {
+        var contract = await this.GetTokenERC20Contract();
+        var blockTag = "latest";
+        var transactionCount = await contract.GetTransactionCount(blockTag);
+        Assert.True(transactionCount >= 0);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetTransactionCount_Wallet()
+    {
+        var wallet = await this.GetSmartWallet();
+        var transactionCount = await wallet.GetTransactionCount(this._chainId);
+        Assert.True(transactionCount >= 0);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetTransactionCount_Wallet_WithBlockTag()
+    {
+        var wallet = await this.GetSmartWallet();
+        var blockTag = "latest";
+        var transactionCount = await wallet.GetTransactionCount(this._chainId, blockTag);
+        Assert.True(transactionCount >= 0);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task Transfer()
     {
         _ = ThirdwebClient.Create(secretKey: this.SecretKey);
