@@ -60,7 +60,7 @@ Console.WriteLine($"Ecosystem Wallet address: {ecosystemWalletAddress}");
 var ecosystemPersonalSignature = await ecosystemWallet.PersonalSign("Hello, Thirdweb!");
 Console.WriteLine($"Ecosystem Wallet personal sign: {ecosystemPersonalSignature}");
 
-var ecosystemTx = await ThirdwebTransaction.Create(wallet: ecosystemWallet, txInput: new ThirdwebTransactionInput(to: await ecosystemWallet.GetAddress()), chainId: 421614);
+var ecosystemTx = await ThirdwebTransaction.Create(wallet: ecosystemWallet, txInput: new ThirdwebTransactionInput(chainId: 421614, to: await ecosystemWallet.GetAddress()));
 
 Console.WriteLine("Fund me!");
 Console.ReadLine();
