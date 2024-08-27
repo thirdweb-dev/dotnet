@@ -219,8 +219,6 @@ public class TransactionTests(ITestOutputHelper output) : BaseTests(output)
     {
         var transaction = await this.CreateSampleTransaction();
         _ = transaction.SetChainId(300);
-        _ = transaction.SetTo("0xbA226d47Cbb2731CBAA67C916c57d68484AA269F");
-        _ = transaction.SetValue(BigInteger.Zero);
         _ = transaction.SetZkSyncOptions(
             new ZkSyncOptions(
                 paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",
@@ -239,8 +237,6 @@ public class TransactionTests(ITestOutputHelper output) : BaseTests(output)
     {
         var transaction = await this.CreateSampleTransaction();
         _ = transaction.SetChainId(300);
-        _ = transaction.SetTo("0xbA226d47Cbb2731CBAA67C916c57d68484AA269F");
-        _ = transaction.SetValue(BigInteger.Zero);
         _ = transaction.SetZkSyncOptions(
             new ZkSyncOptions(
                 paymaster: "0xbA226d47Cbb2731CBAA67C916c57d68484AA269F",

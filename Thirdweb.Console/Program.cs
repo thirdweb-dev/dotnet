@@ -73,8 +73,8 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 // var smartWalletAbstract = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
 
-// var hash = await smartWalletAbstract.SendTransaction(
-//     new ThirdwebTransactionInput()
+// var receipt = await smartWalletAbstract.ExecuteTransaction(
+//     new ThirdwebTransactionInput(11124)
 //     {
 //         To = await smartWalletAbstract.GetAddress(),
 //         Value = new HexBigInteger(BigInteger.Zero),
@@ -82,7 +82,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 //     }
 // );
 
-// Console.WriteLine($"Transaction hash: {hash}");
+// Console.WriteLine($"Transaction hash: {receipt}");
 
 #endregion
 
@@ -98,14 +98,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 // var zkRawTx = await ThirdwebTransaction.Create(
 //     wallet: zkRawWallet,
-//     txInput: new ThirdwebTransactionInput(
-//         chainId: chainId,
-//         from: zkRawAddy,
-//         to: zkRawAddy,
-//         value: 0,
-//         data: "0x",
-//         zkSync: new ZkSyncOptions(paymaster: null, paymasterInput: null, gasPerPubdataByteLimit: 50000)
-//     )
+//     txInput: new ThirdwebTransactionInput(chainId: chainId, from: zkRawAddy, to: zkRawAddy, value: 0, data: "0x", zkSync: new ZkSyncOptions(gasPerPubdataByteLimit: 50000))
 // );
 
 // zkRawTx = await ThirdwebTransaction.Prepare(zkRawTx);

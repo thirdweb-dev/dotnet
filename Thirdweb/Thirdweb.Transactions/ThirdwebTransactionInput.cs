@@ -161,7 +161,7 @@ public struct ZkSyncOptions
     /// <param name="paymasterInput">The paymaster input data.</param>
     /// <param name="gasPerPubdataByteLimit">The gas limit per pubdata byte.</param>
     /// <param name="factoryDeps">The factory dependencies.</param>
-    public ZkSyncOptions(string paymaster, string paymasterInput, BigInteger? gasPerPubdataByteLimit = null, List<byte[]> factoryDeps = null)
+    public ZkSyncOptions(string paymaster = null, string paymasterInput = null, BigInteger? gasPerPubdataByteLimit = null, List<byte[]> factoryDeps = null)
     {
         if (string.IsNullOrEmpty(paymaster) || string.IsNullOrEmpty(paymasterInput))
         {
