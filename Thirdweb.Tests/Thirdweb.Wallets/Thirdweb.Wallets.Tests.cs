@@ -61,7 +61,7 @@ public class WalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task PersonalSign()
     {
-        var wallet = await this.GetSmartAccount();
+        var wallet = await this.GetPrivateKeyAccount();
         var message = "Hello, world!";
         var signature = await wallet.PersonalSign(message);
         Assert.NotNull(signature);
