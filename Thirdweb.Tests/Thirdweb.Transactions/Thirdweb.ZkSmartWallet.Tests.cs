@@ -27,7 +27,7 @@ public class ZkSmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task PersonalSign_Success()
     {
-        var account = await this.GetSmartAccount(zkChainId: 302);
+        var account = await this.GetSmartAccount(zkChainId: 300);
         var message = "Hello, World!";
         var signature = await account.PersonalSign(message);
         Assert.NotNull(signature);
@@ -129,7 +129,7 @@ public class ZkSmartWalletTests : BaseTests
     {
         var account = await this.GetSmartAccount(zkChainId: 300);
         _ = await account.SendTransaction(
-            new ThirdwebTransactionInput(302)
+            new ThirdwebTransactionInput(11124)
             {
                 From = await account.GetAddress(),
                 To = await account.GetAddress(),

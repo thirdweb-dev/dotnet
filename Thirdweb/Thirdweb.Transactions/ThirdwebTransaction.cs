@@ -357,6 +357,7 @@ public class ThirdwebTransaction
             throw new InvalidOperationException("Transaction GasPrice and MaxFeePerGas/MaxPriorityFeePerGas cannot be set at the same time");
         }
 
+        transaction.Input.Nonce ??= new HexBigInteger(await GetNonce(transaction).ConfigureAwait(false));
         transaction.Input.Value ??= new HexBigInteger(0);
         transaction.Input.Data ??= "0x";
         transaction.Input.Gas ??= new HexBigInteger(await EstimateGasLimit(transaction).ConfigureAwait(false));
@@ -404,7 +405,6 @@ public class ThirdwebTransaction
             switch (transaction._wallet.AccountType)
             {
                 case ThirdwebAccountType.PrivateKeyAccount:
-                    transaction.Input.Nonce ??= new HexBigInteger(await GetNonce(transaction).ConfigureAwait(false));
                     var signedTx = await Sign(transaction);
                     hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx).ConfigureAwait(false);
                     break;

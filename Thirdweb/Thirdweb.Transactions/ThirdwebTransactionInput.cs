@@ -166,7 +166,9 @@ public struct ZkSyncOptions
         if (string.IsNullOrEmpty(paymaster) || string.IsNullOrEmpty(paymasterInput))
         {
             this.Paymaster = 0;
-            this.PaymasterInput = null;
+            this.PaymasterInput = Array.Empty<byte>();
+            this.GasPerPubdataByteLimit = gasPerPubdataByteLimit;
+            this.FactoryDeps = factoryDeps ?? new List<byte[]>();
         }
         else
         {
