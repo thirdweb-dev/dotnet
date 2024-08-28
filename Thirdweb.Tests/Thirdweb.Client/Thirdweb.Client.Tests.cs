@@ -1,7 +1,10 @@
 ﻿namespace Thirdweb.Tests.Client;
 
-public class ClientTests(ITestOutputHelper output) : BaseTests(output)
+public class ClientTests : BaseTests
 {
+    public ClientTests(ITestOutputHelper output)
+        : base(output) { }
+
     [Fact(Timeout = 120000)]
     public void NoSecretKeyNoClientId()
     {

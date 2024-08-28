@@ -2,12 +2,15 @@
 
 namespace Thirdweb.Tests.Contracts;
 
-public class ContractsTests(ITestOutputHelper output) : BaseTests(output)
+public class ContractsTests : BaseTests
 {
+    public ContractsTests(ITestOutputHelper output)
+        : base(output) { }
+
     [Fact(Timeout = 120000)]
     public async Task FetchAbi()
     {
-        var abi = await ThirdwebContract.FetchAbi(client: ThirdwebClient.Create(secretKey: this.SecretKey), address: "0x1320Cafa93fb53Ed9068E3272cb270adbBEf149C", chainId: 84532);
+        var abi = await ThirdwebContract.FetchAbi(client: this.Client, address: "0x1320Cafa93fb53Ed9068E3272cb270adbBEf149C", chainId: 84532);
         Assert.NotNull(abi);
         Assert.NotEmpty(abi);
     }
@@ -22,21 +25,21 @@ public class ContractsTests(ITestOutputHelper output) : BaseTests(output)
     [Fact(Timeout = 120000)]
     public async Task InitTest_NullAddress()
     {
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: this.SecretKey), null, 1, "[]"));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(this.Client, null, 1, "[]"));
         Assert.Contains("Address must be provided", exception.Message);
     }
 
     [Fact(Timeout = 120000)]
     public async Task InitTest_ZeroChain()
     {
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: this.SecretKey), "0x123", 0, "[]"));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Create(this.Client, "0x123", 0, "[]"));
         Assert.Contains("Chain must be provided", exception.Message);
     }
 
     [Fact(Timeout = 120000)]
     public async Task InitTest_NullAbi()
     {
-        var res = await ThirdwebContract.Create(ThirdwebClient.Create(secretKey: this.SecretKey), "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", 421614, null);
+        var res = await ThirdwebContract.Create(this.Client, "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", 421614, null);
         Assert.NotNull(res);
     }
 
@@ -173,7 +176,7 @@ public class ContractsTests(ITestOutputHelper output) : BaseTests(output)
     [Fact(Timeout = 120000)]
     public async Task SignatureMint_Generate()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var client = this.Client;
         var signer = await PrivateKeyWallet.Generate(client);
 
         var randomDomain = "Test";
@@ -251,7 +254,7 @@ public class ContractsTests(ITestOutputHelper output) : BaseTests(output)
 
     private async Task<SmartWallet> GetAccount()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var client = this.Client;
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         return smartAccount;
@@ -259,7 +262,7 @@ public class ContractsTests(ITestOutputHelper output) : BaseTests(output)
 
     private async Task<ThirdwebContract> GetContract()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var client = this.Client;
         var contract = await ThirdwebContract.Create(client: client, address: "0xEBB8a39D865465F289fa349A67B3391d8f910da9", chain: 421614);
         return contract;
     }

@@ -2,17 +2,12 @@
 
 public class ZkSmartWalletTests : BaseTests
 {
-    private readonly ThirdwebClient _zkClient;
-
     public ZkSmartWalletTests(ITestOutputHelper output)
-        : base(output)
-    {
-        this._zkClient = ThirdwebClient.Create(secretKey: this.SecretKey);
-    }
+        : base(output) { }
 
     private async Task<SmartWallet> GetSmartAccount(int zkChainId = 300, bool gasless = true)
     {
-        var privateKeyAccount = await PrivateKeyWallet.Generate(this._zkClient);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(this.Client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, gasless: gasless, chainId: zkChainId);
         return smartAccount;
     }
@@ -42,7 +37,7 @@ public class ZkSmartWalletTests : BaseTests
             async () =>
                 await account.CreateSessionKey(
                     signerAddress: await account.GetAddress(),
-                    approvedTargets: [Constants.ADDRESS_ZERO],
+                    approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
                     nativeTokenLimitPerTransactionInWei: "0",
                     permissionStartTimestamp: "0",
                     permissionEndTimestamp: (Utils.GetUnixTimeStampNow() + 86400).ToString(),
@@ -90,7 +85,7 @@ public class ZkSmartWalletTests : BaseTests
         Assert.True(hash.Length == 66);
     }
 
-    // [Fact(Timeout = 120000)]
+    //
     // public async Task SendGaslessZkTx_ZkCandy_Success()
     // {
     //     var account = await this.GetSmartAccount(zkChainId: 302);

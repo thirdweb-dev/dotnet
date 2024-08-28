@@ -2,12 +2,14 @@
 
 namespace Thirdweb.Tests.Wallets;
 
-public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
+public class PrivateKeyWalletTests : BaseTests
 {
+    public PrivateKeyWalletTests(ITestOutputHelper output)
+        : base(output) { }
+
     private async Task<PrivateKeyWallet> GetAccount()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
-        var privateKeyAccount = await PrivateKeyWallet.Generate(client);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(this.Client);
         return privateKeyAccount;
     }
 
@@ -21,7 +23,7 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     [Fact(Timeout = 120000)]
     public async void Initialization_NullPrivateKey()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var client = this.Client;
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () => await PrivateKeyWallet.Create(client, null));
         Assert.Equal("Private key cannot be null or empty. (Parameter 'privateKeyHex')", ex.Message);
     }
@@ -123,8 +125,8 @@ public class PrivateKeyWalletTests(ITestOutputHelper output) : BaseTests(output)
     {
         var account = await this.GetAccount();
         var json =
-                                 /*lang=json,strict*/
-                                 "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallet\",\"type\":\"address\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person\"},{\"name\":\"contents\",\"type\":\"string\"}]},\"primaryType\":\"Mail\",\"domain\":{\"name\":\"Ether Mail\",\"version\":\"1\",\"chainId\":1,\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\":{\"from\":{\"name\":\"Cow\",\"wallet\":\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\":{\"name\":\"Bob\",\"wallet\":\"0xbBbBBBBbbBBBbbbBbbBbbBBbBbbBbBbBbBbbBBbB\"},\"contents\":\"Hello, Bob!\"}}";
+            /*lang=json,strict*/
+            "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallet\",\"type\":\"address\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person\"},{\"name\":\"contents\",\"type\":\"string\"}]},\"primaryType\":\"Mail\",\"domain\":{\"name\":\"Ether Mail\",\"version\":\"1\",\"chainId\":1,\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\":{\"from\":{\"name\":\"Cow\",\"wallet\":\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\":{\"name\":\"Bob\",\"wallet\":\"0xbBbBBBBbbBBBbbbBbbBbbBBbBbbBbBbBbBbbBBbB\"},\"contents\":\"Hello, Bob!\"}}";
         var signature = await account.SignTypedDataV4(json);
         Assert.True(signature.Length == 132);
     }
