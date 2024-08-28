@@ -4,13 +4,8 @@ namespace Thirdweb.Tests.Utilities;
 
 public class UtilsTests : BaseTests
 {
-    private readonly ThirdwebClient _client;
-
     public UtilsTests(ITestOutputHelper output)
-        : base(output)
-    {
-        this._client = ThirdwebClient.Create(secretKey: this.SecretKey);
-    }
+        : base(output) { }
 
     [Fact(Timeout = 120000)]
     public void ComputeClientIdFromSecretKey()
@@ -254,7 +249,7 @@ public class UtilsTests : BaseTests
             InvalidBefore = "0",
             Statement = "This is a statement",
             Uri = "https://thirdweb.com",
-            Resources = ["resource1", "resource2"]
+            Resources = new List<string>() { "resource1", "resource2" }
         };
         var expectedSIWE =
             "thirdweb.com wants you to sign in with your Ethereum account:\n0x0000000000000000000000000000000000000000\n\nThis is a statement\n\nURI: https://thirdweb.com\nVersion: 1\nChain ID: 421614\nNonce: 0\nIssued At: 0\nExpiration Time: 0\nNot Before: 0\nResources:\n- resource1\n- resource2";
@@ -275,7 +270,7 @@ public class UtilsTests : BaseTests
             IssuedAt = "0",
             ExpirationTime = "0",
             InvalidBefore = "0",
-            Resources = ["resource1", "resource2"]
+            Resources = new List<string>() { "resource1", "resource2" }
         };
         var expectedSIWE =
             "thirdweb.com wants you to sign in with your Ethereum account:\n0x0000000000000000000000000000000000000000\n\n\nVersion: 1\nChain ID: 421614\nNonce: 0\nIssued At: 0\nExpiration Time: 0\nNot Before: 0\nResources:\n- resource1\n- resource2";
@@ -440,7 +435,7 @@ public class UtilsTests : BaseTests
         var timer = System.Diagnostics.Stopwatch.StartNew();
         var chainId = new BigInteger(1);
 
-        var chainData = await Utils.GetChainMetadata(this._client, chainId);
+        var chainData = await Utils.GetChainMetadata(this.Client, chainId);
         Assert.NotNull(chainData);
         _ = Assert.IsType<ThirdwebChainData>(chainData);
 
@@ -462,7 +457,7 @@ public class UtilsTests : BaseTests
         var timeAttempt1 = timer.ElapsedMilliseconds;
 
         timer.Restart();
-        var chainData2 = await Utils.GetChainMetadata(this._client, chainId);
+        var chainData2 = await Utils.GetChainMetadata(this.Client, chainId);
         Assert.NotNull(chainData2);
         _ = Assert.IsType<ThirdwebChainData>(chainData);
 
@@ -475,7 +470,7 @@ public class UtilsTests : BaseTests
     {
         var chainId = 123124125418928133;
 
-        var exception = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetChainMetadata(this._client, chainId));
+        var exception = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetChainMetadata(this.Client, chainId));
 
         Assert.Contains("Failed to fetch chain data", exception.Message);
     }
@@ -485,7 +480,7 @@ public class UtilsTests : BaseTests
     {
         var chainId = BigInteger.Zero;
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await Utils.GetChainMetadata(this._client, chainId));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await Utils.GetChainMetadata(this.Client, chainId));
 
         Assert.Contains("Invalid chain", exception.Message);
     }
@@ -493,7 +488,7 @@ public class UtilsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async void ToJsonExternalWalletFriendly_ReturnsCorrectValue4()
     {
-        var pkWallet = await PrivateKeyWallet.Generate(this._client); // Assume external wallet
+        var pkWallet = await PrivateKeyWallet.Generate(this.Client); // Assume external wallet
         var msg = new AccountAbstraction.AccountMessage { Message = new byte[] { 0x01, 0x02, 0x03, 0x04 } };
         var verifyingContract = await pkWallet.GetAddress(); // doesn't matter here
         var typedDataRaw = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 137, verifyingContract);
@@ -502,46 +497,6 @@ public class UtilsTests : BaseTests
         var internalMsg = jsonObject.SelectToken("$.message.message");
         Assert.NotNull(internalMsg);
         Assert.Equal("0x01020304", internalMsg);
-    }
-
-    [Fact(Timeout = 120000)]
-    public async Task IsEip155Enforced_ReturnsTrue_WhenEIP155IsEnforced()
-    {
-        var timer = System.Diagnostics.Stopwatch.StartNew();
-        var chainId = new BigInteger(842);
-
-        var isEnforced = await Utils.IsEip155Enforced(this._client, chainId);
-        Assert.True(isEnforced);
-
-        timer.Stop();
-        var timeAttempt1 = timer.ElapsedMilliseconds;
-
-        timer.Restart();
-        var isEnforcedCached = await Utils.IsEip155Enforced(this._client, chainId);
-        Assert.True(isEnforcedCached);
-
-        var timeAttempt2 = timer.ElapsedMilliseconds;
-        Assert.True(timeAttempt1 > timeAttempt2);
-    }
-
-    [Fact(Timeout = 120000)]
-    public async Task IsEip155Enforced_ReturnsFalse_WhenEIP155IsNotEnforced()
-    {
-        var timer = System.Diagnostics.Stopwatch.StartNew();
-        var chainId = new BigInteger(11155111);
-
-        var isEnforced = await Utils.IsEip155Enforced(this._client, chainId);
-        Assert.False(isEnforced);
-
-        timer.Stop();
-        var timeAttempt1 = timer.ElapsedMilliseconds;
-
-        timer.Restart();
-        var isEnforcedCached = await Utils.IsEip155Enforced(this._client, chainId);
-        Assert.False(isEnforcedCached);
-
-        var timeAttempt2 = timer.ElapsedMilliseconds;
-        Assert.True(timeAttempt1 > timeAttempt2);
     }
 
     [Fact(Timeout = 120000)]

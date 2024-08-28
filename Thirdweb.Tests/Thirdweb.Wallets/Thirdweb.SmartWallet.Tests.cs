@@ -2,17 +2,12 @@
 
 public class SmartWalletTests : BaseTests
 {
-    private readonly ThirdwebClient _client;
-
     public SmartWalletTests(ITestOutputHelper output)
-        : base(output)
-    {
-        this._client = ThirdwebClient.Create(secretKey: this.SecretKey);
-    }
+        : base(output) { }
 
     private async Task<SmartWallet> GetSmartAccount()
     {
-        var privateKeyAccount = await PrivateKeyWallet.Generate(this._client);
+        var privateKeyAccount = await PrivateKeyWallet.Generate(this.Client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, gasless: true, chainId: 421614);
         return smartAccount;
     }
@@ -27,7 +22,7 @@ public class SmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task Initialization_WithoutFactory_Success()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var client = this.Client;
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, chainId: 421614);
         Assert.NotNull(await smartAccount.GetAddress());
@@ -36,7 +31,7 @@ public class SmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task Initialization_Fail()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var client = this.Client;
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         await privateKeyAccount.Disconnect();
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -48,7 +43,7 @@ public class SmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ForceDeploy_Success()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var client = this.Client;
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
         await smartAccount.ForceDeploy();
@@ -66,7 +61,7 @@ public class SmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task IsDeployed_False()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var client = this.Client;
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(
             personalWallet: privateKeyAccount,
@@ -132,7 +127,7 @@ public class SmartWalletTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task GetAddress_WithOverride()
     {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+        var client = this.Client;
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(
             personalWallet: privateKeyAccount,
@@ -226,7 +221,7 @@ public class SmartWalletTests : BaseTests
         var count = signers.Count;
 
         // add signer
-        var randomSigner = await (await PrivateKeyWallet.Generate(this._client)).GetAddress();
+        var randomSigner = await (await PrivateKeyWallet.Generate(this.Client)).GetAddress();
         _ = await account.CreateSessionKey(
             signerAddress: randomSigner,
             approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
@@ -259,7 +254,7 @@ public class SmartWalletTests : BaseTests
         var count = admins.Count;
 
         // add admin
-        var randomAdmin = await (await PrivateKeyWallet.Generate(this._client)).GetAddress();
+        var randomAdmin = await (await PrivateKeyWallet.Generate(this.Client)).GetAddress();
         _ = await account.AddAdmin(randomAdmin);
 
         admins = await account.GetAllAdmins();
@@ -278,7 +273,7 @@ public class SmartWalletTests : BaseTests
     public async Task SendTransaction_07_Success()
     {
         var smartWallet07 = await SmartWallet.Create(
-            personalWallet: await PrivateKeyWallet.Generate(this._client),
+            personalWallet: await PrivateKeyWallet.Generate(this.Client),
             chainId: 11155111,
             gasless: true,
             factoryAddress: "0xc5A43D081Dc10316EE640504Ea1cBc74666F3874",
@@ -298,7 +293,7 @@ public class SmartWalletTests : BaseTests
         var chainId2 = 421614;
 
         var smartWallet = await SmartWallet.Create(
-            personalWallet: await PrivateKeyWallet.Generate(this._client),
+            personalWallet: await PrivateKeyWallet.Generate(this.Client),
             chainId: chainId1,
             gasless: true,
             factoryAddress: Constants.DEFAULT_FACTORY_ADDRESS_V06,

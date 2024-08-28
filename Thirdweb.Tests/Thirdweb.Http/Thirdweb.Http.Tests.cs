@@ -2,8 +2,10 @@
 
 namespace Thirdweb.Tests.Http;
 
-public class HttpTests(ITestOutputHelper output) : BaseTests(output)
+public class HttpTests : BaseTests
 {
+    public HttpTests(ITestOutputHelper output)
+        : base(output) { }
 
     #region ThirdwebHttpClient
 
@@ -28,7 +30,11 @@ public class HttpTests(ITestOutputHelper output) : BaseTests(output)
         // Arrange
         var httpClient = new ThirdwebHttpClient();
         var requestUri = "https://jsonplaceholder.typicode.com/posts";
-        var content = new StringContent(/*lang=json,strict*/ "{\"title\": \"foo\", \"body\": \"bar\", \"userId\": 1}", Encoding.UTF8, "application/json");
+        var content = new StringContent( /*lang=json,strict*/
+            "{\"title\": \"foo\", \"body\": \"bar\", \"userId\": 1}",
+            Encoding.UTF8,
+            "application/json"
+        );
 
         // Act
         var response = await httpClient.PostAsync(requestUri, content);
@@ -102,7 +108,11 @@ public class HttpTests(ITestOutputHelper output) : BaseTests(output)
         // Arrange
         var httpClient = new ThirdwebHttpClient();
         var requestUri = "https://jsonplaceholder.typicode.com/posts/1";
-        var content = new StringContent(/*lang=json,strict*/ "{\"title\": \"foo\", \"body\": \"bar\", \"userId\": 1}", Encoding.UTF8, "application/json");
+        var content = new StringContent( /*lang=json,strict*/
+            "{\"title\": \"foo\", \"body\": \"bar\", \"userId\": 1}",
+            Encoding.UTF8,
+            "application/json"
+        );
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<NotImplementedException>(() => httpClient.PutAsync(requestUri, content));

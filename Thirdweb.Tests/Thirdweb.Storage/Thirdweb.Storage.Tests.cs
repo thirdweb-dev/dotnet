@@ -1,7 +1,10 @@
 ﻿namespace Thirdweb.Tests.Storage;
 
-public class StorageTests(ITestOutputHelper output) : BaseTests(output)
+public class StorageTests : BaseTests
 {
+    public StorageTests(ITestOutputHelper output)
+        : base(output) { }
+
     [Fact(Timeout = 120000)]
     public async Task DownloadTest_SecretKey()
     {
@@ -74,7 +77,10 @@ public class StorageTests(ITestOutputHelper output) : BaseTests(output)
     {
         var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var path = Path.Combine(Path.GetTempPath(), "testJson.json");
-        File.WriteAllText(path, /*lang=json,strict*/ "{\"test\": \"test\"}");
+        File.WriteAllText(
+            path, /*lang=json,strict*/
+            "{\"test\": \"test\"}"
+        );
         var res = await ThirdwebStorage.Upload(client, path);
         Assert.StartsWith($"https://{client.ClientId}.ipfscdn.io/ipfs/", res.PreviewUrl);
     }
@@ -84,7 +90,10 @@ public class StorageTests(ITestOutputHelper output) : BaseTests(output)
     {
         var client = ThirdwebClient.Create(clientId: this.ClientIdBundleIdOnly, bundleId: this.BundleIdBundleIdOnly);
         var path = Path.Combine(Path.GetTempPath(), "testJson.json");
-        File.WriteAllText(path, /*lang=json,strict*/ "{\"test\": \"test\"}");
+        File.WriteAllText(
+            path, /*lang=json,strict*/
+            "{\"test\": \"test\"}"
+        );
         var res = await ThirdwebStorage.Upload(client, path);
         Assert.StartsWith($"https://{client.ClientId}.ipfscdn.io/ipfs/", res.PreviewUrl);
     }
@@ -102,7 +111,10 @@ public class StorageTests(ITestOutputHelper output) : BaseTests(output)
     {
         var client = ThirdwebClient.Create(clientId: "invalid", bundleId: "hello");
         var path = Path.Combine(Path.GetTempPath(), "testJson.json");
-        File.WriteAllText(path, /*lang=json,strict*/ "{\"test\": \"test\"}");
+        File.WriteAllText(
+            path, /*lang=json,strict*/
+            "{\"test\": \"test\"}"
+        );
         var exception = await Assert.ThrowsAsync<Exception>(() => ThirdwebStorage.Upload(client, path));
         Assert.Contains("Failed to upload", exception.Message);
         Assert.Contains("401", exception.Message);

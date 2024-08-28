@@ -3,8 +3,11 @@ using System.Reflection;
 
 namespace Thirdweb.Tests.RPC;
 
-public class RpcTests(ITestOutputHelper output) : BaseTests(output)
+public class RpcTests : BaseTests
 {
+    public RpcTests(ITestOutputHelper output)
+        : base(output) { }
+
     [Fact(Timeout = 120000)]
     public async Task GetBlockNumber()
     {

@@ -13,48 +13,44 @@ public class ExtensionsTests : BaseTests
     private readonly string _dropErc1155ContractAddress = "0x6A7a26c9a595E6893C255C9dF0b593e77518e0c3";
 
     private readonly BigInteger _chainId = 421614;
-    private readonly ThirdwebClient _client;
 
     public ExtensionsTests(ITestOutputHelper output)
-        : base(output)
-    {
-        this._client = ThirdwebClient.Create(secretKey: this.SecretKey);
-    }
+        : base(output) { }
 
     private async Task<IThirdwebWallet> GetSmartWallet()
     {
-        var privateKeyWallet = await PrivateKeyWallet.Generate(this._client);
+        var privateKeyWallet = await PrivateKeyWallet.Generate(this.Client);
         return await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614);
     }
 
     private async Task<ThirdwebContract> GetTokenERC20Contract()
     {
-        return await ThirdwebContract.Create(this._client, this._tokenErc20ContractAddress, this._chainId);
+        return await ThirdwebContract.Create(this.Client, this._tokenErc20ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetTokenERC721Contract()
     {
-        return await ThirdwebContract.Create(this._client, this._tokenErc721ContractAddress, this._chainId);
+        return await ThirdwebContract.Create(this.Client, this._tokenErc721ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetTokenERC1155Contract()
     {
-        return await ThirdwebContract.Create(this._client, this._tokenErc1155ContractAddress, this._chainId);
+        return await ThirdwebContract.Create(this.Client, this._tokenErc1155ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetDrop20Contract()
     {
-        return await ThirdwebContract.Create(this._client, this._dropErc20ContractAddress, this._chainId);
+        return await ThirdwebContract.Create(this.Client, this._dropErc20ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetDrop721Contract()
     {
-        return await ThirdwebContract.Create(this._client, this._dropErc721ContractAddress, this._chainId);
+        return await ThirdwebContract.Create(this.Client, this._dropErc721ContractAddress, this._chainId);
     }
 
     private async Task<ThirdwebContract> GetDrop1155Contract()
     {
-        return await ThirdwebContract.Create(this._client, this._dropErc1155ContractAddress, this._chainId);
+        return await ThirdwebContract.Create(this.Client, this._dropErc1155ContractAddress, this._chainId);
     }
 
     #region Common
@@ -149,7 +145,7 @@ public class ExtensionsTests : BaseTests
     {
         var address = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik.eth
         var chainId = BigInteger.One;
-        var balance = await ThirdwebExtensions.GetBalanceRaw(this._client, chainId, address);
+        var balance = await ThirdwebExtensions.GetBalanceRaw(this.Client, chainId, address);
         Assert.True(balance >= 0);
     }
 
@@ -159,7 +155,7 @@ public class ExtensionsTests : BaseTests
         var address = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik.eth
         var chainId = this._chainId;
         var contractAddress = this._tokenErc20ContractAddress;
-        var balance = await ThirdwebExtensions.GetBalanceRaw(this._client, chainId, address, contractAddress);
+        var balance = await ThirdwebExtensions.GetBalanceRaw(this.Client, chainId, address, contractAddress);
         Assert.True(balance >= 0);
     }
 
@@ -202,7 +198,7 @@ public class ExtensionsTests : BaseTests
     {
         var address = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik.eth
         var chainId = BigInteger.One;
-        var transactionCount = await ThirdwebExtensions.GetTransactionCountRaw(this._client, chainId, address);
+        var transactionCount = await ThirdwebExtensions.GetTransactionCountRaw(this.Client, chainId, address);
         Assert.True(transactionCount >= 0);
     }
 
@@ -212,7 +208,7 @@ public class ExtensionsTests : BaseTests
         var address = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik.eth
         var chainId = this._chainId;
         var blockTag = "latest";
-        var transactionCount = await ThirdwebExtensions.GetTransactionCountRaw(this._client, chainId, address, blockTag);
+        var transactionCount = await ThirdwebExtensions.GetTransactionCountRaw(this.Client, chainId, address, blockTag);
         Assert.True(transactionCount >= 0);
     }
 
@@ -974,7 +970,7 @@ public class ExtensionsTests : BaseTests
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.DropERC721_GetActiveClaimCondition());
     }
 
-    // [Fact(Timeout = 120000)]
+    //
     // public async Task DropERC721_Claim_ShouldThrowTokens()
     // {
     //     var contract = await GetDrop721Contract();
@@ -1184,8 +1180,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC20_GenerateMintSignature_WithVerify()
     {
         var contract = await this.GetTokenERC20Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
         var mintRequest = new TokenERC20_MintRequest { To = await randomReceiver.GetAddress(), Quantity = BigInteger.Parse("1.5".ToWei()), };
 
         (var payload, var signature) = await contract.TokenERC20_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
@@ -1294,8 +1290,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC721_GenerateMintSignature_WithUri_WithVerify()
     {
         var contract = await this.GetTokenERC721Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
         var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress(), Uri = "", };
 
         (var payload, var signature) = await contract.TokenERC721_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
@@ -1329,8 +1325,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC721_GenerateMintSignature_WithNFTMetadata_WithVerify()
     {
         var contract = await this.GetTokenERC721Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
         var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress() };
 
         (var payload, var signature) = await contract.TokenERC721_GenerateMintSignature(
@@ -1462,8 +1458,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC1155_GenerateMintSignature_WithUri_WithVerify()
     {
         var contract = await this.GetTokenERC1155Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
         var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress(), Uri = "", };
 
         (var payload, var signature) = await contract.TokenERC1155_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
@@ -1499,8 +1495,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC1155_GenerateMintSignature_WithNFTMetadata_WithVerify()
     {
         var contract = await this.GetTokenERC1155Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this._client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this._client);
+        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
+        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
         var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress() };
 
         (var payload, var signature) = await contract.TokenERC1155_GenerateMintSignature(

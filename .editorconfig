@@ -139,3 +139,9 @@ csharp_style_deconstructed_variable_declaration = true:warning
 csharp_prefer_simple_default_expression = false:warning
 csharp_style_pattern_local_over_anonymous_function = true:warning
 csharp_style_inlined_variable_declaration = true:warning
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = suggestion
+
+# IDE0290: Use primary constructor
+dotnet_diagnostic.IDE0290.severity = silent

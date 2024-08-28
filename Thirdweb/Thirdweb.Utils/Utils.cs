@@ -2,14 +2,14 @@
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Nethereum.ABI.EIP712;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
 using Nethereum.Util;
-using Newtonsoft.Json.Linq;
-using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Thirdweb;
 
@@ -31,7 +31,7 @@ public static partial class Utils
 #if NETSTANDARD
         using var sha256 = SHA256.Create();
         var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(secretKey));
-        return BitConverter.ToString(hash).Replace("-", "").ToLower().Substring(0, 32);
+        return BitConverter.ToString(hash).Replace("-", "").ToLower()[..32];
 #else
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(secretKey));
         return BitConverter.ToString(hash).Replace("-", "").ToLower()[..32];
