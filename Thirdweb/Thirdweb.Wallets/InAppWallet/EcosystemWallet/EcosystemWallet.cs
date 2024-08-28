@@ -22,7 +22,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
     private string _address;
     private string _authToken;
 
-    private const string EnclavePath = "https://embedded-wallet.thirdweb-dev.com/api/2024-05-05/enclave-wallet";
+    private const string EnclavePath = "https://embedded-wallet.thirdweb-dev.com/api/v1/enclave-wallet";
 
     private EcosystemWallet(
         ThirdwebClient client,
@@ -437,24 +437,34 @@ public partial class EcosystemWallet : PrivateKeyWallet
         return res.Signature;
     }
 
-    public override Task<string> SignTypedDataV4(string json)
+    public override async Task<string> SignTypedDataV4(string json)
     {
         if (string.IsNullOrEmpty(json))
         {
             throw new ArgumentNullException(nameof(json), "Json to sign cannot be null.");
         }
 
-        throw new NotImplementedException();
+        var url = $"{EnclavePath}/sign-typed-data";
+
+        var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var response = await this._httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var res = JsonConvert.DeserializeObject<EnclaveSignResponse>(content);
+        return res.Signature;
     }
 
-    public override Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
+    public override async Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
     {
         if (data == null)
         {
             throw new ArgumentNullException(nameof(data), "Data to sign cannot be null.");
         }
 
-        throw new NotImplementedException();
+        var safeJson = Utils.ToJsonExternalWalletFriendly(typedData, data);
+        return await this.SignTypedDataV4(safeJson).ConfigureAwait(false);
     }
 
     public override async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
@@ -474,41 +484,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             throw new ArgumentException("GasPrice or MaxFeePerGas and MaxPriorityFeePerGas are required for transaction signing.");
         }
 
-        object payload;
-
-        if (transaction.GasPrice != null)
-        {
-            payload = new
-            {
-                transactionPayload = new
-                {
-                    value = transaction.Value?.HexValue ?? "0x0",
-                    to = transaction.To,
-                    nonce = transaction.Nonce.HexValue,
-                    gas = transaction.Gas.HexValue,
-                    gasPrice = transaction.GasPrice.HexValue,
-                    data = transaction.Data ?? "0x",
-                    chainId = transaction.ChainId.HexValue
-                }
-            };
-        }
-        else
-        {
-            payload = new
-            {
-                transactionPayload = new
-                {
-                    value = transaction.Value?.HexValue ?? "0x0",
-                    to = transaction.To,
-                    nonce = transaction.Nonce.HexValue,
-                    gas = transaction.Gas.HexValue,
-                    maxFeePerGas = transaction.MaxFeePerGas.HexValue,
-                    maxPriorityFeePerGas = transaction.MaxPriorityFeePerGas.HexValue,
-                    data = transaction.Data ?? "0x",
-                    chainId = transaction.ChainId.HexValue
-                }
-            };
-        }
+        object payload = new { transactionPayload = transaction };
 
         var url = $"{EnclavePath}/sign-transaction";
 
