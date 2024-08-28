@@ -128,7 +128,6 @@ Console.WriteLine($"Ecosystem Wallet transaction hash: {hash}");
 
 #endregion
 
-
 #region Maximum low level zksync tx
 
 // var chainId = 300;
