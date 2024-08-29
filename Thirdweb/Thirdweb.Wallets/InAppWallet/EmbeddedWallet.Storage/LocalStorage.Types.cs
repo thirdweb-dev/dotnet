@@ -14,22 +14,22 @@ internal partial class LocalStorage : LocalStorageBase
         internal string WalletUserId => this._walletUserId;
         internal string AuthProvider => this._authProvider;
 
-        [DataMember]
+        [DataMember(Name = "authToken")]
         private string _authToken;
 
-        [DataMember]
+        [DataMember(Name = "deviceShare")]
         private string _deviceShare;
 
-        [DataMember]
+        [DataMember(Name = "emailAddress")]
         private string _emailAddress;
 
-        [DataMember]
+        [DataMember(Name = "phoneNumber")]
         private string _phoneNumber;
 
-        [DataMember]
+        [DataMember(Name = "walletUserId")]
         private string _walletUserId;
 
-        [DataMember]
+        [DataMember(Name = "authProvider")]
         private string _authProvider;
 
         internal DataStorage(string authToken, string deviceShare, string emailAddress, string phoneNumber, string walletUserId, string authProvider)

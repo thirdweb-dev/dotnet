@@ -103,6 +103,7 @@ public class InAppWallet : PrivateKeyWallet
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
 
+        storageDirectoryPath ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Thirdweb", "InAppWallet");
         var embeddedWallet = new EmbeddedWallet(client, storageDirectoryPath);
         EthECKey ecKey;
         try

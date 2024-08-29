@@ -112,8 +112,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
         }
         enclaveHttpClient.SetHeaders(headers);
 
-        storageDirectoryPath ??= Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var embeddedWallet = new EmbeddedWallet(client, Path.Combine(storageDirectoryPath, "Thirdweb", "EcosystemWallet"), ecosystemId, ecosystemPartnerId);
+        storageDirectoryPath ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Thirdweb", "EcosystemWallet");
+        var embeddedWallet = new EmbeddedWallet(client, storageDirectoryPath, ecosystemId, ecosystemPartnerId);
 
         string authToken = null;
         try
@@ -126,9 +126,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
                 _address = await GetAddressFromEnclave(enclaveHttpClient).ConfigureAwait(false)
             };
         }
-        catch (Exception e)
+        catch
         {
-            Console.WriteLine($"Failed to resume session: {e.Message}");
             return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, authToken);
         }
     }
@@ -156,9 +155,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
             var enclaveResponse = JsonConvert.DeserializeObject<EnclaveWalletResponse>(content);
             this._address = enclaveResponse.Wallet.Address.ToChecksumAddress();
         }
-        catch (Exception e)
+        catch
         {
-            Console.WriteLine($"Failed to generate wallet: {e.Message}");
             this._address = await GetAddressFromEnclave(this._httpClient).ConfigureAwait(false);
         }
 
@@ -517,7 +515,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
     {
         this._address = null;
         this._authToken = null;
-        await this._embeddedWallet.SignOutAsync();
+        await this._embeddedWallet.SignOutAsync().ConfigureAwait(false);
     }
 
     #endregion

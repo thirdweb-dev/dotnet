@@ -16,13 +16,11 @@ internal class IvGenerator : IvGeneratorBase
     private readonly string _ivFilePath;
     private static readonly long _taps = new int[] { NPrbsBits, 47, 21, 20 }.Aggregate(0L, (a, b) => a + (1L << (NPrbsBits - b))); // https://docs.xilinx.com/v/u/en-US/xapp052, page 5
 
-    internal IvGenerator(string storageDirectoryPath = null)
+    internal IvGenerator(string storageDirectoryPath)
     {
-        string directory;
-        directory = storageDirectoryPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        directory = Path.Combine(directory, "EWS");
-        _ = Directory.CreateDirectory(directory);
-        this._ivFilePath = Path.Combine(directory, "iv.txt");
+        storageDirectoryPath = Path.Combine(storageDirectoryPath, "IV");
+        _ = Directory.CreateDirectory(storageDirectoryPath);
+        this._ivFilePath = Path.Combine(storageDirectoryPath, "iv.txt");
         try
         {
             this._prbsValue = long.Parse(File.ReadAllText(this._ivFilePath));

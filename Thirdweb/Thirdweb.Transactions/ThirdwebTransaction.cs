@@ -336,7 +336,7 @@ public class ThirdwebTransaction
     /// <returns>The signed transaction.</returns>
     public static async Task<string> Sign(ThirdwebTransaction transaction)
     {
-        return await transaction._wallet.SignTransaction(transaction.Input);
+        return await transaction._wallet.SignTransaction(transaction.Input).ConfigureAwait(false);
     }
 
     /// <summary>
