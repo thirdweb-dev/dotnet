@@ -24,6 +24,7 @@ public static partial class Utils
 {
     private static readonly Dictionary<BigInteger, bool> _eip155EnforcedCache = new();
     private static readonly Dictionary<BigInteger, ThirdwebChainData> _chainDataCache = new();
+    private static readonly Dictionary<string, string> _ensCache = new();
 
     /// <summary>
     /// Computes the client ID from the given secret key.
@@ -744,10 +745,16 @@ public static partial class Utils
             throw new ArgumentException("Invalid address.");
         }
 
+        if (_ensCache.TryGetValue(address, out var value))
+        {
+            return value;
+        }
+
         var contract = await ThirdwebContract.Create(client: client, address: Constants.ENS_REGISTRY_ADDRESS, chain: 1).ConfigureAwait(false);
         var reverseName = address.ToLower()[2..] + ".addr.reverse";
         var reverseNameBytes = PacketToBytes(reverseName);
         var ensName = await contract.Read<string>("reverse", reverseNameBytes).ConfigureAwait(false);
+        _ensCache[address] = ensName;
         return ensName;
     }
 
@@ -768,6 +775,11 @@ public static partial class Utils
             throw new ArgumentException("Invalid ENS name.");
         }
 
+        if (_ensCache.TryGetValue(ensName, out var value))
+        {
+            return value;
+        }
+
         var registry = await ThirdwebContract.Create(client: client, address: Constants.ENS_REGISTRY_ADDRESS, chain: 1).ConfigureAwait(false);
         var functionCallEncoder = new FunctionCallEncoder();
         var encodedAddr = "addr(bytes32)"
@@ -777,10 +789,10 @@ public static partial class Utils
             .ToArray()
             .Concat(functionCallEncoder.EncodeParameters(new Parameter[] { new("bytes32", "name") }, new object[] { NameHash(ensName).HexToBytes() }))
             .ToArray();
-        Console.WriteLine(encodedAddr);
         var result = await registry.Read<ResolveReturnType>("resolve(bytes name, bytes data)", PacketToBytes(ensName), encodedAddr).ConfigureAwait(false);
-        Console.WriteLine(result.Bytes.BytesToHex());
-        return ("0x" + result.Bytes.BytesToHex()[26..]).ToChecksumAddress();
+        var address = ("0x" + result.Bytes.BytesToHex()[26..]).ToChecksumAddress();
+        _ensCache[ensName] = address;
+        return address;
     }
 
     public static bool IsValidAddress(this string address)

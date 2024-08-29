@@ -543,6 +543,9 @@ public class UtilsTests : BaseTests
         var ensName = await Utils.GetENSFromAddress(this.Client, validAddress);
 
         Assert.Equal(expectedENSName, ensName);
+
+        ensName = await Utils.GetENSFromAddress(this.Client, validAddress);
+        Assert.Equal(expectedENSName, ensName);
     }
 
     [Fact(Timeout = 120000)]
@@ -576,6 +579,9 @@ public class UtilsTests : BaseTests
         var expectedAddress = "0xDaaBDaaC8073A7dAbdC96F6909E8476ab4001B34";
         var result = await Utils.GetAddressFromENS(this.Client, validENSName);
 
+        Assert.Equal(expectedAddress.ToChecksumAddress(), result);
+
+        result = await Utils.GetAddressFromENS(this.Client, validENSName);
         Assert.Equal(expectedAddress.ToChecksumAddress(), result);
     }
 }
