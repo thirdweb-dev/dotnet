@@ -364,4 +364,70 @@ public class PrivateKeyWalletTests : BaseTests
         };
         _ = await Assert.ThrowsAsync<InvalidOperationException>(() => account.ExecuteTransaction(transaction));
     }
+
+    [Fact(Timeout = 120000)]
+    public async Task LoadOrGenerate_LoadsExistingWallet()
+    {
+        // Generate and save a wallet to simulate an existing wallet file
+        var wallet = await PrivateKeyWallet.Generate(this.Client);
+        await wallet.Save();
+
+        var loadedWallet = await PrivateKeyWallet.LoadOrGenerate(this.Client);
+
+        Assert.NotNull(loadedWallet);
+        Assert.Equal(await wallet.Export(), await loadedWallet.Export());
+        Assert.Equal(await wallet.GetAddress(), await loadedWallet.GetAddress());
+
+        // Clean up
+        var path = PrivateKeyWallet.GetSavePath();
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task LoadOrGenerate_GeneratesNewWalletIfNoExistingWallet()
+    {
+        var path = PrivateKeyWallet.GetSavePath();
+
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+
+        var wallet = await PrivateKeyWallet.LoadOrGenerate(this.Client);
+
+        Assert.NotNull(wallet);
+        Assert.NotNull(await wallet.Export());
+        Assert.False(File.Exists(path));
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task Save_SavesPrivateKeyToFile()
+    {
+        var wallet = await PrivateKeyWallet.Generate(this.Client);
+
+        await wallet.Save();
+
+        var path = PrivateKeyWallet.GetSavePath();
+        Assert.True(File.Exists(path));
+
+        var savedPrivateKey = await File.ReadAllTextAsync(path);
+        Assert.Equal(await wallet.Export(), savedPrivateKey);
+
+        // Clean up
+        File.Delete(path);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task Export_ReturnsPrivateKey()
+    {
+        var wallet = await PrivateKeyWallet.Generate(this.Client);
+
+        var privateKey = await wallet.Export();
+
+        Assert.NotNull(privateKey);
+        Assert.Equal(privateKey, await wallet.Export());
+    }
 }
