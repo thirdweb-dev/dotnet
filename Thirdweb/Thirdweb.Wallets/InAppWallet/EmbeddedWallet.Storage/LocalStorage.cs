@@ -12,9 +12,9 @@ internal abstract class LocalStorageBase
 
 internal partial class LocalStorage : LocalStorageBase
 {
-    internal override DataStorage Data => this.storage.Data;
-    private readonly Storage storage;
-    private readonly string filePath;
+    internal override DataStorage Data => this._storage.Data;
+    private readonly Storage _storage;
+    private readonly string _filePath;
 
     internal LocalStorage(string clientId, string storageDirectoryPath = null)
     {
@@ -22,17 +22,17 @@ internal partial class LocalStorage : LocalStorageBase
         directory = storageDirectoryPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         directory = Path.Combine(directory, "Thirdweb", "InAppWallet");
         _ = Directory.CreateDirectory(directory);
-        this.filePath = Path.Combine(directory, $"{clientId}.txt");
+        this._filePath = Path.Combine(directory, $"{clientId}.txt");
         try
         {
-            var json = File.ReadAllBytes(this.filePath);
+            var json = File.ReadAllBytes(this._filePath);
             DataContractJsonSerializer serializer = new(typeof(Storage));
             MemoryStream fin = new(json);
-            this.storage = (Storage)serializer.ReadObject(fin);
+            this._storage = (Storage)serializer.ReadObject(fin);
         }
         catch (Exception)
         {
-            this.storage = new Storage();
+            this._storage = new Storage();
         }
     }
 
@@ -40,9 +40,9 @@ internal partial class LocalStorage : LocalStorageBase
     {
         return this.UpdateDataAsync(() =>
         {
-            if (this.storage.Data?.AuthToken != null)
+            if (this._storage.Data?.AuthToken != null)
             {
-                this.storage.Data.ClearAuthToken();
+                this._storage.Data.ClearAuthToken();
                 return true;
             }
             return false;
@@ -55,8 +55,8 @@ internal partial class LocalStorage : LocalStorageBase
         {
             DataContractJsonSerializer serializer = new(typeof(Storage));
             MemoryStream fout = new();
-            serializer.WriteObject(fout, this.storage);
-            await File.WriteAllBytesAsync(this.filePath, fout.ToArray()).ConfigureAwait(false);
+            serializer.WriteObject(fout, this._storage);
+            await File.WriteAllBytesAsync(this._filePath, fout.ToArray()).ConfigureAwait(false);
             return true;
         }
         return false;
@@ -66,7 +66,7 @@ internal partial class LocalStorage : LocalStorageBase
     {
         return this.UpdateDataAsync(() =>
         {
-            this.storage.Data = data;
+            this._storage.Data = data;
             return true;
         });
     }
