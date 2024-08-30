@@ -383,7 +383,7 @@ public class SmartWallet : IThirdwebWallet
             // Estimate gas
 
             var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address);
-            partialUserOp.CallGasLimit = 50000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
+            partialUserOp.CallGasLimit = Math.Max((long)(50000 + new HexBigInteger(gasEstimates.CallGasLimit).Value), (long?)transactionInput.Gas?.Value ?? 0);
             partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
             partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
 
@@ -462,11 +462,11 @@ public class SmartWallet : IThirdwebWallet
                 var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
                 partialUserOp.Paymaster = res.Paymaster;
                 partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? Array.Empty<byte>();
-                partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0").Value;
-                partialUserOp.VerificationGasLimit = new HexBigInteger(res.VerificationGasLimit ?? "0").Value;
-                partialUserOp.CallGasLimit = new HexBigInteger(res.CallGasLimit ?? "0").Value;
-                partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(res.PaymasterVerificationGasLimit ?? "0").Value;
-                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(res.PaymasterPostOpGasLimit ?? "0").Value;
+                partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0x0").Value;
+                partialUserOp.VerificationGasLimit = new HexBigInteger(res.VerificationGasLimit ?? "0x0").Value;
+                partialUserOp.CallGasLimit = new HexBigInteger(res.CallGasLimit ?? "0x0").Value;
+                partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(res.PaymasterVerificationGasLimit ?? "0x0").Value;
+                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(res.PaymasterPostOpGasLimit ?? "0x0").Value;
             }
 
             // Hash, sign and encode the user operation
