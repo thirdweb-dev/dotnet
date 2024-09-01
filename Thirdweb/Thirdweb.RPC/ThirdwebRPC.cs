@@ -15,7 +15,7 @@ public class ThirdwebRPC : IDisposable
     private readonly Uri _rpcUrl;
     private readonly TimeSpan _rpcTimeout;
     private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new();
-    private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(25);
+    private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(30);
     private readonly List<RpcRequest> _pendingBatch = new();
     private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new();
     private readonly object _batchLock = new();

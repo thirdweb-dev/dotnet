@@ -71,7 +71,7 @@ public class ThirdwebRPCTimer(TimeSpan interval) : IDisposable
                     return;
                 }
 
-                await Task.Delay(1).ConfigureAwait(false);
+                await Task.Delay(10).ConfigureAwait(false);
             }
             Elapsed?.Invoke();
         }
