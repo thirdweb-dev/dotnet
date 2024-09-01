@@ -335,7 +335,7 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.CompletedTask;
     }
 
-    public Task<string> SendTransaction(ThirdwebTransactionInput transaction)
+    public virtual Task<string> SendTransaction(ThirdwebTransactionInput transaction)
     {
         throw new InvalidOperationException("SendTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");
     }
