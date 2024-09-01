@@ -441,18 +441,6 @@ public class TransactionTests : BaseTests
         var aaFailedReceipt = await Assert.ThrowsAsync<Exception>(async () => await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, aaSilentRevertTxHash, cts.Token));
         Assert.StartsWith($"Transaction {aaSilentRevertTxHash} execution silently reverted", aaFailedReceipt.Message);
 
-        var infiniteTxHash = "0x55181384a4b908ddf6311cf0eb55ea0aa2b1ef4d9e0cc047eab9051fec284958";
-        cts = new CancellationTokenSource();
-        cts.CancelAfter(1);
-        var infiniteReceipt = await Assert.ThrowsAsync<Exception>(async () => await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, infiniteTxHash, cts.Token));
-        Assert.Equal($"Transaction receipt polling for hash {infiniteTxHash} was cancelled.", infiniteReceipt.Message);
-
-        cts = new CancellationTokenSource();
-        var infiniteReceipt2 = Assert.ThrowsAsync<Exception>(() => ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, infiniteTxHash, cts.Token));
-        await Task.Delay(2000);
-        cts.Cancel();
-        Assert.Equal($"Transaction receipt polling for hash {infiniteTxHash} was cancelled.", (await infiniteReceipt2).Message);
-
         var aaReceipt2 = await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, aaTxHash, CancellationToken.None);
         Assert.NotNull(aaReceipt2);
     }

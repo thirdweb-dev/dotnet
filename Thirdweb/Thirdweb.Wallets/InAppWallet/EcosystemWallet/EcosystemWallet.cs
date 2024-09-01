@@ -22,7 +22,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
     private string _address;
     private string _authToken;
 
-    private const string EnclavePath = "https://embedded-wallet.thirdweb-dev.com/api/v1/enclave-wallet";
+    private const string EnclavePath = "https://embedded-wallet.thirdweb.com/api/v1/enclave-wallet";
 
     private EcosystemWallet(
         ThirdwebClient client,
