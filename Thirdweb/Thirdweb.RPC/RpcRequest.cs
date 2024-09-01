@@ -30,12 +30,4 @@ public class RpcRequest
     /// </summary>
     [JsonProperty("id")]
     public int Id { get; set; }
-
-    public RpcRequest() { }
-
-    public RpcRequest(string method, params object[] parameters)
-    {
-        this.Method = method;
-        this.Params = parameters;
-    }
 }
