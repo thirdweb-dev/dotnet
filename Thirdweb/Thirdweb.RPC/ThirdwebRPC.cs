@@ -9,25 +9,15 @@ namespace Thirdweb;
 /// </summary>
 public class ThirdwebRPC : IDisposable
 {
-    private const int BatchSizeLimit = 100;
-    private readonly TimeSpan _batchInterval = TimeSpan.FromMilliseconds(100);
-
     private readonly Uri _rpcUrl;
     private readonly TimeSpan _rpcTimeout;
     private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new();
-    private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(30);
-    private readonly List<RpcRequest> _pendingBatch = new();
-    private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new();
-    private readonly object _batchLock = new();
-    private readonly object _responseLock = new();
+    private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(100);
+    private static readonly Dictionary<string, ThirdwebRPC> _rpcs = new();
+    private readonly IThirdwebHttpClient _httpClient;
     private readonly object _cacheLock = new();
-    private readonly ThirdwebRPCTimer _batchTimer;
 
     private int _requestIdCounter = 1;
-
-    private static readonly Dictionary<string, ThirdwebRPC> _rpcs = new();
-
-    private readonly IThirdwebHttpClient _httpClient;
 
     /// <summary>
     /// Gets an instance of the ThirdwebRPC client for the specified ThirdwebClient and chain ID.
@@ -75,116 +65,59 @@ public class ThirdwebRPC : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the response cannot be deserialized.</exception>
     public async Task<TResponse> SendRequestAsync<TResponse>(string method, params object[] parameters)
     {
+        var cacheKey = GetCacheKey(method, parameters);
+
         lock (this._cacheLock)
         {
-            var cacheKey = GetCacheKey(method, parameters);
             if (this._cache.TryGetValue(cacheKey, out var cachedItem) && (DateTime.Now - cachedItem.Timestamp) < this._cacheDuration)
             {
-                if (cachedItem.Response is TResponse cachedResponse)
-                {
-                    return cachedResponse;
-                }
-                else
-                {
-                    try
-                    {
-                        var deserializedResponse = JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(cachedItem.Response));
-                        this._cache[cacheKey] = (deserializedResponse, DateTime.Now);
-                        return deserializedResponse;
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new InvalidOperationException("Failed to deserialize RPC response.", ex);
-                    }
-                }
+                return (TResponse)cachedItem.Response;
             }
         }
 
-        var tcs = new TaskCompletionSource<object>();
-        int requestId;
-
-        lock (this._batchLock)
+        var requestId = this._requestIdCounter++;
+        var request = new RpcRequest
         {
-            requestId = this._requestIdCounter++;
-            this._pendingBatch.Add(
-                new RpcRequest
-                {
-                    Method = method,
-                    Params = parameters,
-                    Id = requestId
-                }
-            );
-            lock (this._responseLock)
-            {
-                this._responseCompletionSources.Add(requestId, tcs);
-            }
+            Method = method,
+            Params = parameters,
+            Id = requestId
+        };
 
-            if (this._pendingBatch.Count >= BatchSizeLimit)
-            {
-                this.SendBatchNow();
-            }
-        }
+        var response = await this.SendSingleRequestAsync(request).ConfigureAwait(false);
 
-        var result = await tcs.Task.ConfigureAwait(false);
-        if (result is TResponse response)
+        if (response is TResponse typedResponse)
         {
             lock (this._cacheLock)
             {
-                var cacheKey = GetCacheKey(method, parameters);
-                this._cache[cacheKey] = (response, DateTime.Now);
+                this._cache[cacheKey] = (typedResponse, DateTime.Now);
             }
-            return response;
+            return typedResponse;
         }
-        else
+
+        try
         {
-            try
+            var deserializedResponse = JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(response));
+            lock (this._cacheLock)
             {
-                var deserializedResponse = JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(result));
-                lock (this._cacheLock)
-                {
-                    var cacheKey = GetCacheKey(method, parameters);
-                    this._cache[cacheKey] = (deserializedResponse, DateTime.Now);
-                }
-                return deserializedResponse;
+                this._cache[cacheKey] = (deserializedResponse, DateTime.Now);
             }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to deserialize RPC response.", ex);
-            }
+            return deserializedResponse;
         }
-    }
-
-    private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
-    {
-        this._httpClient = client.HttpClient;
-        this._rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb-dev.com/");
-        this._rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
-        this._batchTimer = new ThirdwebRPCTimer(this._batchInterval);
-        this._batchTimer.Elapsed += this.SendBatchNow;
-        this._batchTimer.Start();
-    }
-
-    private void SendBatchNow()
-    {
-        List<RpcRequest> batchToSend;
-        lock (this._batchLock)
+        catch (Exception ex)
         {
-            if (this._pendingBatch.Count == 0)
-            {
-                return;
-            }
-
-            batchToSend = new List<RpcRequest>(this._pendingBatch);
-            this._pendingBatch.Clear();
+            throw new InvalidOperationException("Failed to deserialize RPC response.", ex);
         }
-
-        _ = this.SendBatchAsync(batchToSend);
     }
 
-    private async Task SendBatchAsync(List<RpcRequest> batch)
+    /// <summary>
+    /// Sends a batch of RPC requests asynchronously and returns the responses.
+    /// </summary>
+    /// <param name="requests">The list of RPC requests to be sent in a batch.</param>
+    /// <returns>A list of responses corresponding to the requests.</returns>
+    public async Task<List<object>> SendBatchRequestAsync(List<RpcRequest> requests)
     {
-        var batchJson = JsonConvert.SerializeObject(batch);
-        var content = new StringContent(batchJson, Encoding.UTF8, "application/json");
+        var requestJson = JsonConvert.SerializeObject(requests);
+        var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
         try
         {
@@ -193,93 +126,84 @@ public class ThirdwebRPC : IDisposable
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorDetail = $"Batch request failed with HTTP status code: {response.StatusCode}";
-                throw new HttpRequestException(errorDetail);
+                throw new HttpRequestException($"Batch request failed with HTTP status code: {response.StatusCode}");
             }
 
             var responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var responses = JsonConvert.DeserializeObject<List<RpcResponse<object>>>(responseJson);
+            var rpcResponses = JsonConvert.DeserializeObject<List<RpcResponse<object>>>(responseJson);
 
-            foreach (var rpcResponse in responses)
+            var results = new List<object>();
+            foreach (var rpcResponse in rpcResponses)
             {
-                lock (this._responseLock)
+                if (rpcResponse.Error != null)
                 {
-                    if (this._responseCompletionSources.TryGetValue(rpcResponse.Id, out var tcs))
-                    {
-                        if (rpcResponse.Error != null)
-                        {
-                            var revertMsg = "";
-                            if (rpcResponse.Error.Data != null)
-                            {
-                                try
-                                {
-                                    revertMsg = new Nethereum.ABI.FunctionEncoding.FunctionCallDecoder().DecodeFunctionErrorMessage(rpcResponse.Error.Data);
-                                    revertMsg = string.IsNullOrWhiteSpace(revertMsg) ? rpcResponse.Error.Data : revertMsg;
-                                }
-                                catch
-                                {
-                                    revertMsg = rpcResponse.Error.Data;
-                                }
-                            }
-                            tcs.SetException(new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message} {revertMsg}"));
-                        }
-                        else
-                        {
-                            tcs.SetResult(rpcResponse.Result);
-                        }
-
-                        _ = this._responseCompletionSources.Remove(rpcResponse.Id);
-                    }
+                    throw new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message}");
                 }
+                results.Add(rpcResponse.Result);
             }
+
+            return results;
         }
         catch (TaskCanceledException ex)
         {
-            var timeoutErrorDetail = $"Batch request timed out. Timeout duration: {this._rpcTimeout} ms.";
-            var timeoutException = new TimeoutException(timeoutErrorDetail, ex);
-
-            foreach (var requestId in batch.Select(b => b.Id))
-            {
-                lock (this._responseLock)
-                {
-                    if (this._responseCompletionSources.TryGetValue(requestId, out var tcs))
-                    {
-                        _ = tcs.TrySetException(timeoutException);
-                        _ = this._responseCompletionSources.Remove(requestId);
-                    }
-                }
-            }
-
-            throw timeoutException;
+            throw new TimeoutException($"Batch request timed out. Timeout duration: {this._rpcTimeout.TotalMilliseconds} ms.", ex);
         }
-        catch (Exception ex)
+    }
+
+    /// <summary>
+    /// Disposes the resources used by the ThirdwebRPC instance.
+    /// </summary>
+    public void Dispose()
+    {
+        // No background tasks to cancel or dispose
+    }
+
+    private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
+    {
+        this._httpClient = client.HttpClient;
+        this._rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb-dev.com/");
+        this._rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
+    }
+
+    private async Task<object> SendSingleRequestAsync(RpcRequest request)
+    {
+        var requestJson = JsonConvert.SerializeObject(request);
+        var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+
+        try
         {
-            lock (this._responseLock)
+            using var cts = new CancellationTokenSource(this._rpcTimeout);
+            var response = await this._httpClient.PostAsync(this._rpcUrl.ToString(), content, cts.Token).ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
             {
-                foreach (var kvp in this._responseCompletionSources)
-                {
-                    _ = kvp.Value.TrySetException(ex);
-                }
+                throw new HttpRequestException($"Request failed with HTTP status code: {response.StatusCode}");
             }
+
+            var responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var rpcResponse = JsonConvert.DeserializeObject<RpcResponse<object>>(responseJson);
+
+            if (rpcResponse.Error != null)
+            {
+                var revertMsg = rpcResponse.Error.Data ?? rpcResponse.Error.Message;
+                throw new Exception($"RPC Error: {revertMsg}");
+            }
+
+            return rpcResponse.Result;
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new TimeoutException($"Request timed out. Timeout duration: {this._rpcTimeout.TotalMilliseconds} ms.", ex);
         }
     }
 
     private static string GetCacheKey(string method, params object[] parameters)
     {
-        var keyBuilder = new StringBuilder();
-
-        _ = keyBuilder.Append(method);
-
+        var keyBuilder = new StringBuilder().Append(method);
         foreach (var param in parameters)
         {
             _ = keyBuilder.Append(param?.ToString());
         }
-
         return keyBuilder.ToString();
-    }
-
-    public void Dispose()
-    {
-        throw new NotImplementedException();
     }
 }

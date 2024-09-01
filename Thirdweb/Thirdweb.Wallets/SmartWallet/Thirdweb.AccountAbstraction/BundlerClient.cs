@@ -9,13 +9,13 @@ public static class BundlerClient
 
     public static async Task<EthGetUserOperationReceiptResponse> EthGetUserOperationReceipt(ThirdwebClient client, string bundlerUrl, object requestId, string userOpHash)
     {
-        var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_getUserOperationReceipt", userOpHash);
+        var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_getUserOperationReceipt", userOpHash).ConfigureAwait(false);
         return JsonConvert.DeserializeObject<EthGetUserOperationReceiptResponse>(response.Result.ToString());
     }
 
     public static async Task<string> EthSendUserOperation(ThirdwebClient client, string bundlerUrl, object requestId, object userOp, string entryPoint)
     {
-        var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_sendUserOperation", userOp, entryPoint);
+        var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_sendUserOperation", userOp, entryPoint).ConfigureAwait(false);
         return response.Result.ToString();
     }
 
@@ -28,13 +28,13 @@ public static class BundlerClient
         object stateOverrides = null
     )
     {
-        var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_estimateUserOperationGas", userOp, entryPoint, stateOverrides);
+        var response = await BundlerRequest(client, bundlerUrl, requestId, "eth_estimateUserOperationGas", userOp, entryPoint, stateOverrides).ConfigureAwait(false);
         return JsonConvert.DeserializeObject<EthEstimateUserOperationGasResponse>(response.Result.ToString());
     }
 
     public static async Task<ThirdwebGetUserOperationGasPriceResponse> ThirdwebGetUserOperationGasPrice(ThirdwebClient client, string bundlerUrl, object requestId)
     {
-        var response = await BundlerRequest(client, bundlerUrl, requestId, "thirdweb_getUserOperationGasPrice");
+        var response = await BundlerRequest(client, bundlerUrl, requestId, "thirdweb_getUserOperationGasPrice").ConfigureAwait(false);
         return JsonConvert.DeserializeObject<ThirdwebGetUserOperationGasPriceResponse>(response.Result.ToString());
     }
 
@@ -43,13 +43,14 @@ public static class BundlerClient
     public static async Task<PMSponsorOperationResponse> PMSponsorUserOperation(ThirdwebClient client, string paymasterUrl, object requestId, object userOp, string entryPoint)
     {
         var response = await BundlerRequest(
-            client,
-            paymasterUrl,
-            requestId,
-            "pm_sponsorUserOperation",
-            userOp,
-            entryPoint == Constants.ENTRYPOINT_ADDRESS_V06 ? new EntryPointWrapper() { EntryPoint = entryPoint } : entryPoint
-        );
+                client,
+                paymasterUrl,
+                requestId,
+                "pm_sponsorUserOperation",
+                userOp,
+                entryPoint == Constants.ENTRYPOINT_ADDRESS_V06 ? new EntryPointWrapper() { EntryPoint = entryPoint } : entryPoint
+            )
+            .ConfigureAwait(false);
         try
         {
             return JsonConvert.DeserializeObject<PMSponsorOperationResponse>(response.Result.ToString());
@@ -62,7 +63,7 @@ public static class BundlerClient
 
     public static async Task<ZkPaymasterDataResponse> ZkPaymasterData(ThirdwebClient client, string paymasterUrl, object requestId, ThirdwebTransactionInput txInput)
     {
-        var response = await BundlerRequest(client, paymasterUrl, requestId, "zk_paymasterData", txInput);
+        var response = await BundlerRequest(client, paymasterUrl, requestId, "zk_paymasterData", txInput).ConfigureAwait(false);
         try
         {
             return JsonConvert.DeserializeObject<ZkPaymasterDataResponse>(response.Result.ToString());
@@ -75,7 +76,7 @@ public static class BundlerClient
 
     public static async Task<ZkBroadcastTransactionResponse> ZkBroadcastTransaction(ThirdwebClient client, string paymasterUrl, object requestId, object txInput)
     {
-        var response = await BundlerRequest(client, paymasterUrl, requestId, "zk_broadcastTransaction", txInput);
+        var response = await BundlerRequest(client, paymasterUrl, requestId, "zk_broadcastTransaction", txInput).ConfigureAwait(false);
         return JsonConvert.DeserializeObject<ZkBroadcastTransactionResponse>(response.Result.ToString());
     }
 
@@ -94,7 +95,7 @@ public static class BundlerClient
         ThirdwebHttpResponseMessage httpResponse;
         try
         {
-            httpResponse = await httpClient.PostAsync(url, httpContent, cts.Token);
+            httpResponse = await httpClient.PostAsync(url, httpContent, cts.Token).ConfigureAwait(false);
         }
         catch (TaskCanceledException)
         {
@@ -103,10 +104,10 @@ public static class BundlerClient
 
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw new Exception($"Bundler Request Failed. Error: {httpResponse.StatusCode} - {await httpResponse.Content.ReadAsStringAsync()}");
+            throw new Exception($"Bundler Request Failed. Error: {httpResponse.StatusCode} - {await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false)}");
         }
 
-        var httpResponseJson = await httpResponse.Content.ReadAsStringAsync();
+        var httpResponseJson = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         var response = JsonConvert.DeserializeObject<RpcResponseMessage>(httpResponseJson);
         return response.Error != null ? throw new Exception($"Bundler Request Failed. Error: {response.Error.Code} - {response.Error.Message} - {response.Error.Data}") : response;
