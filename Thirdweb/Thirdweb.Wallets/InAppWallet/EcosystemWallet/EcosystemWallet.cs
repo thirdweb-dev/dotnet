@@ -405,14 +405,24 @@ public partial class EcosystemWallet : PrivateKeyWallet
         throw new NotImplementedException();
     }
 
-    public override Task<string> PersonalSign(byte[] rawMessage)
+    public override async Task<string> PersonalSign(byte[] rawMessage)
     {
         if (rawMessage == null)
         {
             throw new ArgumentNullException(nameof(rawMessage), "Message to sign cannot be null.");
         }
 
-        return this.PersonalSign(Encoding.UTF8.GetString(rawMessage));
+        var url = $"{EnclavePath}/sign-message";
+        var payload = new { messagePayload = new { message = rawMessage.BytesToHex(), isRaw = true } };
+
+        var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+
+        var response = await this._httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var res = JsonConvert.DeserializeObject<EnclaveSignResponse>(content);
+        return res.Signature;
     }
 
     public override async Task<string> PersonalSign(string message)

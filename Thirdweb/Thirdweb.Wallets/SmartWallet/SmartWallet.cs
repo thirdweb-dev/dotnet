@@ -125,8 +125,8 @@ public class SmartWallet : IThirdwebWallet
 
         var entryPointVersion = Utils.GetEntryPointVersion(entryPoint);
 
-        bundlerUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
-        paymasterUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
+        bundlerUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb-dev.com" : $"https://{chainId}.bundler.thirdweb-dev.com/v2";
+        paymasterUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb-dev.com" : $"https://{chainId}.bundler.thirdweb-dev.com/v2";
         factoryAddress ??= entryPointVersion == 6 ? Constants.DEFAULT_FACTORY_ADDRESS_V06 : Constants.DEFAULT_FACTORY_ADDRESS_V07;
 
         ThirdwebContract entryPointContract = null;

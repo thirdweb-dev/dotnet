@@ -119,12 +119,12 @@ var ecosystemTypedSignature = await ecosystemWallet.SignTypedDataV4(
 );
 Console.WriteLine($"Ecosystem Wallet typed sign: {ecosystemTypedSignature}");
 
-var ecosystemTx = await ThirdwebTransaction.Create(wallet: ecosystemWallet, txInput: new ThirdwebTransactionInput(chainId: 421614, to: await ecosystemWallet.GetAddress(), gasPrice: 200000000));
+var ecosystemSmartWallet = await SmartWallet.Create(ecosystemWallet, 421614);
 
-Console.WriteLine("Fund me!");
-Console.ReadLine();
-var hash = await ThirdwebTransaction.Send(ecosystemTx);
-Console.WriteLine($"Ecosystem Wallet transaction hash: {hash}");
+var ecosystemTx = await ThirdwebTransaction.Create(wallet: ecosystemSmartWallet, txInput: new ThirdwebTransactionInput(chainId: 421614, to: await ecosystemWallet.GetAddress()));
+
+var ecosystemTxHash = await ThirdwebTransaction.Send(ecosystemTx);
+Console.WriteLine($"Ecosystem Wallet transaction hash: {ecosystemTxHash}");
 
 #endregion
 
