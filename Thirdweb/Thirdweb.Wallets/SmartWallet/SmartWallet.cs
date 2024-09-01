@@ -337,7 +337,7 @@ public class SmartWallet : IThirdwebWallet
 
             while (this.IsDeploying)
             {
-                await Task.Delay(1000).ConfigureAwait(false); // Wait for the deployment to finish
+                await ThirdwebTask.Delay(100).ConfigureAwait(false);
             }
 
             this.IsDeploying = initCode.Length > 0;
@@ -502,7 +502,7 @@ public class SmartWallet : IThirdwebWallet
         {
             var userOpReceipt = await BundlerClient.EthGetUserOperationReceipt(this.Client, this._bundlerUrl, requestId, userOpHash).ConfigureAwait(false);
             txHash = userOpReceipt?.Receipt?.TransactionHash;
-            await Task.Delay(1000).ConfigureAwait(false);
+            await ThirdwebTask.Delay(100).ConfigureAwait(false);
         }
 
         this.IsDeploying = false;
@@ -727,7 +727,7 @@ public class SmartWallet : IThirdwebWallet
         {
             while (this.IsDeploying)
             {
-                await Task.Delay(1000).ConfigureAwait(false); // Wait for the deployment to finish
+                await ThirdwebTask.Delay(100).ConfigureAwait(false);
             }
             await this.ForceDeploy().ConfigureAwait(false);
         }

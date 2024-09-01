@@ -453,7 +453,7 @@ public class ThirdwebTransaction
                 receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
                 if (receipt == null)
                 {
-                    await Task.Delay(1000, cts.Token).ConfigureAwait(false);
+                    await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
                 }
             } while (receipt == null && !cts.Token.IsCancellationRequested);
 

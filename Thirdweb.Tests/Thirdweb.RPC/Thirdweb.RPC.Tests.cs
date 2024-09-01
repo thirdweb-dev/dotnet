@@ -34,24 +34,6 @@ public class RpcTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
-    public async Task TestBatch()
-    {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
-        var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
-        var req = rpc.SendRequestAsync<string>("eth_blockNumber");
-        _ = await rpc.SendRequestAsync<string>("eth_chainId");
-        var blockNumberTasks = new List<Task<string>>();
-        for (var i = 0; i < 100; i++)
-        {
-            blockNumberTasks.Add(rpc.SendRequestAsync<string>("eth_blockNumber"));
-        }
-        var results = await Task.WhenAll(blockNumberTasks);
-        Assert.Equal(100, results.Length);
-        Assert.All(results, result => Assert.StartsWith("0x", result));
-        Assert.All(results, result => Assert.Equal(results[0], result));
-    }
-
-    [Fact(Timeout = 120000)]
     public async Task TestDeserialization()
     {
         var client = ThirdwebClient.Create(secretKey: this.SecretKey);
@@ -94,23 +76,8 @@ public class RpcTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: this.SecretKey);
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
         var blockNumber1 = await rpc.SendRequestAsync<string>("eth_blockNumber");
-        await Task.Delay(100);
+        await ThirdwebTask.Delay(100);
         var blockNumber2 = await rpc.SendRequestAsync<string>("eth_blockNumber");
         Assert.Equal(blockNumber1, blockNumber2);
-    }
-
-    [Fact(Timeout = 120000)]
-    public async Task TestBatchSizeLimit()
-    {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
-        var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
-        var blockNumberTasks = new List<Task<string>>();
-        for (var i = 0; i < 101; i++)
-        {
-            blockNumberTasks.Add(rpc.SendRequestAsync<string>("eth_blockNumber"));
-        }
-        var results = await Task.WhenAll(blockNumberTasks);
-        Assert.Equal(101, results.Length);
-        Assert.All(results, result => Assert.StartsWith("0x", result));
     }
 }

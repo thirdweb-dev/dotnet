@@ -344,7 +344,7 @@ public class InAppWallet : PrivateKeyWallet
             {
                 throw new TaskCanceledException("LoginWithOauth was cancelled.");
             }
-            await Task.Delay(100, cancellationToken);
+            await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
         var authResultJson = callbackUrl;
