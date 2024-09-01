@@ -13,26 +13,12 @@ namespace Thirdweb;
 /// </summary>
 public class PrivateKeyWallet : IThirdwebWallet
 {
-    /// <summary>
-    /// Gets the Thirdweb client associated with the wallet.
-    /// </summary>
     public ThirdwebClient Client { get; }
 
-    /// <summary>
-    /// Gets the account type of the wallet.
-    /// </summary>
     public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
 
-    /// <summary>
-    /// The Ethereum EC key used by the wallet.
-    /// </summary>
     protected EthECKey EcKey { get; set; }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PrivateKeyWallet"/> class.
-    /// </summary>
-    /// <param name="client">The Thirdweb client.</param>
-    /// <param name="key">The Ethereum EC key.</param>
     protected PrivateKeyWallet(ThirdwebClient client, EthECKey key)
     {
         this.Client = client;
@@ -40,42 +26,127 @@ public class PrivateKeyWallet : IThirdwebWallet
     }
 
     /// <summary>
-    /// Creates a new instance of <see cref="PrivateKeyWallet"/> using the specified private key.
+    /// Creates a new instance of <see cref="PrivateKeyWallet"/> using the provided private key.
     /// </summary>
-    /// <param name="client">The Thirdweb client.</param>
+    /// <param name="client">The Thirdweb client instance.</param>
     /// <param name="privateKeyHex">The private key in hexadecimal format.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="PrivateKeyWallet"/>.</returns>
+    /// <returns>A new instance of <see cref="PrivateKeyWallet"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the private key is null or empty.</exception>
     public static Task<PrivateKeyWallet> Create(ThirdwebClient client, string privateKeyHex)
     {
-        return string.IsNullOrEmpty(privateKeyHex)
-            ? throw new ArgumentNullException(nameof(privateKeyHex), "Private key cannot be null or empty.")
-            : Task.FromResult(new PrivateKeyWallet(client, new EthECKey(privateKeyHex)));
+        if (client == null)
+        {
+            throw new ArgumentNullException(nameof(client));
+        }
+
+        if (string.IsNullOrEmpty(privateKeyHex))
+        {
+            throw new ArgumentNullException(nameof(privateKeyHex), "Private key cannot be null or empty.");
+        }
+
+        return Task.FromResult(new PrivateKeyWallet(client, new EthECKey(privateKeyHex)));
     }
 
+    #region PrivateKeyWallet Specific
+
     /// <summary>
-    /// Generates a new instance of <see cref="PrivateKeyWallet"/> with a random private key.
+    /// Generates a new instance of <see cref="PrivateKeyWallet"/> with a new private key.
     /// </summary>
-    /// <param name="client">The Thirdweb client.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="PrivateKeyWallet"/>.</returns>
+    /// <param name="client">The Thirdweb client instance.</param>
+    /// <returns>A new instance of <see cref="PrivateKeyWallet"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the client is null.</exception>
     public static Task<PrivateKeyWallet> Generate(ThirdwebClient client)
     {
+        if (client == null)
+        {
+            throw new ArgumentNullException(nameof(client));
+        }
+
         return Task.FromResult(new PrivateKeyWallet(client, EthECKey.GenerateKey()));
     }
 
     /// <summary>
-    /// Gets the address of the wallet.
+    /// Loads a saved instance of <see cref="PrivateKeyWallet"/> from the local storage or generates an ephemeral one if not found.
     /// </summary>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the address of the wallet.</returns>
+    /// <param name="client">The Thirdweb client instance.</param>
+    /// <returns>A new instance of <see cref="PrivateKeyWallet"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the client is null.</exception>
+    public static async Task<PrivateKeyWallet> LoadOrGenerate(ThirdwebClient client)
+    {
+        if (client == null)
+        {
+            throw new ArgumentNullException(nameof(client));
+        }
+
+        var path = GetSavePath();
+
+        if (File.Exists(path))
+        {
+            var privateKey = await File.ReadAllTextAsync(path);
+            return new PrivateKeyWallet(client, new EthECKey(privateKey));
+        }
+        else
+        {
+            return await Generate(client);
+        }
+    }
+
+    /// <summary>
+    /// Gets the path to the file where a PrivateKeyWallet would be saved if PrivateKeyWallet.Save() is called.
+    /// </summary>
+    /// <returns>The path to the file.</returns>
+    public static string GetSavePath()
+    {
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Thirdweb", "PrivateKeyWallet", "private_key_wallet.txt");
+    }
+
+    /// <summary>
+    /// Saves the private key to the local storage.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous save operation.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the wallet does not have a private key.</exception>
+    public async Task Save()
+    {
+        if (this.EcKey == null)
+        {
+            throw new InvalidOperationException("Cannot save wallet without a private key.");
+        }
+
+        var filePath = GetSavePath();
+        var directoryPath = Path.GetDirectoryName(filePath);
+
+        if (!Directory.Exists(directoryPath))
+        {
+            _ = Directory.CreateDirectory(directoryPath);
+        }
+
+        await File.WriteAllTextAsync(filePath, this.EcKey.GetPrivateKey());
+    }
+
+    /// <summary>
+    /// Exports the private key as a hexadecimal string.
+    /// </summary>
+    /// <returns>The private key as a hexadecimal string.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the wallet does not have a private key.</exception>
+    public async Task<string> Export()
+    {
+        if (this.EcKey == null)
+        {
+            throw new InvalidOperationException("Cannot export private key without a private key.");
+        }
+
+        return await Task.FromResult(this.EcKey.GetPrivateKey());
+    }
+
+    #endregion
+
+    #region IThirdwebWallet
+
     public virtual Task<string> GetAddress()
     {
         return Task.FromResult(this.EcKey.GetPublicAddress().ToChecksumAddress());
     }
 
-    /// <summary>
-    /// Signs a message using the wallet's private key.
-    /// </summary>
-    /// <param name="rawMessage">The message to sign.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the signed message.</returns>
     public virtual Task<string> EthSign(byte[] rawMessage)
     {
         if (rawMessage == null)
@@ -88,11 +159,6 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(signature);
     }
 
-    /// <summary>
-    /// Signs a message using the wallet's private key.
-    /// </summary>
-    /// <param name="message">The message to sign.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the signed message.</returns>
     public virtual Task<string> EthSign(string message)
     {
         if (message == null)
@@ -105,13 +171,6 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(signature);
     }
 
-    /// <summary>
-    /// Recovers the address from a signed message using Ethereum's signing method.
-    /// </summary>
-    /// <param name="message">The UTF-8 encoded message.</param>
-    /// <param name="signature">The signature.</param>
-    /// <returns>The recovered address.</returns>
-    /// <exception cref="ArgumentNullException"></exception>
     public virtual Task<string> RecoverAddressFromEthSign(string message, string signature)
     {
         if (message == null)
@@ -129,11 +188,6 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(address);
     }
 
-    /// <summary>
-    /// Signs a message using the wallet's private key with personal sign.
-    /// </summary>
-    /// <param name="rawMessage">The message to sign.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the signed message.</returns>
     public virtual Task<string> PersonalSign(byte[] rawMessage)
     {
         if (rawMessage == null)
@@ -146,11 +200,6 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(signature);
     }
 
-    /// <summary>
-    /// Signs a message using the wallet's private key with personal sign.
-    /// </summary>
-    /// <param name="message">The message to sign.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the signed message.</returns>
     public virtual Task<string> PersonalSign(string message)
     {
         if (string.IsNullOrEmpty(message))
@@ -163,13 +212,6 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(signature);
     }
 
-    /// <summary>
-    /// Recovers the address from a signed message using personal signing.
-    /// </summary>
-    /// <param name="message">The UTF-8 encoded and prefixed message.</param>
-    /// <param name="signature">The signature.</param>
-    /// <returns>The recovered address.</returns>
-    /// <exception cref="ArgumentNullException"></exception>
     public virtual Task<string> RecoverAddressFromPersonalSign(string message, string signature)
     {
         if (string.IsNullOrEmpty(message))
@@ -187,11 +229,6 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(address);
     }
 
-    /// <summary>
-    /// Signs typed data (EIP-712) using the wallet's private key.
-    /// </summary>
-    /// <param name="json">The JSON string representing the typed data.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the signed data.</returns>
     public virtual Task<string> SignTypedDataV4(string json)
     {
         if (string.IsNullOrEmpty(json))
@@ -204,14 +241,6 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(signature);
     }
 
-    /// <summary>
-    /// Signs typed data (EIP-712) using the wallet's private key.
-    /// </summary>
-    /// <typeparam name="T">The type of the data to sign.</typeparam>
-    /// <typeparam name="TDomain">The type of the domain.</typeparam>
-    /// <param name="data">The data to sign.</param>
-    /// <param name="typedData">The typed data.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the signed data.</returns>
     public virtual Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
         where TDomain : IDomain
     {
@@ -225,16 +254,6 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(signature);
     }
 
-    /// <summary>
-    /// Recovers the address from a signed message using typed data (version 4).
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="TDomain"></typeparam>
-    /// <param name="data">The data to sign.</param>
-    /// <param name="typedData">The typed data.</param>
-    /// <param name="signature">The signature.</param>
-    /// <returns>The recovered address.</returns>
-    /// <exception cref="ArgumentNullException"></exception>
     public virtual Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
         where TDomain : IDomain
     {
@@ -258,11 +277,6 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(address);
     }
 
-    /// <summary>
-    /// Signs a transaction using the wallet's private key.
-    /// </summary>
-    /// <param name="transaction">The transaction to sign.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the signed transaction.</returns>
     public virtual Task<string> SignTransaction(ThirdwebTransactionInput transaction)
     {
         if (transaction == null)
@@ -310,43 +324,26 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult("0x" + signedTransaction);
     }
 
-    /// <summary>
-    /// Checks if the wallet is connected.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous operation. The task result indicates whether the wallet is connected.</returns>
     public virtual Task<bool> IsConnected()
     {
         return Task.FromResult(this.EcKey != null);
     }
 
-    /// <summary>
-    /// Disconnects the wallet.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
     public virtual Task Disconnect()
     {
         this.EcKey = null;
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Throws an exception because sending transactions is not supported for private key wallets.
-    /// </summary>
-    /// <param name="transaction">The transaction to send.</param>
-    /// <returns>Throws an InvalidOperationException.</returns>
-    public virtual Task<string> SendTransaction(ThirdwebTransactionInput transaction)
+    public Task<string> SendTransaction(ThirdwebTransactionInput transaction)
     {
         throw new InvalidOperationException("SendTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");
     }
 
-    /// <summary>
-    /// Throws an exception because executing transactions is not supported for private key wallets.
-    /// </summary>
-    /// <param name="transactionInput"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
     public virtual Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
     {
         throw new InvalidOperationException("ExecuteTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");
     }
+
+    #endregion
 }

@@ -35,9 +35,11 @@ public class UtilsTests : BaseTests
     public void HashMessage()
     {
         var messageStr = "Hello, World!";
+        var hashStr = "0x" + Utils.HashMessage(messageStr);
+
         var message = System.Text.Encoding.UTF8.GetBytes(messageStr);
-        var hashStr = Utils.HashMessage(messageStr);
         var hash = Utils.HashMessage(message);
+
         Assert.Equal(hashStr, Utils.BytesToHex(hash));
         Assert.Equal("0xacaf3289d7b601cbd114fb36c4d29c85bbfd5e133f14cb355c3fd8d99367964f", hashStr);
     }
@@ -514,5 +516,72 @@ public class UtilsTests : BaseTests
 
         var hexTooLarge = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
         _ = Assert.Throws<ArgumentException>(() => Utils.HexToBytes32(hexTooLarge));
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetENSFromAddress_ThrowsException_WhenAddressIsNull()
+    {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () => await Utils.GetENSFromAddress(this.Client, null));
+
+        Assert.Equal("address", exception.ParamName);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetENSFromAddress_ThrowsException_WhenAddressIsInvalid()
+    {
+        var invalidAddress = "invalid_address";
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await Utils.GetENSFromAddress(this.Client, invalidAddress));
+
+        Assert.Contains("Invalid address", exception.Message);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetENSFromAddress_ReturnsENSName_WhenAddressIsValid()
+    {
+        var validAddress = "0xDaaBDaaC8073A7dAbdC96F6909E8476ab4001B34";
+        var expectedENSName = "0xfirekeeper.eth";
+        var ensName = await Utils.GetENSFromAddress(this.Client, validAddress);
+
+        Assert.Equal(expectedENSName, ensName);
+
+        ensName = await Utils.GetENSFromAddress(this.Client, validAddress);
+        Assert.Equal(expectedENSName, ensName);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetAddressFromENS_ThrowsException_WhenENSNameIsNull()
+    {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () => await Utils.GetAddressFromENS(this.Client, null));
+        Assert.Equal("ensName", exception.ParamName);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetAddressFromENS_ReturnsENSName_WhenENSNameIsAlreadyAddress()
+    {
+        var address = "0xDaaBDaaC8073A7dAbdC96F6909E8476ab4001B34".ToLower();
+        var result = await Utils.GetAddressFromENS(this.Client, address);
+        Assert.Equal(address.ToChecksumAddress(), result);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetAddressFromENS_ThrowsException_WhenENSNameIsInvalid()
+    {
+        var invalidENSName = "invalid_name";
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await Utils.GetAddressFromENS(this.Client, invalidENSName));
+
+        Assert.Contains("Invalid ENS name", exception.Message);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetAddressFromENS_ReturnsAddress_WhenENSNameIsValid()
+    {
+        var validENSName = "0xfirekeeper.eth";
+        var expectedAddress = "0xDaaBDaaC8073A7dAbdC96F6909E8476ab4001B34";
+        var result = await Utils.GetAddressFromENS(this.Client, validENSName);
+
+        Assert.Equal(expectedAddress.ToChecksumAddress(), result);
+
+        result = await Utils.GetAddressFromENS(this.Client, validENSName);
+        Assert.Equal(expectedAddress.ToChecksumAddress(), result);
     }
 }

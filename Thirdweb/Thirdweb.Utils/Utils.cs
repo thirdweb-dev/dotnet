@@ -3,7 +3,11 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using ADRaffy.ENSNormalize;
 using Nethereum.ABI.EIP712;
+using Nethereum.ABI.FunctionEncoding;
+using Nethereum.ABI.FunctionEncoding.Attributes;
+using Nethereum.ABI.Model;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
@@ -20,6 +24,7 @@ public static partial class Utils
 {
     private static readonly Dictionary<BigInteger, bool> _eip155EnforcedCache = new();
     private static readonly Dictionary<BigInteger, ThirdwebChainData> _chainDataCache = new();
+    private static readonly Dictionary<string, string> _ensCache = new();
 
     /// <summary>
     /// Computes the client ID from the given secret key.
@@ -101,7 +106,7 @@ public static partial class Utils
     /// <returns>The hashed message.</returns>
     public static string HashMessage(this string message)
     {
-        return Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(message)).ToHex(true);
+        return Sha3Keccack.Current.CalculateHash(message);
     }
 
     /// <summary>
@@ -675,5 +680,153 @@ public static partial class Utils
             default:
                 return true;
         }
+    }
+
+#if NET8_0_OR_GREATER
+        [GeneratedRegex("^\\.|\\.$")]
+        private static partial Regex PacketRegex();
+#endif
+
+    public static byte[] PacketToBytes(string packet)
+    {
+#if !NET8_0_OR_GREATER
+        var value = new Regex("^\\.|\\.$").Replace(packet, "");
+#else
+        var value = PacketRegex().Replace(packet, "");
+#endif
+        if (string.IsNullOrEmpty(value))
+        {
+            return new byte[] { 0 };
+        }
+
+        var labels = value.Split(".");
+        using var memoryStream = new MemoryStream();
+        foreach (var label in labels)
+        {
+            byte[] labelBytes;
+
+            if (label.Length > 63)
+            {
+                labelBytes = label.HashMessage().HexToBytes();
+            }
+            else
+            {
+                labelBytes = Encoding.UTF8.GetBytes(label);
+            }
+
+            if (labelBytes.Length > 255)
+            {
+                throw new ArgumentException("Label is too long after encoding.");
+            }
+
+            memoryStream.WriteByte((byte)labelBytes.Length);
+            memoryStream.Write(labelBytes, 0, labelBytes.Length);
+        }
+
+        memoryStream.WriteByte(0);
+        return memoryStream.ToArray();
+    }
+
+    public static async Task<string> GetENSFromAddress(ThirdwebClient client, string address)
+    {
+        if (string.IsNullOrEmpty(address))
+        {
+            throw new ArgumentNullException(nameof(address));
+        }
+
+        if (!address.IsValidAddress())
+        {
+            throw new ArgumentException("Invalid address.");
+        }
+
+        if (_ensCache.TryGetValue(address, out var value))
+        {
+            return value;
+        }
+
+        var contract = await ThirdwebContract.Create(client: client, address: Constants.ENS_REGISTRY_ADDRESS, chain: 1).ConfigureAwait(false);
+        var reverseName = address.ToLower()[2..] + ".addr.reverse";
+        var reverseNameBytes = PacketToBytes(reverseName);
+        var ensName = await contract.Read<string>("reverse", reverseNameBytes).ConfigureAwait(false);
+        _ensCache[address] = ensName;
+        return ensName;
+    }
+
+    public static async Task<string> GetAddressFromENS(ThirdwebClient client, string ensName)
+    {
+        if (string.IsNullOrEmpty(ensName))
+        {
+            throw new ArgumentNullException(nameof(ensName));
+        }
+
+        if (ensName.IsValidAddress())
+        {
+            return ensName.ToChecksumAddress();
+        }
+
+        if (!ensName.Contains('.'))
+        {
+            throw new ArgumentException("Invalid ENS name.");
+        }
+
+        if (_ensCache.TryGetValue(ensName, out var value))
+        {
+            return value;
+        }
+
+        var registry = await ThirdwebContract.Create(client: client, address: Constants.ENS_REGISTRY_ADDRESS, chain: 1).ConfigureAwait(false);
+        var functionCallEncoder = new FunctionCallEncoder();
+        var encodedAddr = "addr(bytes32)"
+            .HashMessage()
+            .HexToBytes()
+            .Take(4)
+            .ToArray()
+            .Concat(functionCallEncoder.EncodeParameters(new Parameter[] { new("bytes32", "name") }, new object[] { NameHash(ensName).HexToBytes() }))
+            .ToArray();
+        var result = await registry.Read<ResolveReturnType>("resolve(bytes name, bytes data)", PacketToBytes(ensName), encodedAddr).ConfigureAwait(false);
+        var address = ("0x" + result.Bytes.BytesToHex()[26..]).ToChecksumAddress();
+        _ensCache[ensName] = address;
+        return address;
+    }
+
+    public static bool IsValidAddress(this string address)
+    {
+        if (string.IsNullOrEmpty(address))
+        {
+            return false;
+        }
+
+        if (address.StartsWith("0x") && address.Length == 42 && !address.Contains('.'))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    [FunctionOutput]
+    private class ResolveReturnType
+    {
+        [Parameter("bytes", "", 1)]
+        public byte[] Bytes { get; set; }
+
+        [Parameter("address", "", 2)]
+        public string Address { get; set; }
+    }
+
+    private static string NameHash(string name)
+    {
+        var node = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        if (!string.IsNullOrEmpty(name))
+        {
+            name = ENSNormalize.ENSIP15.Normalize(name);
+            var labels = name.Split('.');
+            for (var i = labels.Length - 1; i >= 0; i--)
+            {
+                var byteInput = (node + labels[i].HashMessage()).HexToByteArray();
+                node = byteInput.HashMessage().BytesToHex();
+            }
+        }
+        return node.EnsureHexPrefix();
     }
 }
