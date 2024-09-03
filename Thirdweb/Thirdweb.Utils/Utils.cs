@@ -835,4 +835,11 @@ public static partial class Utils
         }
         return node.EnsureHexPrefix();
     }
+
+    public static async Task<bool> IsDeployed(ThirdwebClient client, BigInteger chainId, string address)
+    {
+        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+        var code = await rpc.SendRequestAsync<string>("eth_getCode", address, "latest");
+        return code != "0x";
+    }
 }

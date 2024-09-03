@@ -584,4 +584,33 @@ public class UtilsTests : BaseTests
         result = await Utils.GetAddressFromENS(this.Client, validENSName);
         Assert.Equal(expectedAddress.ToChecksumAddress(), result);
     }
+
+    /*
+    public static async Task<bool> IsDeployed(ThirdwebClient client, BigInteger chainId, string address)
+    {
+        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+        var code = await rpc.SendRequestAsync<string>("eth_getCode", address, "latest");
+        return code != "0x";
+    }
+    */
+
+    [Fact(Timeout = 120000)]
+    public async Task IsDeployed_ReturnsTrue_WhenContractIsDeployed()
+    {
+        var chainId = new BigInteger(1);
+        var address = "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D";
+        var isDeployed = await Utils.IsDeployed(this.Client, chainId, address);
+
+        Assert.True(isDeployed);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task IsDeployed_ReturnsFalse_WhenContractIsNotDeployed()
+    {
+        var chainId = new BigInteger(1);
+        var address = await Utils.GetAddressFromENS(this.Client, "vitalik.eth");
+        var isDeployed = await Utils.IsDeployed(this.Client, chainId, address);
+
+        Assert.False(isDeployed);
+    }
 }
