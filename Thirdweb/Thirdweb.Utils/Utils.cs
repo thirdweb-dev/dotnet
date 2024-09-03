@@ -588,9 +588,9 @@ namespace Thirdweb
             }
         }
 
-        public static async Task<ThirdwebTransactionReceipt> DeployEntryPoint(ThirdwebClient client, BigInteger chainId, BigInteger? gasLimitOverride = null)
+        public static async Task<ThirdwebTransactionReceipt> DeployEntryPoint(ThirdwebClient client, BigInteger chainId, int entryPointVersion, BigInteger? gasLimitOverride = null)
         {
-            var entryPointAddress = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
+            var entryPointAddress = entryPointVersion == 7 ? "0x0000000071727De22E5E9d8BAf0edAc6f37da032" : "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
             if (await IsDeployed(client, chainId, entryPointAddress))
             {
                 throw new Exception($"Entry point already deployed at {entryPointAddress}.");
@@ -632,9 +632,10 @@ namespace Thirdweb
             var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
             var nonce = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_getTransactionCount", walletAddress, "pending"));
             var gasPrice = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice"));
-            var gasLimit = gasLimitOverride ?? 6800000;
+            var gasLimit = gasLimitOverride ?? 6000000;
 
-            var signedTx = privateKeyWallet.SignTransactionLegacy(to: arachnid, value: 0, nonce: nonce, gasPrice: gasPrice, gas: gasLimit, data: Constants.ENTRY_POINT_FACTORY_DEPLOY_DATA);
+            var finalData = entryPointVersion == 7 ? HexConcat(Constants.ENTRY_POINT_07_DATA, Constants.ENTRY_POINT_07_SALT) : Constants.ENTRY_POINT_06_DATA;
+            var signedTx = privateKeyWallet.SignTransactionLegacy(to: arachnid, value: 0, nonce: nonce, gasPrice: gasPrice, gas: gasLimit, data: finalData, chainId: null);
 
             var hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
             Console.WriteLine($"Transaction hash: {hash}");

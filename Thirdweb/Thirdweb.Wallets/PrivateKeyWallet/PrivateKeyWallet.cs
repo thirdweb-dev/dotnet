@@ -260,11 +260,28 @@ namespace Thirdweb
             return Task.FromResult(address);
         }
 
-        public string SignTransactionLegacy(string to, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gas, string data)
+        public string SignTransactionLegacy(string to, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gas, string data, BigInteger? chainId)
         {
             var rawSigner = new LegacyTransactionSigner();
-            var signedTx = rawSigner.SignTransaction(_ecKey.GetPrivateKey(), to, value, nonce, gasPrice, gas, data);
-            return "0x" + signedTx;
+            if (chainId == null)
+            {
+                var signedTx = rawSigner.SignTransaction(privateKey: _ecKey.GetPrivateKey(), to: to, amount: value, nonce: nonce, gasPrice: gasPrice, gasLimit: gas, data: data);
+                return "0x" + signedTx;
+            }
+            else
+            {
+                var signedTx = rawSigner.SignTransaction(
+                    privateKey: _ecKey.GetPrivateKeyAsBytes(),
+                    chainId: chainId.Value,
+                    to: to,
+                    amount: value,
+                    nonce: nonce,
+                    gasPrice: gasPrice,
+                    gasLimit: gas,
+                    data: data
+                );
+                return "0x" + signedTx;
+            }
         }
 
         /// <summary>
