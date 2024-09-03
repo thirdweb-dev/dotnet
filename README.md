@@ -7,7 +7,7 @@
 
 ## Overview
 
-The Thirdweb .NET SDK is a comprehensive library that allows developers to interact with the blockchain using the .NET framework. It simplifies the integration of Web3 functionality into your .NET applications with a robust set of methods and classes and a minimal amount of dependencies.
+The Thirdweb .NET SDK is a comprehensive and easy to use library that allows developers to interact with the blockchain using the .NET framework. It simplifies the integration of all [thirdweb](https://thirdweb.com/) functionality with a minimal set of dependencies.
 
 ## Features
 
@@ -15,10 +15,10 @@ The Thirdweb .NET SDK is a comprehensive library that allows developers to inter
 - **Query blockchain data:** Use Thirdweb RPC to fetch blockchain data efficiently.
 - **Interact with smart contracts:** Simplified read and write operations for smart contracts, with various out-of-the-box extensions provided.
 - **In-App Wallets:** Integrate user-friendly wallets within your applications, supporting email, phone, and OAuth login.
-- **Account Abstraction:** Simplify complex account management tasks with smart wallets.
+- **Account Abstraction:** Simplify complex account management tasks with smart wallets, (ERC4337 or native zkSync AA).
 - **Gasless Transactions:** Enable transactions without requiring users to pay gas fees.
 - **Storage Solutions:** Download and upload files using IPFS.
-- **Transaction Builder:** Easily build and send transactions.
+- **Transaction Builder:** Create, manipulate and send low level transactions.
 - **Session Keys:** Advanced control for smart wallets to manage permissions and session durations.
 - **Thirdweb Pay:** Easily integrate fiat onramps and cross-chain crypto purchases.
 - **Unity Compatibility**: This SDK has been tested successfully in [Unity 2021.3+](https://portal.thirdweb.com/unity/v5) (Standalone, Mobile and WebGL).
@@ -44,4 +44,4 @@ dotnet add package Thirdweb
 
 For any questions or support, visit our [Support Portal](https://thirdweb.com/support).
 
-Thank you for trying out the Thirdweb Unity SDK!
+Thank you for trying out the Thirdweb .NET SDK!
