@@ -369,16 +369,11 @@ public partial class EcosystemWallet : PrivateKeyWallet
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
-    public async Task<string> LoginWithJWT(string jwt, string encryptionKey)
+    public async Task<string> LoginWithJWT(string jwt)
     {
         if (await this.IsConnected().ConfigureAwait(false))
         {
             throw new InvalidOperationException("User is already connected.");
-        }
-
-        if (string.IsNullOrEmpty(encryptionKey))
-        {
-            throw new ArgumentException("Encryption key cannot be null or empty.", nameof(encryptionKey));
         }
 
         var serverRes = string.IsNullOrEmpty(jwt) ? throw new ArgumentException("JWT cannot be null or empty.", nameof(jwt)) : await this._embeddedWallet.SignInWithJwtAsync(jwt).ConfigureAwait(false);
@@ -386,16 +381,11 @@ public partial class EcosystemWallet : PrivateKeyWallet
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
-    public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey)
+    public async Task<string> LoginWithAuthEndpoint(string payload)
     {
         if (await this.IsConnected().ConfigureAwait(false))
         {
             throw new InvalidOperationException("User is already connected.");
-        }
-
-        if (string.IsNullOrEmpty(encryptionKey))
-        {
-            throw new ArgumentException("Encryption key cannot be null or empty.", nameof(encryptionKey));
         }
 
         var serverRes = string.IsNullOrEmpty(payload)
