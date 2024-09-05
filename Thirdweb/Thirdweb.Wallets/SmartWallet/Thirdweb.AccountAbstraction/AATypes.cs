@@ -121,36 +121,86 @@ public class PackedUserOperation
 
 public class UserOperationHexifiedV6
 {
-    public string sender { get; set; }
-    public string nonce { get; set; }
-    public string initCode { get; set; }
-    public string callData { get; set; }
-    public string callGasLimit { get; set; }
-    public string verificationGasLimit { get; set; }
-    public string preVerificationGas { get; set; }
-    public string maxFeePerGas { get; set; }
-    public string maxPriorityFeePerGas { get; set; }
-    public string paymasterAndData { get; set; }
-    public string signature { get; set; }
+    [JsonProperty("sender")]
+    public string Sender { get; set; }
+
+    [JsonProperty("nonce")]
+    public string Nonce { get; set; }
+
+    [JsonProperty("initCode")]
+    public string InitCode { get; set; }
+
+    [JsonProperty("callData")]
+    public string CallData { get; set; }
+
+    [JsonProperty("callGasLimit")]
+    public string CallGasLimit { get; set; }
+
+    [JsonProperty("verificationGasLimit")]
+    public string VerificationGasLimit { get; set; }
+
+    [JsonProperty("preVerificationGas")]
+    public string PreVerificationGas { get; set; }
+
+    [JsonProperty("maxFeePerGas")]
+    public string MaxFeePerGas { get; set; }
+
+    [JsonProperty("maxPriorityFeePerGas")]
+    public string MaxPriorityFeePerGas { get; set; }
+
+    [JsonProperty("paymasterAndData")]
+    public string PaymasterAndData { get; set; }
+
+    [JsonProperty("signature")]
+    public string Signature { get; set; }
 }
 
 public class UserOperationHexifiedV7
 {
-    public string sender { get; set; }
-    public string nonce { get; set; }
-    public string factory { get; set; }
-    public string factoryData { get; set; }
-    public string callData { get; set; }
-    public string callGasLimit { get; set; }
-    public string verificationGasLimit { get; set; }
-    public string preVerificationGas { get; set; }
-    public string maxFeePerGas { get; set; }
-    public string maxPriorityFeePerGas { get; set; }
-    public string paymaster { get; set; }
-    public string paymasterVerificationGasLimit { get; set; }
-    public string paymasterPostOpGasLimit { get; set; }
-    public string paymasterData { get; set; }
-    public string signature { get; set; }
+    [JsonProperty("sender")]
+    public string Sender { get; set; }
+
+    [JsonProperty("nonce")]
+    public string Nonce { get; set; }
+
+    [JsonProperty("factory")]
+    public string Factory { get; set; }
+
+    [JsonProperty("factoryData")]
+    public string FactoryData { get; set; }
+
+    [JsonProperty("callData")]
+    public string CallData { get; set; }
+
+    [JsonProperty("callGasLimit")]
+    public string CallGasLimit { get; set; }
+
+    [JsonProperty("verificationGasLimit")]
+    public string VerificationGasLimit { get; set; }
+
+    [JsonProperty("preVerificationGas")]
+    public string PreVerificationGas { get; set; }
+
+    [JsonProperty("maxFeePerGas")]
+    public string MaxFeePerGas { get; set; }
+
+    [JsonProperty("maxPriorityFeePerGas")]
+    public string MaxPriorityFeePerGas { get; set; }
+
+    [JsonProperty("paymaster")]
+    public string Paymaster { get; set; }
+
+    [JsonProperty("paymasterVerificationGasLimit")]
+    public string PaymasterVerificationGasLimit { get; set; }
+
+    [JsonProperty("paymasterPostOpGasLimit")]
+    public string PaymasterPostOpGasLimit { get; set; }
+
+    [JsonProperty("paymasterData")]
+    public string PaymasterData { get; set; }
+
+    [JsonProperty("signature")]
+    public string Signature { get; set; }
 }
 
 [Function("execute")]
@@ -193,7 +243,7 @@ public class EthGetUserOperationReceiptResponse
 public class EntryPointWrapper
 {
     [JsonProperty("entryPoint")]
-    public string entryPoint { get; set; }
+    public string EntryPoint { get; set; }
 }
 
 public class PMSponsorOperationResponse

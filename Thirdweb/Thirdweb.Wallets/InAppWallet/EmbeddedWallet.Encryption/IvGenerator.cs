@@ -9,26 +9,25 @@ internal abstract class IvGeneratorBase
 
 internal class IvGenerator : IvGeneratorBase
 {
-    private long prbsValue;
-    private readonly string ivFilePath;
-    private const int nPrbsBits = 48;
-    private const long prbsPeriod = (1L << nPrbsBits) - 1;
-    private static readonly long taps = new int[] { nPrbsBits, 47, 21, 20 }.Aggregate(0L, (a, b) => a + (1L << (nPrbsBits - b))); // https://docs.xilinx.com/v/u/en-US/xapp052, page 5
+    private const int NPrbsBits = 48;
+    private const long PrbsPeriod = (1L << NPrbsBits) - 1;
 
-    internal IvGenerator(string storageDirectoryPath = null)
+    private long _prbsValue;
+    private readonly string _ivFilePath;
+    private static readonly long _taps = new int[] { NPrbsBits, 47, 21, 20 }.Aggregate(0L, (a, b) => a + (1L << (NPrbsBits - b))); // https://docs.xilinx.com/v/u/en-US/xapp052, page 5
+
+    internal IvGenerator(string storageDirectoryPath)
     {
-        string directory;
-        directory = storageDirectoryPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        directory = Path.Combine(directory, "EWS");
-        _ = Directory.CreateDirectory(directory);
-        this.ivFilePath = Path.Combine(directory, "iv.txt");
+        storageDirectoryPath = Path.Combine(storageDirectoryPath, "IV");
+        _ = Directory.CreateDirectory(storageDirectoryPath);
+        this._ivFilePath = Path.Combine(storageDirectoryPath, "iv.txt");
         try
         {
-            this.prbsValue = long.Parse(File.ReadAllText(this.ivFilePath));
+            this._prbsValue = long.Parse(File.ReadAllText(this._ivFilePath));
         }
         catch (Exception)
         {
-            this.prbsValue = (0x434a49445a27 ^ DateTime.Now.Ticks) & prbsPeriod;
+            this._prbsValue = (0x434a49445a27 ^ DateTime.Now.Ticks) & PrbsPeriod;
         }
     }
 
@@ -40,9 +39,9 @@ internal class IvGenerator : IvGeneratorBase
     internal override async Task ComputeIvAsync(byte[] iv)
     {
         RandomNumberGenerator.Fill(iv);
-        this.prbsValue = ComputeNextPrbsValue(this.prbsValue);
-        await File.WriteAllTextAsync(this.ivFilePath, this.prbsValue.ToString()).ConfigureAwait(false);
-        var prbsBytes = Enumerable.Range(0, nPrbsBits / 8).Select((i) => (byte)(this.prbsValue >> (8 * i))).ToArray();
+        this._prbsValue = ComputeNextPrbsValue(this._prbsValue);
+        await File.WriteAllTextAsync(this._ivFilePath, this._prbsValue.ToString()).ConfigureAwait(false);
+        var prbsBytes = Enumerable.Range(0, NPrbsBits / 8).Select((i) => (byte)(this._prbsValue >> (8 * i))).ToArray();
         Array.Copy(prbsBytes, iv, prbsBytes.Length);
     }
 
@@ -55,10 +54,10 @@ internal class IvGenerator : IvGeneratorBase
     private static long ComputeNextPrbsValue(long prbsValue)
     {
         prbsValue <<= 1;
-        if ((prbsValue & (1L << nPrbsBits)) != 0)
+        if ((prbsValue & (1L << NPrbsBits)) != 0)
         {
-            prbsValue ^= taps;
-            prbsValue &= prbsPeriod;
+            prbsValue ^= _taps;
+            prbsValue &= PrbsPeriod;
         }
         return prbsValue;
     }

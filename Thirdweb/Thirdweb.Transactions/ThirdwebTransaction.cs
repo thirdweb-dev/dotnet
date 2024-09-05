@@ -28,7 +28,7 @@ public struct TotalCosts
 /// </summary>
 public class ThirdwebTransaction
 {
-    internal ThirdwebTransactionInput Input { get; }
+    public ThirdwebTransactionInput Input { get; }
 
     private readonly IThirdwebWallet _wallet;
 
@@ -336,7 +336,7 @@ public class ThirdwebTransaction
     /// <returns>The signed transaction.</returns>
     public static async Task<string> Sign(ThirdwebTransaction transaction)
     {
-        return await transaction._wallet.SignTransaction(transaction.Input);
+        return await transaction._wallet.SignTransaction(transaction.Input).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -453,7 +453,7 @@ public class ThirdwebTransaction
                 receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
                 if (receipt == null)
                 {
-                    await Task.Delay(1000, cts.Token).ConfigureAwait(false);
+                    await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
                 }
             } while (receipt == null && !cts.Token.IsCancellationRequested);
 

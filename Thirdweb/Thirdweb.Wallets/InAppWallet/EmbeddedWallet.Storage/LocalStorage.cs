@@ -16,13 +16,14 @@ internal partial class LocalStorage : LocalStorageBase
     private readonly Storage _storage;
     private readonly string _filePath;
 
-    internal LocalStorage(string clientId, string storageDirectoryPath = null)
+    internal LocalStorage(string clientId, string storageDirectoryPath)
     {
-        string directory;
-        directory = storageDirectoryPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        directory = Path.Combine(directory, "Thirdweb", "InAppWallet");
-        _ = Directory.CreateDirectory(directory);
-        this._filePath = Path.Combine(directory, $"{clientId}.txt");
+        if (string.IsNullOrEmpty(storageDirectoryPath))
+        {
+            throw new ArgumentException("Storage directory path is required", nameof(storageDirectoryPath));
+        }
+        _ = Directory.CreateDirectory(storageDirectoryPath);
+        this._filePath = Path.Combine(storageDirectoryPath, $"{clientId}.txt");
         try
         {
             var json = File.ReadAllBytes(this._filePath);

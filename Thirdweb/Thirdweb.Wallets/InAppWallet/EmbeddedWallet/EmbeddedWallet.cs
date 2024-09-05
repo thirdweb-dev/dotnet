@@ -15,7 +15,7 @@ internal partial class EmbeddedWallet
     private const string WALLET_PRIVATE_KEY_PREFIX = "thirdweb_";
     private const string ENCRYPTION_SEPARATOR = ":";
 
-    public EmbeddedWallet(ThirdwebClient client, string storageDirectoryPath = null)
+    public EmbeddedWallet(ThirdwebClient client, string storageDirectoryPath = null, string ecosystemId = null, string ecosystemPartnerId = null)
     {
         this._localStorage = new LocalStorage(client.ClientId, storageDirectoryPath);
 
@@ -25,16 +25,26 @@ internal partial class EmbeddedWallet
         var headers = client.HttpClient.Headers.ToDictionary(entry => entry.Key, entry => entry.Value);
         var platform = client.HttpClient.Headers["x-sdk-platform"];
         var version = client.HttpClient.Headers["x-sdk-version"];
-        if (client.ClientId != null)
+        if (!string.IsNullOrEmpty(client.ClientId))
         {
             headers.Add("x-thirdweb-client-id", client.ClientId);
         }
-        if (client.SecretKey != null)
+        if (!string.IsNullOrEmpty(client.SecretKey))
         {
             headers.Add("x-thirdweb-secret-key", client.SecretKey);
         }
         headers.Add("x-session-nonce", Guid.NewGuid().ToString());
         headers.Add("x-embedded-wallet-version", $"{platform}:{version}");
+        if (!string.IsNullOrEmpty(ecosystemId))
+        {
+            headers.Add("x-ecosystem-id", ecosystemId);
+
+            if (!string.IsNullOrEmpty(ecosystemPartnerId))
+            {
+                headers.Add("x-ecosystem-partner-id", ecosystemPartnerId);
+            }
+        }
+
         ewsHttpClient.SetHeaders(headers);
 
         this._server = new Server(client, ewsHttpClient);

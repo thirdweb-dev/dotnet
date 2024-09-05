@@ -10,7 +10,7 @@ namespace Thirdweb;
 public class ThirdwebRPC : IDisposable
 {
     private const int BatchSizeLimit = 100;
-    private readonly TimeSpan _batchInterval = TimeSpan.FromMilliseconds(100);
+    private readonly TimeSpan _batchInterval = TimeSpan.FromMilliseconds(50);
 
     private readonly Uri _rpcUrl;
     private readonly TimeSpan _rpcTimeout;
@@ -21,7 +21,7 @@ public class ThirdwebRPC : IDisposable
     private readonly object _batchLock = new();
     private readonly object _responseLock = new();
     private readonly object _cacheLock = new();
-    private readonly ThirdwebRPCTimer _batchTimer;
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
 
     private int _requestIdCounter = 1;
 
@@ -159,9 +159,7 @@ public class ThirdwebRPC : IDisposable
         this._httpClient = client.HttpClient;
         this._rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb.com/");
         this._rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
-        this._batchTimer = new ThirdwebRPCTimer(this._batchInterval);
-        this._batchTimer.Elapsed += this.SendBatchNow;
-        this._batchTimer.Start();
+        _ = this.StartBackgroundFlushAsync();
     }
 
     private void SendBatchNow()
@@ -278,8 +276,18 @@ public class ThirdwebRPC : IDisposable
         return keyBuilder.ToString();
     }
 
+    private async Task StartBackgroundFlushAsync()
+    {
+        while (!this._cancellationTokenSource.Token.IsCancellationRequested)
+        {
+            await ThirdwebTask.Delay(this._batchInterval.Milliseconds, this._cancellationTokenSource.Token).ConfigureAwait(false);
+            this.SendBatchNow();
+        }
+    }
+
     public void Dispose()
     {
-        throw new NotImplementedException();
+        this._cancellationTokenSource.Cancel();
+        this._cancellationTokenSource.Dispose();
     }
 }

@@ -4,9 +4,14 @@ namespace Thirdweb.EWS;
 
 internal partial class EmbeddedWallet
 {
-    internal string GetCurrentAuthToken()
+    internal LocalStorage.DataStorage GetSessionData()
     {
-        return this._localStorage.Data?.AuthToken;
+        return this._localStorage.Data ?? null;
+    }
+
+    internal async void UpdateSessionData(LocalStorage.DataStorage data)
+    {
+        await this._localStorage.SaveDataAsync(data).ConfigureAwait(false);
     }
 
     internal async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)

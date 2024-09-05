@@ -116,7 +116,7 @@ public class SmartWallet : IThirdwebWallet
         TokenPaymaster tokenPaymaster = TokenPaymaster.NONE
     )
     {
-        if (!await personalWallet.IsConnected())
+        if (!await personalWallet.IsConnected().ConfigureAwait(false))
         {
             throw new InvalidOperationException("SmartAccount.Connect: Personal account must be connected.");
         }
@@ -139,13 +139,13 @@ public class SmartWallet : IThirdwebWallet
             var factoryAbi = entryPointVersion == 6 ? Constants.FACTORY_V06_ABI : Constants.FACTORY_V07_ABI;
             var accountAbi = entryPointVersion == 6 ? Constants.ACCOUNT_V06_ABI : Constants.ACCOUNT_V07_ABI;
 
-            entryPointContract = await ThirdwebContract.Create(personalWallet.Client, entryPoint, chainId, entryPointAbi);
-            factoryContract = await ThirdwebContract.Create(personalWallet.Client, factoryAddress, chainId, factoryAbi);
+            entryPointContract = await ThirdwebContract.Create(personalWallet.Client, entryPoint, chainId, entryPointAbi).ConfigureAwait(false);
+            factoryContract = await ThirdwebContract.Create(personalWallet.Client, factoryAddress, chainId, factoryAbi).ConfigureAwait(false);
 
-            var personalAddress = await personalWallet.GetAddress();
-            var accountAddress = accountAddressOverride ?? await ThirdwebContract.Read<string>(factoryContract, "getAddress", personalAddress, Array.Empty<byte>());
+            var personalAddress = await personalWallet.GetAddress().ConfigureAwait(false);
+            var accountAddress = accountAddressOverride ?? await ThirdwebContract.Read<string>(factoryContract, "getAddress", personalAddress, Array.Empty<byte>()).ConfigureAwait(false);
 
-            accountContract = await ThirdwebContract.Create(personalWallet.Client, accountAddress, chainId, accountAbi);
+            accountContract = await ThirdwebContract.Create(personalWallet.Client, accountAddress, chainId, accountAbi).ConfigureAwait(false);
         }
 
         var erc20PmInfo = _tokenPaymasterConfig[tokenPaymaster];
@@ -204,9 +204,9 @@ public class SmartWallet : IThirdwebWallet
         this._paymasterUrl = entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
         if (!Utils.IsZkSync(chainId))
         {
-            this._entryPointContract = await ThirdwebContract.Create(this.Client, this._entryPointContract.Address, chainId, this._entryPointContract.Abi);
-            this._factoryContract = await ThirdwebContract.Create(this.Client, this._factoryContract.Address, chainId, this._factoryContract.Abi);
-            this._accountContract = await ThirdwebContract.Create(this.Client, this._accountContract.Address, chainId, this._accountContract.Abi);
+            this._entryPointContract = await ThirdwebContract.Create(this.Client, this._entryPointContract.Address, chainId, this._entryPointContract.Abi).ConfigureAwait(false);
+            this._factoryContract = await ThirdwebContract.Create(this.Client, this._factoryContract.Address, chainId, this._factoryContract.Abi).ConfigureAwait(false);
+            this._accountContract = await ThirdwebContract.Create(this.Client, this._accountContract.Address, chainId, this._accountContract.Abi).ConfigureAwait(false);
         }
     }
 
@@ -217,7 +217,7 @@ public class SmartWallet : IThirdwebWallet
             return true;
         }
 
-        var code = await ThirdwebRPC.GetRpcInstance(this.Client, this._chainId).SendRequestAsync<string>("eth_getCode", this._accountContract.Address, "latest");
+        var code = await ThirdwebRPC.GetRpcInstance(this.Client, this._chainId).SendRequestAsync<string>("eth_getCode", this._accountContract.Address, "latest").ConfigureAwait(false);
         return code != "0x";
     }
 
@@ -228,66 +228,67 @@ public class SmartWallet : IThirdwebWallet
             throw new InvalidOperationException("SmartAccount.SendTransaction: Transaction input is required.");
         }
 
-        await this.SwitchNetwork(transactionInput.ChainId.Value);
+        await this.SwitchNetwork(transactionInput.ChainId.Value).ConfigureAwait(false);
 
-        var transaction = await ThirdwebTransaction.Create(Utils.IsZkSync(this._chainId) ? this._personalAccount : this, transactionInput);
-        transaction = await ThirdwebTransaction.Prepare(transaction);
+        var transaction = await ThirdwebTransaction.Create(Utils.IsZkSync(this._chainId) ? this._personalAccount : this, transactionInput).ConfigureAwait(false);
+        transaction = await ThirdwebTransaction.Prepare(transaction).ConfigureAwait(false);
         transactionInput = transaction.Input;
 
         if (Utils.IsZkSync(this._chainId))
         {
             if (this._gasless)
             {
-                (var paymaster, var paymasterInput) = await this.ZkPaymasterData(transactionInput);
+                (var paymaster, var paymasterInput) = await this.ZkPaymasterData(transactionInput).ConfigureAwait(false);
                 transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
-                var zkTx = await ThirdwebTransaction.ConvertToZkSyncTransaction(transaction);
-                var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, this);
+                var zkTx = await ThirdwebTransaction.ConvertToZkSyncTransaction(transaction).ConfigureAwait(false);
+                var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, this).ConfigureAwait(false);
                 // Match bundler ZkTransactionInput type without recreating
                 var hash = await this.ZkBroadcastTransaction(
-                    new
-                    {
-                        nonce = zkTx.Nonce.ToString(),
-                        from = zkTx.From,
-                        to = zkTx.To,
-                        gas = zkTx.GasLimit.ToString(),
-                        gasPrice = string.Empty,
-                        value = zkTx.Value.ToString(),
-                        data = Utils.BytesToHex(zkTx.Data),
-                        maxFeePerGas = zkTx.MaxFeePerGas.ToString(),
-                        maxPriorityFeePerGas = zkTx.MaxPriorityFeePerGas.ToString(),
-                        chainId = this._chainId.ToString(),
-                        signedTransaction = zkTxSigned,
-                        paymaster
-                    }
-                );
+                        new
+                        {
+                            nonce = zkTx.Nonce.ToString(),
+                            from = zkTx.From,
+                            to = zkTx.To,
+                            gas = zkTx.GasLimit.ToString(),
+                            gasPrice = string.Empty,
+                            value = zkTx.Value.ToString(),
+                            data = Utils.BytesToHex(zkTx.Data),
+                            maxFeePerGas = zkTx.MaxFeePerGas.ToString(),
+                            maxPriorityFeePerGas = zkTx.MaxPriorityFeePerGas.ToString(),
+                            chainId = this._chainId.ToString(),
+                            signedTransaction = zkTxSigned,
+                            paymaster
+                        }
+                    )
+                    .ConfigureAwait(false);
                 return hash;
             }
             else
             {
-                return await ThirdwebTransaction.Send(transaction);
+                return await ThirdwebTransaction.Send(transaction).ConfigureAwait(false);
             }
         }
         else
         {
-            var signedOp = await this.SignUserOp(transactionInput);
-            return await this.SendUserOp(signedOp);
+            var signedOp = await this.SignUserOp(transactionInput).ConfigureAwait(false);
+            return await this.SendUserOp(signedOp).ConfigureAwait(false);
         }
     }
 
     public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
     {
-        var txHash = await this.SendTransaction(transactionInput);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+        var txHash = await this.SendTransaction(transactionInput).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
     }
 
     private async Task<(byte[] initCode, string factory, string factoryData)> GetInitCode()
     {
-        if (await this.IsDeployed())
+        if (await this.IsDeployed().ConfigureAwait(false))
         {
             return (Array.Empty<byte>(), null, null);
         }
 
-        var personalAccountAddress = await this._personalAccount.GetAddress();
+        var personalAccountAddress = await this._personalAccount.GetAddress().ConfigureAwait(false);
         var factoryContract = new Contract(null, this._factoryContract.Abi, this._factoryContract.Address);
         var createFunction = factoryContract.GetFunction("createAccount");
         var data = createFunction.GetData(personalAccountAddress, Array.Empty<byte>());
@@ -298,7 +299,7 @@ public class SmartWallet : IThirdwebWallet
     {
         requestId ??= 1;
 
-        (var initCode, var factory, var factoryData) = await this.GetInitCode();
+        (var initCode, var factory, var factoryData) = await this.GetInitCode().ConfigureAwait(false);
 
         // Approve tokens if ERC20Paymaster
         if (this.UseERC20Paymaster && !this._isApproving && !this._isApproved && !simulation)
@@ -306,14 +307,14 @@ public class SmartWallet : IThirdwebWallet
             try
             {
                 this._isApproving = true;
-                var tokenContract = await ThirdwebContract.Create(this.Client, this._erc20PaymasterToken, this._chainId);
-                var approvedAmount = await tokenContract.ERC20_Allowance(this._accountContract.Address, this._erc20PaymasterAddress);
+                var tokenContract = await ThirdwebContract.Create(this.Client, this._erc20PaymasterToken, this._chainId).ConfigureAwait(false);
+                var approvedAmount = await tokenContract.ERC20_Allowance(this._accountContract.Address, this._erc20PaymasterAddress).ConfigureAwait(false);
                 if (approvedAmount == 0)
                 {
-                    _ = await tokenContract.ERC20_Approve(this, this._erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1);
+                    _ = await tokenContract.ERC20_Approve(this, this._erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1).ConfigureAwait(false);
                 }
                 this._isApproved = true;
-                (initCode, factory, factoryData) = await this.GetInitCode();
+                (initCode, factory, factoryData) = await this.GetInitCode().ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -336,7 +337,7 @@ public class SmartWallet : IThirdwebWallet
 
             while (this.IsDeploying)
             {
-                await Task.Delay(1000); // Wait for the deployment to finish
+                await ThirdwebTask.Delay(100).ConfigureAwait(false);
             }
 
             this.IsDeploying = initCode.Length > 0;
@@ -344,7 +345,7 @@ public class SmartWallet : IThirdwebWallet
 
         // Create the user operation and its safe (hexified) version
 
-        var fees = await BundlerClient.ThirdwebGetUserOperationGasPrice(this.Client, this._bundlerUrl, requestId);
+        var fees = await BundlerClient.ThirdwebGetUserOperationGasPrice(this.Client, this._bundlerUrl, requestId).ConfigureAwait(false);
         var maxFee = new HexBigInteger(fees.MaxFeePerGas).Value;
         var maxPriorityFee = new HexBigInteger(fees.MaxPriorityFeePerGas).Value;
 
@@ -357,14 +358,14 @@ public class SmartWallet : IThirdwebWallet
                 Target = transactionInput.To,
                 Value = transactionInput.Value.Value,
                 Calldata = transactionInput.Data.HexToBytes(),
-                FromAddress = await this.GetAddress(),
+                FromAddress = await this.GetAddress().ConfigureAwait(false),
             };
-            var executeInput = executeFn.CreateTransactionInput(await this.GetAddress());
+            var executeInput = executeFn.CreateTransactionInput(await this.GetAddress().ConfigureAwait(false));
 
             var partialUserOp = new UserOperationV6()
             {
                 Sender = this._accountContract.Address,
-                Nonce = await this.GetNonce(),
+                Nonce = await this.GetNonce().ConfigureAwait(false),
                 InitCode = initCode,
                 CallData = executeInput.Data.HexToBytes(),
                 CallGasLimit = 0,
@@ -378,7 +379,7 @@ public class SmartWallet : IThirdwebWallet
 
             // Update paymaster data if any
 
-            partialUserOp.PaymasterAndData = (await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation)).PaymasterAndData.HexToBytes();
+            partialUserOp.PaymasterAndData = (await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false)).PaymasterAndData.HexToBytes();
 
             // Estimate gas
 
@@ -389,11 +390,11 @@ public class SmartWallet : IThirdwebWallet
 
             // Update paymaster data if any
 
-            partialUserOp.PaymasterAndData = (await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation)).PaymasterAndData.HexToBytes();
+            partialUserOp.PaymasterAndData = (await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false)).PaymasterAndData.HexToBytes();
 
             // Hash, sign and encode the user operation
 
-            partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, this._entryPointContract);
+            partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, this._entryPointContract).ConfigureAwait(false);
 
             return partialUserOp;
         }
@@ -404,14 +405,14 @@ public class SmartWallet : IThirdwebWallet
                 Target = transactionInput.To,
                 Value = transactionInput.Value.Value,
                 Calldata = transactionInput.Data.HexToBytes(),
-                FromAddress = await this.GetAddress(),
+                FromAddress = await this.GetAddress().ConfigureAwait(false),
             };
-            var executeInput = executeFn.CreateTransactionInput(await this.GetAddress());
+            var executeInput = executeFn.CreateTransactionInput(await this.GetAddress().ConfigureAwait(false));
 
             var partialUserOp = new UserOperationV7()
             {
                 Sender = this._accountContract.Address,
-                Nonce = await this.GetNonce(),
+                Nonce = await this.GetNonce().ConfigureAwait(false),
                 Factory = factory,
                 FactoryData = factoryData.HexToBytes(),
                 CallData = executeInput.Data.HexToBytes(),
@@ -439,18 +440,13 @@ public class SmartWallet : IThirdwebWallet
                     { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex().ToString(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() }
                 };
                 var stateDict = new Dictionary<string, object> { { this._erc20PaymasterToken, new { stateDiff = storageDict } } };
-                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
+                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false);
                 partialUserOp.Paymaster = res.Paymaster;
                 partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
 
-                var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(
-                    this.Client,
-                    this._bundlerUrl,
-                    requestId,
-                    EncodeUserOperation(partialUserOp),
-                    this._entryPointContract.Address,
-                    stateDict
-                );
+                var gasEstimates = await BundlerClient
+                    .EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address, stateDict)
+                    .ConfigureAwait(false);
                 partialUserOp.CallGasLimit = 21000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
                 partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
                 partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
@@ -459,7 +455,7 @@ public class SmartWallet : IThirdwebWallet
             }
             else
             {
-                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation);
+                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false);
                 partialUserOp.Paymaster = res.Paymaster;
                 partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? Array.Empty<byte>();
                 partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0x0").Value;
@@ -471,7 +467,7 @@ public class SmartWallet : IThirdwebWallet
 
             // Hash, sign and encode the user operation
 
-            partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, this._entryPointContract);
+            partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, this._entryPointContract).ConfigureAwait(false);
 
             return partialUserOp;
         }
@@ -495,16 +491,16 @@ public class SmartWallet : IThirdwebWallet
 
         // Send the user operation
 
-        var userOpHash = await BundlerClient.EthSendUserOperation(this.Client, this._bundlerUrl, requestId, encodedOp, this._entryPointContract.Address);
+        var userOpHash = await BundlerClient.EthSendUserOperation(this.Client, this._bundlerUrl, requestId, encodedOp, this._entryPointContract.Address).ConfigureAwait(false);
 
         // Wait for the transaction to be mined
 
         string txHash = null;
         while (txHash == null)
         {
-            var userOpReceipt = await BundlerClient.EthGetUserOperationReceipt(this.Client, this._bundlerUrl, requestId, userOpHash);
+            var userOpReceipt = await BundlerClient.EthGetUserOperationReceipt(this.Client, this._bundlerUrl, requestId, userOpHash).ConfigureAwait(false);
             txHash = userOpReceipt?.Receipt?.TransactionHash;
-            await Task.Delay(1000).ConfigureAwait(false);
+            await ThirdwebTask.Delay(100).ConfigureAwait(false);
         }
 
         this.IsDeploying = false;
@@ -517,14 +513,14 @@ public class SmartWallet : IThirdwebWallet
         RandomNumberGenerator.Fill(randomBytes);
         BigInteger randomInt192 = new(randomBytes);
         randomInt192 = BigInteger.Abs(randomInt192) % (BigInteger.One << 192);
-        return await ThirdwebContract.Read<BigInteger>(this._entryPointContract, "getNonce", await this.GetAddress(), randomInt192);
+        return await ThirdwebContract.Read<BigInteger>(this._entryPointContract, "getNonce", await this.GetAddress().ConfigureAwait(false), randomInt192).ConfigureAwait(false);
     }
 
     private async Task<(string, string)> ZkPaymasterData(ThirdwebTransactionInput transactionInput)
     {
         if (this._gasless)
         {
-            var result = await BundlerClient.ZkPaymasterData(this.Client, this._paymasterUrl, 1, transactionInput);
+            var result = await BundlerClient.ZkPaymasterData(this.Client, this._paymasterUrl, 1, transactionInput).ConfigureAwait(false);
             return (result.Paymaster, result.PaymasterInput);
         }
         else
@@ -535,7 +531,7 @@ public class SmartWallet : IThirdwebWallet
 
     private async Task<string> ZkBroadcastTransaction(object transactionInput)
     {
-        var result = await BundlerClient.ZkBroadcastTransaction(this.Client, this._bundlerUrl, 1, transactionInput);
+        var result = await BundlerClient.ZkBroadcastTransaction(this.Client, this._bundlerUrl, 1, transactionInput).ConfigureAwait(false);
         return result.TransactionHash;
     }
 
@@ -552,7 +548,9 @@ public class SmartWallet : IThirdwebWallet
         }
         else
         {
-            return this._gasless ? await BundlerClient.PMSponsorUserOperation(this.Client, this._paymasterUrl, requestId, userOp, this._entryPointContract.Address) : new PMSponsorOperationResponse();
+            return this._gasless
+                ? await BundlerClient.PMSponsorUserOperation(this.Client, this._paymasterUrl, requestId, userOp, this._entryPointContract.Address).ConfigureAwait(false)
+                : new PMSponsorOperationResponse();
         }
     }
 
@@ -561,8 +559,8 @@ public class SmartWallet : IThirdwebWallet
         var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
         var sig =
             this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount
-                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex())
-                : await this._personalAccount.PersonalSign(userOpHash);
+                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex()).ConfigureAwait(false)
+                : await this._personalAccount.PersonalSign(userOpHash).ConfigureAwait(false);
         return sig.HexToBytes();
     }
 
@@ -609,12 +607,12 @@ public class SmartWallet : IThirdwebWallet
             Signature = userOp.Signature
         };
 
-        var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp);
+        var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp).ConfigureAwait(false);
 
         var sig =
             this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount
-                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex())
-                : await this._personalAccount.PersonalSign(userOpHash);
+                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex()).ConfigureAwait(false)
+                : await this._personalAccount.PersonalSign(userOpHash).ConfigureAwait(false);
 
         return sig.HexToBytes();
     }
@@ -623,17 +621,17 @@ public class SmartWallet : IThirdwebWallet
     {
         return new UserOperationHexifiedV6()
         {
-            sender = userOperation.Sender,
-            nonce = userOperation.Nonce.ToHexBigInteger().HexValue,
-            initCode = userOperation.InitCode.BytesToHex(),
-            callData = userOperation.CallData.BytesToHex(),
-            callGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
-            verificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
-            preVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
-            maxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
-            maxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
-            paymasterAndData = userOperation.PaymasterAndData.BytesToHex(),
-            signature = userOperation.Signature.BytesToHex()
+            Sender = userOperation.Sender,
+            Nonce = userOperation.Nonce.ToHexBigInteger().HexValue,
+            InitCode = userOperation.InitCode.BytesToHex(),
+            CallData = userOperation.CallData.BytesToHex(),
+            CallGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
+            VerificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
+            PreVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
+            MaxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
+            MaxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
+            PaymasterAndData = userOperation.PaymasterAndData.BytesToHex(),
+            Signature = userOperation.Signature.BytesToHex()
         };
     }
 
@@ -641,21 +639,21 @@ public class SmartWallet : IThirdwebWallet
     {
         return new UserOperationHexifiedV7()
         {
-            sender = userOperation.Sender,
-            nonce = Utils.HexConcat(Constants.ADDRESS_ZERO, userOperation.Nonce.ToHexBigInteger().HexValue),
-            factory = userOperation.Factory,
-            factoryData = userOperation.FactoryData.BytesToHex(),
-            callData = userOperation.CallData.BytesToHex(),
-            callGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
-            verificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
-            preVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
-            maxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
-            maxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
-            paymaster = userOperation.Paymaster,
-            paymasterVerificationGasLimit = userOperation.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue,
-            paymasterPostOpGasLimit = userOperation.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue,
-            paymasterData = userOperation.PaymasterData.BytesToHex(),
-            signature = userOperation.Signature.BytesToHex()
+            Sender = userOperation.Sender,
+            Nonce = Utils.HexConcat(Constants.ADDRESS_ZERO, userOperation.Nonce.ToHexBigInteger().HexValue),
+            Factory = userOperation.Factory,
+            FactoryData = userOperation.FactoryData.BytesToHex(),
+            CallData = userOperation.CallData.BytesToHex(),
+            CallGasLimit = userOperation.CallGasLimit.ToHexBigInteger().HexValue,
+            VerificationGasLimit = userOperation.VerificationGasLimit.ToHexBigInteger().HexValue,
+            PreVerificationGas = userOperation.PreVerificationGas.ToHexBigInteger().HexValue,
+            MaxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
+            MaxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
+            Paymaster = userOperation.Paymaster,
+            PaymasterVerificationGasLimit = userOperation.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue,
+            PaymasterPostOpGasLimit = userOperation.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue,
+            PaymasterData = userOperation.PaymasterData.BytesToHex(),
+            Signature = userOperation.Signature.BytesToHex()
         };
     }
 
@@ -666,7 +664,7 @@ public class SmartWallet : IThirdwebWallet
             return;
         }
 
-        if (await this.IsDeployed())
+        if (await this.IsDeployed().ConfigureAwait(false))
         {
             return;
         }
@@ -682,8 +680,8 @@ public class SmartWallet : IThirdwebWallet
             To = this._accountContract.Address,
             Value = new HexBigInteger(0)
         };
-        var txHash = await this.SendTransaction(input);
-        _ = await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+        var txHash = await this.SendTransaction(input).ConfigureAwait(false);
+        _ = await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
     }
 
     public Task<IThirdwebWallet> GetPersonalWallet()
@@ -693,7 +691,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<string> GetAddress()
     {
-        return Utils.IsZkSync(this._chainId) ? await this._personalAccount.GetAddress() : this._accountContract.Address.ToChecksumAddress();
+        return Utils.IsZkSync(this._chainId) ? await this._personalAccount.GetAddress().ConfigureAwait(false) : this._accountContract.Address.ToChecksumAddress();
     }
 
     public Task<string> EthSign(byte[] rawMessage)
@@ -720,25 +718,25 @@ public class SmartWallet : IThirdwebWallet
     {
         if (Utils.IsZkSync(this._chainId))
         {
-            return await this._personalAccount.PersonalSign(message);
+            return await this._personalAccount.PersonalSign(message).ConfigureAwait(false);
         }
 
         if (!await this.IsDeployed())
         {
             while (this.IsDeploying)
             {
-                await Task.Delay(1000); // Wait for the deployment to finish
+                await ThirdwebTask.Delay(100).ConfigureAwait(false);
             }
-            await this.ForceDeploy();
+            await this.ForceDeploy().ConfigureAwait(false);
         }
 
-        if (await this.IsDeployed())
+        if (await this.IsDeployed().ConfigureAwait(false))
         {
             var originalMsgHash = Encoding.UTF8.GetBytes(message).HashPrefixedMessage();
             bool factorySupports712;
             try
             {
-                _ = await ThirdwebContract.Read<byte[]>(this._accountContract, "getMessageHash", originalMsgHash);
+                _ = await ThirdwebContract.Read<byte[]>(this._accountContract, "getMessageHash", originalMsgHash).ConfigureAwait(false);
                 factorySupports712 = true;
             }
             catch
@@ -747,8 +745,10 @@ public class SmartWallet : IThirdwebWallet
             }
 
             var sig = factorySupports712
-                ? await EIP712.GenerateSignature_SmartAccount_AccountMessage("Account", "1", this._chainId, await this.GetAddress(), originalMsgHash, this._personalAccount)
-                : await this._personalAccount.PersonalSign(message);
+                ? await EIP712
+                    .GenerateSignature_SmartAccount_AccountMessage("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), originalMsgHash, this._personalAccount)
+                    .ConfigureAwait(false)
+                : await this._personalAccount.PersonalSign(message).ConfigureAwait(false);
 
             var isValid = await this.IsValidSignature(message, sig);
             return isValid ? sig : throw new Exception("Invalid signature.");
@@ -761,21 +761,25 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<string> RecoverAddressFromPersonalSign(string message, string signature)
     {
-        return !await this.IsValidSignature(message, signature) ? await this._personalAccount.RecoverAddressFromPersonalSign(message, signature) : await this.GetAddress();
+        return !await this.IsValidSignature(message, signature).ConfigureAwait(false)
+            ? await this._personalAccount.RecoverAddressFromPersonalSign(message, signature).ConfigureAwait(false)
+            : await this.GetAddress().ConfigureAwait(false);
     }
 
     public async Task<bool> IsValidSignature(string message, string signature)
     {
         try
         {
-            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", message.StringToHex(), signature.HexToBytes());
+            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", message.StringToHex(), signature.HexToBytes()).ConfigureAwait(false);
             return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
         }
         catch
         {
             try
             {
-                var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", Encoding.UTF8.GetBytes(message).HashPrefixedMessage(), signature.HexToBytes());
+                var magicValue = await ThirdwebContract
+                    .Read<byte[]>(this._accountContract, "isValidSignature", Encoding.UTF8.GetBytes(message).HashPrefixedMessage(), signature.HexToBytes())
+                    .ConfigureAwait(false);
                 return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
             }
             catch
@@ -792,7 +796,7 @@ public class SmartWallet : IThirdwebWallet
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
 
-        var result = await ThirdwebContract.Read<List<string>>(this._accountContract, "getAllAdmins");
+        var result = await ThirdwebContract.Read<List<string>>(this._accountContract, "getAllAdmins").ConfigureAwait(false);
         return result ?? new List<string>();
     }
 
@@ -803,7 +807,7 @@ public class SmartWallet : IThirdwebWallet
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
 
-        var result = await ThirdwebContract.Read<List<SignerPermissions>>(this._accountContract, "getAllActiveSigners");
+        var result = await ThirdwebContract.Read<List<SignerPermissions>>(this._accountContract, "getAllActiveSigners").ConfigureAwait(false);
         return result ?? new List<SignerPermissions>();
     }
 
@@ -835,7 +839,7 @@ public class SmartWallet : IThirdwebWallet
             Uid = Guid.NewGuid().ToByteArray()
         };
 
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount);
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
         // Do it this way to avoid triggering an extra sig from estimation
         var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
         var txInput = new ThirdwebTransactionInput(this._chainId)
@@ -844,15 +848,15 @@ public class SmartWallet : IThirdwebWallet
             Value = new HexBigInteger(0),
             Data = data
         };
-        var txHash = await this.SendTransaction(txInput);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
     }
 
     public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
     {
         return Utils.IsZkSync(this._chainId)
             ? throw new InvalidOperationException("Account Permissions are not supported in ZkSync")
-            : await this.CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString());
+            : await this.CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString()).ConfigureAwait(false);
     }
 
     public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
@@ -875,7 +879,7 @@ public class SmartWallet : IThirdwebWallet
             Uid = Guid.NewGuid().ToByteArray()
         };
 
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount);
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount).ConfigureAwait(false);
         var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
         var txInput = new ThirdwebTransactionInput(this._chainId)
         {
@@ -883,8 +887,8 @@ public class SmartWallet : IThirdwebWallet
             Value = new HexBigInteger(0),
             Data = data
         };
-        var txHash = await this.SendTransaction(txInput);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
     }
 
     public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
@@ -907,7 +911,7 @@ public class SmartWallet : IThirdwebWallet
             Uid = Guid.NewGuid().ToByteArray()
         };
 
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount);
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
         var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
         var txInput = new ThirdwebTransactionInput(this._chainId)
         {
@@ -915,8 +919,8 @@ public class SmartWallet : IThirdwebWallet
             Value = new HexBigInteger(0),
             Data = data
         };
-        var txHash = await this.SendTransaction(txInput);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash);
+        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
     }
 
     public Task<string> SignTypedDataV4(string json)
@@ -938,14 +942,14 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<BigInteger> EstimateUserOperationGas(ThirdwebTransactionInput transaction)
     {
-        await this.SwitchNetwork(transaction.ChainId.Value);
+        await this.SwitchNetwork(transaction.ChainId.Value).ConfigureAwait(false);
 
         if (Utils.IsZkSync(this._chainId))
         {
             throw new Exception("User Operations are not supported in ZkSync");
         }
 
-        var signedOp = await this.SignUserOp(transaction, null, simulation: true);
+        var signedOp = await this.SignUserOp(transaction, null, simulation: true).ConfigureAwait(false);
         if (signedOp is UserOperationV6)
         {
             var castSignedOp = signedOp as UserOperationV6;
@@ -967,14 +971,14 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
     {
-        await this.SwitchNetwork(transaction.ChainId.Value);
+        await this.SwitchNetwork(transaction.ChainId.Value).ConfigureAwait(false);
 
         if (Utils.IsZkSync(this._chainId))
         {
             throw new Exception("Offline Signing is not supported in ZkSync");
         }
 
-        var signedOp = await this.SignUserOp(transaction);
+        var signedOp = await this.SignUserOp(transaction).ConfigureAwait(false);
         if (signedOp is UserOperationV6)
         {
             var encodedOp = EncodeUserOperation(signedOp as UserOperationV6);
@@ -993,7 +997,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<bool> IsConnected()
     {
-        return Utils.IsZkSync(this._chainId) ? await this._personalAccount.IsConnected() : this._accountContract != null;
+        return Utils.IsZkSync(this._chainId) ? await this._personalAccount.IsConnected().ConfigureAwait(false) : this._accountContract != null;
     }
 
     public Task Disconnect()
