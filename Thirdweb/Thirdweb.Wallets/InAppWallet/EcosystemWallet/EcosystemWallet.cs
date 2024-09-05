@@ -20,20 +20,12 @@ public partial class EcosystemWallet : PrivateKeyWallet
     private readonly string _authProvider;
 
     private string _address;
-    private string _authToken;
 
-    private const string EnclavePath = "https://embedded-wallet.thirdweb.com/api/v1/enclave-wallet";
+    private const string EMBEDDED_WALLET_PATH_2024 = "https://embedded-wallet.thirdweb.com/api/2024-05-05";
+    private const string EMBEDDED_WALLET_PATH_V1 = "https://embedded-wallet.thirdweb.com/api/v1";
+    private const string ENCLAVE_PATH = $"{EMBEDDED_WALLET_PATH_V1}/enclave-wallet";
 
-    private EcosystemWallet(
-        ThirdwebClient client,
-        EmbeddedWallet embeddedWallet,
-        IThirdwebHttpClient httpClient,
-        string email,
-        string phoneNumber,
-        string authProvider,
-        IThirdwebWallet siweSigner,
-        string authToken
-    )
+    private EcosystemWallet(ThirdwebClient client, EmbeddedWallet embeddedWallet, IThirdwebHttpClient httpClient, string email, string phoneNumber, string authProvider, IThirdwebWallet siweSigner)
         : base(client, null)
     {
         this._embeddedWallet = embeddedWallet;
@@ -42,7 +34,6 @@ public partial class EcosystemWallet : PrivateKeyWallet
         this._phoneNumber = phoneNumber;
         this._authProvider = authProvider;
         this._siweSigner = siweSigner;
-        this._authToken = authToken;
     }
 
     #region Creation
@@ -115,53 +106,100 @@ public partial class EcosystemWallet : PrivateKeyWallet
         storageDirectoryPath ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Thirdweb", "EcosystemWallet");
         var embeddedWallet = new EmbeddedWallet(client, storageDirectoryPath, ecosystemId, ecosystemPartnerId);
 
-        string authToken = null;
         try
         {
-            authToken = await embeddedWallet.ResumeEnclaveSession(email, phoneNumber, authproviderStr).ConfigureAwait(false);
-            enclaveHttpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{authToken}");
-
-            return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, authToken)
-            {
-                _address = await GetAddressFromEnclave(enclaveHttpClient).ConfigureAwait(false)
-            };
+            var userAddress = await ResumeEnclaveSession(enclaveHttpClient, embeddedWallet, email, phoneNumber, authproviderStr).ConfigureAwait(false);
+            return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = userAddress };
         }
-        catch
+        catch (Exception e)
         {
-            return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, authToken);
+            Console.WriteLine($"Unable to resume session, will need to auth again: {e.Message}");
+            enclaveHttpClient.RemoveHeader("Authorization");
+            return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = null };
         }
     }
 
-    private static async Task<string> GetAddressFromEnclave(IThirdwebHttpClient httpClient)
+    private static async Task<string> ResumeEnclaveSession(IThirdwebHttpClient httpClient, EmbeddedWallet embeddedWallet, string email, string phone, string authProvider)
     {
-        var url = $"{EnclavePath}/details";
+        email = email?.ToLower();
+
+        var sessionData = embeddedWallet.GetSessionData();
+
+        if (string.IsNullOrEmpty(sessionData.AuthToken))
+        {
+            throw new InvalidOperationException("User is not signed in");
+        }
+
+        if (sessionData.EmailAddress != email || sessionData.PhoneNumber != phone || sessionData.AuthProvider != authProvider)
+        {
+            throw new InvalidOperationException("Saved session data does not match provided details");
+        }
+
+        httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{sessionData.AuthToken}");
+
+        var userStatus = await GetUserStatus(httpClient).ConfigureAwait(false);
+        return userStatus.Wallets[0].Address;
+    }
+
+    private static void CreateEnclaveSession(EmbeddedWallet embeddedWallet, string authToken, string email, string phone, string authProvider)
+    {
+        var data = new LocalStorage.DataStorage(authToken, null, email, phone, null, authProvider);
+        embeddedWallet.UpdateSessionData(data);
+    }
+
+    private static async Task<EnclaveUserStatusResponse> GetUserStatus(IThirdwebHttpClient httpClient)
+    {
+        var url = $"{EMBEDDED_WALLET_PATH_2024}/accounts";
         var response = await httpClient.GetAsync(url).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        var enclaveResponse = JsonConvert.DeserializeObject<List<EnclaveWalletResponse>>(content);
-        return enclaveResponse[0].Wallet.Address.ToChecksumAddress();
+        var userStatus = JsonConvert.DeserializeObject<EnclaveUserStatusResponse>(content);
+        return userStatus;
     }
 
-    private async Task<string> GenerateOrLoadWallet()
+    private static async Task<string> GenerateWallet(IThirdwebHttpClient httpClient)
     {
-        try
+        var url = $"{ENCLAVE_PATH}/generate";
+        var requestContent = new StringContent("", Encoding.UTF8, "application/json");
+        var response = await httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var enclaveResponse = JsonConvert.DeserializeObject<EnclaveGenerateResponse>(content);
+        return enclaveResponse.Wallet.Address.ToChecksumAddress();
+    }
+
+    private async Task<string> PostAuth(Server.VerifyResult result)
+    {
+        this._httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{result.AuthToken}");
+        string address;
+        if (result.IsNewUser)
         {
-            var url = $"{EnclavePath}/generate";
-            var requestContent = new StringContent("", Encoding.UTF8, "application/json");
-            this._httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{this._authToken}");
-            var response = await this._httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
-            _ = response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var enclaveResponse = JsonConvert.DeserializeObject<EnclaveWalletResponse>(content);
-            this._address = enclaveResponse.Wallet.Address.ToChecksumAddress();
+            address = await GenerateWallet(this._httpClient);
         }
-        catch
+        else
         {
-            this._address = await GetAddressFromEnclave(this._httpClient).ConfigureAwait(false);
+            var userStatus = await GetUserStatus(this._httpClient).ConfigureAwait(false);
+            if (userStatus.Wallets[0].Type == "enclave")
+            {
+                address = userStatus.Wallets[0].Address;
+            }
+            else
+            {
+                // TODO: Implement migration flow from existing sharded InAppWallet to sharded EcosystemWallet to enclave Ecosystem Wallet
+                throw new InvalidOperationException("Migration flow from existing sharded InAppWallet to enclave Ecosystem Wallet not implemented yet.");
+            }
         }
 
-        await this._embeddedWallet.CreateEnclaveSession(this._authToken, this._email, this._phoneNumber, this._authProvider).ConfigureAwait(false);
-        return this._address;
+        if (string.IsNullOrEmpty(address))
+        {
+            throw new InvalidOperationException("Failed to get user address from enclave wallet.");
+        }
+        else
+        {
+            CreateEnclaveSession(this._embeddedWallet, result.AuthToken, this._email, this._phoneNumber, this._authProvider);
+            this._address = address.ToChecksumAddress();
+            return this._address;
+        }
     }
 
     #endregion
@@ -225,9 +263,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
                     ? await this._embeddedWallet.VerifyPhoneOtpAsync(this._phoneNumber, otp).ConfigureAwait(false)
                     : await this._embeddedWallet.VerifyEmailOtpAsync(this._email, otp).ConfigureAwait(false);
 
-        this._authToken = serverRes.AuthToken;
-
-        return await this.GenerateOrLoadWallet().ConfigureAwait(false);
+        return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
     #endregion
@@ -297,11 +333,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
         var serverRes = await this._embeddedWallet.SignInWithOauthAsync(authResultJson).ConfigureAwait(false);
 
-        this._authToken = serverRes.AuthToken;
-
-        var walletAddress = await this.GenerateOrLoadWallet().ConfigureAwait(false);
-
-        return walletAddress;
+        return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
     public async Task<string> LoginWithSiwe(BigInteger chainId)
@@ -326,9 +358,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
                 ? throw new ArgumentException("Chain ID must be greater than 0.", nameof(chainId))
                 : await this._embeddedWallet.SignInWithSiweAsync(this._siweSigner, chainId).ConfigureAwait(false);
 
-        this._authToken = serverRes.AuthToken;
-
-        return await this.GenerateOrLoadWallet().ConfigureAwait(false);
+        return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
     public async Task<string> LoginWithJWT(string jwt, string encryptionKey)
@@ -344,8 +374,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
         }
 
         var serverRes = string.IsNullOrEmpty(jwt) ? throw new ArgumentException("JWT cannot be null or empty.", nameof(jwt)) : await this._embeddedWallet.SignInWithJwtAsync(jwt).ConfigureAwait(false);
-        this._authToken = serverRes.AuthToken;
-        return await this.GenerateOrLoadWallet().ConfigureAwait(false);
+
+        return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
     public async Task<string> LoginWithAuthEndpoint(string payload, string encryptionKey)
@@ -364,9 +394,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             ? throw new ArgumentNullException(nameof(payload), "Payload cannot be null or empty.")
             : await this._embeddedWallet.SignInWithAuthEndpointAsync(payload).ConfigureAwait(false);
 
-        this._authToken = serverRes.AuthToken;
-
-        return await this.GenerateOrLoadWallet().ConfigureAwait(false);
+        return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
     #endregion
@@ -412,7 +440,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             throw new ArgumentNullException(nameof(rawMessage), "Message to sign cannot be null.");
         }
 
-        var url = $"{EnclavePath}/sign-message";
+        var url = $"{ENCLAVE_PATH}/sign-message";
         var payload = new { messagePayload = new { message = rawMessage.BytesToHex(), isRaw = true } };
 
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
@@ -432,7 +460,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             throw new ArgumentNullException(nameof(message), "Message to sign cannot be null.");
         }
 
-        var url = $"{EnclavePath}/sign-message";
+        var url = $"{ENCLAVE_PATH}/sign-message";
         var payload = new { messagePayload = new { message, isRaw = false } };
 
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
@@ -452,7 +480,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             throw new ArgumentNullException(nameof(json), "Json to sign cannot be null.");
         }
 
-        var url = $"{EnclavePath}/sign-typed-data";
+        var url = $"{ENCLAVE_PATH}/sign-typed-data";
 
         var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -494,7 +522,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
         object payload = new { transactionPayload = transaction };
 
-        var url = $"{EnclavePath}/sign-transaction";
+        var url = $"{ENCLAVE_PATH}/sign-transaction";
 
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
 
@@ -508,7 +536,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
     public override Task<bool> IsConnected()
     {
-        return Task.FromResult(this._authToken != null);
+        return Task.FromResult(this._address != null);
     }
 
     public override Task<string> SendTransaction(ThirdwebTransactionInput transaction)
@@ -524,7 +552,6 @@ public partial class EcosystemWallet : PrivateKeyWallet
     public override async Task Disconnect()
     {
         this._address = null;
-        this._authToken = null;
         await this._embeddedWallet.SignOutAsync().ConfigureAwait(false);
     }
 

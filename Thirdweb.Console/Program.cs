@@ -19,10 +19,7 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
 // Fetch timeout options are optional, default is 120000ms
-var client = ThirdwebClient.Create(
-    secretKey: "_1xieXygv2AIOIQVkyTCe-zDc6pqLXcCN24gACtZbT1sVoBiD2fZdgKx6CdFeXhv1nabgHU5DcwNSL1O9RQOCQ",
-    fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000)
-);
+var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000));
 
 // Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
@@ -77,12 +74,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Ecosystem Wallet
 
-var ecosystemWallet = await EcosystemWallet.Create(
-    client: client,
-    ecosystemId: "ecosystem.bonfire-development",
-    ecosystemPartnerId: "02077ab1-59be-4b62-a768-6c6609da7864",
-    email: "firekeeper+enclave20@thirdweb.com"
-);
+var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", email: "firekeeper+bonfire3@thirdweb.com");
 
 if (!await ecosystemWallet.IsConnected())
 {
@@ -105,12 +97,12 @@ var ecosystemTypedSignature = await ecosystemWallet.SignTypedDataV4(
 );
 Console.WriteLine($"Ecosystem Wallet typed sign: {ecosystemTypedSignature}");
 
-var ecosystemSmartWallet = await SmartWallet.Create(ecosystemWallet, 421614);
+// var ecosystemSmartWallet = await SmartWallet.Create(ecosystemWallet, 421614);
 
-var ecosystemTx = await ThirdwebTransaction.Create(wallet: ecosystemSmartWallet, txInput: new ThirdwebTransactionInput(chainId: 421614, to: await ecosystemWallet.GetAddress()));
+// var ecosystemTx = await ThirdwebTransaction.Create(wallet: ecosystemSmartWallet, txInput: new ThirdwebTransactionInput(chainId: 421614, to: await ecosystemWallet.GetAddress()));
 
-var ecosystemTxHash = await ThirdwebTransaction.Send(ecosystemTx);
-Console.WriteLine($"Ecosystem Wallet transaction hash: {ecosystemTxHash}");
+// var ecosystemTxHash = await ThirdwebTransaction.Send(ecosystemTx);
+// Console.WriteLine($"Ecosystem Wallet transaction hash: {ecosystemTxHash}");
 
 #endregion
 

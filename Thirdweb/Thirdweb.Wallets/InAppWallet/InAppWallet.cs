@@ -225,7 +225,7 @@ public class InAppWallet : PrivateKeyWallet
                 throw new ArgumentException($"Cannot link account with an unsupported authentication provider:", walletToLink.AuthProvider);
         }
 
-        var currentAccountToken = this.EmbeddedWallet.GetCurrentAuthToken();
+        var currentAccountToken = this.EmbeddedWallet.GetSessionData()?.AuthToken;
         var authTokenToConnect = serverRes.AuthToken;
 
         var serverLinkedAccounts = await this.EmbeddedWallet.LinkAccountAsync(currentAccountToken, authTokenToConnect).ConfigureAwait(false);
@@ -251,7 +251,7 @@ public class InAppWallet : PrivateKeyWallet
 
     public async Task<List<LinkedAccount>> GetLinkedAccounts()
     {
-        var currentAccountToken = this.EmbeddedWallet.GetCurrentAuthToken();
+        var currentAccountToken = this.EmbeddedWallet.GetSessionData()?.AuthToken;
         var serverLinkedAccounts = await this.EmbeddedWallet.GetLinkedAccountsAsync(currentAccountToken).ConfigureAwait(false);
         var linkedAccounts = new List<LinkedAccount>();
         foreach (var linkedAccount in serverLinkedAccounts)
