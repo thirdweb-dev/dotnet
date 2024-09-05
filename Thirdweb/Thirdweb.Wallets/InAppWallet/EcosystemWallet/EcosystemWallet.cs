@@ -138,7 +138,15 @@ public partial class EcosystemWallet : PrivateKeyWallet
         httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{sessionData.AuthToken}");
 
         var userStatus = await GetUserStatus(httpClient).ConfigureAwait(false);
-        return userStatus.Wallets[0].Address;
+        if (userStatus.Wallets[0].Type == "enclave")
+        {
+            return userStatus.Wallets[0].Address.ToChecksumAddress();
+        }
+        else
+        {
+            // TODO: Implement migration flow from existing sharded InAppWallet to sharded EcosystemWallet to enclave Ecosystem Wallet
+            throw new InvalidOperationException("Migration flow from existing sharded InAppWallet to enclave Ecosystem Wallet not implemented yet.");
+        }
     }
 
     private static void CreateEnclaveSession(EmbeddedWallet embeddedWallet, string authToken, string email, string phone, string authProvider)

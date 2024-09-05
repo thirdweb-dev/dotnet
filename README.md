@@ -15,7 +15,8 @@ The Thirdweb .NET SDK is a comprehensive and easy to use library that allows dev
 - **Query blockchain data:** Use Thirdweb RPC to fetch blockchain data efficiently.
 - **Interact with smart contracts:** Simplified read and write operations for smart contracts, with various out-of-the-box extensions provided.
 - **In-App Wallets:** Integrate user-friendly wallets within your applications, supporting email, phone, and OAuth login.
-- **Account Abstraction:** Simplify complex account management tasks with smart wallets, (ERC4337 or native zkSync AA).
+- **Ecosystem Wallets:** Basically In-App Wallets functionality wise, with the added benefit of being able to securely share your wallets with third party partners.
+- **Account Abstraction:** Simplify complex account management tasks with smart wallets.
 - **Gasless Transactions:** Enable transactions without requiring users to pay gas fees.
 - **Storage Solutions:** Download and upload files using IPFS.
 - **Transaction Builder:** Create, manipulate and send low level transactions.
