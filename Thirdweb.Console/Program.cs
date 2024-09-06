@@ -77,33 +77,33 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Ecosystem Wallet
 
-var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.bonfire-development", email: "firekeeper+linkeco@thirdweb.com");
+// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.bonfire-development", email: "firekeeper+linkeco@thirdweb.com");
 
-if (!await ecosystemWallet.IsConnected())
-{
-    _ = await ecosystemWallet.SendOTP();
-    Console.WriteLine("Enter OTP:");
-    var otp = Console.ReadLine();
-    _ = await ecosystemWallet.LoginWithOtp(otp: otp);
-}
-var ecosystemWalletAddress = await ecosystemWallet.GetAddress();
-Console.WriteLine($"Ecosystem Wallet address: {ecosystemWalletAddress}");
+// if (!await ecosystemWallet.IsConnected())
+// {
+//     _ = await ecosystemWallet.SendOTP();
+//     Console.WriteLine("Enter OTP:");
+//     var otp = Console.ReadLine();
+//     _ = await ecosystemWallet.LoginWithOtp(otp: otp);
+// }
+// var ecosystemWalletAddress = await ecosystemWallet.GetAddress();
+// Console.WriteLine($"Ecosystem Wallet address: {ecosystemWalletAddress}");
 
-var ecosystemPersonalSignature = await ecosystemWallet.PersonalSign("Hello, Thirdweb!");
-Console.WriteLine($"Ecosystem Wallet personal sign: {ecosystemPersonalSignature}");
-var isValidPersonal = (await ecosystemWallet.RecoverAddressFromPersonalSign("Hello, Thirdweb!", ecosystemPersonalSignature)) == ecosystemWalletAddress;
-Console.WriteLine($"Ecosystem Wallet personal sign valid: {isValidPersonal}");
+// var ecosystemPersonalSignature = await ecosystemWallet.PersonalSign("Hello, Thirdweb!");
+// Console.WriteLine($"Ecosystem Wallet personal sign: {ecosystemPersonalSignature}");
+// var isValidPersonal = (await ecosystemWallet.RecoverAddressFromPersonalSign("Hello, Thirdweb!", ecosystemPersonalSignature)) == ecosystemWalletAddress;
+// Console.WriteLine($"Ecosystem Wallet personal sign valid: {isValidPersonal}");
 
-var ecosystemTypedSignature = await ecosystemWallet.SignTypedDataV4(
-    /*lang=json,strict*/
-    "{\"types\": {\"EIP712Domain\": [{\"name\": \"name\",\"type\": \"string\"},{\"name\": \"version\",\"type\": \"string\"},{\"name\": \"chainId\",\"type\": \"uint256\"},{\"name\": \"verifyingContract\",\"type\": \"address\"}],\"Person\": [{\"name\": \"name\",\"type\": \"string\"},{\"name\": \"wallet\",\"type\": \"address\"}],\"Mail\": [{\"name\": \"from\",\"type\": \"Person\"},{\"name\": \"to\",\"type\": \"Person\"},{\"name\": \"contents\",\"type\": \"string\"}]},\"primaryType\": \"Mail\",\"domain\": {\"name\": \"Ether Mail\",\"version\": \"1\",\"chainId\": 1,\"verifyingContract\": \"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\": {\"from\": {\"name\": \"Cow\",\"wallet\": \"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\": {\"name\": \"Bob\",\"wallet\": \"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\"},\"contents\": \"Hello, Bob!\"}}"
-);
-Console.WriteLine($"Ecosystem Wallet typed sign: {ecosystemTypedSignature}");
+// var ecosystemTypedSignature = await ecosystemWallet.SignTypedDataV4(
+//     /*lang=json,strict*/
+//     "{\"types\": {\"EIP712Domain\": [{\"name\": \"name\",\"type\": \"string\"},{\"name\": \"version\",\"type\": \"string\"},{\"name\": \"chainId\",\"type\": \"uint256\"},{\"name\": \"verifyingContract\",\"type\": \"address\"}],\"Person\": [{\"name\": \"name\",\"type\": \"string\"},{\"name\": \"wallet\",\"type\": \"address\"}],\"Mail\": [{\"name\": \"from\",\"type\": \"Person\"},{\"name\": \"to\",\"type\": \"Person\"},{\"name\": \"contents\",\"type\": \"string\"}]},\"primaryType\": \"Mail\",\"domain\": {\"name\": \"Ether Mail\",\"version\": \"1\",\"chainId\": 1,\"verifyingContract\": \"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\": {\"from\": {\"name\": \"Cow\",\"wallet\": \"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\": {\"name\": \"Bob\",\"wallet\": \"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\"},\"contents\": \"Hello, Bob!\"}}"
+// );
+// Console.WriteLine($"Ecosystem Wallet typed sign: {ecosystemTypedSignature}");
 
-var siweSigner = await PrivateKeyWallet.Generate(client: client);
-var ecosystemWalletOther = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.bonfire-development", authProvider: AuthProvider.Siwe, siweSigner: siweSigner);
-var linkedAccounts = await ecosystemWallet.LinkAccount(walletToLink: ecosystemWalletOther, chainId: 421614);
-Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
+// var siweSigner = await PrivateKeyWallet.Generate(client: client);
+// var ecosystemWalletOther = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.bonfire-development", authProvider: AuthProvider.Siwe, siweSigner: siweSigner);
+// var linkedAccounts = await ecosystemWallet.LinkAccount(walletToLink: ecosystemWalletOther, chainId: 421614);
+// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
 
 // var ecosystemSmartWallet = await SmartWallet.Create(ecosystemWallet, 421614);
 
