@@ -124,6 +124,20 @@ public class PrivateKeyWallet : IThirdwebWallet
     }
 
     /// <summary>
+    /// Deletes the saved private key from the local storage if it exists.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous delete operation.</returns>
+    public static void Delete()
+    {
+        var path = GetSavePath();
+
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+    }
+
+    /// <summary>
     /// Exports the private key as a hexadecimal string.
     /// </summary>
     /// <returns>The private key as a hexadecimal string.</returns>

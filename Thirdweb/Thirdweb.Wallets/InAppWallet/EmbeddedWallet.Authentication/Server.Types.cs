@@ -6,22 +6,26 @@ internal partial class Server
 {
     internal class VerifyResult
     {
-        internal VerifyResult(bool isNewUser, string authToken, string walletUserId, string recoveryCode, string email, string phoneNumber)
+        internal VerifyResult(string authProvider, bool isNewUser, string authToken, string walletUserId, string recoveryCode, string email, string phoneNumber, string authIdentifier)
         {
+            this.AuthProvider = authProvider;
             this.IsNewUser = isNewUser;
             this.AuthToken = authToken;
             this.WalletUserId = walletUserId;
             this.RecoveryCode = recoveryCode;
             this.Email = email;
             this.PhoneNumber = phoneNumber;
+            this.AuthIdentifier = authIdentifier;
         }
 
+        internal string AuthProvider { get; }
         internal bool IsNewUser { get; }
         internal string AuthToken { get; }
         internal string WalletUserId { get; }
         internal string RecoveryCode { get; }
         internal string Email { get; }
         internal string PhoneNumber { get; }
+        internal string AuthIdentifier { get; }
     }
 
     [DataContract]
@@ -88,7 +92,7 @@ internal partial class Server
             internal AuthDetailsType AuthDetails { get; set; }
 
             [DataMember(Name = "authProvider")]
-            private string _authProvider;
+            internal string AuthProvider { get; set; }
 
             [DataMember(Name = "developerClientId")]
             private string _developerClientId;
@@ -171,9 +175,6 @@ internal partial class Server
     {
         [DataMember(Name = "storedToken")]
         internal StoredTokenType StoredToken { get; set; }
-
-        [DataMember(Name = "walletDetails")]
-        internal WalletDetailsType WalletDetails { get; set; }
     }
 
     [DataContract]
@@ -213,27 +214,14 @@ internal partial class Server
         [DataMember(Name = "userWalletId")]
         internal string UserWalletId { get; set; }
 
+        [DataMember(Name = "authIdentifier")]
+        internal string AuthIdentifier { get; set; }
+
         [DataMember(Name = "recoveryCode")]
         internal string RecoveryCode { get; set; }
 
         [DataMember(Name = "recoveryShareManagement")]
         internal string RecoveryShareManagement { get; set; }
-
-        [DataMember(Name = "backupRecoveryCodes")]
-        internal string[] BackupRecoveryCodes { get; set; }
-    }
-
-    [DataContract]
-    internal class WalletDetailsType
-    {
-        [DataMember(Name = "deviceShareStored")]
-        internal string DeviceShareStored { get; set; }
-
-        [DataMember(Name = "isIframeStorageEnabled")]
-        internal bool IsIframeStorageEnabled { get; set; }
-
-        [DataMember(Name = "walletAddress")]
-        internal string WalletAddress { get; set; }
     }
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.

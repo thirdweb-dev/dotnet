@@ -168,6 +168,26 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region Guest Login
+
+var guestWallet = await InAppWallet.Create(client: client, authProvider: AuthProvider.Guest);
+if (!await guestWallet.IsConnected())
+{
+    _ = await guestWallet.LoginWithGuest();
+}
+var address = await guestWallet.GetAddress();
+Console.WriteLine($"Guest address: {address}");
+
+var emailWalletFresh = await InAppWallet.Create(client: client, email: "firekeeper+guestupgrade1@thirdweb.com");
+_ = await emailWalletFresh.SendOTP();
+Console.WriteLine("Enter OTP:");
+var otp = Console.ReadLine();
+
+var linkedAccounts = await guestWallet.LinkAccount(walletToLink: emailWalletFresh, otp: otp);
+Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
+
+#endregion
+
 #region Account Linking
 
 // var inAppWalletMain = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);

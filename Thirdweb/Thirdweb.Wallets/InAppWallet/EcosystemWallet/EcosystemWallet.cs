@@ -75,6 +75,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             AuthProvider.Farcaster => "Farcaster",
             AuthProvider.Telegram => "Telegram",
             AuthProvider.Siwe => "Siwe",
+            AuthProvider.Guest => "Guest",
             AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -111,9 +112,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
             var userAddress = await ResumeEnclaveSession(enclaveHttpClient, embeddedWallet, email, phoneNumber, authproviderStr).ConfigureAwait(false);
             return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = userAddress };
         }
-        catch (Exception e)
+        catch
         {
-            Console.WriteLine($"Unable to resume session, will need to auth again: {e.Message}");
             enclaveHttpClient.RemoveHeader("Authorization");
             return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = null };
         }
@@ -149,9 +149,9 @@ public partial class EcosystemWallet : PrivateKeyWallet
         }
     }
 
-    private static void CreateEnclaveSession(EmbeddedWallet embeddedWallet, string authToken, string email, string phone, string authProvider)
+    private static void CreateEnclaveSession(EmbeddedWallet embeddedWallet, string authToken, string email, string phone, string authProvider, string authIdentifier)
     {
-        var data = new LocalStorage.DataStorage(authToken, null, email, phone, null, authProvider);
+        var data = new LocalStorage.DataStorage(authToken, null, email, phone, null, authProvider, authIdentifier);
         embeddedWallet.UpdateSessionData(data);
     }
 
@@ -204,7 +204,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
         }
         else
         {
-            CreateEnclaveSession(this._embeddedWallet, result.AuthToken, this._email, this._phoneNumber, this._authProvider);
+            CreateEnclaveSession(this._embeddedWallet, result.AuthToken, this._email, this._phoneNumber, this._authProvider, result.AuthIdentifier);
             this._address = address.ToChecksumAddress();
             return this._address;
         }
@@ -292,6 +292,9 @@ public partial class EcosystemWallet : PrivateKeyWallet
                     throw new ArgumentException("Cannot link account with an AuthEndpoint wallet without a payload.");
                 }
                 serverRes = await walletToLink.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
+                break;
+            case "Guest":
+                serverRes = await walletToLink.PreAuth_Guest().ConfigureAwait(false);
                 break;
             case "Google":
             case "Apple":
@@ -500,6 +503,33 @@ public partial class EcosystemWallet : PrivateKeyWallet
     public async Task<string> LoginWithSiwe(BigInteger chainId)
     {
         var serverRes = await this.PreAuth_Siwe(this._siweSigner, chainId).ConfigureAwait(false);
+        return await this.PostAuth(serverRes).ConfigureAwait(false);
+    }
+
+    #endregion
+
+    #region Guest
+
+    private async Task<Server.VerifyResult> PreAuth_Guest()
+    {
+        var sessionData = this._embeddedWallet.GetSessionData();
+        string sessionId;
+        if (sessionData != null && sessionData.AuthProvider == "Guest" && !string.IsNullOrEmpty(sessionData.AuthIdentifier))
+        {
+            sessionId = sessionData.AuthIdentifier;
+        }
+        else
+        {
+            sessionId = Guid.NewGuid().ToString();
+        }
+        Console.WriteLine($"Guest Session ID: {sessionId}");
+        var serverRes = await this._embeddedWallet.SignInWithGuestAsync(sessionId).ConfigureAwait(false);
+        return serverRes;
+    }
+
+    public async Task<string> LoginWithGuest()
+    {
+        var serverRes = await this.PreAuth_Guest().ConfigureAwait(false);
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 

@@ -20,7 +20,8 @@ public enum AuthProvider
     Discord,
     Farcaster,
     Telegram,
-    Siwe
+    Siwe,
+    Guest
 }
 
 public struct LinkedAccount
@@ -99,6 +100,7 @@ public class InAppWallet : PrivateKeyWallet
             Thirdweb.AuthProvider.Farcaster => "Farcaster",
             Thirdweb.AuthProvider.Telegram => "Telegram",
             Thirdweb.AuthProvider.Siwe => "Siwe",
+            Thirdweb.AuthProvider.Guest => "Guest",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -212,6 +214,9 @@ public class InAppWallet : PrivateKeyWallet
                     throw new ArgumentException("Cannot link account with an AuthEndpoint wallet without a payload.");
                 }
                 serverRes = await walletToLink.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
+                break;
+            case "Guest":
+                serverRes = await walletToLink.PreAuth_Guest().ConfigureAwait(false);
                 break;
             case "Google":
             case "Apple":
@@ -458,6 +463,32 @@ public class InAppWallet : PrivateKeyWallet
         }
 
         return chainId <= 0 ? throw new ArgumentException(nameof(chainId), "Chain ID must be greater than 0.") : await this.EmbeddedWallet.SignInWithSiweAsync(signer, chainId).ConfigureAwait(false);
+    }
+
+    #endregion
+
+    #region Guest
+
+    public async Task<string> LoginWithGuest()
+    {
+        var serverRes = await this.PreAuth_Guest().ConfigureAwait(false);
+        return await this.PostAuth(serverRes, null, "Guest").ConfigureAwait(false);
+    }
+
+    private async Task<Server.VerifyResult> PreAuth_Guest()
+    {
+        var sessionData = this.EmbeddedWallet.GetSessionData();
+        string sessionId;
+        if (sessionData != null && sessionData.AuthProvider == "Guest" && !string.IsNullOrEmpty(sessionData.AuthIdentifier))
+        {
+            sessionId = sessionData.AuthIdentifier;
+        }
+        else
+        {
+            sessionId = Guid.NewGuid().ToString();
+        }
+        var serverRes = await this.EmbeddedWallet.SignInWithGuestAsync(sessionId).ConfigureAwait(false);
+        return serverRes;
     }
 
     #endregion
