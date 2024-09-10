@@ -75,6 +75,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             AuthProvider.Farcaster => "Farcaster",
             AuthProvider.Telegram => "Telegram",
             AuthProvider.Siwe => "Siwe",
+            AuthProvider.Line => "Line",
             AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
