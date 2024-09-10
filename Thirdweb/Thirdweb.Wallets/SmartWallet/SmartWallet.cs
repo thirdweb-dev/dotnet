@@ -394,7 +394,10 @@ public class SmartWallet : IThirdwebWallet
 
             // Hash, sign and encode the user operation
 
-            partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, this._entryPointContract).ConfigureAwait(false);
+            if (!simulation)
+            {
+                partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, this._entryPointContract).ConfigureAwait(false);
+            }
 
             return partialUserOp;
         }
