@@ -170,7 +170,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Guest Login
 
-var guestWallet = await InAppWallet.Create(client: client, authProvider: AuthProvider.Guest);
+var guestWallet = await EcosystemWallet.Create(ecosystemId: "ecosystem.bonfire-development", client: client, authProvider: AuthProvider.Guest);
 if (!await guestWallet.IsConnected())
 {
     _ = await guestWallet.LoginWithGuest();
@@ -178,7 +178,10 @@ if (!await guestWallet.IsConnected())
 var address = await guestWallet.GetAddress();
 Console.WriteLine($"Guest address: {address}");
 
-var emailWalletFresh = await InAppWallet.Create(client: client, email: "firekeeper+guestupgrade1@thirdweb.com");
+var oldLinkedAccounts = await guestWallet.GetLinkedAccounts();
+Console.WriteLine($"Old linked accounts: {JsonConvert.SerializeObject(oldLinkedAccounts, Formatting.Indented)}");
+
+var emailWalletFresh = await EcosystemWallet.Create(ecosystemId: "ecosystem.bonfire-development", client: client, email: "firekeeper+guestupgrade5@thirdweb.com");
 _ = await emailWalletFresh.SendOTP();
 Console.WriteLine("Enter OTP:");
 var otp = Console.ReadLine();
