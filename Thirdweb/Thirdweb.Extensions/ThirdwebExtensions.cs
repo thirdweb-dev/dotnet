@@ -1211,30 +1211,46 @@ public static class ThirdwebExtensions
             throw new ArgumentException("Owner must be provided");
         }
 
+        // ERC721AQueryable
         try
         {
-            var balanceOfOwner = await contract.ERC721_BalanceOf(owner).ConfigureAwait(false);
+            var tokensOfOwner = await ThirdwebContract.Read<List<BigInteger>>(contract, "tokensOfOwner", owner).ConfigureAwait(false);
             var ownedNftTasks = new List<Task<NFT>>();
-            for (var i = 0; i < balanceOfOwner; i++)
+            foreach (var tokenId in tokensOfOwner)
             {
-                var tokenOfOwnerByIndex = await contract.ERC721_TokenOfOwnerByIndex(owner, i).ConfigureAwait(false);
-                ownedNftTasks.Add(contract.ERC721_GetNFT(tokenOfOwnerByIndex));
+                ownedNftTasks.Add(contract.ERC721_GetNFT(tokenId));
             }
             var ownedNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
             return ownedNfts.ToList();
         }
-        catch (Exception)
+        catch
         {
-            var allNfts = await contract.ERC721_GetAllNFTs().ConfigureAwait(false);
-            var ownedNfts = new List<NFT>();
-            foreach (var nft in allNfts)
+            // ERC721Enumerable
+            try
             {
-                if (nft.Owner == owner)
+                var balanceOfOwner = await contract.ERC721_BalanceOf(owner).ConfigureAwait(false);
+                var ownedNftTasks = new List<Task<NFT>>();
+                for (var i = 0; i < balanceOfOwner; i++)
                 {
-                    ownedNfts.Add(nft);
+                    var tokenOfOwnerByIndex = await contract.ERC721_TokenOfOwnerByIndex(owner, i).ConfigureAwait(false);
+                    ownedNftTasks.Add(contract.ERC721_GetNFT(tokenOfOwnerByIndex));
                 }
+                var ownedNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
+                return ownedNfts.ToList();
             }
-            return ownedNfts.ToList();
+            catch (Exception)
+            {
+                var allNfts = await contract.ERC721_GetAllNFTs().ConfigureAwait(false);
+                var ownedNfts = new List<NFT>();
+                foreach (var nft in allNfts)
+                {
+                    if (nft.Owner == owner)
+                    {
+                        ownedNfts.Add(nft);
+                    }
+                }
+                return ownedNfts.ToList();
+            }
         }
     }
 
