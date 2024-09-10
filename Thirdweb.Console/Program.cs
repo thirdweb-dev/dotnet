@@ -280,22 +280,22 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region InAppWallet - OAuth
 
-// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Telegram);
-// if (!await inAppWalletOAuth.IsConnected())
-// {
-//     _ = await inAppWalletOAuth.LoginWithOauth(
-//         isMobile: false,
-//         (url) =>
-//         {
-//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-//             _ = Process.Start(psi);
-//         },
-//         "thirdweb://",
-//         new InAppWalletBrowser()
-//     );
-// }
-// var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
-// Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
+var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Line);
+if (!await inAppWalletOAuth.IsConnected())
+{
+    _ = await inAppWalletOAuth.LoginWithOauth(
+        isMobile: false,
+        (url) =>
+        {
+            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+            _ = Process.Start(psi);
+        },
+        "thirdweb://",
+        new InAppWalletBrowser()
+    );
+}
+var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
+Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
 
 #endregion
 

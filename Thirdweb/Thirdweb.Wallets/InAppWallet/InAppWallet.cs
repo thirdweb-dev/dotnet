@@ -20,7 +20,8 @@ public enum AuthProvider
     Discord,
     Farcaster,
     Telegram,
-    Siwe
+    Siwe,
+    Line
 }
 
 public struct LinkedAccount
@@ -99,6 +100,7 @@ public class InAppWallet : PrivateKeyWallet
             Thirdweb.AuthProvider.Farcaster => "Farcaster",
             Thirdweb.AuthProvider.Telegram => "Telegram",
             Thirdweb.AuthProvider.Siwe => "Siwe",
+            Thirdweb.AuthProvider.Line => "Line",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -219,6 +221,7 @@ public class InAppWallet : PrivateKeyWallet
             case "Discord":
             case "Farcaster":
             case "Telegram":
+            case "Line":
                 serverRes = await walletToLink.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:
