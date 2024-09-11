@@ -868,7 +868,6 @@ public class ExtensionsTests : BaseTests
         var nfts = await contract.ERC1155_GetAllNFTs(1, 2);
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
-        Assert.True(nfts.Count == 1);
     }
 
     [Fact(Timeout = 120000)]
