@@ -35,7 +35,7 @@ internal abstract class ServerBase
 
 internal partial class Server : ServerBase
 {
-    private const string ROOT_URL = "https://embedded-wallet.thirdweb-dev.com";
+    private const string ROOT_URL = "https://embedded-wallet.thirdweb.com";
     private const string API_ROOT_PATH_2024 = "/api/2024-05-05";
     private const string API_ROOT_PATH_2023 = "/api/2023-10-20";
 

@@ -19,10 +19,7 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
 // Fetch timeout options are optional, default is 120000ms
-var client = ThirdwebClient.Create(
-    secretKey: "_1xieXygv2AIOIQVkyTCe-zDc6pqLXcCN24gACtZbT1sVoBiD2fZdgKx6CdFeXhv1nabgHU5DcwNSL1O9RQOCQ",
-    fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000)
-);
+var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000));
 
 // Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
@@ -77,7 +74,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Ecosystem Wallet
 
-// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.bonfire-development", email: "firekeeper+linkeco@thirdweb.com");
+// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", email: "firekeeper+linkeco@thirdweb.com");
 
 // if (!await ecosystemWallet.IsConnected())
 // {
@@ -101,7 +98,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // Console.WriteLine($"Ecosystem Wallet typed sign: {ecosystemTypedSignature}");
 
 // var siweSigner = await PrivateKeyWallet.Generate(client: client);
-// var ecosystemWalletOther = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.bonfire-development", authProvider: AuthProvider.Siwe, siweSigner: siweSigner);
+// var ecosystemWalletOther = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Siwe, siweSigner: siweSigner);
 // var linkedAccounts = await ecosystemWallet.LinkAccount(walletToLink: ecosystemWalletOther, chainId: 421614);
 // Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
 
@@ -170,24 +167,24 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Guest Login
 
-var guestWallet = await EcosystemWallet.Create(ecosystemId: "ecosystem.bonfire-development", client: client, authProvider: AuthProvider.Guest);
-if (!await guestWallet.IsConnected())
-{
-    _ = await guestWallet.LoginWithGuest();
-}
-var address = await guestWallet.GetAddress();
-Console.WriteLine($"Guest address: {address}");
+// var guestWallet = await EcosystemWallet.Create(ecosystemId: "ecosystem.the-bonfire", client: client, authProvider: AuthProvider.Guest);
+// if (!await guestWallet.IsConnected())
+// {
+//     _ = await guestWallet.LoginWithGuest();
+// }
+// var address = await guestWallet.GetAddress();
+// Console.WriteLine($"Guest address: {address}");
 
-var oldLinkedAccounts = await guestWallet.GetLinkedAccounts();
-Console.WriteLine($"Old linked accounts: {JsonConvert.SerializeObject(oldLinkedAccounts, Formatting.Indented)}");
+// var oldLinkedAccounts = await guestWallet.GetLinkedAccounts();
+// Console.WriteLine($"Old linked accounts: {JsonConvert.SerializeObject(oldLinkedAccounts, Formatting.Indented)}");
 
-var emailWalletFresh = await EcosystemWallet.Create(ecosystemId: "ecosystem.bonfire-development", client: client, email: "firekeeper+guestupgrade5@thirdweb.com");
-_ = await emailWalletFresh.SendOTP();
-Console.WriteLine("Enter OTP:");
-var otp = Console.ReadLine();
+// var emailWalletFresh = await EcosystemWallet.Create(ecosystemId: "ecosystem.the-bonfire", client: client, email: "firekeeper+guestupgrade5@thirdweb.com");
+// _ = await emailWalletFresh.SendOTP();
+// Console.WriteLine("Enter OTP:");
+// var otp = Console.ReadLine();
 
-var linkedAccounts = await guestWallet.LinkAccount(walletToLink: emailWalletFresh, otp: otp);
-Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
+// var linkedAccounts = await guestWallet.LinkAccount(walletToLink: emailWalletFresh, otp: otp);
+// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
 
 #endregion
 

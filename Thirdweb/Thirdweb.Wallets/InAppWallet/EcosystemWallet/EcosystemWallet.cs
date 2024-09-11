@@ -21,8 +21,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
     private string _address;
 
-    private const string EMBEDDED_WALLET_PATH_2024 = "https://embedded-wallet.thirdweb-dev.com/api/2024-05-05";
-    private const string EMBEDDED_WALLET_PATH_V1 = "https://embedded-wallet.thirdweb-dev.com/api/v1";
+    private const string EMBEDDED_WALLET_PATH_2024 = "https://embedded-wallet.thirdweb.com/api/2024-05-05";
+    private const string EMBEDDED_WALLET_PATH_V1 = "https://embedded-wallet.thirdweb.com/api/v1";
     private const string ENCLAVE_PATH = $"{EMBEDDED_WALLET_PATH_V1}/enclave-wallet";
 
     private EcosystemWallet(ThirdwebClient client, EmbeddedWallet embeddedWallet, IThirdwebHttpClient httpClient, string email, string phoneNumber, string authProvider, IThirdwebWallet siweSigner)
