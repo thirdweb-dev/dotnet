@@ -206,11 +206,11 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // }
 // Console.WriteLine($"Main InAppWallet address: {await inAppWalletMain.GetAddress()}");
 
-// var inAppWalletToLink = await InAppWallet.Create(client: client, authProvider: AuthProvider.Siwe, siweSigner: privateKeyWallet);
-// _ = inAppWalletToLink.SendOTP();
-// Console.WriteLine("Enter OTP:");
-// var otp = Console.ReadLine();
-// _ = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink, otp: otp);
+// var oldLinkedAccounts = await inAppWalletMain.GetLinkedAccounts();
+// Console.WriteLine($"Old linked accounts: {JsonConvert.SerializeObject(oldLinkedAccounts, Formatting.Indented)}");
+
+// var inAppWalletToLink = await InAppWallet.Create(client: client, authProvider: AuthProvider.Guest);
+// _ = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink);
 
 // var linkedAccounts = await inAppWalletMain.GetLinkedAccounts();
 // Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
@@ -302,7 +302,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region InAppWallet - OAuth
 
-// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Telegram);
+// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Line);
 // if (!await inAppWalletOAuth.IsConnected())
 // {
 //     _ = await inAppWalletOAuth.LoginWithOauth(

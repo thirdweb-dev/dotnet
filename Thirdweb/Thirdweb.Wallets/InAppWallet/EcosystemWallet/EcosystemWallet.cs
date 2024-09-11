@@ -75,6 +75,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             AuthProvider.Farcaster => "Farcaster",
             AuthProvider.Telegram => "Telegram",
             AuthProvider.Siwe => "Siwe",
+            AuthProvider.Line => "Line",
             AuthProvider.Guest => "Guest",
             AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
@@ -302,6 +303,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             case "Discord":
             case "Farcaster":
             case "Telegram":
+            case "Line":
                 serverRes = await walletToLink.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:
