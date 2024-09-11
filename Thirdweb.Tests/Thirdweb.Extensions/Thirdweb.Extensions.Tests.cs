@@ -836,7 +836,11 @@ public class ExtensionsTests : BaseTests
         var ownerAddress = "0x10a798EC43A776c39BA19978EDb6e4a7706326FA";
         var nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress, 0, 280);
         Assert.NotNull(nfts);
-        Assert.True(nfts.Count > 0);
+        Assert.True(nfts.Count == 2);
+
+        nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress, 0, 1);
+        Assert.NotNull(nfts);
+        Assert.True(nfts.Count == 1);
     }
 
     [Fact(Timeout = 120000)]
