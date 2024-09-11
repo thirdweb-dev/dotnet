@@ -20,7 +20,8 @@ public enum AuthProvider
     Discord,
     Farcaster,
     Telegram,
-    Siwe
+    Siwe,
+    Guest
 }
 
 public struct LinkedAccount
@@ -99,6 +100,7 @@ public class InAppWallet : PrivateKeyWallet
             Thirdweb.AuthProvider.Farcaster => "Farcaster",
             Thirdweb.AuthProvider.Telegram => "Telegram",
             Thirdweb.AuthProvider.Siwe => "Siwe",
+            Thirdweb.AuthProvider.Guest => "Guest",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -108,7 +110,7 @@ public class InAppWallet : PrivateKeyWallet
         EthECKey ecKey;
         try
         {
-            var user = await embeddedWallet.GetUserAsync(email, phoneNumber, authproviderStr);
+            var user = await embeddedWallet.GetUserAsync(email, phoneNumber, authproviderStr).ConfigureAwait(false);
             ecKey = new EthECKey(user.Account.PrivateKey);
         }
         catch
@@ -124,8 +126,8 @@ public class InAppWallet : PrivateKeyWallet
     /// <returns>A task representing the asynchronous operation.</returns>
     public override async Task Disconnect()
     {
-        await base.Disconnect();
-        await this.EmbeddedWallet.SignOutAsync();
+        await base.Disconnect().ConfigureAwait(false);
+        await this.EmbeddedWallet.SignOutAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -160,7 +162,7 @@ public class InAppWallet : PrivateKeyWallet
         string payload = null
     )
     {
-        if (!await this.IsConnected())
+        if (!await this.IsConnected().ConfigureAwait(false))
         {
             throw new InvalidOperationException("Cannot link account with a wallet that is not connected. Please login to the wallet before linking other wallets.");
         }
@@ -170,7 +172,7 @@ public class InAppWallet : PrivateKeyWallet
             throw new ArgumentNullException(nameof(walletToLink), "Wallet to link cannot be null.");
         }
 
-        if (await walletToLink.IsConnected())
+        if (await walletToLink.IsConnected().ConfigureAwait(false))
         {
             throw new ArgumentException("Cannot link account with a wallet that is already created and connected.");
         }
@@ -212,6 +214,9 @@ public class InAppWallet : PrivateKeyWallet
                     throw new ArgumentException("Cannot link account with an AuthEndpoint wallet without a payload.");
                 }
                 serverRes = await walletToLink.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
+                break;
+            case "Guest":
+                serverRes = await walletToLink.PreAuth_Guest().ConfigureAwait(false);
                 break;
             case "Google":
             case "Apple":
@@ -378,7 +383,9 @@ public class InAppWallet : PrivateKeyWallet
 
         try
         {
-            return this.Email == null ? await this.EmbeddedWallet.SendPhoneOtpAsync(this.PhoneNumber) : await this.EmbeddedWallet.SendEmailOtpAsync(this.Email);
+            return this.Email == null
+                ? await this.EmbeddedWallet.SendPhoneOtpAsync(this.PhoneNumber).ConfigureAwait(false)
+                : await this.EmbeddedWallet.SendEmailOtpAsync(this.Email).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -421,8 +428,8 @@ public class InAppWallet : PrivateKeyWallet
         return string.IsNullOrEmpty(this.Email) && string.IsNullOrEmpty(this.PhoneNumber)
             ? throw new Exception("Email or Phone Number is required for OTP login")
             : this.Email == null
-                ? await this.EmbeddedWallet.VerifyPhoneOtpAsync(this.PhoneNumber, otp)
-                : await this.EmbeddedWallet.VerifyEmailOtpAsync(this.Email, otp);
+                ? await this.EmbeddedWallet.VerifyPhoneOtpAsync(this.PhoneNumber, otp).ConfigureAwait(false)
+                : await this.EmbeddedWallet.VerifyEmailOtpAsync(this.Email, otp).ConfigureAwait(false);
     }
 
     #endregion
@@ -440,7 +447,7 @@ public class InAppWallet : PrivateKeyWallet
     public async Task<string> LoginWithSiwe(BigInteger chainId)
     {
         var serverRes = await this.PreAuth_Siwe(this.SiweSigner, chainId).ConfigureAwait(false);
-        return await this.PostAuth(serverRes, null, "Siwe");
+        return await this.PostAuth(serverRes, null, "Siwe").ConfigureAwait(false);
     }
 
     private async Task<Server.VerifyResult> PreAuth_Siwe(IThirdwebWallet signer, BigInteger chainId)
@@ -455,7 +462,33 @@ public class InAppWallet : PrivateKeyWallet
             throw new InvalidOperationException("SIWE Signer wallet must be connected as this operation requires it to sign a message.");
         }
 
-        return chainId <= 0 ? throw new ArgumentException(nameof(chainId), "Chain ID must be greater than 0.") : await this.EmbeddedWallet.SignInWithSiweAsync(signer, chainId);
+        return chainId <= 0 ? throw new ArgumentException(nameof(chainId), "Chain ID must be greater than 0.") : await this.EmbeddedWallet.SignInWithSiweAsync(signer, chainId).ConfigureAwait(false);
+    }
+
+    #endregion
+
+    #region Guest
+
+    public async Task<string> LoginWithGuest()
+    {
+        var serverRes = await this.PreAuth_Guest().ConfigureAwait(false);
+        return await this.PostAuth(serverRes, null, "Guest").ConfigureAwait(false);
+    }
+
+    private async Task<Server.VerifyResult> PreAuth_Guest()
+    {
+        var sessionData = this.EmbeddedWallet.GetSessionData();
+        string sessionId;
+        if (sessionData != null && sessionData.AuthProvider == "Guest" && !string.IsNullOrEmpty(sessionData.AuthIdentifier))
+        {
+            sessionId = sessionData.AuthIdentifier;
+        }
+        else
+        {
+            sessionId = Guid.NewGuid().ToString();
+        }
+        var serverRes = await this.EmbeddedWallet.SignInWithGuestAsync(sessionId).ConfigureAwait(false);
+        return serverRes;
     }
 
     #endregion
@@ -478,12 +511,12 @@ public class InAppWallet : PrivateKeyWallet
         }
 
         var serverRes = await this.PreAuth_JWT(jwt).ConfigureAwait(false);
-        return await this.PostAuth(serverRes, encryptionKey, "JWT");
+        return await this.PostAuth(serverRes, encryptionKey, "JWT").ConfigureAwait(false);
     }
 
     private async Task<Server.VerifyResult> PreAuth_JWT(string jwt)
     {
-        return string.IsNullOrEmpty(jwt) ? throw new ArgumentException(nameof(jwt), "JWT cannot be null or empty.") : await this.EmbeddedWallet.SignInWithJwtAsync(jwt);
+        return string.IsNullOrEmpty(jwt) ? throw new ArgumentException(nameof(jwt), "JWT cannot be null or empty.") : await this.EmbeddedWallet.SignInWithJwtAsync(jwt).ConfigureAwait(false);
     }
 
     #endregion
@@ -506,12 +539,14 @@ public class InAppWallet : PrivateKeyWallet
         }
 
         var serverRes = await this.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
-        return await this.PostAuth(serverRes, encryptionKey, "AuthEndpoint");
+        return await this.PostAuth(serverRes, encryptionKey, "AuthEndpoint").ConfigureAwait(false);
     }
 
     private async Task<Server.VerifyResult> PreAuth_AuthEndpoint(string payload)
     {
-        return string.IsNullOrEmpty(payload) ? throw new ArgumentException(nameof(payload), "Payload cannot be null or empty.") : await this.EmbeddedWallet.SignInWithAuthEndpointAsync(payload);
+        return string.IsNullOrEmpty(payload)
+            ? throw new ArgumentException(nameof(payload), "Payload cannot be null or empty.")
+            : await this.EmbeddedWallet.SignInWithAuthEndpointAsync(payload).ConfigureAwait(false);
     }
 
     #endregion
@@ -524,6 +559,6 @@ public class InAppWallet : PrivateKeyWallet
             throw new Exception($"Failed to login with {authProvider}");
         }
         this.EcKey = new EthECKey(res.User.Account.PrivateKey);
-        return await this.GetAddress();
+        return await this.GetAddress().ConfigureAwait(false);
     }
 }

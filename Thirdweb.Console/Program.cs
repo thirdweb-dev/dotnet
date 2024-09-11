@@ -74,20 +74,14 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Ecosystem Wallet
 
-// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Google);
+// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", email: "firekeeper+linkeco@thirdweb.com");
 
 // if (!await ecosystemWallet.IsConnected())
 // {
-//     _ = await ecosystemWallet.LoginWithOauth(
-//         isMobile: false,
-//         (url) =>
-//         {
-//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-//             _ = Process.Start(psi);
-//         },
-//         "thirdweb://",
-//         new InAppWalletBrowser()
-//     );
+//     _ = await ecosystemWallet.SendOTP();
+//     Console.WriteLine("Enter OTP:");
+//     var otp = Console.ReadLine();
+//     _ = await ecosystemWallet.LoginWithOtp(otp: otp);
 // }
 // var ecosystemWalletAddress = await ecosystemWallet.GetAddress();
 // Console.WriteLine($"Ecosystem Wallet address: {ecosystemWalletAddress}");
@@ -102,6 +96,11 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 //     "{\"types\": {\"EIP712Domain\": [{\"name\": \"name\",\"type\": \"string\"},{\"name\": \"version\",\"type\": \"string\"},{\"name\": \"chainId\",\"type\": \"uint256\"},{\"name\": \"verifyingContract\",\"type\": \"address\"}],\"Person\": [{\"name\": \"name\",\"type\": \"string\"},{\"name\": \"wallet\",\"type\": \"address\"}],\"Mail\": [{\"name\": \"from\",\"type\": \"Person\"},{\"name\": \"to\",\"type\": \"Person\"},{\"name\": \"contents\",\"type\": \"string\"}]},\"primaryType\": \"Mail\",\"domain\": {\"name\": \"Ether Mail\",\"version\": \"1\",\"chainId\": 1,\"verifyingContract\": \"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\": {\"from\": {\"name\": \"Cow\",\"wallet\": \"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\": {\"name\": \"Bob\",\"wallet\": \"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\"},\"contents\": \"Hello, Bob!\"}}"
 // );
 // Console.WriteLine($"Ecosystem Wallet typed sign: {ecosystemTypedSignature}");
+
+// var siweSigner = await PrivateKeyWallet.Generate(client: client);
+// var ecosystemWalletOther = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Siwe, siweSigner: siweSigner);
+// var linkedAccounts = await ecosystemWallet.LinkAccount(walletToLink: ecosystemWalletOther, chainId: 421614);
+// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
 
 // var ecosystemSmartWallet = await SmartWallet.Create(ecosystemWallet, 421614);
 
@@ -163,6 +162,29 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // var rpcInstance = ThirdwebRPC.GetRpcInstance(client, chainId);
 // var hash = await rpcInstance.SendRequestAsync<string>("eth_sendRawTransaction", signedZkRawTx);
 // Console.WriteLine($"Transaction hash: {hash}");
+
+#endregion
+
+#region Guest Login
+
+// var guestWallet = await EcosystemWallet.Create(ecosystemId: "ecosystem.the-bonfire", client: client, authProvider: AuthProvider.Guest);
+// if (!await guestWallet.IsConnected())
+// {
+//     _ = await guestWallet.LoginWithGuest();
+// }
+// var address = await guestWallet.GetAddress();
+// Console.WriteLine($"Guest address: {address}");
+
+// var oldLinkedAccounts = await guestWallet.GetLinkedAccounts();
+// Console.WriteLine($"Old linked accounts: {JsonConvert.SerializeObject(oldLinkedAccounts, Formatting.Indented)}");
+
+// var emailWalletFresh = await EcosystemWallet.Create(ecosystemId: "ecosystem.the-bonfire", client: client, email: "firekeeper+guestupgrade5@thirdweb.com");
+// _ = await emailWalletFresh.SendOTP();
+// Console.WriteLine("Enter OTP:");
+// var otp = Console.ReadLine();
+
+// var linkedAccounts = await guestWallet.LinkAccount(walletToLink: emailWalletFresh, otp: otp);
+// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
 
 #endregion
 
