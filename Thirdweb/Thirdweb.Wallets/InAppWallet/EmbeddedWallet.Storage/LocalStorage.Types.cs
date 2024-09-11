@@ -13,6 +13,7 @@ internal partial class LocalStorage : LocalStorageBase
         internal string PhoneNumber => this._phoneNumber;
         internal string WalletUserId => this._walletUserId;
         internal string AuthProvider => this._authProvider;
+        internal string AuthIdentifier => this._authIdentifier;
 
         [DataMember(Name = "authToken")]
         private string _authToken;
@@ -32,7 +33,10 @@ internal partial class LocalStorage : LocalStorageBase
         [DataMember(Name = "authProvider")]
         private string _authProvider;
 
-        internal DataStorage(string authToken, string deviceShare, string emailAddress, string phoneNumber, string walletUserId, string authProvider)
+        [DataMember(Name = "authIdentifier")]
+        private string _authIdentifier;
+
+        internal DataStorage(string authToken, string deviceShare, string emailAddress, string phoneNumber, string walletUserId, string authProvider, string authIdentifier)
         {
             this._authToken = authToken;
             this._deviceShare = deviceShare;
@@ -40,11 +44,7 @@ internal partial class LocalStorage : LocalStorageBase
             this._phoneNumber = phoneNumber;
             this._walletUserId = walletUserId;
             this._authProvider = authProvider;
-        }
-
-        internal void ClearAuthToken()
-        {
-            this._authToken = null;
+            this._authIdentifier = authIdentifier;
         }
     }
 

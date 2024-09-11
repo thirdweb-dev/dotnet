@@ -16,24 +16,19 @@ internal partial class EmbeddedWallet
 
     internal async Task<VerifyResult> PostAuthSetup(Server.VerifyResult result, string twManagedRecoveryCodeOverride, string authProvider)
     {
-        var walletUserId = result.WalletUserId;
-        var authToken = result.AuthToken;
-        var emailAddress = result.Email;
-        var phoneNumber = result.PhoneNumber;
-
         var mainRecoveryCode = (twManagedRecoveryCodeOverride ?? result.RecoveryCode) ?? throw new InvalidOperationException("Server failed to return recovery code.");
 
         (var account, var deviceShare) = result.IsNewUser
             ? await this.CreateAccountAsync(result.AuthToken, mainRecoveryCode).ConfigureAwait(false)
             : await this.RecoverAccountAsync(result.AuthToken, mainRecoveryCode).ConfigureAwait(false);
-        var user = await this.MakeUserAsync(emailAddress, phoneNumber, account, authToken, walletUserId, deviceShare, authProvider).ConfigureAwait(false);
+        var user = this.MakeUserAsync(result.Email, result.PhoneNumber, account, result.AuthToken, result.WalletUserId, deviceShare, authProvider, result.AuthIdentifier);
         return new VerifyResult(user, mainRecoveryCode);
     }
 
     public async Task SignOutAsync()
     {
         this._user = null;
-        await this._localStorage.RemoveAuthTokenAsync().ConfigureAwait(false);
+        await this._localStorage.SaveDataAsync(new LocalStorage.DataStorage(null, null, null, null, null, null, null)).ConfigureAwait(false);
     }
 
     public async Task<User> GetUserAsync(string email, string phone, string authProvider)
@@ -87,10 +82,10 @@ internal partial class EmbeddedWallet
         throw new InvalidOperationException($"Unexpected user status '{userWallet.Status}'");
     }
 
-    private async Task<User> MakeUserAsync(string emailAddress, string phoneNumber, Account account, string authToken, string walletUserId, string deviceShare, string authProvider)
+    private User MakeUserAsync(string emailAddress, string phoneNumber, Account account, string authToken, string walletUserId, string deviceShare, string authProvider, string authIdentifier)
     {
-        var data = new LocalStorage.DataStorage(authToken, deviceShare, emailAddress, phoneNumber, walletUserId, authProvider);
-        await this._localStorage.SaveDataAsync(data).ConfigureAwait(false);
+        var data = new LocalStorage.DataStorage(authToken, deviceShare, emailAddress, phoneNumber, walletUserId, authProvider, authIdentifier);
+        this.UpdateSessionData(data);
         this._user = new User(account, emailAddress, phoneNumber);
         return this._user;
     }

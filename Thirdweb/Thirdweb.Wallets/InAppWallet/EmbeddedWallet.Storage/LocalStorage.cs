@@ -6,7 +6,6 @@ internal abstract class LocalStorageBase
 {
     internal abstract LocalStorage.DataStorage Data { get; }
 
-    internal abstract Task RemoveAuthTokenAsync();
     internal abstract Task SaveDataAsync(LocalStorage.DataStorage data);
 }
 
@@ -35,19 +34,6 @@ internal partial class LocalStorage : LocalStorageBase
         {
             this._storage = new Storage();
         }
-    }
-
-    internal override Task RemoveAuthTokenAsync()
-    {
-        return this.UpdateDataAsync(() =>
-        {
-            if (this._storage.Data?.AuthToken != null)
-            {
-                this._storage.Data.ClearAuthToken();
-                return true;
-            }
-            return false;
-        });
     }
 
     private async Task<bool> UpdateDataAsync(Func<bool> fn)

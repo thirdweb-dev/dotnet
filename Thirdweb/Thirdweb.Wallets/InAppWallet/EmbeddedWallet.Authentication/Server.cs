@@ -17,6 +17,8 @@ internal abstract class ServerBase
     internal abstract Task<LoginPayloadData> FetchSiwePayloadAsync(string address, string chainId);
     internal abstract Task<Server.VerifyResult> VerifySiweAsync(LoginPayloadData payload, string signature);
 
+    internal abstract Task<Server.VerifyResult> VerifyGuestAsync(string sessionId);
+
     internal abstract Task<string> SendEmailOtpAsync(string emailAddress);
     internal abstract Task<Server.VerifyResult> VerifyEmailOtpAsync(string emailAddress, string otp);
 
@@ -180,6 +182,20 @@ internal partial class Server : ServerBase
         return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
     }
 
+    // login/guest
+
+    internal override async Task<VerifyResult> VerifyGuestAsync(string sessionId)
+    {
+        var uri = MakeUri2024("/login/guest/callback");
+        var content = MakeHttpContent(new { sessionId });
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        await CheckStatusCodeAsync(response).ConfigureAwait(false);
+
+        var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
+        authResult.StoredToken.AuthDetails.AuthIdentifier = sessionId;
+        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+    }
+
     // login/oauthprovider
     internal override Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform)
     {
@@ -245,12 +261,14 @@ internal partial class Server : ServerBase
 
         var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response).ConfigureAwait(false);
         return new VerifyResult(
+            authVerifiedToken.VerifiedToken.AuthProvider,
             authVerifiedToken.VerifiedToken.IsNewUser,
             authVerifiedToken.VerifiedTokenJwtString,
             authVerifiedToken.VerifiedToken.AuthDetails.UserWalletId,
             authVerifiedToken.VerifiedToken.AuthDetails.RecoveryCode,
             authVerifiedToken.VerifiedToken.AuthDetails.Email,
-            authVerifiedToken.VerifiedToken.AuthDetails.PhoneNumber
+            authVerifiedToken.VerifiedToken.AuthDetails.PhoneNumber,
+            authVerifiedToken.VerifiedToken.AuthDetails.AuthIdentifier
         );
     }
 
@@ -265,12 +283,14 @@ internal partial class Server : ServerBase
 
         var authVerifiedToken = await DeserializeAsync<AuthVerifiedTokenReturnType>(response).ConfigureAwait(false);
         return new VerifyResult(
+            authVerifiedToken.VerifiedToken.AuthProvider,
             authVerifiedToken.VerifiedToken.IsNewUser,
             authVerifiedToken.VerifiedTokenJwtString,
             authVerifiedToken.VerifiedToken.AuthDetails.UserWalletId,
             authVerifiedToken.VerifiedToken.AuthDetails.RecoveryCode,
             authVerifiedToken.VerifiedToken.AuthDetails.Email,
-            authVerifiedToken.VerifiedToken.AuthDetails.PhoneNumber
+            authVerifiedToken.VerifiedToken.AuthDetails.PhoneNumber,
+            authVerifiedToken.VerifiedToken.AuthDetails.AuthIdentifier
         );
     }
 
@@ -294,12 +314,14 @@ internal partial class Server : ServerBase
         var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));
         payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StringReader(payload.Body)));
         return new VerifyResult(
+            authResult.StoredToken.AuthProvider,
             authResult.StoredToken.IsNewUser,
             authToken,
             authResult.StoredToken.AuthDetails.UserWalletId,
             payload.RecoverySharePassword,
             authResult.StoredToken.AuthDetails.Email,
-            authResult.StoredToken.AuthDetails.PhoneNumber
+            authResult.StoredToken.AuthDetails.PhoneNumber,
+            authResult.StoredToken.AuthDetails.AuthIdentifier
         );
     }
 
