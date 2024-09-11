@@ -303,6 +303,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             case "Discord":
             case "Farcaster":
             case "Telegram":
+            case "Line":
                 serverRes = await walletToLink.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:
