@@ -24,6 +24,13 @@ public static class ThirdwebStorage
             throw new ArgumentNullException(nameof(uri));
         }
 
+        if (uri.StartsWith("data:application/json;base64,"))
+        {
+            var base64Data = uri["data:application/json;base64,".Length..];
+            var jsonData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64Data));
+            return JsonConvert.DeserializeObject<T>(jsonData);
+        }
+
         uri = uri.ReplaceIPFS($"https://{client.ClientId}.ipfscdn.io/ipfs/");
 
         using var cts = new CancellationTokenSource(requestTimeout ?? client.FetchTimeoutOptions.GetTimeout(TimeoutType.Storage));
@@ -94,8 +101,6 @@ public static class ThirdwebStorage
     /// <exception cref="ArgumentNullException">Thrown if the path is null or empty.</exception>
     public static async Task<IPFSUploadResult> Upload(ThirdwebClient client, string path)
     {
-        return string.IsNullOrEmpty(path)
-            ? throw new ArgumentNullException(nameof(path))
-            : await UploadRaw(client, await File.ReadAllBytesAsync(path).ConfigureAwait(false)).ConfigureAwait(false);
+        return string.IsNullOrEmpty(path) ? throw new ArgumentNullException(nameof(path)) : await UploadRaw(client, await File.ReadAllBytesAsync(path).ConfigureAwait(false)).ConfigureAwait(false);
     }
 }

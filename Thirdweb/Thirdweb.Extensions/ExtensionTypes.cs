@@ -236,6 +236,12 @@ public struct NFTMetadata
     /// </summary>
     [JsonProperty("attributes")]
     public object Attributes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the properties of the NFT.
+    /// </summary>
+    [JsonProperty("properties")]
+    public object Properties { get; set; }
 }
 
 #endregion
