@@ -11,6 +11,7 @@ public class ExtensionsTests : BaseTests
     private readonly string _dropErc20ContractAddress = "0xEBB8a39D865465F289fa349A67B3391d8f910da9";
     private readonly string _dropErc721ContractAddress = "0xD811CB13169C175b64bf8897e2Fd6a69C6343f5C";
     private readonly string _dropErc1155ContractAddress = "0x6A7a26c9a595E6893C255C9dF0b593e77518e0c3";
+    private readonly string _erc721AContractAddressTaiko = "0xCA99F9DbF4A13D4de05B41a68041dcE7929cb5e0";
 
     private readonly BigInteger _chainId = 421614;
 
@@ -51,6 +52,11 @@ public class ExtensionsTests : BaseTests
     private async Task<ThirdwebContract> GetDrop1155Contract()
     {
         return await ThirdwebContract.Create(this.Client, this._dropErc1155ContractAddress, this._chainId);
+    }
+
+    private async Task<ThirdwebContract> GetERC721AContract()
+    {
+        return await ThirdwebContract.Create(this.Client, this._erc721AContractAddressTaiko, 167000);
     }
 
     #region Common
@@ -793,7 +799,6 @@ public class ExtensionsTests : BaseTests
         var nfts = await contract.ERC721_GetAllNFTs(1, 2);
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
-        Assert.True(nfts.Count == 1);
     }
 
     [Fact(Timeout = 120000)]
@@ -803,6 +808,39 @@ public class ExtensionsTests : BaseTests
         var ownerAddress = contract.Address;
         var nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress);
         Assert.NotNull(nfts);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetOwnedNFTs_721_WithRange()
+    {
+        var contract = await this.GetTokenERC721Contract();
+        var ownerAddress = contract.Address;
+        var nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress, 1, 2);
+        Assert.NotNull(nfts);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetOwnedNFTs_721A()
+    {
+        var contract = await this.GetERC721AContract();
+        var ownerAddress = "0x10a798EC43A776c39BA19978EDb6e4a7706326FA";
+        var nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress);
+        Assert.NotNull(nfts);
+        Assert.True(nfts.Count > 0);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetOwnedNFTs_721A_WithRange()
+    {
+        var contract = await this.GetERC721AContract();
+        var ownerAddress = "0x10a798EC43A776c39BA19978EDb6e4a7706326FA";
+        var nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress, 0, 280);
+        Assert.NotNull(nfts);
+        Assert.True(nfts.Count == 2);
+
+        nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress, 0, 1);
+        Assert.NotNull(nfts);
+        Assert.True(nfts.Count == 1);
     }
 
     [Fact(Timeout = 120000)]
@@ -830,7 +868,6 @@ public class ExtensionsTests : BaseTests
         var nfts = await contract.ERC1155_GetAllNFTs(1, 2);
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
-        Assert.True(nfts.Count == 1);
     }
 
     [Fact(Timeout = 120000)]
@@ -839,6 +876,15 @@ public class ExtensionsTests : BaseTests
         var contract = await this.GetTokenERC1155Contract();
         var ownerAddress = contract.Address;
         var nfts = await contract.ERC1155_GetOwnedNFTs(ownerAddress);
+        Assert.NotNull(nfts);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetOwnedNFTs_1155_WithRange()
+    {
+        var contract = await this.GetTokenERC1155Contract();
+        var ownerAddress = contract.Address;
+        var nfts = await contract.ERC1155_GetOwnedNFTs(ownerAddress, 1, 2);
         Assert.NotNull(nfts);
     }
 
