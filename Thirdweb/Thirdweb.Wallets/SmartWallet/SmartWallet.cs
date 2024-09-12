@@ -333,6 +333,8 @@ public class SmartWallet : IThirdwebWallet
             if (this.IsDeploying)
             {
                 initCode = Array.Empty<byte>();
+                factory = null;
+                factoryData = null;
             }
 
             while (this.IsDeploying)

@@ -287,6 +287,27 @@ public class SmartWalletTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task ExecuteTransaction_07_WhenAll_Success()
+    {
+        var smartWallet07 = await SmartWallet.Create(
+            personalWallet: await PrivateKeyWallet.Generate(this.Client),
+            chainId: 11155111,
+            gasless: true,
+            factoryAddress: "0xc5A43D081Dc10316EE640504Ea1cBc74666F3874",
+            entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
+        );
+
+        var hash07 = smartWallet07.ExecuteTransaction(new ThirdwebTransactionInput(11155111) { To = await smartWallet07.GetAddress(), });
+        var hash07_2 = smartWallet07.ExecuteTransaction(new ThirdwebTransactionInput(11155111) { To = await smartWallet07.GetAddress(), });
+
+        var hashes = await Task.WhenAll(hash07, hash07_2);
+
+        Assert.True(hashes.Length == 2);
+        Assert.True(hashes[0].TransactionHash.Length == 66);
+        Assert.True(hashes[1].TransactionHash.Length == 66);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task MultiChainTransaction_Success()
     {
         var chainId1 = 11155111;
