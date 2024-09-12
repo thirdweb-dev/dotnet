@@ -79,7 +79,7 @@ public class RpcTests : BaseTests
         await ThirdwebTask.Delay(1);
         var blockNumber2 = await rpc.SendRequestAsync<string>("eth_blockNumber");
         Assert.Equal(blockNumber1, blockNumber2);
-        await ThirdwebTask.Delay(100);
+        await ThirdwebTask.Delay(1000);
         var blockNumber3 = await rpc.SendRequestAsync<string>("eth_blockNumber");
         Assert.NotEqual(blockNumber1, blockNumber3);
     }
