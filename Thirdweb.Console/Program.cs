@@ -55,6 +55,18 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region AA Modular
+
+var smartWalletModular = await ModularSmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11155111, gasless: true, factoryAddress: "0xb76B7f92f839d3eE3740b7756eC63b28002E137D");
+
+var smartWalletModularAddress = await smartWalletModular.GetAddress();
+Console.WriteLine($"Modular Smart Wallet address: {smartWalletModularAddress}");
+
+var receiptModular = await smartWalletModular.SendTransaction(new ThirdwebTransactionInput(chainId: 11155111, to: smartWalletModularAddress, value: 0, data: "0x"));
+Console.WriteLine($"Receipt: {receiptModular}");
+
+#endregion
+
 #region AA ZkSync (Abstract)
 
 // var smartWalletAbstract = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);

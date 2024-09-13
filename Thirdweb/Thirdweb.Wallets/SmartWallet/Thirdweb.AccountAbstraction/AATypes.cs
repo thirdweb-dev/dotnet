@@ -452,3 +452,26 @@ public class SignerPermissions
     [Parameter("uint128", "endTimestamp", 5)]
     public virtual BigInteger EndTimestamp { get; set; }
 }
+
+[Struct("InitializerInstallModule")]
+public class InitializerInstallModule
+{
+    [Parameter("uint256", "moduleTypeId", 1)]
+    public virtual BigInteger ModuleTypeId { get; set; }
+
+    [Parameter("address", "module", 2)]
+    public virtual string Module { get; set; }
+
+    [Parameter("bytes", "initData", 3)]
+    public virtual byte[] InitData { get; set; }
+}
+
+[Function("execute")]
+public class ExecuteModular : FunctionMessage
+{
+    [Parameter("bytes32", "mode", 1)]
+    public virtual byte[] Mode { get; set; }
+
+    [Parameter("bytes", "executionCallData", 2)]
+    public virtual byte[] ExecutionCallData { get; set; }
+}
