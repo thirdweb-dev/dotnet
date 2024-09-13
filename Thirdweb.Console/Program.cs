@@ -57,12 +57,12 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region AA Modular
 
-var smartWalletModular = await ModularSmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11155111, gasless: true, factoryAddress: "0xb76B7f92f839d3eE3740b7756eC63b28002E137D");
+var randomSigner = await PrivateKeyWallet.Generate(client: client);
 
+var smartWalletModular = await ModularSmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11155111, gasless: true, factoryAddress: "0xb76B7f92f839d3eE3740b7756eC63b28002E137D");
 var smartWalletModularAddress = await smartWalletModular.GetAddress();
 Console.WriteLine($"Modular Smart Wallet address: {smartWalletModularAddress}");
 
-var randomSigner = await PrivateKeyWallet.Generate(client: client);
 var receiptModular = await smartWalletModular.CreateSessionKey(
     signerAddress: await randomSigner.GetAddress(),
     approvedTargets: new List<string> { Constants.ADDRESS_ZERO },
@@ -72,6 +72,20 @@ var receiptModular = await smartWalletModular.CreateSessionKey(
     sessionKeyType: Thirdweb.AccountAbstraction.SessionKeyType.Regular
 );
 Console.WriteLine($"Receipt: {receiptModular}");
+
+var smartWalletModularUsingSigner = await ModularSmartWallet.Create(
+    personalWallet: randomSigner,
+    chainId: 11155111,
+    gasless: true,
+    factoryAddress: "0xb76B7f92f839d3eE3740b7756eC63b28002E137D",
+    accountAddressOverride: smartWalletModularAddress
+);
+var smartWalletModularUsingSignerAddress = await smartWalletModularUsingSigner.GetAddress();
+Console.WriteLine($"Modular Smart Wallet using signer address: {smartWalletModularUsingSignerAddress}");
+
+var tx = await ThirdwebTransaction.Create(wallet: smartWalletModularUsingSigner, txInput: new ThirdwebTransactionInput(chainId: 11155111, to: await smartWalletModularUsingSigner.GetAddress()));
+var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx);
+Console.WriteLine($"Receipt: {receipt}");
 
 #endregion
 
