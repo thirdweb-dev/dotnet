@@ -475,3 +475,27 @@ public class ExecuteModular : FunctionMessage
     [Parameter("bytes", "executionCallData", 2)]
     public virtual byte[] ExecutionCallData { get; set; }
 }
+
+public enum SessionKeyType : byte
+{
+    Regular = 0,
+}
+
+[Struct("SessionKeyParams")]
+public class SessionKeyParamsModular
+{
+    [Parameter("uint256", "nativeTokenLimitPerTransaction", 1)]
+    public virtual BigInteger NativeTokenLimitPerTransaction { get; set; }
+
+    [Parameter("uint128", "startTimestamp", 2)]
+    public virtual BigInteger StartTimestamp { get; set; }
+
+    [Parameter("uint128", "endTimestamp", 3)]
+    public virtual BigInteger EndTimestamp { get; set; }
+
+    [Parameter("uint8", "keyType", 4)]
+    public virtual byte KeyType { get; set; }
+
+    [Parameter("address[]", "approvedTargets", 5)]
+    public virtual List<string> ApprovedTargets { get; set; }
+}

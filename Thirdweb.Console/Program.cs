@@ -62,7 +62,15 @@ var smartWalletModular = await ModularSmartWallet.Create(personalWallet: private
 var smartWalletModularAddress = await smartWalletModular.GetAddress();
 Console.WriteLine($"Modular Smart Wallet address: {smartWalletModularAddress}");
 
-var receiptModular = await smartWalletModular.SendTransaction(new ThirdwebTransactionInput(chainId: 11155111, to: smartWalletModularAddress, value: 0, data: "0x"));
+var randomSigner = await PrivateKeyWallet.Generate(client: client);
+var receiptModular = await smartWalletModular.CreateSessionKey(
+    signerAddress: await randomSigner.GetAddress(),
+    approvedTargets: new List<string> { Constants.ADDRESS_ZERO },
+    nativeTokenLimitPerTransactionInWei: 0,
+    startTimestamp: 0,
+    endTimestamp: Utils.GetUnixTimeStampNow() + 3600, // 1 hour
+    sessionKeyType: Thirdweb.AccountAbstraction.SessionKeyType.Regular
+);
 Console.WriteLine($"Receipt: {receiptModular}");
 
 #endregion

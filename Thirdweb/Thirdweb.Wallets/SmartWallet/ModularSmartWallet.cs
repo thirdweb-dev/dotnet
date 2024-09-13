@@ -468,8 +468,7 @@ public class ModularSmartWallet : IThirdwebWallet
 
     public async Task<List<string>> GetAllAdmins()
     {
-        var result = await ThirdwebContract.Read<List<string>>(this._accountContract, "getAllAdmins").ConfigureAwait(false);
-        return result ?? new List<string>();
+        throw new NotImplementedException();
     }
 
     public async Task<List<SignerPermissions>> GetAllActiveSigners()
@@ -481,29 +480,23 @@ public class ModularSmartWallet : IThirdwebWallet
     public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
         string signerAddress,
         List<string> approvedTargets,
-        string nativeTokenLimitPerTransactionInWei,
-        string permissionStartTimestamp,
-        string permissionEndTimestamp,
-        string reqValidityStartTimestamp,
-        string reqValidityEndTimestamp
+        BigInteger nativeTokenLimitPerTransactionInWei,
+        BigInteger startTimestamp,
+        BigInteger endTimestamp,
+        SessionKeyType sessionKeyType = SessionKeyType.Regular
     )
     {
-        var request = new SignerPermissionRequest()
+        var request = new SessionKeyParamsModular()
         {
-            Signer = signerAddress,
-            IsAdmin = 0,
             ApprovedTargets = approvedTargets,
-            NativeTokenLimitPerTransaction = BigInteger.Parse(nativeTokenLimitPerTransactionInWei),
-            PermissionStartTimestamp = BigInteger.Parse(permissionStartTimestamp),
-            PermissionEndTimestamp = BigInteger.Parse(permissionEndTimestamp),
-            ReqValidityStartTimestamp = BigInteger.Parse(reqValidityStartTimestamp),
-            ReqValidityEndTimestamp = BigInteger.Parse(reqValidityEndTimestamp),
-            Uid = Guid.NewGuid().ToByteArray()
+            NativeTokenLimitPerTransaction = nativeTokenLimitPerTransactionInWei,
+            StartTimestamp = startTimestamp,
+            EndTimestamp = endTimestamp,
+            KeyType = (byte)sessionKeyType,
         };
 
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
         // Do it this way to avoid triggering an extra sig from estimation
-        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("createSessionKeyForSigner").GetData(signerAddress, request);
         var txInput = new ThirdwebTransactionInput(this._chainId)
         {
             To = this._accountContract.Address,
@@ -516,61 +509,17 @@ public class ModularSmartWallet : IThirdwebWallet
 
     public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
     {
-        return await this.CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString()).ConfigureAwait(false);
+        return await this.CreateSessionKey(signerAddress, new List<string>(), 0, 0, 0, SessionKeyType.Regular).ConfigureAwait(false);
     }
 
     public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
     {
-        var request = new SignerPermissionRequest()
-        {
-            Signer = admin,
-            IsAdmin = 1,
-            ApprovedTargets = new List<string>(),
-            NativeTokenLimitPerTransaction = 0,
-            PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-            PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-            ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            Uid = Guid.NewGuid().ToByteArray()
-        };
-
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount).ConfigureAwait(false);
-        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-        var txInput = new ThirdwebTransactionInput(this._chainId)
-        {
-            To = this._accountContract.Address,
-            Value = new HexBigInteger(0),
-            Data = data
-        };
-        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+        throw new NotImplementedException();
     }
 
     public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
     {
-        var request = new SignerPermissionRequest()
-        {
-            Signer = admin,
-            IsAdmin = 2,
-            ApprovedTargets = new List<string>(),
-            NativeTokenLimitPerTransaction = 0,
-            PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-            PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-            ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            Uid = Guid.NewGuid().ToByteArray()
-        };
-
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
-        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-        var txInput = new ThirdwebTransactionInput(this._chainId)
-        {
-            To = this._accountContract.Address,
-            Value = new HexBigInteger(0),
-            Data = data
-        };
-        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+        throw new NotImplementedException();
     }
 
     public Task<string> SignTypedDataV4(string json)
