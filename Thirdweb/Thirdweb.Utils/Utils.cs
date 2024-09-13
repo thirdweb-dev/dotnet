@@ -293,7 +293,7 @@ public static partial class Utils
     /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
     public static bool IsZkSync(BigInteger chainId)
     {
-        return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124);
+        return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124) || chainId.Equals(531050104);
     }
 
     /// <summary>

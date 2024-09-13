@@ -236,6 +236,15 @@ public class SmartWallet : IThirdwebWallet
 
         if (Utils.IsZkSync(this._chainId))
         {
+            // Sophon override until they are no longer permissioned
+            if (this._chainId == 531050104)
+            {
+                var paymaster = "0x950e3Bb8C6bab20b56a70550EC037E22032A413e";
+                var paymasterInput = "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000";
+                transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
+                return await ThirdwebTransaction.Send(transaction).ConfigureAwait(false);
+            }
+
             if (this._gasless)
             {
                 (var paymaster, var paymasterInput) = await this.ZkPaymasterData(transactionInput).ConfigureAwait(false);
