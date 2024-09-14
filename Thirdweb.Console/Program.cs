@@ -98,8 +98,9 @@ var testTx = new ThirdwebTransactionInput(chainId: sepolia, to: modularSwSession
 var testHash = await modularSwSessionKey.SendTransaction(testTx);
 Console.WriteLine($"Sepolia Test Tx Hash: {testHash}");
 
+// Switch everything over to arbitrum explicitly so we can force deploy and make use of getChainAgnosticUserOpHash on account contract
 await modularSw.SwitchNetwork(arbSepolia);
-await modularSw.ForceDeploy(); // so we can make use of getChainAgnosticUserOpHash on account contract
+await modularSw.ForceDeploy();
 
 // Replay the session key creation on Arbitrum Sepolia
 var replayedTx = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwAddress, data: replayableCallData, isChainAgnostic: true);
@@ -107,7 +108,7 @@ var replayedHash = await modularSw.SendTransaction(replayedTx);
 Console.WriteLine($"Replayed session key hash: {replayedHash}");
 
 // Test session key valid
-var testTx2 = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwSessionKeyAddress);
+var testTx2 = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwSessionKeyAddress); // will auto switch to the correct chain
 var testHash2 = await modularSw.SendTransaction(testTx2);
 Console.WriteLine($"Arbitrum Sepolia Test Tx Hash: {testHash2}");
 
