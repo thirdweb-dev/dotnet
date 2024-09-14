@@ -476,6 +476,13 @@ public class ExecuteModular : FunctionMessage
     public virtual byte[] ExecutionCallData { get; set; }
 }
 
+[Function("executeChainAgnostic")]
+public class ExecuteChainAgnosticModular : FunctionMessage
+{
+    [Parameter("bytes[]", "calls", 1)]
+    public virtual List<byte[]> Calls { get; set; }
+}
+
 public enum SessionKeyType : byte
 {
     Regular = 0,
@@ -498,4 +505,19 @@ public class SessionKeyParamsModular
 
     [Parameter("address[]", "approvedTargets", 5)]
     public virtual List<string> ApprovedTargets { get; set; }
+}
+
+public class SessionKeyModular
+{
+    [Parameter("uint256", "nativeTokenLimitPerTransaction", 1)]
+    public virtual BigInteger NativeTokenLimitPerTransaction { get; set; }
+
+    [Parameter("uint128", "startTimestamp", 2)]
+    public virtual BigInteger StartTimestamp { get; set; }
+
+    [Parameter("uint128", "endTimestamp", 3)]
+    public virtual BigInteger EndTimestamp { get; set; }
+
+    [Parameter("uint8", "keyType", 4)]
+    public virtual byte KeyType { get; set; }
 }

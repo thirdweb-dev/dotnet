@@ -186,8 +186,17 @@ public class ModularSmartWallet : IThirdwebWallet
             new ABIValue(new BytesType(), transactionInput.Data.HexToBytes())
         );
 
-        var executeFn = new ExecuteModular { Mode = "0x".HexToBytes32(), ExecutionCallData = bytes, }; // TODO: Maybe allow batch and try
-        var executeInput = executeFn.CreateTransactionInput(await this.GetAddress().ConfigureAwait(false));
+        Nethereum.RPC.Eth.DTOs.TransactionInput executeInput;
+        if (transactionInput.IsChainAgnostic.HasValue && transactionInput.IsChainAgnostic == true)
+        {
+            var executeFn = new ExecuteChainAgnosticModular() { Calls = new List<byte[]>() { transactionInput.Data.HexToBytes() }, };
+            executeInput = executeFn.CreateTransactionInput(await this.GetAddress().ConfigureAwait(false));
+        }
+        else
+        {
+            var executeFn = new ExecuteModular() { Mode = "0x".HexToBytes32(), ExecutionCallData = bytes, };
+            executeInput = executeFn.CreateTransactionInput(await this.GetAddress().ConfigureAwait(false));
+        }
 
         var partialUserOp = new UserOperationV7()
         {
@@ -221,7 +230,8 @@ public class ModularSmartWallet : IThirdwebWallet
 
         // Hash, sign and encode the user operation
 
-        partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, this._entryPointContract).ConfigureAwait(false);
+        partialUserOp.Signature = await this.HashAndSignUserOp(partialUserOp, isChainAgnostic: transactionInput.IsChainAgnostic.HasValue && transactionInput.IsChainAgnostic == true)
+            .ConfigureAwait(false);
 
         return partialUserOp;
     }
@@ -269,7 +279,7 @@ public class ModularSmartWallet : IThirdwebWallet
             : new PMSponsorOperationResponse();
     }
 
-    private async Task<byte[]> HashAndSignUserOp(UserOperationV7 userOp, ThirdwebContract entryPointContract)
+    private async Task<byte[]> HashAndSignUserOp(UserOperationV7 userOp, bool isChainAgnostic)
     {
         var factoryBytes = userOp.Factory.HexToBytes();
         var factoryDataBytes = userOp.FactoryData;
@@ -312,7 +322,9 @@ public class ModularSmartWallet : IThirdwebWallet
             Signature = userOp.Signature
         };
 
-        var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp).ConfigureAwait(false);
+        var userOpHash = !isChainAgnostic
+            ? await ThirdwebContract.Read<byte[]>(this._entryPointContract, "getUserOpHash", packedOp).ConfigureAwait(false)
+            : await ThirdwebContract.Read<byte[]>(this._accountContract, "getChainAgnosticUserOpHash", packedOp).ConfigureAwait(false);
 
         var sig =
             this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount
@@ -471,19 +483,19 @@ public class ModularSmartWallet : IThirdwebWallet
         throw new NotImplementedException();
     }
 
-    public async Task<List<SignerPermissions>> GetAllActiveSigners()
+    public async Task<SessionKeyModular> GetSessionKeyForSigner(string signer)
     {
-        var result = await ThirdwebContract.Read<List<SignerPermissions>>(this._accountContract, "getAllActiveSigners").ConfigureAwait(false);
-        return result ?? new List<SignerPermissions>();
+        return await ThirdwebContract.Read<SessionKeyModular>(this._accountContract, "getSessionKeyForSigner", signer).ConfigureAwait(false);
     }
 
-    public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
+    public async Task<(ThirdwebTransactionReceipt receipt, string callData)> CreateSessionKey(
         string signerAddress,
         List<string> approvedTargets,
         BigInteger nativeTokenLimitPerTransactionInWei,
         BigInteger startTimestamp,
         BigInteger endTimestamp,
-        SessionKeyType sessionKeyType = SessionKeyType.Regular
+        SessionKeyType sessionKeyType = SessionKeyType.Regular,
+        bool chainAgnostic = false
     )
     {
         var request = new SessionKeyParamsModular()
@@ -497,19 +509,14 @@ public class ModularSmartWallet : IThirdwebWallet
 
         // Do it this way to avoid triggering an extra sig from estimation
         var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("createSessionKeyForSigner").GetData(signerAddress, request);
-        var txInput = new ThirdwebTransactionInput(this._chainId)
-        {
-            To = this._accountContract.Address,
-            Value = new HexBigInteger(0),
-            Data = data
-        };
+        var txInput = new ThirdwebTransactionInput(chainId: this._chainId, to: this._accountContract.Address, data: data, value: 0, isChainAgnostic: chainAgnostic);
         var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+        return (await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false), data);
     }
 
     public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
     {
-        return await this.CreateSessionKey(signerAddress, new List<string>(), 0, 0, 0, SessionKeyType.Regular).ConfigureAwait(false);
+        return (await this.CreateSessionKey(signerAddress, new List<string>(), 0, 0, 0, SessionKeyType.Regular).ConfigureAwait(false)).receipt;
     }
 
     public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)

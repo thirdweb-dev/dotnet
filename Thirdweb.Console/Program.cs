@@ -57,35 +57,58 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region AA Modular
 
+// Our session key signer
 var randomSigner = await PrivateKeyWallet.Generate(client: client);
+var randomSignerAddress = await randomSigner.GetAddress();
+Console.WriteLine($"Random signer address: {randomSignerAddress}");
 
-var smartWalletModular = await ModularSmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11155111, gasless: true, factoryAddress: "0xb76B7f92f839d3eE3740b7756eC63b28002E137D");
-var smartWalletModularAddress = await smartWalletModular.GetAddress();
-Console.WriteLine($"Modular Smart Wallet address: {smartWalletModularAddress}");
+// Deterministically deployed factory
+var factory = "0x26b0A8a570Dd14809Fe1E3779813aA5cb405BE2D";
+var sepolia = 11155111;
+var arbSepolia = 421614;
 
-var receiptModular = await smartWalletModular.CreateSessionKey(
+// Create canonical wallet on Sepolia
+var modularSw = await ModularSmartWallet.Create(personalWallet: privateKeyWallet, chainId: sepolia, factoryAddress: factory);
+var modularSwAddress = await modularSw.GetAddress();
+Console.WriteLine($"Modular Smart Wallet address: {modularSwAddress}");
+
+Console.WriteLine("Force deploying Modular Smart Wallet...");
+await modularSw.ForceDeploy(); // so we can make use of getChainAgnosticUserOpHash on account contract
+Console.WriteLine("Modular Smart Wallet deployed");
+
+// Session key creation returns replayable call data if chain agnostic
+(var receiptModular, var replayableCallData) = await modularSw.CreateSessionKey(
     signerAddress: await randomSigner.GetAddress(),
-    approvedTargets: new List<string> { Constants.ADDRESS_ZERO },
-    nativeTokenLimitPerTransactionInWei: 0,
+    approvedTargets: new List<string> { modularSwAddress },
+    nativeTokenLimitPerTransactionInWei: 1,
     startTimestamp: 0,
     endTimestamp: Utils.GetUnixTimeStampNow() + 3600, // 1 hour
-    sessionKeyType: Thirdweb.AccountAbstraction.SessionKeyType.Regular
+    sessionKeyType: Thirdweb.AccountAbstraction.SessionKeyType.Regular,
+    chainAgnostic: true
 );
-Console.WriteLine($"Receipt: {receiptModular}");
+Console.WriteLine($"Sepolia Session Key Hash: {receiptModular.TransactionHash}");
 
-var smartWalletModularUsingSigner = await ModularSmartWallet.Create(
-    personalWallet: randomSigner,
-    chainId: 11155111,
-    gasless: true,
-    factoryAddress: "0xb76B7f92f839d3eE3740b7756eC63b28002E137D",
-    accountAddressOverride: smartWalletModularAddress
-);
-var smartWalletModularUsingSignerAddress = await smartWalletModularUsingSigner.GetAddress();
-Console.WriteLine($"Modular Smart Wallet using signer address: {smartWalletModularUsingSignerAddress}");
+// Reconnect to the same wallet using the session key for a quick test
+var modularSwSessionKey = await ModularSmartWallet.Create(personalWallet: randomSigner, chainId: sepolia, factoryAddress: factory, accountAddressOverride: modularSwAddress);
+var modularSwSessionKeyAddress = await modularSwSessionKey.GetAddress();
+Console.WriteLine($"Sepolia Smart Wallet using session key: {modularSwSessionKeyAddress}");
 
-var tx = await ThirdwebTransaction.Create(wallet: smartWalletModularUsingSigner, txInput: new ThirdwebTransactionInput(chainId: 11155111, to: await smartWalletModularUsingSigner.GetAddress()));
-var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx);
-Console.WriteLine($"Receipt: {receipt}");
+// Test session key valid
+var testTx = new ThirdwebTransactionInput(chainId: sepolia, to: modularSwSessionKeyAddress);
+var testHash = await modularSwSessionKey.SendTransaction(testTx);
+Console.WriteLine($"Sepolia Test Tx Hash: {testHash}");
+
+await modularSw.SwitchNetwork(arbSepolia); // unnecessary as the call below would auto switch it because it's fancy like that
+
+// Replay the session key creation on Arbitrum Sepolia
+var replayedTx = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwAddress, data: replayableCallData);
+var replayedHash = await modularSw.SendTransaction(replayedTx);
+Console.WriteLine($"Replayed session key hash: {replayedHash}");
+
+// Test session key valid
+var testTx2 = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwSessionKeyAddress);
+var testHash2 = await modularSw.SendTransaction(testTx2);
+Console.WriteLine($"Arbitrum Sepolia Test Tx Hash: {testHash2}");
 
 #endregion
 

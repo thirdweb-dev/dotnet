@@ -26,7 +26,8 @@ public class ThirdwebTransactionInput
         string data = null,
         BigInteger? maxFeePerGas = null,
         BigInteger? maxPriorityFeePerGas = null,
-        ZkSyncOptions? zkSync = null
+        ZkSyncOptions? zkSync = null,
+        bool? isChainAgnostic = null
     )
     {
         this.ChainId = chainId > 0 ? new HexBigInteger(chainId) : throw new ArgumentException("Invalid Chain ID");
@@ -40,6 +41,7 @@ public class ThirdwebTransactionInput
         this.MaxFeePerGas = maxFeePerGas == null ? null : new HexBigInteger(maxFeePerGas.Value);
         this.MaxPriorityFeePerGas = maxPriorityFeePerGas == null ? null : new HexBigInteger(maxPriorityFeePerGas.Value);
         this.ZkSync = zkSync;
+        this.IsChainAgnostic = isChainAgnostic;
     }
 
     /// <summary>
@@ -123,6 +125,13 @@ public class ThirdwebTransactionInput
     /// </summary>
     [JsonProperty(PropertyName = "zkSyncOptions", NullValueHandling = NullValueHandling.Ignore)]
     public ZkSyncOptions? ZkSync { get; set; }
+
+    /// <summary>
+    /// Whether this transaction is chain agnostic, only applies to ModularSmartWallet.
+    /// </summary>
+    /// <returns>True if the transaction is chain agnostic, otherwise false.</returns>
+    [JsonIgnore]
+    public bool? IsChainAgnostic { get; set; }
 }
 
 /// <summary>
