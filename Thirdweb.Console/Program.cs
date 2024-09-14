@@ -109,7 +109,7 @@ Console.WriteLine($"Replayed session key hash: {replayedHash}");
 
 // Test session key valid
 var testTx2 = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwSessionKeyAddress); // will auto switch to the correct chain
-var testHash2 = await modularSw.SendTransaction(testTx2);
+var testHash2 = await modularSwSessionKey.SendTransaction(testTx2);
 Console.WriteLine($"Arbitrum Sepolia Test Tx Hash: {testHash2}");
 
 #endregion
