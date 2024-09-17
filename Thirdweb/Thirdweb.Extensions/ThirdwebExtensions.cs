@@ -1905,7 +1905,7 @@ public static class ThirdwebExtensions
 
         var payableAmount = isNativeToken ? mintRequest.Quantity * mintRequest.Price : BigInteger.Zero;
 
-        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature);
+        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature.HexToBytes());
     }
 
     /// <summary>
@@ -2105,7 +2105,7 @@ public static class ThirdwebExtensions
 
         var payableAmount = isNativeToken ? mintRequest.Price : BigInteger.Zero;
 
-        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature);
+        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature.HexToBytes());
     }
 
     /// <summary>
@@ -2359,7 +2359,7 @@ public static class ThirdwebExtensions
 
         var payableAmount = isNativeToken ? mintRequest.Quantity * mintRequest.PricePerToken : BigInteger.Zero;
 
-        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature);
+        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature.HexToBytes());
     }
 
     /// <summary>
