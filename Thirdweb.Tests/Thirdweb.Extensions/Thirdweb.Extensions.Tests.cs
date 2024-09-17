@@ -798,6 +798,15 @@ public class ExtensionsTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task GetAllNFTs_721_ExceedTotalSupply()
+    {
+        var contract = await this.GetTokenERC721Contract();
+        var nfts = await contract.ERC721_GetAllNFTs(0, int.MaxValue);
+        Assert.NotNull(nfts);
+        Assert.NotEmpty(nfts);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task GetAllNFTs_721_WithRange()
     {
         var contract = await this.GetTokenERC721Contract();
@@ -812,6 +821,15 @@ public class ExtensionsTests : BaseTests
         var contract = await this.GetTokenERC721Contract();
         var ownerAddress = contract.Address;
         var nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress);
+        Assert.NotNull(nfts);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetOwnedNFTs_721_ExceedTotalSupply()
+    {
+        var contract = await this.GetTokenERC721Contract();
+        var ownerAddress = contract.Address;
+        var nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress, 0, int.MaxValue);
         Assert.NotNull(nfts);
     }
 
@@ -867,6 +885,15 @@ public class ExtensionsTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task GetAllNFTs_1155_ExceedTotalSupply()
+    {
+        var contract = await this.GetTokenERC1155Contract();
+        var nfts = await contract.ERC1155_GetAllNFTs(0, int.MaxValue);
+        Assert.NotNull(nfts);
+        Assert.NotEmpty(nfts);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task GetAllNFTs_1155_WithRange()
     {
         var contract = await this.GetTokenERC1155Contract();
@@ -881,6 +908,15 @@ public class ExtensionsTests : BaseTests
         var contract = await this.GetTokenERC1155Contract();
         var ownerAddress = contract.Address;
         var nfts = await contract.ERC1155_GetOwnedNFTs(ownerAddress);
+        Assert.NotNull(nfts);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetOwnedNFTs_1155_ExceedTotalSupply()
+    {
+        var contract = await this.GetTokenERC1155Contract();
+        var ownerAddress = contract.Address;
+        var nfts = await contract.ERC1155_GetOwnedNFTs(ownerAddress, 0, int.MaxValue);
         Assert.NotNull(nfts);
     }
 
