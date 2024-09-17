@@ -1239,12 +1239,17 @@ public static class ThirdwebExtensions
             throw new ArgumentException("Owner must be provided");
         }
 
-        var totalSupply = await contract.ERC721_TotalSupply().ConfigureAwait(false);
-        count ??= Math.Min((int)count, (int)(totalSupply - startTokenId));
+        if (startTokenId == null)
+        {
+            startTokenId = 0;
+        }
 
         // Paginated
-        if (startTokenId != null && count != null)
+        if (count != null)
         {
+            var totalSupply = await contract.ERC721_TotalSupply().ConfigureAwait(false);
+            count = Math.Min((int)count, (int)(totalSupply - startTokenId));
+
             // ERC721AQueryable
             try
             {
