@@ -258,7 +258,7 @@ public class ThirdwebRPC : IDisposable
         {
             if (this._pendingRequests.IsEmpty)
             {
-                await Task.Delay(this._batchInterval, this._cancellationTokenSource.Token).ConfigureAwait(false);
+                await ThirdwebTask.Delay(this._batchInterval.Milliseconds, this._cancellationTokenSource.Token).ConfigureAwait(false);
                 continue;
             }
 
