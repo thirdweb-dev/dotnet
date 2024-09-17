@@ -1203,11 +1203,8 @@ public static class ThirdwebExtensions
             startTokenId = 0;
         }
 
-        if (count == null)
-        {
-            var totalSupply = await contract.ERC721_TotalSupply().ConfigureAwait(false);
-            count = totalSupply - startTokenId;
-        }
+        var totalSupply = await contract.ERC721_TotalSupply().ConfigureAwait(false);
+        count = count == null ? totalSupply - startTokenId : Math.Min((int)count, (int)(totalSupply - startTokenId));
 
         var nftTasks = new List<Task<NFT>>();
         for (var i = startTokenId.Value; i < startTokenId.Value + count.Value; i++)
@@ -1241,6 +1238,9 @@ public static class ThirdwebExtensions
         {
             throw new ArgumentException("Owner must be provided");
         }
+
+        var totalSupply = await contract.ERC721_TotalSupply().ConfigureAwait(false);
+        count ??= Math.Min((int)count, (int)(totalSupply - startTokenId));
 
         // Paginated
         if (startTokenId != null && count != null)
@@ -1394,11 +1394,17 @@ public static class ThirdwebExtensions
             startTokenId = 0;
         }
 
-        if (count == null)
+        BigInteger totalSupply;
+        try
         {
-            var totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
-            count = totalSupply - startTokenId;
+            // Not part of IERC1155 so we fallback just in case
+            totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
         }
+        catch
+        {
+            totalSupply = int.MaxValue;
+        }
+        count = count == null ? totalSupply - startTokenId : Math.Min((int)count, (int)(totalSupply - startTokenId));
 
         var nftTasks = new List<Task<NFT>>();
         for (var i = startTokenId.Value; i < startTokenId.Value + count.Value; i++)
@@ -1437,11 +1443,17 @@ public static class ThirdwebExtensions
             startTokenId = 0;
         }
 
-        if (count == null)
+        BigInteger totalSupply;
+        try
         {
-            var totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
-            count = totalSupply - startTokenId;
+            // Not part of IERC1155 so we fallback just in case
+            totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
         }
+        catch
+        {
+            totalSupply = int.MaxValue;
+        }
+        count = count == null ? totalSupply - startTokenId : Math.Min((int)count, (int)(totalSupply - startTokenId));
 
         var ownerArray = new List<string>();
         var tokenIds = new List<BigInteger>();
