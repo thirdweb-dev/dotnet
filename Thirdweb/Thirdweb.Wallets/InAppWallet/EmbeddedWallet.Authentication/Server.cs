@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Thirdweb.EWS;
 
@@ -31,11 +32,13 @@ internal abstract class ServerBase
     internal abstract Task<Server.VerifyResult> VerifyOAuthAsync(string authResultStr);
 
     internal abstract Task<Server.VerifyResult> VerifyAuthEndpointAsync(string payload);
+
+    internal abstract Task<JToken> GenerateEncryptedKeyResultAsync(string authToken);
 }
 
 internal partial class Server : ServerBase
 {
-    private const string ROOT_URL = "https://embedded-wallet.thirdweb.com";
+    private const string ROOT_URL = "https://embedded-wallet.thirdweb-dev.com";
     private const string API_ROOT_PATH_2024 = "/api/2024-05-05";
     private const string API_ROOT_PATH_2023 = "/api/2023-10-20";
 
@@ -301,6 +304,12 @@ internal partial class Server : ServerBase
     }
 
     #region Misc
+
+    internal override async Task<JToken> GenerateEncryptedKeyResultAsync(string authToken)
+    {
+        var webExchangeResult = await this.FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
+        return await AWS.GenerateDataKey(webExchangeResult.IdentityId, webExchangeResult.Token, _thirdwebHttpClientType).ConfigureAwait(false);
+    }
 
     private async Task<VerifyResult> InvokeAuthResultLambdaAsync(AuthResultType authResult)
     {

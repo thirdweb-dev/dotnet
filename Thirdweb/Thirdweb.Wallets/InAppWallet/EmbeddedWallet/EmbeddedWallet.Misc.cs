@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Nethereum.Web3.Accounts;
 
 namespace Thirdweb.EWS;
@@ -101,7 +103,7 @@ internal partial class EmbeddedWallet
         return (account, deviceShare);
     }
 
-    private async Task<(Account account, string deviceShare)> RecoverAccountAsync(string authToken, string recoveryCode)
+    internal async Task<(Account account, string deviceShare)> RecoverAccountAsync(string authToken, string recoveryCode)
     {
         (var authShare, var encryptedRecoveryShare) = await this._server.FetchAuthAndRecoverySharesAsync(authToken).ConfigureAwait(false);
 
@@ -111,6 +113,49 @@ internal partial class EmbeddedWallet
         Secrets secrets = new();
         var deviceShare = secrets.NewShare(DEVICE_SHARE_ID, new[] { authShare, recoveryShare });
         return (account, deviceShare);
+    }
+
+    internal async Task<(string address, string encryptedPrivateKeyB64, string ivB64, string kmsCiphertextB64)> GenerateEncryptionDataAsync(string authToken, string recoveryCode)
+    {
+        var (account, _) = await this.RecoverAccountAsync(authToken, recoveryCode).ConfigureAwait(false);
+        var address = account.Address;
+        Console.WriteLine($"Address: {address}");
+
+        var encryptedKeyResult = await this._server.GenerateEncryptedKeyResultAsync(authToken).ConfigureAwait(false);
+        Console.WriteLine($"Encrypted key result: {Newtonsoft.Json.JsonConvert.SerializeObject(encryptedKeyResult)}");
+        var plainTextToken = encryptedKeyResult["Plaintext"].ToString();
+        var cipherTextToken = encryptedKeyResult["CiphertextBlob"].ToString();
+
+        if (plainTextToken == null || cipherTextToken == null || string.IsNullOrEmpty(plainTextToken) || string.IsNullOrEmpty(cipherTextToken))
+        {
+            throw new InvalidOperationException("No migration key found. Please try again.");
+        }
+
+        var iv = new byte[16];
+        RandomNumberGenerator.Fill(iv);
+
+        var plainTextKeyBlob = Convert.FromBase64String(plainTextToken);
+
+        using var aes = Aes.Create();
+        aes.Key = plainTextKeyBlob;
+        aes.IV = iv;
+        aes.Mode = CipherMode.CBC;
+        aes.Padding = PaddingMode.PKCS7;
+
+        using var encryptor = aes.CreateEncryptor();
+        var privateKeyBytes = Encoding.UTF8.GetBytes(account.PrivateKey);
+        var encryptedPrivateKeyBytes = encryptor.TransformFinalBlock(privateKeyBytes, 0, privateKeyBytes.Length);
+
+        var encryptedData = new byte[iv.Length + encryptedPrivateKeyBytes.Length];
+        Buffer.BlockCopy(iv, 0, encryptedData, 0, iv.Length);
+        Buffer.BlockCopy(encryptedPrivateKeyBytes, 0, encryptedData, iv.Length, encryptedPrivateKeyBytes.Length);
+
+        var ivB64 = Convert.ToBase64String(iv);
+        var cipherTextBlobB64 = Convert.ToBase64String(Convert.FromBase64String(cipherTextToken));
+
+        var encryptedDataB64 = Convert.ToBase64String(encryptedData);
+
+        return (address, encryptedDataB64, ivB64, cipherTextBlobB64);
     }
 
     public class VerifyResult
