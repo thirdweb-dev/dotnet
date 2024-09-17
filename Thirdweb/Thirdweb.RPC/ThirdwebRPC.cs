@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections.Concurrent;
+using System.Numerics;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -16,9 +17,8 @@ public class ThirdwebRPC : IDisposable
     private readonly TimeSpan _rpcTimeout;
     private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new();
     private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(25);
-    private readonly List<RpcRequest> _pendingBatch = new();
+    private readonly ConcurrentQueue<RpcRequest> _pendingRequests = new();
     private readonly Dictionary<int, TaskCompletionSource<object>> _responseCompletionSources = new();
-    private readonly object _batchLock = new();
     private readonly object _responseLock = new();
     private readonly object _cacheLock = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -101,29 +101,20 @@ public class ThirdwebRPC : IDisposable
         }
 
         var tcs = new TaskCompletionSource<object>();
-        int requestId;
-
-        lock (this._batchLock)
+        var requestId = Interlocked.Increment(ref this._requestIdCounter);
+        var rpcRequest = new RpcRequest
         {
-            requestId = this._requestIdCounter++;
-            this._pendingBatch.Add(
-                new RpcRequest
-                {
-                    Method = method,
-                    Params = parameters,
-                    Id = requestId
-                }
-            );
-            lock (this._responseLock)
-            {
-                this._responseCompletionSources.Add(requestId, tcs);
-            }
+            Method = method,
+            Params = parameters,
+            Id = requestId
+        };
 
-            if (this._pendingBatch.Count >= BatchSizeLimit)
-            {
-                this.SendBatchNow();
-            }
+        lock (this._responseLock)
+        {
+            this._responseCompletionSources.Add(requestId, tcs);
         }
+
+        this._pendingRequests.Enqueue(rpcRequest);
 
         var result = await tcs.Task.ConfigureAwait(false);
         if (result is TResponse response)
@@ -160,23 +151,6 @@ public class ThirdwebRPC : IDisposable
         this._rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb.com/");
         this._rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
         _ = this.StartBackgroundFlushAsync();
-    }
-
-    private void SendBatchNow()
-    {
-        List<RpcRequest> batchToSend;
-        lock (this._batchLock)
-        {
-            if (this._pendingBatch.Count == 0)
-            {
-                return;
-            }
-
-            batchToSend = new List<RpcRequest>(this._pendingBatch);
-            this._pendingBatch.Clear();
-        }
-
-        _ = this.SendBatchAsync(batchToSend);
     }
 
     private async Task SendBatchAsync(List<RpcRequest> batch)
@@ -247,16 +221,18 @@ public class ThirdwebRPC : IDisposable
                     }
                 }
             }
-
-            throw timeoutException;
         }
         catch (Exception ex)
         {
             lock (this._responseLock)
             {
-                foreach (var kvp in this._responseCompletionSources)
+                foreach (var requestId in batch.Select(b => b.Id))
                 {
-                    _ = kvp.Value.TrySetException(ex);
+                    if (this._responseCompletionSources.TryGetValue(requestId, out var tcs))
+                    {
+                        _ = tcs.TrySetException(ex);
+                        _ = this._responseCompletionSources.Remove(requestId);
+                    }
                 }
             }
         }
@@ -280,8 +256,29 @@ public class ThirdwebRPC : IDisposable
     {
         while (!this._cancellationTokenSource.Token.IsCancellationRequested)
         {
-            await ThirdwebTask.Delay(this._batchInterval.Milliseconds, this._cancellationTokenSource.Token).ConfigureAwait(false);
-            this.SendBatchNow();
+            if (this._pendingRequests.IsEmpty)
+            {
+                await Task.Delay(this._batchInterval, this._cancellationTokenSource.Token).ConfigureAwait(false);
+                continue;
+            }
+
+            var batchToSend = new List<RpcRequest>();
+            for (var i = 0; i < BatchSizeLimit; i++)
+            {
+                if (this._pendingRequests.TryDequeue(out var request))
+                {
+                    batchToSend.Add(request);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (batchToSend.Count > 0)
+            {
+                await this.SendBatchAsync(batchToSend);
+            }
         }
     }
 

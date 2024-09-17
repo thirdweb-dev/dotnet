@@ -29,9 +29,9 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Contract Interaction
 
-// var contract = await ThirdwebContract.Create(client: client, address: "0x81ebd23aA79bCcF5AaFb9c9c5B0Db4223c39102e", chain: 421614);
-// var readResult = await contract.Read<string>("name");
-// Console.WriteLine($"Contract read result: {readResult}");
+var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
+var nfts = await contract.ERC721_GetAllNFTs();
+Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
 
 #endregion
 
