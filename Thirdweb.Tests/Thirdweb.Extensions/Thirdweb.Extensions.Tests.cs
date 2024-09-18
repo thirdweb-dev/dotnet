@@ -802,9 +802,11 @@ public class ExtensionsTests : BaseTests
     public async Task GetAllNFTs_721_ExceedTotalSupply()
     {
         var contract = await this.GetTokenERC721Contract();
+        var allNfts = await contract.ERC721_GetAllNFTs();
         var nfts = await contract.ERC721_GetAllNFTs(0, int.MaxValue);
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
+        Assert.True(nfts.Count == allNfts.Count);
     }
 
     [Fact(Timeout = 120000)]
@@ -830,8 +832,10 @@ public class ExtensionsTests : BaseTests
     {
         var contract = await this.GetTokenERC721Contract();
         var ownerAddress = contract.Address;
+        var allNfts = await contract.ERC721_GetOwnedNFTs(ownerAddress);
         var nfts = await contract.ERC721_GetOwnedNFTs(ownerAddress, 0, int.MaxValue);
         Assert.NotNull(nfts);
+        Assert.True(nfts.Count == allNfts.Count);
     }
 
     [Fact(Timeout = 120000)]
@@ -889,9 +893,11 @@ public class ExtensionsTests : BaseTests
     public async Task GetAllNFTs_1155_ExceedTotalSupply()
     {
         var contract = await this.GetTokenERC1155Contract();
+        var allNfts = await contract.ERC1155_GetAllNFTs();
         var nfts = await contract.ERC1155_GetAllNFTs(0, int.MaxValue);
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
+        Assert.True(nfts.Count == allNfts.Count);
     }
 
     [Fact(Timeout = 120000)]
@@ -917,8 +923,10 @@ public class ExtensionsTests : BaseTests
     {
         var contract = await this.GetTokenERC1155Contract();
         var ownerAddress = contract.Address;
+        var allNfts = await contract.ERC1155_GetOwnedNFTs(ownerAddress);
         var nfts = await contract.ERC1155_GetOwnedNFTs(ownerAddress, 0, int.MaxValue);
         Assert.NotNull(nfts);
+        Assert.True(nfts.Count == allNfts.Count);
     }
 
     [Fact(Timeout = 120000)]
