@@ -507,17 +507,17 @@ public class SessionKeyParamsModular
     public virtual List<string> ApprovedTargets { get; set; }
 }
 
-public class SessionKeyModular
-{
-    [Parameter("uint256", "nativeTokenLimitPerTransaction", 1)]
-    public virtual BigInteger NativeTokenLimitPerTransaction { get; set; }
+// public class SessionKeyModular
+// {
+//     [Parameter("uint256", "nativeTokenLimitPerTransaction", 1)]
+//     public virtual BigInteger NativeTokenLimitPerTransaction { get; set; }
 
-    [Parameter("uint128", "startTimestamp", 2)]
-    public virtual BigInteger StartTimestamp { get; set; }
+//     [Parameter("uint128", "startTimestamp", 2)]
+//     public virtual BigInteger StartTimestamp { get; set; }
 
-    [Parameter("uint128", "endTimestamp", 3)]
-    public virtual BigInteger EndTimestamp { get; set; }
+//     [Parameter("uint128", "endTimestamp", 3)]
+//     public virtual BigInteger EndTimestamp { get; set; }
 
-    [Parameter("uint8", "keyType", 4)]
-    public virtual byte KeyType { get; set; }
-}
+//     [Parameter("uint8", "keyType", 4)]
+//     public virtual byte KeyType { get; set; }
+// }

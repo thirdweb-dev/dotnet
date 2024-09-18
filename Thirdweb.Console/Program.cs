@@ -63,18 +63,16 @@ var randomSignerAddress = await randomSigner.GetAddress();
 Console.WriteLine($"Random signer address: {randomSignerAddress}");
 
 // Deterministically deployed factory
-var factory = "0x26b0A8a570Dd14809Fe1E3779813aA5cb405BE2D";
+var factory = "0x330F2D410642B5164BaeCC842781158fDFE324AD";
 var sepolia = 11155111;
 var arbSepolia = 421614;
 
-// Create canonical wallet on Sepolia
+// SEPOLIA
+
+// Create canonical cross-chain ModularSmartWallet
 var modularSw = await ModularSmartWallet.Create(personalWallet: privateKeyWallet, chainId: sepolia, factoryAddress: factory);
 var modularSwAddress = await modularSw.GetAddress();
 Console.WriteLine($"Modular Smart Wallet address: {modularSwAddress}");
-
-Console.WriteLine("Force deploying Modular Smart Wallet...");
-await modularSw.ForceDeploy(); // so we can make use of getChainAgnosticUserOpHash on account contract
-Console.WriteLine("Modular Smart Wallet deployed");
 
 // Session key creation returns replayable call data if chain agnostic
 (var receiptModular, var replayableCallData) = await modularSw.CreateSessionKey(
@@ -88,6 +86,14 @@ Console.WriteLine("Modular Smart Wallet deployed");
 );
 Console.WriteLine($"Sepolia Session Key Hash: {receiptModular.TransactionHash}");
 
+// Return signers
+var signers = await modularSw.GetAllActiveSigners();
+Console.WriteLine($"Sepolia Signers: {JsonConvert.SerializeObject(signers, Formatting.Indented)}");
+
+// Return admins
+var admins = await modularSw.GetAllAdmins();
+Console.WriteLine($"Sepolia Admins: {JsonConvert.SerializeObject(admins, Formatting.Indented)}");
+
 // Reconnect to the same wallet using the session key for a quick test
 var modularSwSessionKey = await ModularSmartWallet.Create(personalWallet: randomSigner, chainId: sepolia, factoryAddress: factory, accountAddressOverride: modularSwAddress);
 var modularSwSessionKeyAddress = await modularSwSessionKey.GetAddress();
@@ -98,9 +104,7 @@ var testTx = new ThirdwebTransactionInput(chainId: sepolia, to: modularSwSession
 var testHash = await modularSwSessionKey.SendTransaction(testTx);
 Console.WriteLine($"Sepolia Test Tx Hash: {testHash}");
 
-// Switch everything over to arbitrum explicitly so we can force deploy and make use of getChainAgnosticUserOpHash on account contract
-await modularSw.SwitchNetwork(arbSepolia);
-await modularSw.ForceDeploy();
+// ARBITRUM SEPOLIA
 
 // Replay the session key creation on Arbitrum Sepolia
 var replayedTx = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwAddress, data: replayableCallData, isChainAgnostic: true);
@@ -111,6 +115,14 @@ Console.WriteLine($"Replayed session key hash: {replayedHash}");
 var testTx2 = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwSessionKeyAddress); // will auto switch to the correct chain
 var testHash2 = await modularSwSessionKey.SendTransaction(testTx2);
 Console.WriteLine($"Arbitrum Sepolia Test Tx Hash: {testHash2}");
+
+// Return signers
+var signers2 = await modularSw.GetAllActiveSigners();
+Console.WriteLine($"Arbitrum Sepolia Signers: {JsonConvert.SerializeObject(signers2, Formatting.Indented)}");
+
+// Return admins
+var admins2 = await modularSw.GetAllAdmins();
+Console.WriteLine($"Arbitrum Sepolia Admins: {JsonConvert.SerializeObject(admins2, Formatting.Indented)}");
 
 #endregion
 

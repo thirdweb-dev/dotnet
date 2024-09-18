@@ -324,7 +324,7 @@ public class ModularSmartWallet : IThirdwebWallet
 
         var userOpHash = !isChainAgnostic
             ? await ThirdwebContract.Read<byte[]>(this._entryPointContract, "getUserOpHash", packedOp).ConfigureAwait(false)
-            : await ThirdwebContract.Read<byte[]>(this._accountContract, "getChainAgnosticUserOpHash", packedOp).ConfigureAwait(false);
+            : await ThirdwebContract.Read<byte[]>(this._factoryContract, "getChainAgnosticUserOpHash", packedOp).ConfigureAwait(false);
 
         var sig =
             this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount
@@ -480,12 +480,24 @@ public class ModularSmartWallet : IThirdwebWallet
 
     public async Task<List<string>> GetAllAdmins()
     {
-        throw new NotImplementedException();
+        return await ThirdwebContract.Read<List<string>>(this._accountContract, "getAllAdmins").ConfigureAwait(false);
     }
 
-    public async Task<SessionKeyModular> GetSessionKeyForSigner(string signer)
+    public async Task<List<SessionKeyParamsModular>> GetAllSigners()
     {
-        return await ThirdwebContract.Read<SessionKeyModular>(this._accountContract, "getSessionKeyForSigner", signer).ConfigureAwait(false);
+        return await ThirdwebContract.Read<List<SessionKeyParamsModular>>(this._accountContract, "getAllSigners").ConfigureAwait(false);
+    }
+
+    public async Task<List<SessionKeyParamsModular>> GetAllActiveSigners()
+    {
+        var signers = await this.GetAllSigners().ConfigureAwait(false);
+        var timeNow = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        return signers.Where(s => s.EndTimestamp > timeNow).ToList();
+    }
+
+    public async Task<SessionKeyParamsModular> GetSessionKeyForSigner(string signer)
+    {
+        return await ThirdwebContract.Read<SessionKeyParamsModular>(this._accountContract, "getSessionKeyForSigner", signer).ConfigureAwait(false);
     }
 
     public async Task<(ThirdwebTransactionReceipt receipt, string callData)> CreateSessionKey(
@@ -521,12 +533,12 @@ public class ModularSmartWallet : IThirdwebWallet
 
     public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
     {
-        throw new NotImplementedException();
+        return await ThirdwebContract.Write(this, this._accountContract, "grantRoles", 0, admin, Constants.ADDRESS_ZERO).ConfigureAwait(false);
     }
 
     public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
     {
-        throw new NotImplementedException();
+        return await ThirdwebContract.Write(this, this._accountContract, "revokeRoles", 0, admin, Constants.ADDRESS_ZERO).ConfigureAwait(false);
     }
 
     public Task<string> SignTypedDataV4(string json)
