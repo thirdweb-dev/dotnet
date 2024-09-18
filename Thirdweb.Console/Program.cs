@@ -19,7 +19,10 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
 // Fetch timeout options are optional, default is 120000ms
-var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000));
+var client = ThirdwebClient.Create(
+    secretKey: "2EoCBkQlos8YE3z6ykTxn5G_5rC7uFpldEkrPMVf_fLsu-s0uM584dDLTQFShP7uazGvhVeXSt4QtL2NTaPoGg",
+    fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000)
+);
 
 // Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
@@ -74,17 +77,32 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Ecosystem Wallet
 
-// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", email: "firekeeper+linkeco@thirdweb.com");
-
-// if (!await ecosystemWallet.IsConnected())
+// var inAppWallet = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+// if (!await inAppWallet.IsConnected())
 // {
-//     _ = await ecosystemWallet.SendOTP();
-//     Console.WriteLine("Enter OTP:");
-//     var otp = Console.ReadLine();
-//     _ = await ecosystemWallet.LoginWithOtp(otp: otp);
+//     _ = await inAppWallet.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         "thirdweb://",
+//         new InAppWalletBrowser()
+//     );
 // }
-// var ecosystemWalletAddress = await ecosystemWallet.GetAddress();
-// Console.WriteLine($"Ecosystem Wallet address: {ecosystemWalletAddress}");
+
+var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.bonfire-development", email: "firekeeper+joaeco@thirdweb.com");
+
+if (!await ecosystemWallet.IsConnected())
+{
+    _ = await ecosystemWallet.SendOTP();
+    Console.WriteLine("Enter OTP:");
+    var otp = Console.ReadLine();
+    _ = await ecosystemWallet.LoginWithOtp(otp);
+}
+var ecosystemWalletAddress = await ecosystemWallet.GetAddress();
+Console.WriteLine($"Ecosystem Wallet address: {ecosystemWalletAddress}");
 
 // var ecosystemPersonalSignature = await ecosystemWallet.PersonalSign("Hello, Thirdweb!");
 // Console.WriteLine($"Ecosystem Wallet personal sign: {ecosystemPersonalSignature}");

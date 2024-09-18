@@ -230,7 +230,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
         };
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
 
-        Console.WriteLine($"Migrating sharded wallet to enclave wallet: {JsonConvert.SerializeObject(payload)}");
+        Console.WriteLine($"Migrating sharded wallet to enclave wallet: {JsonConvert.SerializeObject(payload, Formatting.Indented)}");
 
         var response = await this._httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();

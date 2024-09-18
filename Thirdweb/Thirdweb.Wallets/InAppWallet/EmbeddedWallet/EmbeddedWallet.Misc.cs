@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using System.Text;
 using Nethereum.Web3.Accounts;
 
 namespace Thirdweb.EWS;
@@ -119,43 +118,54 @@ internal partial class EmbeddedWallet
     {
         var (account, _) = await this.RecoverAccountAsync(authToken, recoveryCode).ConfigureAwait(false);
         var address = account.Address;
-        Console.WriteLine($"Address: {address}");
 
         var encryptedKeyResult = await this._server.GenerateEncryptedKeyResultAsync(authToken).ConfigureAwait(false);
-        Console.WriteLine($"Encrypted key result: {Newtonsoft.Json.JsonConvert.SerializeObject(encryptedKeyResult)}");
-        var plainTextToken = encryptedKeyResult["Plaintext"].ToString();
-        var cipherTextToken = encryptedKeyResult["CiphertextBlob"].ToString();
 
-        if (plainTextToken == null || cipherTextToken == null || string.IsNullOrEmpty(plainTextToken) || string.IsNullOrEmpty(cipherTextToken))
+        var plainTextBase64 = encryptedKeyResult["Plaintext"]?.ToString();
+        var cipherTextBlobBase64 = encryptedKeyResult["CiphertextBlob"]?.ToString();
+
+        if (string.IsNullOrEmpty(plainTextBase64) || string.IsNullOrEmpty(cipherTextBlobBase64))
         {
             throw new InvalidOperationException("No migration key found. Please try again.");
         }
 
         var iv = new byte[16];
-        RandomNumberGenerator.Fill(iv);
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(iv);
+        }
 
-        var plainTextKeyBlob = Convert.FromBase64String(plainTextToken);
+        var privateKey = account.PrivateKey;
+        var utf8WithoutBom = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        var privateKeyBytes = utf8WithoutBom.GetBytes(privateKey);
 
-        using var aes = Aes.Create();
-        aes.Key = plainTextKeyBlob;
-        aes.IV = iv;
-        aes.Mode = CipherMode.CBC;
-        aes.Padding = PaddingMode.PKCS7;
+        byte[] encryptedPrivateKeyBytes;
+        try
+        {
+            using var aes = Aes.Create();
+            aes.KeySize = 256;
+            aes.BlockSize = 128;
+            aes.Key = Convert.FromBase64String(plainTextBase64);
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
 
-        using var encryptor = aes.CreateEncryptor();
-        var privateKeyBytes = Encoding.UTF8.GetBytes(account.PrivateKey);
-        var encryptedPrivateKeyBytes = encryptor.TransformFinalBlock(privateKeyBytes, 0, privateKeyBytes.Length);
+            using var encryptor = aes.CreateEncryptor();
+            encryptedPrivateKeyBytes = encryptor.TransformFinalBlock(privateKeyBytes, 0, privateKeyBytes.Length);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Encryption failed.", ex);
+        }
 
         var encryptedData = new byte[iv.Length + encryptedPrivateKeyBytes.Length];
-        Buffer.BlockCopy(iv, 0, encryptedData, 0, iv.Length);
-        Buffer.BlockCopy(encryptedPrivateKeyBytes, 0, encryptedData, iv.Length, encryptedPrivateKeyBytes.Length);
-
-        var ivB64 = Convert.ToBase64String(iv);
-        var cipherTextBlobB64 = Convert.ToBase64String(Convert.FromBase64String(cipherTextToken));
+        iv.CopyTo(encryptedData, 0);
+        encryptedPrivateKeyBytes.CopyTo(encryptedData, iv.Length);
 
         var encryptedDataB64 = Convert.ToBase64String(encryptedData);
+        var ivB64 = Convert.ToBase64String(iv);
 
-        return (address, encryptedDataB64, ivB64, cipherTextBlobB64);
+        return (address, encryptedDataB64, ivB64, cipherTextBlobBase64);
     }
 
     public class VerifyResult
