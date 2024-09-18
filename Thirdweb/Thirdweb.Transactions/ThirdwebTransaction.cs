@@ -304,6 +304,11 @@ public class ThirdwebTransaction
             var smartAccount = transaction._wallet as SmartWallet;
             return await smartAccount.EstimateUserOperationGas(transaction.Input).ConfigureAwait(false);
         }
+        else if (transaction._wallet.AccountType == ThirdwebAccountType.ModularSmartAccount)
+        {
+            var smartAccount = transaction._wallet as ModularSmartWallet;
+            return await smartAccount.EstimateUserOperationGas(transaction.Input).ConfigureAwait(false);
+        }
         else
         {
             var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest").ConfigureAwait(false);
@@ -409,6 +414,7 @@ public class ThirdwebTransaction
                     hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx).ConfigureAwait(false);
                     break;
                 case ThirdwebAccountType.SmartAccount:
+                case ThirdwebAccountType.ModularSmartAccount:
                 case ThirdwebAccountType.ExternalAccount:
                     hash = await transaction._wallet.SendTransaction(transaction.Input).ConfigureAwait(false);
                     break;

@@ -92,6 +92,8 @@ public static class BundlerClient
 
         var httpContent = new StringContent(requestMessageJson, System.Text.Encoding.UTF8, "application/json");
 
+        // Console.WriteLine($"Bundler Request: {requestMessageJson}");
+
         ThirdwebHttpResponseMessage httpResponse;
         try
         {

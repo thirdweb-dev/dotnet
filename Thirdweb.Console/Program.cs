@@ -55,6 +55,77 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region AA Modular
+
+// Our session key signer
+var randomSigner = await PrivateKeyWallet.Generate(client: client);
+var randomSignerAddress = await randomSigner.GetAddress();
+Console.WriteLine($"Random signer address: {randomSignerAddress}");
+
+// Deterministically deployed factory
+var factory = "0x330F2D410642B5164BaeCC842781158fDFE324AD";
+var sepolia = 11155111;
+var arbSepolia = 421614;
+
+// SEPOLIA
+
+// Create canonical cross-chain ModularSmartWallet
+var modularSw = await ModularSmartWallet.Create(personalWallet: privateKeyWallet, chainId: sepolia, factoryAddress: factory);
+var modularSwAddress = await modularSw.GetAddress();
+Console.WriteLine($"Modular Smart Wallet address: {modularSwAddress}");
+
+// Session key creation returns replayable call data if chain agnostic
+(var receiptModular, var replayableCallData) = await modularSw.CreateSessionKey(
+    signerAddress: await randomSigner.GetAddress(),
+    approvedTargets: new List<string> { modularSwAddress },
+    nativeTokenLimitPerTransactionInWei: 1,
+    startTimestamp: 0,
+    endTimestamp: Utils.GetUnixTimeStampNow() + 3600, // 1 hour
+    sessionKeyType: Thirdweb.AccountAbstraction.SessionKeyType.Regular,
+    chainAgnostic: true
+);
+Console.WriteLine($"Sepolia Session Key Hash: {receiptModular.TransactionHash}");
+
+// Return signers
+var signers = await modularSw.GetAllActiveSigners();
+Console.WriteLine($"Sepolia Signers: {JsonConvert.SerializeObject(signers, Formatting.Indented)}");
+
+// Return admins
+var admins = await modularSw.GetAllAdmins();
+Console.WriteLine($"Sepolia Admins: {JsonConvert.SerializeObject(admins, Formatting.Indented)}");
+
+// Reconnect to the same wallet using the session key for a quick test
+var modularSwSessionKey = await ModularSmartWallet.Create(personalWallet: randomSigner, chainId: sepolia, factoryAddress: factory, accountAddressOverride: modularSwAddress);
+var modularSwSessionKeyAddress = await modularSwSessionKey.GetAddress();
+Console.WriteLine($"Sepolia Smart Wallet using session key: {modularSwSessionKeyAddress}");
+
+// Test session key valid
+var testTx = new ThirdwebTransactionInput(chainId: sepolia, to: modularSwSessionKeyAddress);
+var testHash = await modularSwSessionKey.SendTransaction(testTx);
+Console.WriteLine($"Sepolia Test Tx Hash: {testHash}");
+
+// ARBITRUM SEPOLIA
+
+// Replay the session key creation on Arbitrum Sepolia
+var replayedTx = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwAddress, data: replayableCallData, isChainAgnostic: true);
+var replayedHash = await modularSw.SendTransaction(replayedTx);
+Console.WriteLine($"Replayed session key hash: {replayedHash}");
+
+// Test session key valid
+var testTx2 = new ThirdwebTransactionInput(chainId: arbSepolia, to: modularSwSessionKeyAddress); // will auto switch to the correct chain
+var testHash2 = await modularSwSessionKey.SendTransaction(testTx2);
+Console.WriteLine($"Arbitrum Sepolia Test Tx Hash: {testHash2}");
+
+// Return signers
+var signers2 = await modularSw.GetAllActiveSigners();
+Console.WriteLine($"Arbitrum Sepolia Signers: {JsonConvert.SerializeObject(signers2, Formatting.Indented)}");
+
+// Return admins
+var admins2 = await modularSw.GetAllAdmins();
+Console.WriteLine($"Arbitrum Sepolia Admins: {JsonConvert.SerializeObject(admins2, Formatting.Indented)}");
+
+#endregion
+
 #region AA ZkSync (Abstract)
 
 // var smartWalletAbstract = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);

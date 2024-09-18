@@ -138,7 +138,8 @@ public enum ThirdwebAccountType
 {
     PrivateKeyAccount,
     SmartAccount,
-    ExternalAccount
+    ExternalAccount,
+    ModularSmartAccount
 }
 
 /// <summary>

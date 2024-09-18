@@ -452,3 +452,72 @@ public class SignerPermissions
     [Parameter("uint128", "endTimestamp", 5)]
     public virtual BigInteger EndTimestamp { get; set; }
 }
+
+[Struct("InitializerInstallModule")]
+public class InitializerInstallModule
+{
+    [Parameter("uint256", "moduleTypeId", 1)]
+    public virtual BigInteger ModuleTypeId { get; set; }
+
+    [Parameter("address", "module", 2)]
+    public virtual string Module { get; set; }
+
+    [Parameter("bytes", "initData", 3)]
+    public virtual byte[] InitData { get; set; }
+}
+
+[Function("execute")]
+public class ExecuteModular : FunctionMessage
+{
+    [Parameter("bytes32", "mode", 1)]
+    public virtual byte[] Mode { get; set; }
+
+    [Parameter("bytes", "executionCallData", 2)]
+    public virtual byte[] ExecutionCallData { get; set; }
+}
+
+[Function("executeChainAgnostic")]
+public class ExecuteChainAgnosticModular : FunctionMessage
+{
+    [Parameter("bytes[]", "calls", 1)]
+    public virtual List<byte[]> Calls { get; set; }
+}
+
+public enum SessionKeyType : byte
+{
+    Regular = 0,
+}
+
+[Struct("SessionKeyParams")]
+public class SessionKeyParamsModular
+{
+    [Parameter("uint256", "nativeTokenLimitPerTransaction", 1)]
+    public virtual BigInteger NativeTokenLimitPerTransaction { get; set; }
+
+    [Parameter("uint128", "startTimestamp", 2)]
+    public virtual BigInteger StartTimestamp { get; set; }
+
+    [Parameter("uint128", "endTimestamp", 3)]
+    public virtual BigInteger EndTimestamp { get; set; }
+
+    [Parameter("uint8", "keyType", 4)]
+    public virtual byte KeyType { get; set; }
+
+    [Parameter("address[]", "approvedTargets", 5)]
+    public virtual List<string> ApprovedTargets { get; set; }
+}
+
+// public class SessionKeyModular
+// {
+//     [Parameter("uint256", "nativeTokenLimitPerTransaction", 1)]
+//     public virtual BigInteger NativeTokenLimitPerTransaction { get; set; }
+
+//     [Parameter("uint128", "startTimestamp", 2)]
+//     public virtual BigInteger StartTimestamp { get; set; }
+
+//     [Parameter("uint128", "endTimestamp", 3)]
+//     public virtual BigInteger EndTimestamp { get; set; }
+
+//     [Parameter("uint8", "keyType", 4)]
+//     public virtual byte KeyType { get; set; }
+// }
