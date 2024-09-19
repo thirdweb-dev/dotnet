@@ -148,7 +148,7 @@ internal partial class Server
     }
 
     [DataContract]
-    private class IdTokenResponse
+    internal class IdTokenResponse
     {
         [DataMember(Name = "token")]
         internal string Token { get; set; }

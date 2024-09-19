@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Thirdweb.EWS;
 
@@ -9,11 +10,18 @@ internal class AWS
     private const string AWS_REGION = "us-west-2";
 
     private static readonly string _recoverySharePasswordLambdaFunctionNameV2 = $"arn:aws:lambda:{AWS_REGION}:324457261097:function:lambda-thirdweb-auth-enc-key-prod-ThirdwebAuthEncKeyFunction";
+    private static readonly string _migrationKeyId = $"arn:aws:kms:{AWS_REGION}:324457261097:key/ccfb9ecd-f45d-4f37-864a-25fe72dcb49e";
 
     internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaAsync(string identityId, string token, string invokePayload, Type thirdwebHttpClientType)
     {
         var credentials = await GetTemporaryCredentialsAsync(identityId, token, thirdwebHttpClientType).ConfigureAwait(false);
         return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, thirdwebHttpClientType, _recoverySharePasswordLambdaFunctionNameV2).ConfigureAwait(false);
+    }
+
+    internal static async Task<JToken> GenerateDataKey(string identityId, string token, Type thirdwebHttpClientType)
+    {
+        var credentials = await GetTemporaryCredentialsAsync(identityId, token, thirdwebHttpClientType).ConfigureAwait(false);
+        return await GenerateDataKey(credentials, thirdwebHttpClientType).ConfigureAwait(false);
     }
 
     private static async Task<AwsCredentials> GetTemporaryCredentialsAsync(string identityId, string token, Type thirdwebHttpClientType)
@@ -43,6 +51,72 @@ internal class AWS
             SecretAccessKey = credentialsResponse.Credentials.SecretKey,
             SessionToken = credentialsResponse.Credentials.SessionToken
         };
+    }
+
+    private static async Task<JToken> GenerateDataKey(AwsCredentials credentials, Type thirdwebHttpClientType)
+    {
+        var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
+        var endpoint = $"https://kms.{AWS_REGION}.amazonaws.com/";
+
+        var payloadForGenerateDataKey = new { KeyId = _migrationKeyId, KeySpec = "AES_256" };
+
+        var content = new StringContent(JsonConvert.SerializeObject(payloadForGenerateDataKey), Encoding.UTF8, "application/x-amz-json-1.1");
+
+        client.AddHeader("X-Amz-Target", "TrentService.GenerateDataKey");
+
+        var dateTimeNow = DateTime.UtcNow;
+        var dateStamp = dateTimeNow.ToString("yyyyMMdd");
+        var amzDate = dateTimeNow.ToString("yyyyMMddTHHmmssZ");
+        var canonicalUri = "/";
+
+        var canonicalHeaders = $"host:kms.{AWS_REGION}.amazonaws.com\nx-amz-date:{amzDate}\n";
+        var signedHeaders = "host;x-amz-date";
+
+#if NETSTANDARD
+        using var sha256 = SHA256.Create();
+        var payloadHash = ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(await content.ReadAsStringAsync())));
+#else
+        var payloadHash = ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(await content.ReadAsStringAsync())));
+#endif
+
+        var canonicalRequest = $"POST\n{canonicalUri}\n\n{canonicalHeaders}\n{signedHeaders}\n{payloadHash}";
+
+        var algorithm = "AWS4-HMAC-SHA256";
+        var credentialScope = $"{dateStamp}/{AWS_REGION}/kms/aws4_request";
+
+#if NETSTANDARD
+        var stringToSign = $"{algorithm}\n{amzDate}\n{credentialScope}\n{ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(canonicalRequest)))}";
+#else
+        var stringToSign = $"{algorithm}\n{amzDate}\n{credentialScope}\n{ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalRequest)))}";
+#endif
+
+        var signingKey = GetSignatureKey(credentials.SecretAccessKey, dateStamp, AWS_REGION, "kms");
+        var signature = ToHexString(HMACSHA256(signingKey, stringToSign));
+
+        var authorizationHeader = $"{algorithm} Credential={credentials.AccessKeyId}/{credentialScope}, SignedHeaders={signedHeaders}, Signature={signature}";
+
+        client.AddHeader("x-amz-date", amzDate);
+        client.AddHeader("Authorization", authorizationHeader);
+        client.AddHeader("x-amz-security-token", credentials.SessionToken);
+
+        var response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
+        var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Failed to generate data key: {responseContent}");
+        }
+
+        var responseObject = JToken.Parse(responseContent);
+        var plaintextKeyBlob = responseObject["Plaintext"];
+        var cipherTextBlob = responseObject["CiphertextBlob"];
+
+        if (plaintextKeyBlob == null || cipherTextBlob == null)
+        {
+            throw new Exception("No migration key found. Please try again.");
+        }
+
+        return responseObject;
     }
 
     private static async Task<MemoryStream> InvokeLambdaWithTemporaryCredentialsAsync(AwsCredentials credentials, string invokePayload, Type thirdwebHttpClientType, string lambdaFunction)

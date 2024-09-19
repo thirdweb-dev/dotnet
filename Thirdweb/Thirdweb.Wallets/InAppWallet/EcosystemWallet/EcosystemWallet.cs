@@ -21,8 +21,9 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
     private string _address;
 
-    private const string EMBEDDED_WALLET_PATH_2024 = "https://embedded-wallet.thirdweb.com/api/2024-05-05";
-    private const string EMBEDDED_WALLET_PATH_V1 = "https://embedded-wallet.thirdweb.com/api/v1";
+    private const string EMBEDDED_WALLET_BASE_PATH = "https://embedded-wallet.thirdweb.com/api";
+    private const string EMBEDDED_WALLET_PATH_2024 = $"{EMBEDDED_WALLET_BASE_PATH}/2024-05-05";
+    private const string EMBEDDED_WALLET_PATH_V1 = $"{EMBEDDED_WALLET_BASE_PATH}/v1";
     private const string ENCLAVE_PATH = $"{EMBEDDED_WALLET_PATH_V1}/enclave-wallet";
 
     private EcosystemWallet(ThirdwebClient client, EmbeddedWallet embeddedWallet, IThirdwebHttpClient httpClient, string email, string phoneNumber, string authProvider, IThirdwebWallet siweSigner)
@@ -146,8 +147,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
         }
         else
         {
-            // TODO: Implement migration flow from existing sharded InAppWallet to sharded EcosystemWallet to enclave Ecosystem Wallet
-            throw new InvalidOperationException("Migration flow from existing sharded InAppWallet to enclave Ecosystem Wallet not implemented yet.");
+            await embeddedWallet.SignOutAsync().ConfigureAwait(false);
+            throw new InvalidOperationException("Must auth again to perform migration.");
         }
     }
 
@@ -181,6 +182,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
     private async Task<string> PostAuth(Server.VerifyResult result)
     {
         this._httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{result.AuthToken}");
+
         string address;
         if (result.IsNewUser)
         {
@@ -195,8 +197,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             }
             else
             {
-                // TODO: Implement migration flow from existing sharded InAppWallet to sharded EcosystemWallet to enclave Ecosystem Wallet
-                throw new InvalidOperationException("Migration flow from existing sharded InAppWallet to enclave Ecosystem Wallet not implemented yet.");
+                address = await this.MigrateShardToEnclave(result).ConfigureAwait(false);
             }
         }
 
@@ -210,6 +211,28 @@ public partial class EcosystemWallet : PrivateKeyWallet
             this._address = address.ToChecksumAddress();
             return this._address;
         }
+    }
+
+    private async Task<string> MigrateShardToEnclave(Server.VerifyResult authResult)
+    {
+        // TODO: For recovery code, allow old encryption keys as overrides to migrate sharded custom auth?
+        var (address, encryptedPrivateKeyB64, ivB64, kmsCiphertextB64) = await this._embeddedWallet.GenerateEncryptionDataAsync(authResult.AuthToken, authResult.RecoveryCode).ConfigureAwait(false);
+
+        var url = $"{ENCLAVE_PATH}/migrate";
+        var payload = new
+        {
+            address,
+            encryptedPrivateKeyB64,
+            ivB64,
+            kmsCiphertextB64
+        };
+        var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+
+        var response = await this._httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+
+        var userStatus = await GetUserStatus(this._httpClient).ConfigureAwait(false);
+        return userStatus.Wallets[0].Address;
     }
 
     #endregion
@@ -526,7 +549,6 @@ public partial class EcosystemWallet : PrivateKeyWallet
         {
             sessionId = Guid.NewGuid().ToString();
         }
-        Console.WriteLine($"Guest Session ID: {sessionId}");
         var serverRes = await this._embeddedWallet.SignInWithGuestAsync(sessionId).ConfigureAwait(false);
         return serverRes;
     }
