@@ -21,7 +21,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
     private string _address;
 
-    private const string EMBEDDED_WALLET_BASE_PATH = "https://embedded-wallet.thirdweb-dev.com/api";
+    private const string EMBEDDED_WALLET_BASE_PATH = "https://embedded-wallet.thirdweb.com/api";
     private const string EMBEDDED_WALLET_PATH_2024 = $"{EMBEDDED_WALLET_BASE_PATH}/2024-05-05";
     private const string EMBEDDED_WALLET_PATH_V1 = $"{EMBEDDED_WALLET_BASE_PATH}/v1";
     private const string ENCLAVE_PATH = $"{EMBEDDED_WALLET_PATH_V1}/enclave-wallet";
@@ -218,8 +218,6 @@ public partial class EcosystemWallet : PrivateKeyWallet
         // TODO: For recovery code, allow old encryption keys as overrides to migrate sharded custom auth?
         var (address, encryptedPrivateKeyB64, ivB64, kmsCiphertextB64) = await this._embeddedWallet.GenerateEncryptionDataAsync(authResult.AuthToken, authResult.RecoveryCode).ConfigureAwait(false);
 
-        Console.WriteLine($"Generated sharded wallet encryption data: {address}, {encryptedPrivateKeyB64}, {ivB64}, {kmsCiphertextB64}");
-
         var url = $"{ENCLAVE_PATH}/migrate";
         var payload = new
         {
@@ -230,15 +228,10 @@ public partial class EcosystemWallet : PrivateKeyWallet
         };
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
 
-        Console.WriteLine($"Migrating sharded wallet to enclave wallet: {JsonConvert.SerializeObject(payload, Formatting.Indented)}");
-
         var response = await this._httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
 
-        Console.WriteLine($"Migrated sharded wallet to enclave wallet: {JsonConvert.SerializeObject(payload)}");
-
         var userStatus = await GetUserStatus(this._httpClient).ConfigureAwait(false);
-        Console.WriteLine($"Migrated sharded wallet to enclave wallet: {JsonConvert.SerializeObject(userStatus)}");
         return userStatus.Wallets[0].Address;
     }
 
@@ -556,7 +549,6 @@ public partial class EcosystemWallet : PrivateKeyWallet
         {
             sessionId = Guid.NewGuid().ToString();
         }
-        Console.WriteLine($"Guest Session ID: {sessionId}");
         var serverRes = await this._embeddedWallet.SignInWithGuestAsync(sessionId).ConfigureAwait(false);
         return serverRes;
     }

@@ -148,7 +148,7 @@ public class ThirdwebRPC : IDisposable
     private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
     {
         this._httpClient = client.HttpClient;
-        this._rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb-dev.com/");
+        this._rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb.com/");
         this._rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
         _ = this.StartBackgroundFlushAsync();
     }

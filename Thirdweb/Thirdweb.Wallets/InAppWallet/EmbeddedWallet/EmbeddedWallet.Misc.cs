@@ -136,7 +136,7 @@ internal partial class EmbeddedWallet
         }
 
         var privateKey = account.PrivateKey;
-        var utf8WithoutBom = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        var utf8WithoutBom = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
         var privateKeyBytes = utf8WithoutBom.GetBytes(privateKey);
 
         byte[] encryptedPrivateKeyBytes;
