@@ -29,9 +29,9 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Contract Interaction
 
-var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
-var nfts = await contract.ERC721_GetAllNFTs();
-Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
+// var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
+// var nfts = await contract.ERC721_GetAllNFTs();
+// Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
 
 #endregion
 
@@ -74,14 +74,34 @@ Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented
 
 #region Ecosystem Wallet
 
-// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", email: "firekeeper+linkeco@thirdweb.com");
+// var inAppWallet = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+// if (!await inAppWallet.IsConnected())
+// {
+//     _ = await inAppWallet.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         "thirdweb://",
+//         new InAppWalletBrowser()
+//     );
+// }
+
+// var ecosystemWallet = await EcosystemWallet.Create(
+//     client: client,
+//     ecosystemId: "ecosystem.the-bonfire",
+//     ecosystemPartnerId: "20842d97-be35-4ecc-b51e-9f3ba0843a60",
+//     email: "firekeeper+shardedsucks@thirdweb.com"
+// );
 
 // if (!await ecosystemWallet.IsConnected())
 // {
 //     _ = await ecosystemWallet.SendOTP();
 //     Console.WriteLine("Enter OTP:");
 //     var otp = Console.ReadLine();
-//     _ = await ecosystemWallet.LoginWithOtp(otp: otp);
+//     _ = await ecosystemWallet.LoginWithOtp(otp);
 // }
 // var ecosystemWalletAddress = await ecosystemWallet.GetAddress();
 // Console.WriteLine($"Ecosystem Wallet address: {ecosystemWalletAddress}");

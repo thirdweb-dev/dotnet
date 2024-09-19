@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Thirdweb.EWS;
 
@@ -31,6 +32,8 @@ internal abstract class ServerBase
     internal abstract Task<Server.VerifyResult> VerifyOAuthAsync(string authResultStr);
 
     internal abstract Task<Server.VerifyResult> VerifyAuthEndpointAsync(string payload);
+
+    internal abstract Task<JToken> GenerateEncryptedKeyResultAsync(string authToken);
 }
 
 internal partial class Server : ServerBase
@@ -301,6 +304,12 @@ internal partial class Server : ServerBase
     }
 
     #region Misc
+
+    internal override async Task<JToken> GenerateEncryptedKeyResultAsync(string authToken)
+    {
+        var webExchangeResult = await this.FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
+        return await AWS.GenerateDataKey(webExchangeResult.IdentityId, webExchangeResult.Token, _thirdwebHttpClientType).ConfigureAwait(false);
+    }
 
     private async Task<VerifyResult> InvokeAuthResultLambdaAsync(AuthResultType authResult)
     {
