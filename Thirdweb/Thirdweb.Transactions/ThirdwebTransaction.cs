@@ -298,12 +298,6 @@ public class ThirdwebTransaction
             var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_limit"].ToString();
             return new HexBigInteger(hex).Value * 10 / 5;
         }
-
-        if (transaction._wallet.AccountType == ThirdwebAccountType.SmartAccount)
-        {
-            var smartAccount = transaction._wallet as SmartWallet;
-            return await smartAccount.EstimateUserOperationGas(transaction.Input).ConfigureAwait(false);
-        }
         else
         {
             var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest").ConfigureAwait(false);

@@ -1188,29 +1188,21 @@ public static class ThirdwebExtensions
     /// </summary>
     /// <param name="contract">The contract to interact with.</param>
     /// <param name="startTokenId">The starting token ID (inclusive). Defaults to 0 if not specified.</param>
-    /// <param name="count">The number of tokens to retrieve. Defaults to the total supply if not specified.</param>
+    /// <param name="count">The number of tokens to retrieve. Defaults to 100 if not specified.</param>
     /// <returns>A task representing the asynchronous operation, with a list of NFT results containing the token details.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
-    public static async Task<List<NFT>> ERC721_GetAllNFTs(this ThirdwebContract contract, BigInteger? startTokenId = null, BigInteger? count = null)
+    public static async Task<List<NFT>> ERC721_GetAllNFTs(this ThirdwebContract contract, int startTokenId = 0, int count = 100)
     {
         if (contract == null)
         {
             throw new ArgumentNullException(nameof(contract));
         }
 
-        if (startTokenId == null)
-        {
-            startTokenId = 0;
-        }
-
-        if (count == null)
-        {
-            var totalSupply = await contract.ERC721_TotalSupply().ConfigureAwait(false);
-            count = totalSupply - startTokenId;
-        }
+        var totalSupply = await contract.ERC721_TotalSupply().ConfigureAwait(false);
+        count = Math.Min(count, (int)(totalSupply - startTokenId));
 
         var nftTasks = new List<Task<NFT>>();
-        for (var i = startTokenId.Value; i < startTokenId.Value + count.Value; i++)
+        for (var i = startTokenId; i < startTokenId + count; i++)
         {
             nftTasks.Add(contract.ERC721_GetNFT(i));
         }
@@ -1224,13 +1216,13 @@ public static class ThirdwebExtensions
     /// </summary>
     /// <param name="contract">The contract to interact with.</param>
     /// <param name="owner">The address of the owner.</param>
-    /// <param name="startTokenId">The starting token ID (inclusive). Defaults to null if not specified.</param>
-    /// <param name="count">The number of tokens to retrieve. Defaults to null if not specified.</param>
+    /// <param name="startTokenId">The starting token ID (inclusive). Defaults to 0 if not specified.</param>
+    /// <param name="count">The number of tokens to retrieve. Defaults to 100 if not specified.</param>
     /// <returns>A task representing the asynchronous operation, with a list of NFT results containing the token details.</returns>
     /// <remarks>ERC721AQueryable and ERC721Enumerable are supported.</remarks>
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the owner address is null or empty.</exception>
-    public static async Task<List<NFT>> ERC721_GetOwnedNFTs(this ThirdwebContract contract, string owner, BigInteger? startTokenId = null, BigInteger? count = null)
+    public static async Task<List<NFT>> ERC721_GetOwnedNFTs(this ThirdwebContract contract, string owner, int startTokenId = 0, int count = 100)
     {
         if (contract == null)
         {
@@ -1242,97 +1234,51 @@ public static class ThirdwebExtensions
             throw new ArgumentException("Owner must be provided");
         }
 
-        // Paginated
-        if (startTokenId != null && count != null)
+        var totalSupply = await contract.ERC721_TotalSupply().ConfigureAwait(false);
+        count = Math.Min(count, (int)(totalSupply - startTokenId));
+
+        // ERC721AQueryable
+        try
         {
-            // ERC721AQueryable
-            try
+            var tokensOfOwnerIn = await contract.ERC721A_TokensOfOwnerIn(owner, startTokenId, startTokenId + count).ConfigureAwait(false);
+            var ownedNftTasks = new List<Task<NFT>>();
+            foreach (var tokenId in tokensOfOwnerIn)
             {
-                var tokensOfOwnerIn = await contract.ERC721A_TokensOfOwnerIn(owner, startTokenId.Value, startTokenId.Value + count.Value).ConfigureAwait(false);
-                var ownedNftTasks = new List<Task<NFT>>();
-                foreach (var tokenId in tokensOfOwnerIn)
-                {
-                    ownedNftTasks.Add(contract.ERC721_GetNFT(tokenId));
-                }
-                var ownedNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
-                return ownedNfts.ToList();
+                ownedNftTasks.Add(contract.ERC721_GetNFT(tokenId));
             }
-            catch
-            {
-                // ERC721Enumerable
-                try
-                {
-                    var balanceOfOwner = await contract.ERC721_BalanceOf(owner).ConfigureAwait(false);
-                    var ownedNftTasks = new List<Task<NFT>>();
-                    for (var i = 0; i < balanceOfOwner; i++)
-                    {
-                        var tokenOfOwnerByIndex = await contract.ERC721_TokenOfOwnerByIndex(owner, i).ConfigureAwait(false);
-                        if (tokenOfOwnerByIndex >= startTokenId && tokenOfOwnerByIndex < startTokenId + count)
-                        {
-                            ownedNftTasks.Add(contract.ERC721_GetNFT(tokenOfOwnerByIndex));
-                        }
-                    }
-                    var ownedNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
-                    return ownedNfts.ToList();
-                }
-                catch (Exception)
-                {
-                    var allNfts = await contract.ERC721_GetAllNFTs(startTokenId, count).ConfigureAwait(false);
-                    var ownedNfts = new List<NFT>();
-                    foreach (var nft in allNfts)
-                    {
-                        if (nft.Owner == owner)
-                        {
-                            ownedNfts.Add(nft);
-                        }
-                    }
-                    return ownedNfts.ToList();
-                }
-            }
+            var ownedNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
+            return ownedNfts.ToList();
         }
-        // All
-        else
+        catch
         {
+            // ERC721Enumerable
             try
             {
-                // ERC721AQueryable
-                var tokensOfOwner = await contract.ERC721A_TokensOfOwner(owner).ConfigureAwait(false);
+                var balanceOfOwner = await contract.ERC721_BalanceOf(owner).ConfigureAwait(false);
                 var ownedNftTasks = new List<Task<NFT>>();
-                foreach (var tokenId in tokensOfOwner)
+                for (var i = 0; i < balanceOfOwner; i++)
                 {
-                    ownedNftTasks.Add(contract.ERC721_GetNFT(tokenId));
-                }
-                var ownedNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
-                return ownedNfts.ToList();
-            }
-            catch
-            {
-                try
-                {
-                    // ERC721Enumerable
-                    var balanceOfOwner = await contract.ERC721_BalanceOf(owner).ConfigureAwait(false);
-                    var ownedNftTasks = new List<Task<NFT>>();
-                    for (var i = 0; i < balanceOfOwner; i++)
+                    var tokenOfOwnerByIndex = await contract.ERC721_TokenOfOwnerByIndex(owner, i).ConfigureAwait(false);
+                    if (tokenOfOwnerByIndex >= startTokenId && tokenOfOwnerByIndex < startTokenId + count)
                     {
-                        var tokenOfOwnerByIndex = await contract.ERC721_TokenOfOwnerByIndex(owner, i).ConfigureAwait(false);
                         ownedNftTasks.Add(contract.ERC721_GetNFT(tokenOfOwnerByIndex));
                     }
-                    var ownedNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
-                    return ownedNfts.ToList();
                 }
-                catch (Exception)
+                var ownedNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
+                return ownedNfts.ToList();
+            }
+            catch (Exception)
+            {
+                var allNfts = await contract.ERC721_GetAllNFTs(startTokenId, count).ConfigureAwait(false);
+                var ownedNfts = new List<NFT>();
+                foreach (var nft in allNfts)
                 {
-                    var allNfts = await contract.ERC721_GetAllNFTs().ConfigureAwait(false);
-                    var ownedNfts = new List<NFT>();
-                    foreach (var nft in allNfts)
+                    if (nft.Owner == owner)
                     {
-                        if (nft.Owner == owner)
-                        {
-                            ownedNfts.Add(nft);
-                        }
+                        ownedNfts.Add(nft);
                     }
-                    return ownedNfts.ToList();
                 }
+                return ownedNfts.ToList();
             }
         }
     }
@@ -1379,29 +1325,30 @@ public static class ThirdwebExtensions
     /// </summary>
     /// <param name="contract">The contract to interact with.</param>
     /// <param name="startTokenId">The starting token ID (inclusive). Defaults to 0 if not specified.</param>
-    /// <param name="count">The number of tokens to retrieve. Defaults to the total supply if not specified.</param>
+    /// <param name="count">The number of tokens to retrieve. Defaults to the 100 if not specified.</param>
     /// <returns>A task representing the asynchronous operation, with a list of NFT results containing the token details.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
-    public static async Task<List<NFT>> ERC1155_GetAllNFTs(this ThirdwebContract contract, BigInteger? startTokenId = null, BigInteger? count = null)
+    public static async Task<List<NFT>> ERC1155_GetAllNFTs(this ThirdwebContract contract, int startTokenId = 0, int count = 100)
     {
         if (contract == null)
         {
             throw new ArgumentNullException(nameof(contract));
         }
 
-        if (startTokenId == null)
+        BigInteger totalSupply;
+        try
         {
-            startTokenId = 0;
+            // Not part of IERC1155 so we fallback just in case
+            totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
         }
-
-        if (count == null)
+        catch
         {
-            var totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
-            count = totalSupply - startTokenId;
+            totalSupply = int.MaxValue;
         }
+        count = Math.Min(count, (int)(totalSupply - startTokenId));
 
         var nftTasks = new List<Task<NFT>>();
-        for (var i = startTokenId.Value; i < startTokenId.Value + count.Value; i++)
+        for (var i = startTokenId; i < startTokenId + count; i++)
         {
             nftTasks.Add(contract.ERC1155_GetNFT(i));
         }
@@ -1416,11 +1363,11 @@ public static class ThirdwebExtensions
     /// <param name="contract">The contract to interact with.</param>
     /// <param name="owner">The address of the owner.</param>
     /// <param name="startTokenId">The starting token ID (inclusive). Defaults to 0 if not specified.</param>
-    /// <param name="count">The number of tokens to retrieve. Defaults to total supply if not specified.</param>
+    /// <param name="count">The number of tokens to retrieve. Defaults to 100 if not specified.</param>
     /// <returns>A task representing the asynchronous operation, with a list of NFT results containing the token details.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the owner address is null or empty.</exception>
-    public static async Task<List<NFT>> ERC1155_GetOwnedNFTs(this ThirdwebContract contract, string owner, BigInteger? startTokenId = null, BigInteger? count = null)
+    public static async Task<List<NFT>> ERC1155_GetOwnedNFTs(this ThirdwebContract contract, string owner, int startTokenId = 0, int count = 100)
     {
         if (contract == null)
         {
@@ -1432,21 +1379,22 @@ public static class ThirdwebExtensions
             throw new ArgumentException("Owner must be provided");
         }
 
-        if (startTokenId == null)
+        BigInteger totalSupply;
+        try
         {
-            startTokenId = 0;
+            // Not part of IERC1155 so we fallback just in case
+            totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
         }
-
-        if (count == null)
+        catch
         {
-            var totalSupply = await contract.ERC1155_TotalSupply().ConfigureAwait(false);
-            count = totalSupply - startTokenId;
+            totalSupply = int.MaxValue;
         }
+        count = Math.Min(count, (int)(totalSupply - startTokenId));
 
         var ownerArray = new List<string>();
         var tokenIds = new List<BigInteger>();
 
-        for (var i = startTokenId.Value; i < startTokenId.Value + count.Value; i++)
+        for (var i = startTokenId; i < startTokenId + count; i++)
         {
             ownerArray.Add(owner);
             tokenIds.Add(i);
@@ -1905,7 +1853,7 @@ public static class ThirdwebExtensions
 
         var payableAmount = isNativeToken ? mintRequest.Quantity * mintRequest.Price : BigInteger.Zero;
 
-        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature);
+        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature.HexToBytes());
     }
 
     /// <summary>
@@ -2105,7 +2053,7 @@ public static class ThirdwebExtensions
 
         var payableAmount = isNativeToken ? mintRequest.Price : BigInteger.Zero;
 
-        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature);
+        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature.HexToBytes());
     }
 
     /// <summary>
@@ -2359,7 +2307,7 @@ public static class ThirdwebExtensions
 
         var payableAmount = isNativeToken ? mintRequest.Quantity * mintRequest.PricePerToken : BigInteger.Zero;
 
-        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature);
+        return await ThirdwebContract.Write(wallet, contract, "mintWithSignature", payableAmount, mintRequest, signature.HexToBytes());
     }
 
     /// <summary>
