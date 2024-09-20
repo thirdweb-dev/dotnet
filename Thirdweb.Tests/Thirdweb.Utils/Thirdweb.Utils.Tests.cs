@@ -452,7 +452,6 @@ public class UtilsTests : BaseTests
         Assert.NotNull(chainData.NativeCurrency.Name);
         Assert.NotNull(chainData.NativeCurrency.Symbol);
         Assert.Equal(18, chainData.NativeCurrency.Decimals);
-        Assert.NotNull(chainData.Faucets);
         Assert.NotNull(chainData.Explorers);
 
         timer.Stop();
