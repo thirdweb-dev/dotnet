@@ -12,7 +12,7 @@ public static class Constants
     public const string DEFAULT_FACTORY_ADDRESS_V06 = "0x85e23b94e7F5E9cC1fF78BCe78cfb15B81f0DF00";
     public const string DEFAULT_FACTORY_ADDRESS_V07 = "0x4bE0ddfebcA9A5A4a617dee4DeCe99E7c862dceb";
 
-    internal const string VERSION = "2.2.0";
+    internal const string VERSION = "2.2.1";
     internal const int DEFAULT_FETCH_TIMEOUT = 120000;
     internal const string DUMMY_SIG = "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
     internal const string DUMMY_PAYMASTER_AND_DATA_HEX =
