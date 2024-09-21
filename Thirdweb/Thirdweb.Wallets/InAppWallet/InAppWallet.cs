@@ -23,7 +23,8 @@ public enum AuthProvider
     Siwe,
     Line,
     Guest,
-    X
+    X,
+    Coinbase
 }
 
 public struct LinkedAccount
@@ -105,6 +106,7 @@ public class InAppWallet : PrivateKeyWallet
             Thirdweb.AuthProvider.Line => "Line",
             Thirdweb.AuthProvider.Guest => "Guest",
             Thirdweb.AuthProvider.X => "X",
+            Thirdweb.AuthProvider.Coinbase => "Coinbase",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -230,6 +232,7 @@ public class InAppWallet : PrivateKeyWallet
             case "Telegram":
             case "Line":
             case "X":
+            case "Coinbase":
                 serverRes = await walletToLink.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:

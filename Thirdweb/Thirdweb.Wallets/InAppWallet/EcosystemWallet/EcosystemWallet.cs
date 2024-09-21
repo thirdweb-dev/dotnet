@@ -18,6 +18,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
     private readonly string _email;
     private readonly string _phoneNumber;
     private readonly string _authProvider;
+    private readonly string _ecosystemId;
+    private readonly string _ecosystemPartnerId;
 
     private string _address;
 
@@ -26,9 +28,21 @@ public partial class EcosystemWallet : PrivateKeyWallet
     private const string EMBEDDED_WALLET_PATH_V1 = $"{EMBEDDED_WALLET_BASE_PATH}/v1";
     private const string ENCLAVE_PATH = $"{EMBEDDED_WALLET_PATH_V1}/enclave-wallet";
 
-    private EcosystemWallet(ThirdwebClient client, EmbeddedWallet embeddedWallet, IThirdwebHttpClient httpClient, string email, string phoneNumber, string authProvider, IThirdwebWallet siweSigner)
+    private EcosystemWallet(
+        string ecosystemId,
+        string ecosystemPartnerId,
+        ThirdwebClient client,
+        EmbeddedWallet embeddedWallet,
+        IThirdwebHttpClient httpClient,
+        string email,
+        string phoneNumber,
+        string authProvider,
+        IThirdwebWallet siweSigner
+    )
         : base(client, null)
     {
+        this._ecosystemId = ecosystemId;
+        this._ecosystemPartnerId = ecosystemPartnerId;
         this._embeddedWallet = embeddedWallet;
         this._httpClient = httpClient;
         this._email = email;
@@ -79,6 +93,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             AuthProvider.Line => "Line",
             AuthProvider.Guest => "Guest",
             AuthProvider.X => "X",
+            AuthProvider.Coinbase => "Coinbase",
             AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -113,12 +128,12 @@ public partial class EcosystemWallet : PrivateKeyWallet
         try
         {
             var userAddress = await ResumeEnclaveSession(enclaveHttpClient, embeddedWallet, email, phoneNumber, authproviderStr).ConfigureAwait(false);
-            return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = userAddress };
+            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = userAddress };
         }
         catch
         {
             enclaveHttpClient.RemoveHeader("Authorization");
-            return new EcosystemWallet(client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = null };
+            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = null };
         }
     }
 
@@ -329,6 +344,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             case "Telegram":
             case "Line":
             case "X":
+            case "Coinbase":
                 serverRes = await walletToLink.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:
@@ -450,6 +466,11 @@ public partial class EcosystemWallet : PrivateKeyWallet
         var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
         var loginUrl = await this._embeddedWallet.FetchHeadlessOauthLoginLinkAsync(this._authProvider, platform).ConfigureAwait(false);
         loginUrl = platform == "web" ? loginUrl : $"{loginUrl}?platform={platform}&redirectUrl={redirectUrl}&developerClientId={this.Client.ClientId}&authOption={this._authProvider}";
+        loginUrl = $"{loginUrl}&ecosystemId={this._ecosystemId}";
+        if (!string.IsNullOrEmpty(this._ecosystemPartnerId))
+        {
+            loginUrl = $"{loginUrl}&ecosystemPartnerId={this._ecosystemPartnerId}";
+        }
 
         browser ??= new InAppWalletBrowser();
         var browserResult = await browser.Login(this.Client, loginUrl, redirectUrl, browserOpenAction, cancellationToken).ConfigureAwait(false);

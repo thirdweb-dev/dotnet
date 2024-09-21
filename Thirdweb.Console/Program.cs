@@ -89,12 +89,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 //     );
 // }
 
-// var ecosystemWallet = await EcosystemWallet.Create(
-//     client: client,
-//     ecosystemId: "ecosystem.the-bonfire",
-//     ecosystemPartnerId: "20842d97-be35-4ecc-b51e-9f3ba0843a60",
-//     email: "firekeeper+shardedsucks@thirdweb.com"
-// );
+// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", email: "firekeeper@thirdweb.com");
 
 // if (!await ecosystemWallet.IsConnected())
 // {
@@ -117,9 +112,15 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // );
 // Console.WriteLine($"Ecosystem Wallet typed sign: {ecosystemTypedSignature}");
 
-// var siweSigner = await PrivateKeyWallet.Generate(client: client);
-// var ecosystemWalletOther = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Siwe, siweSigner: siweSigner);
-// var linkedAccounts = await ecosystemWallet.LinkAccount(walletToLink: ecosystemWalletOther, chainId: 421614);
+// var ecosystemWalletOther = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Telegram);
+// var linkedAccounts = await ecosystemWallet.LinkAccount(
+//     walletToLink: ecosystemWalletOther,
+//     browserOpenAction: (url) =>
+//     {
+//         var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//         _ = Process.Start(psi);
+//     }
+// );
 // Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
 
 // var ecosystemSmartWallet = await SmartWallet.Create(ecosystemWallet, 421614);
@@ -322,7 +323,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region InAppWallet - OAuth
 
-// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.X);
+// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Coinbase);
 // if (!await inAppWalletOAuth.IsConnected())
 // {
 //     _ = await inAppWalletOAuth.LoginWithOauth(
