@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Thirdweb;
 
 public static class ThirdwebTask
@@ -11,26 +13,34 @@ public static class ThirdwebTask
     public static async Task Delay(int millisecondsDelay, CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.UtcNow;
-        while ((DateTime.UtcNow - startTime).TotalMilliseconds < millisecondsDelay && !cancellationToken.IsCancellationRequested)
-        {
-            // Yield to avoid blocking the main thread, especially in WebGL
-            await Task.Yield();
+        var endTime = startTime.AddMilliseconds(millisecondsDelay);
+        var currentDelay = 10;
 
-            // Introduce a minimal delay to check again
-            await MinimalDelay(10);
+        while (DateTime.UtcNow < endTime && !cancellationToken.IsCancellationRequested)
+        {
+            await MinimalDelay(currentDelay);
+
+            if (DateTime.UtcNow.AddMilliseconds(currentDelay) < endTime)
+            {
+                currentDelay = Math.Min(currentDelay * 2, 100);
+            }
+            else
+            {
+                currentDelay = (int)(endTime - DateTime.UtcNow).TotalMilliseconds;
+            }
         }
     }
 
     /// <summary>
-    /// Provides a minimal delay by looping for a specified number of milliseconds.
+    /// Provides a minimal delay using a manual loop with short sleeps to reduce CPU usage.
     /// </summary>
     /// <param name="milliseconds">The number of milliseconds to delay.</param>
-    /// <returns>A task that completes after the specified minimal delay.</returns>
     private static async Task MinimalDelay(int milliseconds)
     {
-        var startTime = DateTime.UtcNow;
-        while ((DateTime.UtcNow - startTime).TotalMilliseconds < milliseconds)
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds < milliseconds)
         {
+            Thread.Sleep(1);
             await Task.Yield();
         }
     }
