@@ -236,19 +236,44 @@ public class SmartWallet : IThirdwebWallet
 
         if (Utils.IsZkSync(this._chainId))
         {
-            // Sophon override until they are no longer permissioned
-            if (this._chainId == 531050104)
-            {
-                var paymaster = "0x950e3Bb8C6bab20b56a70550EC037E22032A413e";
-                var paymasterInput = "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000";
-                transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
-                return await ThirdwebTransaction.Send(transaction).ConfigureAwait(false);
-            }
-
             if (this._gasless)
             {
-                (var paymaster, var paymasterInput) = await this.ZkPaymasterData(transactionInput).ConfigureAwait(false);
-                transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
+                string paymaster;
+                string paymasterInput;
+
+                // Until Sophon is out of beta
+                if (this._chainId == 531050104)
+                {
+                    paymaster = "0x950e3Bb8C6bab20b56a70550EC037E22032A413e";
+                    paymasterInput = "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000";
+                }
+                else
+                {
+                    (paymaster, paymasterInput) = await this.ZkPaymasterData(transactionInput).ConfigureAwait(false);
+                }
+
+                if (transaction.Input.ZkSync != null)
+                {
+                    _ = transaction.SetZkSyncOptions(
+                        new ZkSyncOptions(
+                            paymaster: paymaster, // override
+                            paymasterInput: paymasterInput, // override
+                            gasPerPubdataByteLimit: transaction.Input.ZkSync?.GasPerPubdataByteLimit,
+                            factoryDeps: transaction.Input.ZkSync?.FactoryDeps
+                        )
+                    );
+                }
+                else
+                {
+                    _ = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
+                }
+
+                // Until Sophon is out of beta
+                if (this._chainId == 531050104)
+                {
+                    return await ThirdwebTransaction.Send(transaction).ConfigureAwait(false);
+                }
+
                 var zkTx = await ThirdwebTransaction.ConvertToZkSyncTransaction(transaction).ConfigureAwait(false);
                 var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, this).ConfigureAwait(false);
                 // Match bundler ZkTransactionInput type without recreating

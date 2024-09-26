@@ -233,6 +233,10 @@ public class ThirdwebTransaction
 
         if (Utils.IsZkSync(transaction.Input.ChainId.Value))
         {
+            if (transaction.Input.ZkSync.HasValue && transaction.Input.ZkSync?.FactoryDeps.Count > 0)
+            {
+                return (1000000, 1000000);
+            }
             var fees = await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false);
             var maxFee = fees["max_fee_per_gas"].ToObject<HexBigInteger>().Value;
             var maxPriorityFee = fees["max_priority_fee_per_gas"].ToObject<HexBigInteger>().Value;
@@ -295,6 +299,10 @@ public class ThirdwebTransaction
 
         if (Utils.IsZkSync(transaction.Input.ChainId.Value))
         {
+            if (transaction.Input.ZkSync.HasValue && transaction.Input.ZkSync?.FactoryDeps.Count > 0)
+            {
+                return 1000000;
+            }
             var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_limit"].ToString();
             return new HexBigInteger(hex).Value * 10 / 5;
         }
@@ -317,6 +325,10 @@ public class ThirdwebTransaction
 
     private static async Task<BigInteger> GetGasPerPubData(ThirdwebTransaction transaction)
     {
+        if (transaction.Input.ZkSync.HasValue && transaction.Input.ZkSync?.FactoryDeps.Count > 0)
+        {
+            return 100000;
+        }
         var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
         var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_per_pubdata_limit"].ToString();
         var finalGasPerPubData = new HexBigInteger(hex).Value * 10 / 5;

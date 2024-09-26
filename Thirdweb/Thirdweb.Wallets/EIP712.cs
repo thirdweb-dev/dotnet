@@ -78,9 +78,19 @@ public static class EIP712
         IThirdwebWallet signer
     )
     {
+        var rawFactoryDeps = transaction.FactoryDeps;
+        var hashedFactoryDeps = new List<byte[]>();
+        foreach (var factoryDep in transaction.FactoryDeps)
+        {
+            hashedFactoryDeps.Add(Utils.HashMessage(factoryDep));
+        }
+
+        transaction.FactoryDeps = hashedFactoryDeps;
         var typedData = GetTypedDefinition_ZkSyncTransaction(domainName, version, chainId);
         var signatureHex = await signer.SignTypedDataV4(transaction, typedData);
         var signatureRaw = EthECDSASignatureFactory.ExtractECDSASignature(signatureHex);
+
+        transaction.FactoryDeps = rawFactoryDeps;
         return SerializeEip712(transaction, signatureRaw, chainId);
     }
 
@@ -382,7 +392,10 @@ public static class EIP712
             transaction.From.ToByteArray(isUnsigned: true, isBigEndian: true),
             // Add meta
             transaction.GasPerPubdataByteLimit.ToByteArray(isUnsigned: true, isBigEndian: true),
-            Array.Empty<byte>(), // TODO: FactoryDeps
+            // Factory deps is List<byte[]>
+            transaction.FactoryDeps.Count == 0
+                ? Array.Empty<byte>()
+                : RLP.EncodeElement(transaction.FactoryDeps[0]), // TODO: Support multiple deps per tx
             signature.CreateStringSignature().HexToByteArray(),
             // add array of rlp encoded paymaster/paymasterinput
             transaction.Paymaster != 0
