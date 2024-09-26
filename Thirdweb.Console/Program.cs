@@ -74,10 +74,11 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Ecosystem Wallet
 
-// var inAppWallet = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
-// if (!await inAppWallet.IsConnected())
+// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Telegram);
+
+// if (!await ecosystemWallet.IsConnected())
 // {
-//     _ = await inAppWallet.LoginWithOauth(
+//     _ = await ecosystemWallet.LoginWithOauth(
 //         isMobile: false,
 //         (url) =>
 //         {
@@ -87,16 +88,6 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 //         "thirdweb://",
 //         new InAppWalletBrowser()
 //     );
-// }
-
-// var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", email: "firekeeper@thirdweb.com");
-
-// if (!await ecosystemWallet.IsConnected())
-// {
-//     _ = await ecosystemWallet.SendOTP();
-//     Console.WriteLine("Enter OTP:");
-//     var otp = Console.ReadLine();
-//     _ = await ecosystemWallet.LoginWithOtp(otp);
 // }
 // var ecosystemWalletAddress = await ecosystemWallet.GetAddress();
 // Console.WriteLine($"Ecosystem Wallet address: {ecosystemWalletAddress}");

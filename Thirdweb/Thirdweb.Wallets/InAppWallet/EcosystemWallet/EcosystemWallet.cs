@@ -465,7 +465,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
         var platform = this._httpClient?.Headers?["x-sdk-name"] == "UnitySDK_WebGL" ? "web" : "dotnet";
         var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
         var loginUrl = await this._embeddedWallet.FetchHeadlessOauthLoginLinkAsync(this._authProvider, platform).ConfigureAwait(false);
-        loginUrl = platform == "web" ? loginUrl : $"{loginUrl}?platform={platform}&redirectUrl={redirectUrl}&developerClientId={this.Client.ClientId}&authOption={this._authProvider}";
+        loginUrl = platform == "web" ? loginUrl : $"{loginUrl}&redirectUrl={redirectUrl}&developerClientId={this.Client.ClientId}&authOption={this._authProvider}";
         loginUrl = $"{loginUrl}&ecosystemId={this._ecosystemId}";
         if (!string.IsNullOrEmpty(this._ecosystemPartnerId))
         {

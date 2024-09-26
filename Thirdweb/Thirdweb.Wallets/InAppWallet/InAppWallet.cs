@@ -331,7 +331,7 @@ public class InAppWallet : PrivateKeyWallet
         var platform = this.Client.HttpClient?.Headers?["x-sdk-name"] == "UnitySDK_WebGL" ? "web" : "dotnet";
         var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
         var loginUrl = await this.EmbeddedWallet.FetchHeadlessOauthLoginLinkAsync(this.AuthProvider, platform);
-        loginUrl = platform == "web" ? loginUrl : $"{loginUrl}?platform={platform}&redirectUrl={redirectUrl}&developerClientId={this.Client.ClientId}&authOption={this.AuthProvider}";
+        loginUrl = platform == "web" ? loginUrl : $"{loginUrl}&redirectUrl={redirectUrl}&developerClientId={this.Client.ClientId}&authOption={this.AuthProvider}";
 
         browser ??= new InAppWalletBrowser();
         var browserResult = await browser.Login(this.Client, loginUrl, redirectUrl, browserOpenAction, cancellationToken);
