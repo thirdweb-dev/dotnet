@@ -16,10 +16,10 @@ public class ThirdwebHttpClient : IThirdwebHttpClient
     /// <summary>
     /// Initializes a new instance of the <see cref="ThirdwebHttpClient"/> class.
     /// </summary>
-    public ThirdwebHttpClient()
+    public ThirdwebHttpClient(Dictionary<string, string> defaultHeaders = null)
     {
         this._httpClient = new HttpClient();
-        this.Headers = new();
+        this.Headers = defaultHeaders ?? new Dictionary<string, string>();
     }
 
     /// <summary>
