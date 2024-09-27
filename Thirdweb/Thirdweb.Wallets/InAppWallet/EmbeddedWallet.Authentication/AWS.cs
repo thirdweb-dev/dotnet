@@ -12,21 +12,21 @@ internal class AWS
     private static readonly string _recoverySharePasswordLambdaFunctionNameV2 = $"arn:aws:lambda:{AWS_REGION}:324457261097:function:lambda-thirdweb-auth-enc-key-prod-ThirdwebAuthEncKeyFunction";
     private static readonly string _migrationKeyId = $"arn:aws:kms:{AWS_REGION}:324457261097:key/ccfb9ecd-f45d-4f37-864a-25fe72dcb49e";
 
-    internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaAsync(string identityId, string token, string invokePayload, Type thirdwebHttpClientType)
+    internal static async Task<MemoryStream> InvokeRecoverySharePasswordLambdaAsync(string identityId, string token, string invokePayload, IThirdwebHttpClient httpClient)
     {
-        var credentials = await GetTemporaryCredentialsAsync(identityId, token, thirdwebHttpClientType).ConfigureAwait(false);
-        return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, thirdwebHttpClientType, _recoverySharePasswordLambdaFunctionNameV2).ConfigureAwait(false);
+        var credentials = await GetTemporaryCredentialsAsync(identityId, token, httpClient).ConfigureAwait(false);
+        return await InvokeLambdaWithTemporaryCredentialsAsync(credentials, invokePayload, httpClient, _recoverySharePasswordLambdaFunctionNameV2).ConfigureAwait(false);
     }
 
-    internal static async Task<JToken> GenerateDataKey(string identityId, string token, Type thirdwebHttpClientType)
+    internal static async Task<JToken> GenerateDataKey(string identityId, string token, IThirdwebHttpClient httpClient)
     {
-        var credentials = await GetTemporaryCredentialsAsync(identityId, token, thirdwebHttpClientType).ConfigureAwait(false);
-        return await GenerateDataKey(credentials, thirdwebHttpClientType).ConfigureAwait(false);
+        var credentials = await GetTemporaryCredentialsAsync(identityId, token, httpClient).ConfigureAwait(false);
+        return await GenerateDataKey(credentials, httpClient).ConfigureAwait(false);
     }
 
-    private static async Task<AwsCredentials> GetTemporaryCredentialsAsync(string identityId, string token, Type thirdwebHttpClientType)
+    private static async Task<AwsCredentials> GetTemporaryCredentialsAsync(string identityId, string token, IThirdwebHttpClient httpClient)
     {
-        var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
+        var client = Utils.ReconstructHttpClient(httpClient);
         var endpoint = $"https://cognito-identity.{AWS_REGION}.amazonaws.com/";
 
         var payloadForGetCredentials = new { IdentityId = identityId, Logins = new Dictionary<string, string> { { "cognito-identity.amazonaws.com", token } } };
@@ -53,9 +53,9 @@ internal class AWS
         };
     }
 
-    private static async Task<JToken> GenerateDataKey(AwsCredentials credentials, Type thirdwebHttpClientType)
+    private static async Task<JToken> GenerateDataKey(AwsCredentials credentials, IThirdwebHttpClient httpClient)
     {
-        var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
+        var client = Utils.ReconstructHttpClient(httpClient);
         var endpoint = $"https://kms.{AWS_REGION}.amazonaws.com/";
 
         var payloadForGenerateDataKey = new { KeyId = _migrationKeyId, KeySpec = "AES_256" };
@@ -119,12 +119,12 @@ internal class AWS
         return responseObject;
     }
 
-    private static async Task<MemoryStream> InvokeLambdaWithTemporaryCredentialsAsync(AwsCredentials credentials, string invokePayload, Type thirdwebHttpClientType, string lambdaFunction)
+    private static async Task<MemoryStream> InvokeLambdaWithTemporaryCredentialsAsync(AwsCredentials credentials, string invokePayload, IThirdwebHttpClient httpClient, string lambdaFunction)
     {
         var endpoint = $"https://lambda.{AWS_REGION}.amazonaws.com/2015-03-31/functions/{lambdaFunction}/invocations";
         var requestBody = new StringContent(invokePayload, Encoding.UTF8, "application/json");
 
-        var client = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
+        var client = Utils.ReconstructHttpClient(httpClient);
 
         var dateTimeNow = DateTime.UtcNow;
         var dateStamp = dateTimeNow.ToString("yyyyMMdd");

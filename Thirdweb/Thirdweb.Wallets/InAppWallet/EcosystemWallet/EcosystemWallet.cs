@@ -98,7 +98,6 @@ public partial class EcosystemWallet : PrivateKeyWallet
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
 
-        var enclaveHttpClient = client.HttpClient.GetType().GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
         var headers = client.HttpClient.Headers.ToDictionary(entry => entry.Key, entry => entry.Value);
         var platform = client.HttpClient.Headers["x-sdk-platform"];
         var version = client.HttpClient.Headers["x-sdk-version"];
@@ -120,7 +119,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
                 headers.Add("x-ecosystem-partner-id", ecosystemPartnerId);
             }
         }
-        enclaveHttpClient.SetHeaders(headers);
+        var enclaveHttpClient = Utils.ReconstructHttpClient(client.HttpClient, headers);
 
         storageDirectoryPath ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Thirdweb", "EcosystemWallet");
         var embeddedWallet = new EmbeddedWallet(client, storageDirectoryPath, ecosystemId, ecosystemPartnerId);

@@ -47,14 +47,10 @@ internal partial class Server : ServerBase
 
     private readonly string _clientId;
 
-    private static Type _thirdwebHttpClientType = typeof(ThirdwebHttpClient);
-
     internal Server(ThirdwebClient client, IThirdwebHttpClient httpClient)
     {
         this._clientId = client.ClientId;
         this._httpClient = httpClient;
-
-        _thirdwebHttpClientType = httpClient.GetType();
     }
 
     // account/connect
@@ -308,7 +304,7 @@ internal partial class Server : ServerBase
     internal override async Task<JToken> GenerateEncryptedKeyResultAsync(string authToken)
     {
         var webExchangeResult = await this.FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
-        return await AWS.GenerateDataKey(webExchangeResult.IdentityId, webExchangeResult.Token, _thirdwebHttpClientType).ConfigureAwait(false);
+        return await AWS.GenerateDataKey(webExchangeResult.IdentityId, webExchangeResult.Token, this._httpClient).ConfigureAwait(false);
     }
 
     private async Task<VerifyResult> InvokeAuthResultLambdaAsync(AuthResultType authResult)
@@ -317,7 +313,7 @@ internal partial class Server : ServerBase
         var idTokenResponse = await this.FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
 
         var invokePayload = Serialize(new { token = idTokenResponse.LambdaToken });
-        var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idTokenResponse.IdentityId, idTokenResponse.Token, invokePayload, _thirdwebHttpClientType).ConfigureAwait(false);
+        var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idTokenResponse.IdentityId, idTokenResponse.Token, invokePayload, this._httpClient).ConfigureAwait(false);
 
         var jsonSerializer = new JsonSerializer();
         var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));

@@ -10,44 +10,6 @@ public class InAppWalletBrowser : IThirdwebBrowser
     private TaskCompletionSource<BrowserResult> _taskCompletionSource;
     private static readonly HttpListener _httpListener = new();
 
-    private readonly string _closePageResponse =
-        @"
-            <html>
-            <head>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        background-color: #2c2c2c;
-                        color: #ffffff;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
-                        flex-direction: column;
-                    }
-                    .container {
-                        background-color: #3c3c3c;
-                        padding: 20px;
-                        border-radius: 10px;
-                        box-shadow: 0 0 10px rgba(0,0,0,0.3);
-                        text-align: center;
-                    }
-                    .instruction {
-                        margin-top: 20px;
-                        font-size: 18px;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class='container'>
-                    <b>DONE!</b>
-                    <div class='instruction'>
-                        You can close this tab/window now.
-                    </div>
-                </div>
-            </body>
-            </html>";
-
     /// <summary>
     /// Initiates a login process using the in-app browser.
     /// </summary>
@@ -124,7 +86,7 @@ public class InAppWalletBrowser : IThirdwebBrowser
         var httpContext = httpListener.EndGetContext(result);
         var httpRequest = httpContext.Request;
         var httpResponse = httpContext.Response;
-        var buffer = System.Text.Encoding.UTF8.GetBytes(this._closePageResponse);
+        var buffer = System.Text.Encoding.UTF8.GetBytes(Constants.REDIRECT_HTML);
 
         httpResponse.ContentLength64 = buffer.Length;
         var output = httpResponse.OutputStream;

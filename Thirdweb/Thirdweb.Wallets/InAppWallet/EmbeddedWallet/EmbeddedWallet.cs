@@ -20,8 +20,6 @@ internal partial class EmbeddedWallet
         this._localStorage = new LocalStorage(client.ClientId, storageDirectoryPath);
 
         // Create a new client of same type with extra needed headers for EWS
-        var thirdwebHttpClientType = client.HttpClient.GetType();
-        var ewsHttpClient = thirdwebHttpClientType.GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
         var headers = client.HttpClient.Headers.ToDictionary(entry => entry.Key, entry => entry.Value);
         var platform = client.HttpClient.Headers["x-sdk-platform"];
         var version = client.HttpClient.Headers["x-sdk-version"];
@@ -45,7 +43,7 @@ internal partial class EmbeddedWallet
             }
         }
 
-        ewsHttpClient.SetHeaders(headers);
+        var ewsHttpClient = Utils.ReconstructHttpClient(client.HttpClient, headers);
 
         this._server = new Server(client, ewsHttpClient);
 

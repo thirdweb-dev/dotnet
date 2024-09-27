@@ -836,4 +836,14 @@ public static partial class Utils
         var code = await rpc.SendRequestAsync<string>("eth_getCode", address, "latest");
         return code != "0x";
     }
+
+    public static IThirdwebHttpClient ReconstructHttpClient(IThirdwebHttpClient httpClient, Dictionary<string, string> defaultHeaders = null)
+    {
+        var reconstructedHttpClient = httpClient.GetType().GetConstructor(Type.EmptyTypes).Invoke(null) as IThirdwebHttpClient;
+        if (defaultHeaders != null)
+        {
+            reconstructedHttpClient.SetHeaders(defaultHeaders ?? httpClient.Headers);
+        }
+        return reconstructedHttpClient;
+    }
 }

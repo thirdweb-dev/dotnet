@@ -21,7 +21,17 @@ public class ThirdwebClient
     internal string BundleId { get; }
     internal ITimeoutOptions FetchTimeoutOptions { get; }
 
-    private ThirdwebClient(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null, IThirdwebHttpClient httpClient = null)
+    private ThirdwebClient(
+        string clientId = null,
+        string secretKey = null,
+        string bundleId = null,
+        ITimeoutOptions fetchTimeoutOptions = null,
+        IThirdwebHttpClient httpClient = null,
+        string sdkName = null,
+        string sdkOs = null,
+        string sdkPlatform = null,
+        string sdkVersion = null
+    )
     {
         if (string.IsNullOrEmpty(clientId) && string.IsNullOrEmpty(secretKey))
         {
@@ -42,30 +52,25 @@ public class ThirdwebClient
 
         this.FetchTimeoutOptions = fetchTimeoutOptions ?? new TimeoutOptions();
 
-        if (httpClient != null)
+        var defaultHeaders = new Dictionary<string, string>
         {
-            this.HttpClient = httpClient;
-        }
-        else
+            { "x-sdk-name", sdkName ?? "Thirdweb.NET" },
+            { "x-sdk-os", sdkOs ?? System.Runtime.InteropServices.RuntimeInformation.OSDescription },
+            { "x-sdk-platform", sdkPlatform ?? "dotnet" },
+            { "x-sdk-version", sdkVersion ?? Constants.VERSION },
+            { "x-client-id", this.ClientId },
+        };
+        if (!string.IsNullOrEmpty(this.BundleId))
         {
-            var defaultHeaders = new Dictionary<string, string>
-            {
-                { "x-sdk-name", "Thirdweb.NET" },
-                { "x-sdk-os", System.Runtime.InteropServices.RuntimeInformation.OSDescription },
-                { "x-sdk-platform", "dotnet" },
-                { "x-sdk-version", Constants.VERSION },
-                { "x-client-id", this.ClientId },
-            };
-            if (!string.IsNullOrEmpty(this.SecretKey))
-            {
-                defaultHeaders.Add("x-secret-key", this.SecretKey);
-            }
-            if (!string.IsNullOrEmpty(this.BundleId))
-            {
-                defaultHeaders.Add("x-bundle-id", this.BundleId);
-            }
-            this.HttpClient = new ThirdwebHttpClient(defaultHeaders);
+            defaultHeaders.Add("x-bundle-id", this.BundleId);
         }
+        if (!string.IsNullOrEmpty(this.SecretKey))
+        {
+            defaultHeaders.Add("x-secret-key", this.SecretKey);
+        }
+
+        this.HttpClient = httpClient ?? new ThirdwebHttpClient();
+        this.HttpClient.SetHeaders(defaultHeaders);
     }
 
     /// <summary>
@@ -76,9 +81,23 @@ public class ThirdwebClient
     /// <param name="bundleId">The bundle ID (optional).</param>
     /// <param name="fetchTimeoutOptions">The fetch timeout options (optional).</param>
     /// <param name="httpClient">The HTTP client (optional).</param>
+    /// <param name="sdkName">The SDK name (optional).</param>
+    /// <param name="sdkOs">The SDK OS (optional).</param>
+    /// <param name="sdkPlatform">The SDK platform (optional).</param>
+    /// <param name="sdkVersion">The SDK version (optional).</param>
     /// <returns>A new instance of <see cref="ThirdwebClient"/>.</returns>
-    public static ThirdwebClient Create(string clientId = null, string secretKey = null, string bundleId = null, ITimeoutOptions fetchTimeoutOptions = null, IThirdwebHttpClient httpClient = null)
+    public static ThirdwebClient Create(
+        string clientId = null,
+        string secretKey = null,
+        string bundleId = null,
+        ITimeoutOptions fetchTimeoutOptions = null,
+        IThirdwebHttpClient httpClient = null,
+        string sdkName = null,
+        string sdkOs = null,
+        string sdkPlatform = null,
+        string sdkVersion = null
+    )
     {
-        return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient);
+        return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient, sdkName, sdkOs, sdkPlatform, sdkVersion);
     }
 }
