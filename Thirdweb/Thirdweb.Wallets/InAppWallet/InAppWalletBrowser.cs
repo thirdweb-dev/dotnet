@@ -10,6 +10,14 @@ public class InAppWalletBrowser : IThirdwebBrowser
     private TaskCompletionSource<BrowserResult> _taskCompletionSource;
     private static readonly HttpListener _httpListener = new();
 
+    private readonly string _redirectHtmlOverride;
+
+    public InAppWalletBrowser(string redirectHtmlOverride = null)
+    {
+        _httpListener.Prefixes.Add("http://localhost:8080/");
+        this._redirectHtmlOverride = redirectHtmlOverride;
+    }
+
     /// <summary>
     /// Initiates a login process using the in-app browser.
     /// </summary>
@@ -86,7 +94,7 @@ public class InAppWalletBrowser : IThirdwebBrowser
         var httpContext = httpListener.EndGetContext(result);
         var httpRequest = httpContext.Request;
         var httpResponse = httpContext.Response;
-        var buffer = System.Text.Encoding.UTF8.GetBytes(Constants.REDIRECT_HTML);
+        var buffer = System.Text.Encoding.UTF8.GetBytes(this._redirectHtmlOverride ?? Constants.REDIRECT_HTML);
 
         httpResponse.ContentLength64 = buffer.Length;
         var output = httpResponse.OutputStream;
