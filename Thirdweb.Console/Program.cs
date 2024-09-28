@@ -55,6 +55,18 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region AA ZkSync (Sophon)
+
+// var sophonPmWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 531050104);
+
+// var sophonPmWalletAddress = await sophonPmWallet.GetAddress();
+// Console.WriteLine($"Sophon Paymaster Wallet address: {sophonPmWalletAddress}");
+
+// var receipt = await sophonPmWallet.ExecuteTransaction(new ThirdwebTransactionInput(chainId: 531050104, to: sophonPmWalletAddress, value: 0, data: "0x"));
+// Console.WriteLine($"Transaction hash: {receipt}");
+
+#endregion
+
 #region AA ZkSync (Abstract)
 
 // var smartWalletAbstract = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
