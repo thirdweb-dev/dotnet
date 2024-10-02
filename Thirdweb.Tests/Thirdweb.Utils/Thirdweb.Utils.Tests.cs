@@ -467,6 +467,18 @@ public class UtilsTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task FetchThirdwebChainDataAsync_ReturnsStack_WhenResponseIsSuccessful()
+    {
+        var chainId = new BigInteger(300);
+
+        var chainData = await Utils.GetChainMetadata(this.Client, chainId);
+        Assert.NotNull(chainData);
+        _ = Assert.IsType<ThirdwebChainData>(chainData);
+        Assert.NotNull(chainData.StackType);
+        Assert.Contains("zksync", chainData.StackType);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task FetchThirdwebChainDataAsync_ThrowsException_WhenResponseHasError()
     {
         var chainId = 123124125418928133;

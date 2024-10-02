@@ -133,7 +133,7 @@ public class SmartWallet : IThirdwebWallet
         ThirdwebContract factoryContract = null;
         ThirdwebContract accountContract = null;
 
-        if (!Utils.IsZkSync(chainId))
+        if (!await Utils.IsZkSync(personalWallet.Client, chainId).ConfigureAwait(false))
         {
             var entryPointAbi = entryPointVersion == 6 ? Constants.ENTRYPOINT_V06_ABI : Constants.ENTRYPOINT_V07_ABI;
             var factoryAbi = entryPointVersion == 6 ? Constants.FACTORY_V06_ABI : Constants.FACTORY_V07_ABI;
@@ -202,7 +202,7 @@ public class SmartWallet : IThirdwebWallet
         var entryPointVersion = Utils.GetEntryPointVersion(this._entryPointContract?.Address);
         this._bundlerUrl = entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
         this._paymasterUrl = entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
-        if (!Utils.IsZkSync(chainId))
+        if (!await Utils.IsZkSync(this.Client, chainId).ConfigureAwait(false))
         {
             this._entryPointContract = await ThirdwebContract.Create(this.Client, this._entryPointContract.Address, chainId, this._entryPointContract.Abi).ConfigureAwait(false);
             this._factoryContract = await ThirdwebContract.Create(this.Client, this._factoryContract.Address, chainId, this._factoryContract.Abi).ConfigureAwait(false);
@@ -212,7 +212,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<bool> IsDeployed()
     {
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             return true;
         }
@@ -230,11 +230,13 @@ public class SmartWallet : IThirdwebWallet
 
         await this.SwitchNetwork(transactionInput.ChainId.Value).ConfigureAwait(false);
 
-        var transaction = await ThirdwebTransaction.Create(Utils.IsZkSync(this._chainId) ? this._personalAccount : this, transactionInput).ConfigureAwait(false);
+        var transaction = await ThirdwebTransaction
+            .Create(await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false) ? this._personalAccount : this, transactionInput)
+            .ConfigureAwait(false);
         transaction = await ThirdwebTransaction.Prepare(transaction).ConfigureAwait(false);
         transactionInput = transaction.Input;
 
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             if (this._gasless)
             {
@@ -664,7 +666,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task ForceDeploy()
     {
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             return;
         }
@@ -696,7 +698,9 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<string> GetAddress()
     {
-        return Utils.IsZkSync(this._chainId) ? await this._personalAccount.GetAddress().ConfigureAwait(false) : this._accountContract.Address.ToChecksumAddress();
+        return await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false)
+            ? await this._personalAccount.GetAddress().ConfigureAwait(false)
+            : this._accountContract.Address.ToChecksumAddress();
     }
 
     public Task<string> EthSign(byte[] rawMessage)
@@ -721,7 +725,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<string> PersonalSign(string message)
     {
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             return await this._personalAccount.PersonalSign(message).ConfigureAwait(false);
         }
@@ -796,7 +800,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<List<string>> GetAllAdmins()
     {
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -807,7 +811,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<List<SignerPermissions>> GetAllActiveSigners()
     {
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -826,7 +830,7 @@ public class SmartWallet : IThirdwebWallet
         string reqValidityEndTimestamp
     )
     {
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -859,14 +863,14 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
     {
-        return Utils.IsZkSync(this._chainId)
+        return await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false)
             ? throw new InvalidOperationException("Account Permissions are not supported in ZkSync")
             : await this.CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString()).ConfigureAwait(false);
     }
 
     public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
     {
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -898,7 +902,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
     {
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -949,7 +953,7 @@ public class SmartWallet : IThirdwebWallet
     {
         await this.SwitchNetwork(transaction.ChainId.Value).ConfigureAwait(false);
 
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             throw new Exception("User Operations are not supported in ZkSync");
         }
@@ -978,7 +982,7 @@ public class SmartWallet : IThirdwebWallet
     {
         await this.SwitchNetwork(transaction.ChainId.Value).ConfigureAwait(false);
 
-        if (Utils.IsZkSync(this._chainId))
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
             throw new Exception("Offline Signing is not supported in ZkSync");
         }
@@ -1002,7 +1006,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<bool> IsConnected()
     {
-        return Utils.IsZkSync(this._chainId) ? await this._personalAccount.IsConnected().ConfigureAwait(false) : this._accountContract != null;
+        return await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false) ? await this._personalAccount.IsConnected().ConfigureAwait(false) : this._accountContract != null;
     }
 
     public Task Disconnect()

@@ -59,6 +59,9 @@ public class ThirdwebChainData
 
     [JsonProperty("testnet")]
     public bool Testnet { get; set; }
+
+    [JsonProperty("stackType")]
+    public string StackType { get; set; }
 }
 
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
