@@ -683,8 +683,8 @@ public static partial class Utils
     }
 
 #if NET8_0_OR_GREATER
-        [GeneratedRegex("^\\.|\\.$")]
-        private static partial Regex PacketRegex();
+    [GeneratedRegex("^\\.|\\.$")]
+    private static partial Regex PacketRegex();
 #endif
 
     public static byte[] PacketToBytes(string packet)
@@ -845,5 +845,40 @@ public static partial class Utils
             reconstructedHttpClient.SetHeaders(defaultHeaders ?? httpClient.Headers);
         }
         return reconstructedHttpClient;
+    }
+
+    /// <summary>
+    /// Gets the social profiles for the given address or ENS.
+    /// </summary>
+    /// <param name="client">The Thirdweb client.</param>
+    /// <param name="addressOrEns">The wallet address or ENS.</param>
+    /// <returns>A <see cref="SocialProfiles"/> object containing the social profiles.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the address or ENS is null or empty.</exception>
+    /// <exception cref="ArgumentException">Thrown when the address or ENS is invalid.</exception>
+    /// <exception cref="Exception">Thrown when the social profiles could not be fetched.</exception>
+    public static async Task<SocialProfiles> GetSocialProfiles(ThirdwebClient client, string addressOrEns)
+    {
+        if (string.IsNullOrEmpty(addressOrEns))
+        {
+            throw new ArgumentNullException(nameof(addressOrEns));
+        }
+
+        if (!addressOrEns.IsValidAddress() && !addressOrEns.Contains('.'))
+        {
+            throw new ArgumentException("Invalid address or ENS.");
+        }
+
+        addressOrEns = await GetAddressFromENS(client, addressOrEns).ConfigureAwait(false) ?? addressOrEns;
+
+        var url = $"{Constants.SOCIAL_API_URL}/v1/profiles/{addressOrEns}";
+        var response = await client.HttpClient.GetAsync(url).ConfigureAwait(false);
+        var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var deserializedResponse = JsonConvert.DeserializeObject<SocialProfileResponse>(json);
+        if (deserializedResponse == null || deserializedResponse.Error != null)
+        {
+            throw new Exception($"Failed to fetch social profiles for address {addressOrEns}. Error: {deserializedResponse?.Error}");
+        }
+
+        return new SocialProfiles(deserializedResponse.Data);
     }
 }
