@@ -42,23 +42,8 @@ public static class BundlerClient
 
     public static async Task<PMSponsorOperationResponse> PMSponsorUserOperation(ThirdwebClient client, string paymasterUrl, object requestId, object userOp, string entryPoint)
     {
-        var response = await BundlerRequest(
-                client,
-                paymasterUrl,
-                requestId,
-                "pm_sponsorUserOperation",
-                userOp,
-                entryPoint == Constants.ENTRYPOINT_ADDRESS_V06 ? new EntryPointWrapper() { EntryPoint = entryPoint } : entryPoint
-            )
-            .ConfigureAwait(false);
-        try
-        {
-            return JsonConvert.DeserializeObject<PMSponsorOperationResponse>(response.Result.ToString());
-        }
-        catch
-        {
-            return new PMSponsorOperationResponse() { PaymasterAndData = response.Result.ToString() };
-        }
+        var response = await BundlerRequest(client, paymasterUrl, requestId, "pm_sponsorUserOperation", userOp, entryPoint).ConfigureAwait(false);
+        return JsonConvert.DeserializeObject<PMSponsorOperationResponse>(response.Result.ToString());
     }
 
     public static async Task<ZkPaymasterDataResponse> ZkPaymasterData(ThirdwebClient client, string paymasterUrl, object requestId, ThirdwebTransactionInput txInput)
