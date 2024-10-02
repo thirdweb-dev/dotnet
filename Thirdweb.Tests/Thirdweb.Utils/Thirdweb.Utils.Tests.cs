@@ -624,4 +624,49 @@ public class UtilsTests : BaseTests
 
         Assert.False(isDeployed);
     }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetSocialProfiles_WithENS()
+    {
+        var socialProfiles = await Utils.GetSocialProfiles(this.Client, "joenrv.eth");
+
+        Assert.NotNull(socialProfiles);
+        Assert.True(socialProfiles.EnsProfiles.Count > 0);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetSocialProfiles_WithAddress()
+    {
+        var address = "0x2247d5d238d0f9d37184d8332aE0289d1aD9991b";
+        var socialProfiles = await Utils.GetSocialProfiles(this.Client, address);
+
+        Assert.NotNull(socialProfiles);
+        Assert.True(socialProfiles.EnsProfiles.Count > 0);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetSocialProfiles_ThrowsException_WhenInputIsInvalid()
+    {
+        var invalidInput = "invalid_input";
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await Utils.GetSocialProfiles(this.Client, invalidInput));
+
+        Assert.Contains("Invalid address or ENS.", exception.Message);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetSocialProfiles_ThrowsException_WhenInputIsNull()
+    {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () => await Utils.GetSocialProfiles(this.Client, null));
+
+        Assert.Equal("addressOrEns", exception.ParamName);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetSocialProfiles_ThrowsException_InvalidAuth()
+    {
+        var client = ThirdwebClient.Create("a");
+        var exception = await Assert.ThrowsAsync<Exception>(async () => await Utils.GetSocialProfiles(client, "joenrv.eth"));
+
+        Assert.Contains("Failed to fetch social profiles", exception.Message);
+    }
 }

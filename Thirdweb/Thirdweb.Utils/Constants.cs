@@ -23,6 +23,7 @@ public static class Constants
     internal const string FALLBACK_IPFS_GATEWAY = "https://ipfs.io/ipfs/";
     internal const string PIN_URI = "https://storage.thirdweb.com/ipfs/upload";
     internal const string ENS_REGISTRY_ADDRESS = "0xce01f8eee7E479C928F8919abD53E553a36CeF67";
+    internal const string SOCIAL_API_URL = "https://social.thirdweb.com";
 
     internal const string ENTRYPOINT_V06_ABI =
         /*lang=json,strict*/

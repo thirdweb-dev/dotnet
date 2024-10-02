@@ -35,6 +35,13 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region Get Social Profiles
+
+// var socialProfiles = await Utils.GetSocialProfiles(client, "joenrv.eth");
+// Console.WriteLine($"Social Profiles: {socialProfiles}");
+
+#endregion
+
 #region AA 0.6
 
 // var smartWallet06 = await SmartWallet.Create(

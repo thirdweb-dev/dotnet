@@ -1018,4 +1018,52 @@ public class SmartWallet : IThirdwebWallet
         this._accountContract = null;
         return Task.CompletedTask;
     }
+
+    public async Task<List<LinkedAccount>> LinkAccount(
+        IThirdwebWallet walletToLink,
+        string otp = null,
+        bool? isMobile = null,
+        Action<string> browserOpenAction = null,
+        string mobileRedirectScheme = "thirdweb://",
+        IThirdwebBrowser browser = null,
+        BigInteger? chainId = null,
+        string jwt = null,
+        string payload = null
+    )
+    {
+        var personalWallet = await this.GetPersonalWallet().ConfigureAwait(false);
+        if (personalWallet is not InAppWallet and not EcosystemWallet)
+        {
+            throw new Exception("SmartWallet.LinkAccount is only supported if the signer is an InAppWallet or EcosystemWallet");
+        }
+        else if (walletToLink is not InAppWallet and not EcosystemWallet)
+        {
+            throw new Exception("SmartWallet.LinkAccount is only supported if the wallet to link is an InAppWallet or EcosystemWallet");
+        }
+        else if (personalWallet is InAppWallet && walletToLink is not InAppWallet)
+        {
+            throw new Exception("SmartWallet.LinkAccount with an InAppWallet signer is only supported if the wallet to link is also an InAppWallet");
+        }
+        else if (personalWallet is EcosystemWallet && walletToLink is not EcosystemWallet)
+        {
+            throw new Exception("SmartWallet.LinkAccount with an EcosystemWallet signer is only supported if the wallet to link is also an EcosystemWallet");
+        }
+        else
+        {
+            return await personalWallet.LinkAccount(walletToLink, otp, isMobile, browserOpenAction, mobileRedirectScheme, browser, chainId, jwt, payload).ConfigureAwait(false);
+        }
+    }
+
+    public async Task<List<LinkedAccount>> GetLinkedAccounts()
+    {
+        var personalWallet = await this.GetPersonalWallet().ConfigureAwait(false);
+        if (personalWallet is not InAppWallet and not EcosystemWallet)
+        {
+            throw new Exception("SmartWallet.LinkAccount is only supported if the signer is an InAppWallet or EcosystemWallet");
+        }
+        else
+        {
+            return await personalWallet.GetLinkedAccounts().ConfigureAwait(false);
+        }
+    }
 }
