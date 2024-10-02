@@ -55,22 +55,22 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
-#region AA ZkSync (Abstract)
+// #region AA ZkSync
 
-// var smartWalletAbstract = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
+// var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 4654, gasless: true);
 
-// var receipt = await smartWalletAbstract.ExecuteTransaction(
-//     new ThirdwebTransactionInput(11124)
+// var hash = await zkSmartWallet.SendTransaction(
+//     new ThirdwebTransactionInput(4654)
 //     {
-//         To = await smartWalletAbstract.GetAddress(),
+//         To = await zkSmartWallet.GetAddress(),
 //         Value = new HexBigInteger(BigInteger.Zero),
-//         Data = "0x"
+//         Data = "0x",
 //     }
 // );
 
-// Console.WriteLine($"Transaction hash: {receipt}");
+// Console.WriteLine($"Transaction hash: {hash}");
 
-#endregion
+// #endregion
 
 #region Ecosystem Wallet
 
