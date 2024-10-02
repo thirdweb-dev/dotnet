@@ -66,7 +66,7 @@ public class SmartWallet : IThirdwebWallet
                 new TokenPaymasterConfig()
                 {
                     ChainId = 8453,
-                    PaymasterAddress = "0x0c6199eE133EB4ff8a6bbD03370336C5A5d9D536",
+                    PaymasterAddress = "0xff4d12b1f8d276aa4a9e8cc80539e806791bfe28",
                     TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
                     BalanceStorageSlot = 9
                 }
@@ -125,8 +125,8 @@ public class SmartWallet : IThirdwebWallet
 
         var entryPointVersion = Utils.GetEntryPointVersion(entryPoint);
 
-        bundlerUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
-        paymasterUrl ??= entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
+        bundlerUrl ??= $"https://{chainId}.bundler.thirdweb.com/v2";
+        paymasterUrl ??= $"https://{chainId}.bundler.thirdweb.com/v2";
         factoryAddress ??= entryPointVersion == 6 ? Constants.DEFAULT_FACTORY_ADDRESS_V06 : Constants.DEFAULT_FACTORY_ADDRESS_V07;
 
         ThirdwebContract entryPointContract = null;
@@ -160,9 +160,6 @@ public class SmartWallet : IThirdwebWallet
             {
                 throw new InvalidOperationException("Token paymaster chain ID does not match the smart account chain ID.");
             }
-
-            // TODO: Re-enable token paymasters
-            throw new InvalidOperationException("Token paymasters are currently disabled.");
         }
 
         return new SmartWallet(
@@ -199,9 +196,8 @@ public class SmartWallet : IThirdwebWallet
 
         this._chainId = chainId;
 
-        var entryPointVersion = Utils.GetEntryPointVersion(this._entryPointContract?.Address);
-        this._bundlerUrl = entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
-        this._paymasterUrl = entryPointVersion == 6 ? $"https://{chainId}.bundler.thirdweb.com" : $"https://{chainId}.bundler.thirdweb.com/v2";
+        this._bundlerUrl = this._bundlerUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._bundlerUrl;
+        this._paymasterUrl = this._paymasterUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._paymasterUrl;
         if (!Utils.IsZkSync(chainId))
         {
             this._entryPointContract = await ThirdwebContract.Create(this.Client, this._entryPointContract.Address, chainId, this._entryPointContract.Abi).ConfigureAwait(false);
@@ -314,6 +310,7 @@ public class SmartWallet : IThirdwebWallet
                     _ = await tokenContract.ERC20_Approve(this, this._erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1).ConfigureAwait(false);
                 }
                 this._isApproved = true;
+                await ThirdwebTask.Delay(1000).ConfigureAwait(false);
                 (initCode, factory, factoryData) = await this.GetInitCode().ConfigureAwait(false);
             }
             catch (Exception e)
@@ -370,7 +367,7 @@ public class SmartWallet : IThirdwebWallet
                 Nonce = await this.GetNonce().ConfigureAwait(false),
                 InitCode = initCode,
                 CallData = executeInput.Data.HexToBytes(),
-                CallGasLimit = 0,
+                CallGasLimit = transactionInput.Gas == null ? 0 : 21000 + transactionInput.Gas.Value,
                 VerificationGasLimit = 0,
                 PreVerificationGas = 0,
                 MaxFeePerGas = maxFee,
@@ -379,20 +376,24 @@ public class SmartWallet : IThirdwebWallet
                 Signature = Constants.DUMMY_SIG.HexToBytes(),
             };
 
-            // Update paymaster data if any
+            // Update paymaster data and gas
 
-            partialUserOp.PaymasterAndData = (await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false)).PaymasterAndData.HexToBytes();
+            var pmSponsorResult = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false);
+            partialUserOp.PaymasterAndData = pmSponsorResult.PaymasterAndData.HexToBytes();
 
-            // Estimate gas
-
-            var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address);
-            partialUserOp.CallGasLimit = Math.Max((long)(50000 + new HexBigInteger(gasEstimates.CallGasLimit).Value), (long?)transactionInput.Gas?.Value ?? 0);
-            partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
-            partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
-
-            // Update paymaster data if any
-
-            partialUserOp.PaymasterAndData = (await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false)).PaymasterAndData.HexToBytes();
+            if (pmSponsorResult.VerificationGasLimit == null || pmSponsorResult.PreVerificationGas == null)
+            {
+                var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address);
+                partialUserOp.CallGasLimit = new HexBigInteger(gasEstimates.CallGasLimit).Value;
+                partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
+                partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
+            }
+            else
+            {
+                partialUserOp.CallGasLimit = new HexBigInteger(pmSponsorResult.CallGasLimit).Value;
+                partialUserOp.VerificationGasLimit = new HexBigInteger(pmSponsorResult.VerificationGasLimit).Value;
+                partialUserOp.PreVerificationGas = new HexBigInteger(pmSponsorResult.PreVerificationGas).Value;
+            }
 
             // Hash, sign and encode the user operation
 
@@ -435,6 +436,12 @@ public class SmartWallet : IThirdwebWallet
 
             // Update Paymaster Data / Estimate gas
 
+            var pmSponsorResult = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false);
+            partialUserOp.Paymaster = pmSponsorResult.Paymaster;
+            partialUserOp.PaymasterData = pmSponsorResult.PaymasterData?.HexToBytes() ?? Array.Empty<byte>();
+
+            Dictionary<string, object> stateDict = null;
+
             if (this.UseERC20Paymaster && !this._isApproving)
             {
                 var abiEncoder = new ABIEncode();
@@ -444,30 +451,27 @@ public class SmartWallet : IThirdwebWallet
                 {
                     { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex().ToString(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() }
                 };
-                var stateDict = new Dictionary<string, object> { { this._erc20PaymasterToken, new { stateDiff = storageDict } } };
-                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false);
-                partialUserOp.Paymaster = res.Paymaster;
-                partialUserOp.PaymasterData = res.PaymasterData.HexToBytes();
+                stateDict = new Dictionary<string, object> { { this._erc20PaymasterToken, new { stateDiff = storageDict } } };
+            }
+            else
+            {
+                partialUserOp.PreVerificationGas = new HexBigInteger(pmSponsorResult.PreVerificationGas ?? "0x0").Value;
+                partialUserOp.VerificationGasLimit = new HexBigInteger(pmSponsorResult.VerificationGasLimit ?? "0x0").Value;
+                partialUserOp.CallGasLimit = new HexBigInteger(pmSponsorResult.CallGasLimit ?? "0x0").Value;
+                partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(pmSponsorResult.PaymasterVerificationGasLimit ?? "0x0").Value;
+                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(pmSponsorResult.PaymasterPostOpGasLimit ?? "0x0").Value;
+            }
 
+            if (partialUserOp.PreVerificationGas == 0 || partialUserOp.VerificationGasLimit == 0)
+            {
                 var gasEstimates = await BundlerClient
                     .EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address, stateDict)
                     .ConfigureAwait(false);
-                partialUserOp.CallGasLimit = 21000 + new HexBigInteger(gasEstimates.CallGasLimit).Value;
+                partialUserOp.CallGasLimit = new HexBigInteger(gasEstimates.CallGasLimit).Value;
                 partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
                 partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
                 partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(gasEstimates.PaymasterVerificationGasLimit).Value;
                 partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(gasEstimates.PaymasterPostOpGasLimit).Value;
-            }
-            else
-            {
-                var res = await this.GetPaymasterAndData(requestId, EncodeUserOperation(partialUserOp), simulation).ConfigureAwait(false);
-                partialUserOp.Paymaster = res.Paymaster;
-                partialUserOp.PaymasterData = res.PaymasterData?.HexToBytes() ?? Array.Empty<byte>();
-                partialUserOp.PreVerificationGas = new HexBigInteger(res.PreVerificationGas ?? "0x0").Value;
-                partialUserOp.VerificationGasLimit = new HexBigInteger(res.VerificationGasLimit ?? "0x0").Value;
-                partialUserOp.CallGasLimit = new HexBigInteger(res.CallGasLimit ?? "0x0").Value;
-                partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(res.PaymasterVerificationGasLimit ?? "0x0").Value;
-                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(res.PaymasterPostOpGasLimit ?? "0x0").Value;
             }
 
             // Hash, sign and encode the user operation
