@@ -129,6 +129,20 @@ public interface IThirdwebWallet
     /// Disconnects the wallet (if using InAppWallet, clears session)
     /// </summary>
     Task Disconnect();
+
+    Task<List<LinkedAccount>> LinkAccount(
+        IThirdwebWallet walletToLink,
+        string otp = null,
+        bool? isMobile = null,
+        Action<string> browserOpenAction = null,
+        string mobileRedirectScheme = "thirdweb://",
+        IThirdwebBrowser browser = null,
+        System.Numerics.BigInteger? chainId = null,
+        string jwt = null,
+        string payload = null
+    );
+
+    Task<List<LinkedAccount>> GetLinkedAccounts();
 }
 
 /// <summary>

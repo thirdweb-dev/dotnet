@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text;
 using Nethereum.ABI.EIP712;
 using Nethereum.Hex.HexConvertors.Extensions;
@@ -357,6 +358,26 @@ public class PrivateKeyWallet : IThirdwebWallet
     public virtual Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
     {
         throw new InvalidOperationException("ExecuteTransaction is not supported for private key wallets, please use the unified Contract or ThirdwebTransaction APIs.");
+    }
+
+    public virtual Task<List<LinkedAccount>> LinkAccount(
+        IThirdwebWallet walletToLink,
+        string otp = null,
+        bool? isMobile = null,
+        Action<string> browserOpenAction = null,
+        string mobileRedirectScheme = "thirdweb://",
+        IThirdwebBrowser browser = null,
+        BigInteger? chainId = null,
+        string jwt = null,
+        string payload = null
+    )
+    {
+        throw new InvalidOperationException("LinkAccount is not supported for private key wallets.");
+    }
+
+    public virtual Task<List<LinkedAccount>> GetLinkedAccounts()
+    {
+        throw new InvalidOperationException("GetLinkedAccounts is not supported for private key wallets.");
     }
 
     #endregion
