@@ -267,8 +267,8 @@ public partial class EcosystemWallet : PrivateKeyWallet
 
     #region Account Linking
 
-    public async Task<List<LinkedAccount>> LinkAccount(
-        EcosystemWallet walletToLink,
+    public override async Task<List<LinkedAccount>> LinkAccount(
+        IThirdwebWallet walletToLink,
         string otp = null,
         bool? isMobile = null,
         Action<string> browserOpenAction = null,
@@ -289,51 +289,56 @@ public partial class EcosystemWallet : PrivateKeyWallet
             throw new ArgumentNullException(nameof(walletToLink), "Wallet to link cannot be null.");
         }
 
-        if (await walletToLink.IsConnected().ConfigureAwait(false))
+        if (walletToLink is not EcosystemWallet ecosystemWallet)
+        {
+            throw new ArgumentException("Cannot link account with a non-EcosystemWallet wallet.");
+        }
+
+        if (await ecosystemWallet.IsConnected().ConfigureAwait(false))
         {
             throw new ArgumentException("Cannot link account with a wallet that is already created and connected.");
         }
 
         Server.VerifyResult serverRes = null;
-        switch (walletToLink._authProvider)
+        switch (ecosystemWallet._authProvider)
         {
             case "Email":
-                if (string.IsNullOrEmpty(walletToLink._email))
+                if (string.IsNullOrEmpty(ecosystemWallet._email))
                 {
                     throw new ArgumentException("Cannot link account with an email wallet that does not have an email address.");
                 }
-                serverRes = await walletToLink.PreAuth_Otp(otp).ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_Otp(otp).ConfigureAwait(false);
                 break;
             case "Phone":
-                if (string.IsNullOrEmpty(walletToLink._phoneNumber))
+                if (string.IsNullOrEmpty(ecosystemWallet._phoneNumber))
                 {
                     throw new ArgumentException("Cannot link account with a phone wallet that does not have a phone number.");
                 }
-                serverRes = await walletToLink.PreAuth_Otp(otp).ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_Otp(otp).ConfigureAwait(false);
                 break;
             case "Siwe":
-                if (walletToLink._siweSigner == null || chainId == null)
+                if (ecosystemWallet._siweSigner == null || chainId == null)
                 {
                     throw new ArgumentException("Cannot link account with a Siwe wallet without a signer and chain ID.");
                 }
-                serverRes = await walletToLink.PreAuth_Siwe(walletToLink._siweSigner, chainId.Value).ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_Siwe(ecosystemWallet._siweSigner, chainId.Value).ConfigureAwait(false);
                 break;
             case "JWT":
                 if (string.IsNullOrEmpty(jwt))
                 {
                     throw new ArgumentException("Cannot link account with a JWT wallet without a JWT.");
                 }
-                serverRes = await walletToLink.PreAuth_JWT(jwt).ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_JWT(jwt).ConfigureAwait(false);
                 break;
             case "AuthEndpoint":
                 if (string.IsNullOrEmpty(payload))
                 {
                     throw new ArgumentException("Cannot link account with an AuthEndpoint wallet without a payload.");
                 }
-                serverRes = await walletToLink.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
                 break;
             case "Guest":
-                serverRes = await walletToLink.PreAuth_Guest().ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_Guest().ConfigureAwait(false);
                 break;
             case "Google":
             case "Apple":
@@ -344,10 +349,10 @@ public partial class EcosystemWallet : PrivateKeyWallet
             case "Line":
             case "X":
             case "Coinbase":
-                serverRes = await walletToLink.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:
-                throw new ArgumentException($"Cannot link account with an unsupported authentication provider:", walletToLink._authProvider);
+                throw new ArgumentException($"Cannot link account with an unsupported authentication provider:", ecosystemWallet._authProvider);
         }
 
         var currentAccountToken = this._embeddedWallet.GetSessionData()?.AuthToken;
@@ -374,7 +379,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
         return linkedAccounts;
     }
 
-    public async Task<List<LinkedAccount>> GetLinkedAccounts()
+    public override async Task<List<LinkedAccount>> GetLinkedAccounts()
     {
         var currentAccountToken = this._embeddedWallet.GetSessionData()?.AuthToken;
         var serverLinkedAccounts = await this._embeddedWallet.GetLinkedAccountsAsync(currentAccountToken).ConfigureAwait(false);

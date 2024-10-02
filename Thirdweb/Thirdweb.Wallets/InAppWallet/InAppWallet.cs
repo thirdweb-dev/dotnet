@@ -156,8 +156,8 @@ public class InAppWallet : PrivateKeyWallet
 
     #region Account Linking
 
-    public async Task<List<LinkedAccount>> LinkAccount(
-        InAppWallet walletToLink,
+    public override async Task<List<LinkedAccount>> LinkAccount(
+        IThirdwebWallet walletToLink,
         string otp = null,
         bool? isMobile = null,
         Action<string> browserOpenAction = null,
@@ -178,51 +178,56 @@ public class InAppWallet : PrivateKeyWallet
             throw new ArgumentNullException(nameof(walletToLink), "Wallet to link cannot be null.");
         }
 
-        if (await walletToLink.IsConnected().ConfigureAwait(false))
+        if (walletToLink is not InAppWallet inAppWallet)
+        {
+            throw new ArgumentException("Cannot link account with a wallet that is not an InAppWallet.");
+        }
+
+        if (await inAppWallet.IsConnected().ConfigureAwait(false))
         {
             throw new ArgumentException("Cannot link account with a wallet that is already created and connected.");
         }
 
         Server.VerifyResult serverRes = null;
-        switch (walletToLink.AuthProvider)
+        switch (inAppWallet.AuthProvider)
         {
             case "Email":
-                if (string.IsNullOrEmpty(walletToLink.Email))
+                if (string.IsNullOrEmpty(inAppWallet.Email))
                 {
                     throw new ArgumentException("Cannot link account with an email wallet that does not have an email address.");
                 }
-                serverRes = await walletToLink.PreAuth_Otp(otp).ConfigureAwait(false);
+                serverRes = await inAppWallet.PreAuth_Otp(otp).ConfigureAwait(false);
                 break;
             case "Phone":
-                if (string.IsNullOrEmpty(walletToLink.PhoneNumber))
+                if (string.IsNullOrEmpty(inAppWallet.PhoneNumber))
                 {
                     throw new ArgumentException("Cannot link account with a phone wallet that does not have a phone number.");
                 }
-                serverRes = await walletToLink.PreAuth_Otp(otp).ConfigureAwait(false);
+                serverRes = await inAppWallet.PreAuth_Otp(otp).ConfigureAwait(false);
                 break;
             case "Siwe":
-                if (walletToLink.SiweSigner == null || chainId == null)
+                if (inAppWallet.SiweSigner == null || chainId == null)
                 {
                     throw new ArgumentException("Cannot link account with a Siwe wallet without a signer and chain ID.");
                 }
-                serverRes = await walletToLink.PreAuth_Siwe(walletToLink.SiweSigner, chainId.Value).ConfigureAwait(false);
+                serverRes = await inAppWallet.PreAuth_Siwe(inAppWallet.SiweSigner, chainId.Value).ConfigureAwait(false);
                 break;
             case "JWT":
                 if (string.IsNullOrEmpty(jwt))
                 {
                     throw new ArgumentException("Cannot link account with a JWT wallet without a JWT.");
                 }
-                serverRes = await walletToLink.PreAuth_JWT(jwt).ConfigureAwait(false);
+                serverRes = await inAppWallet.PreAuth_JWT(jwt).ConfigureAwait(false);
                 break;
             case "AuthEndpoint":
                 if (string.IsNullOrEmpty(payload))
                 {
                     throw new ArgumentException("Cannot link account with an AuthEndpoint wallet without a payload.");
                 }
-                serverRes = await walletToLink.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
+                serverRes = await inAppWallet.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
                 break;
             case "Guest":
-                serverRes = await walletToLink.PreAuth_Guest().ConfigureAwait(false);
+                serverRes = await inAppWallet.PreAuth_Guest().ConfigureAwait(false);
                 break;
             case "Google":
             case "Apple":
@@ -233,10 +238,10 @@ public class InAppWallet : PrivateKeyWallet
             case "Line":
             case "X":
             case "Coinbase":
-                serverRes = await walletToLink.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
+                serverRes = await inAppWallet.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:
-                throw new ArgumentException($"Cannot link account with an unsupported authentication provider:", walletToLink.AuthProvider);
+                throw new ArgumentException($"Cannot link account with an unsupported authentication provider:", inAppWallet.AuthProvider);
         }
 
         var currentAccountToken = this.EmbeddedWallet.GetSessionData()?.AuthToken;
@@ -263,7 +268,7 @@ public class InAppWallet : PrivateKeyWallet
         return linkedAccounts;
     }
 
-    public async Task<List<LinkedAccount>> GetLinkedAccounts()
+    public override async Task<List<LinkedAccount>> GetLinkedAccounts()
     {
         var currentAccountToken = this.EmbeddedWallet.GetSessionData()?.AuthToken;
         var serverLinkedAccounts = await this.EmbeddedWallet.GetLinkedAccountsAsync(currentAccountToken).ConfigureAwait(false);
