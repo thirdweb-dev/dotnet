@@ -646,7 +646,7 @@ public class UtilsTests : BaseTests
     {
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () => await Utils.GetSocialProfiles(this.Client, null));
 
-        Assert.Equal("address", exception.ParamName);
+        Assert.Equal("addressOrEns", exception.ParamName);
     }
 
     [Fact(Timeout = 120000)]
