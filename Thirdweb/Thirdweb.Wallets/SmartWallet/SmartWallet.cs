@@ -66,7 +66,7 @@ public class SmartWallet : IThirdwebWallet
                 new TokenPaymasterConfig()
                 {
                     ChainId = 8453,
-                    PaymasterAddress = "0x0c6199eE133EB4ff8a6bbD03370336C5A5d9D536",
+                    PaymasterAddress = "0xff4d12b1f8d276aa4a9e8cc80539e806791bfe28",
                     TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
                     BalanceStorageSlot = 9
                 }
@@ -310,6 +310,7 @@ public class SmartWallet : IThirdwebWallet
                     _ = await tokenContract.ERC20_Approve(this, this._erc20PaymasterAddress, BigInteger.Pow(2, 96) - 1).ConfigureAwait(false);
                 }
                 this._isApproved = true;
+                await ThirdwebTask.Delay(1000).ConfigureAwait(false);
                 (initCode, factory, factoryData) = await this.GetInitCode().ConfigureAwait(false);
             }
             catch (Exception e)
