@@ -294,7 +294,7 @@ public static partial class Utils
     /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
     public static async Task<bool> IsZkSync(ThirdwebClient client, BigInteger chainId)
     {
-        if (chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124) || chainId.Equals(4654))
+        if (chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124) || chainId.Equals(4654) || chainId.Equals(333271))
         {
             return true;
         }

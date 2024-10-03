@@ -197,7 +197,7 @@ public class SmartWallet : IThirdwebWallet
         this._chainId = chainId;
         this._bundlerUrl = this._bundlerUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._bundlerUrl;
         this._paymasterUrl = this._paymasterUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._paymasterUrl;
-        
+
         if (!await Utils.IsZkSync(this.Client, chainId).ConfigureAwait(false))
         {
             this._entryPointContract = await ThirdwebContract.Create(this.Client, this._entryPointContract.Address, chainId, this._entryPointContract.Abi).ConfigureAwait(false);
