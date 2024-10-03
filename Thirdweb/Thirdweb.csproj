@@ -12,7 +12,7 @@
     <Copyright>Copyright (c) thirdweb 2024</Copyright>
     <PackageProjectUrl>https://thirdweb.com/</PackageProjectUrl>
     <PackageIcon>icon.png</PackageIcon>
-    <RepositoryUrl>https://github.com/thirdweb-dev/thirdweb-dotnet</RepositoryUrl>
+    <RepositoryUrl>https://github.com/thirdweb-dev/dotnet</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>thirdweb wallet contracts client web3 ethereum blockchain game unity godot</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

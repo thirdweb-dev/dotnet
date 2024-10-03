@@ -50,4 +50,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: ./
           verbose: true
-          slug: thirdweb-dev/thirdweb-dotnet
+          slug: thirdweb-dev/dotnet
