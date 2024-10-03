@@ -1,9 +1,9 @@
-![net-banner](https://github.com/thirdweb-dev/thirdweb-dotnet/assets/43042585/6abcdae9-b49f-492a-98de-b01756e21798)
+![net-banner](https://github.com/thirdweb-dev/dotnet/assets/43042585/6abcdae9-b49f-492a-98de-b01756e21798)
 
 [<img alt=".NET Documentation" src="https://img.shields.io/badge/.NET-Documentation-purple?logo=dotnet&style=for-the-badge" height="30">](https://portal.thirdweb.com/dotnet)
 [<img alt="NuGet Version" src="https://img.shields.io/nuget/v/Thirdweb?logo=nuget&style=for-the-badge" height="30">](https://www.nuget.org/packages/Thirdweb)
 [<img alt="NuGet Downloads" src="https://img.shields.io/nuget/dt/Thirdweb?logo=nuget&style=for-the-badge" height="30">](https://www.nuget.org/packages/Thirdweb)
-[<img alt="Codecov" src="https://img.shields.io/codecov/c/github/thirdweb-dev/thirdweb-dotnet?logo=codecov&style=for-the-badge" height="30">](https://app.codecov.io/gh/thirdweb-dev/thirdweb-dotnet)
+[<img alt="Codecov" src="https://img.shields.io/codecov/c/github/thirdweb-dev/dotnet?logo=codecov&style=for-the-badge" height="30">](https://app.codecov.io/gh/thirdweb-dev/dotnet)
 
 ## Overview
 
@@ -39,7 +39,7 @@ dotnet add package Thirdweb
 
 [Documentation Portal](https://portal.thirdweb.com/dotnet)
 
-[Full API Reference](https://thirdweb-dev.github.io/thirdweb-dotnet/)
+[Full API Reference](https://thirdweb-dev.github.io/dotnet/)
 
 ## Need Help?
 
