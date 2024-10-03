@@ -289,11 +289,20 @@ public static partial class Utils
     /// <summary>
     /// Checks if the chain ID corresponds to zkSync.
     /// </summary>
+    /// <param name="client">The Thirdweb client.</param>
     /// <param name="chainId">The chain ID.</param>
     /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
-    public static bool IsZkSync(BigInteger chainId)
+    public static async Task<bool> IsZkSync(ThirdwebClient client, BigInteger chainId)
     {
-        return chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124) || chainId.Equals(4654);
+        if (chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124) || chainId.Equals(4654) || chainId.Equals(333271))
+        {
+            return true;
+        }
+        else
+        {
+            var chainData = await GetChainMetadata(client, chainId).ConfigureAwait(false);
+            return !string.IsNullOrEmpty(chainData.StackType) && chainData.StackType.Contains("zksync", StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     /// <summary>
@@ -371,6 +380,7 @@ public static partial class Utils
             }
             else
             {
+                deserializedResponse.Data.Explorers = deserializedResponse.Data.Explorers == null || deserializedResponse.Data.Explorers.Count == 0 ? null : deserializedResponse.Data.Explorers;
                 _chainDataCache[chainId] = deserializedResponse.Data;
                 return deserializedResponse.Data;
             }
