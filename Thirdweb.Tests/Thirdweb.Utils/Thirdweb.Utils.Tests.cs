@@ -469,7 +469,7 @@ public class UtilsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task FetchThirdwebChainDataAsync_ReturnsStack_WhenResponseIsSuccessful()
     {
-        var chainId = new BigInteger(300);
+        var chainId = new BigInteger(4654);
 
         var chainData = await Utils.GetChainMetadata(this.Client, chainId);
         Assert.NotNull(chainData);
