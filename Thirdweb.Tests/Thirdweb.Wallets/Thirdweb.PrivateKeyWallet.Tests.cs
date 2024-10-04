@@ -21,11 +21,50 @@ public class PrivateKeyWalletTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
-    public async void Initialization_NullPrivateKey()
+    public async void Create_NullClient()
+    {
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => PrivateKeyWallet.Create(null, "0x1234567890abcdef"));
+    }
+
+    [Fact(Timeout = 120000)]
+    public async void Create_NullPrivateKey()
     {
         var client = this.Client;
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () => await PrivateKeyWallet.Create(client, null));
         Assert.Equal("Private key cannot be null or empty. (Parameter 'privateKeyHex')", ex.Message);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async void Create_EmptyPrivateKey()
+    {
+        var client = this.Client;
+        var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () => await PrivateKeyWallet.Create(client, string.Empty));
+        Assert.Equal("Private key cannot be null or empty. (Parameter 'privateKeyHex')", ex.Message);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async void Generate_NullClient()
+    {
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => PrivateKeyWallet.Generate(null));
+    }
+
+    [Fact(Timeout = 120000)]
+    public async void LoadOrGenerate_NullClient()
+    {
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => PrivateKeyWallet.LoadOrGenerate(null));
+    }
+
+    [Fact(Timeout = 120000)]
+    public async void SaveAndDelete_CheckPath()
+    {
+        var wallet = await PrivateKeyWallet.Generate(this.Client);
+        await wallet.Save();
+
+        var path = PrivateKeyWallet.GetSavePath();
+        Assert.True(File.Exists(path));
+
+        PrivateKeyWallet.Delete();
+        Assert.False(File.Exists(path));
     }
 
     [Fact(Timeout = 120000)]

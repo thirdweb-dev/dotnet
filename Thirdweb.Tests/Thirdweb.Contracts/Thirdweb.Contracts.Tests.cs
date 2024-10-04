@@ -94,6 +94,14 @@ public class ContractsTests : BaseTests
         Assert.Equal("Kitty DropERC20", result);
     }
 
+    [Fact(Timeout = 120000)]
+    public async Task PrepareTest_NoSig()
+    {
+        var contract = await this.GetContract();
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebContract.Prepare(null, contract, "sup", 0));
+        Assert.Contains("Method signature not found in contract ABI.", exception.Message);
+    }
+
     private sealed class AllowlistProof
     {
         public List<byte[]> Proof { get; set; } = new List<byte[]>();
@@ -263,7 +271,7 @@ public class ContractsTests : BaseTests
     private async Task<ThirdwebContract> GetContract()
     {
         var client = this.Client;
-        var contract = await ThirdwebContract.Create(client: client, address: "0xEBB8a39D865465F289fa349A67B3391d8f910da9", chain: 421614);
+        var contract = await ThirdwebContract.Create(client: client, address: "0xEBB8a39D865465F289fa349A67B3391d8f910da9", chain: 421614); // DropERC20
         return contract;
     }
 }
