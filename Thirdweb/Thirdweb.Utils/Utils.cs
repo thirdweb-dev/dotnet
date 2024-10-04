@@ -26,6 +26,7 @@ public static partial class Utils
     private static readonly Dictionary<BigInteger, bool> _eip155EnforcedCache = new();
     private static readonly Dictionary<BigInteger, ThirdwebChainData> _chainDataCache = new();
     private static readonly Dictionary<string, string> _ensCache = new();
+    private static readonly List<string[]> _errorSubstringsComposite = new() { new string[] { "account", "not found!" }, new[] { "wrong", "chainid" } };
 
     /// <summary>
     /// Computes the client ID from the given secret key.
@@ -305,7 +306,7 @@ public static partial class Utils
     /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
     public static async Task<bool> IsZkSync(ThirdwebClient client, BigInteger chainId)
     {
-        if (chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124) || chainId.Equals(4654) || chainId.Equals(333271))
+        if (chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124) || chainId.Equals(4654) || chainId.Equals(333271) || chainId.Equals(37111))
         {
             return true;
         }
@@ -659,9 +660,7 @@ public static partial class Utils
             else
             {
                 // Check if all substrings in any of the composite substrings are present
-                var errorSubstringsComposite = new List<string[]> { new string[] { "account", "not found!" }, new[] { "wrong", "chainid" } };
-
-                result = errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
+                result = _errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
             }
         }
 

@@ -130,6 +130,19 @@ public interface IThirdwebWallet
     /// </summary>
     Task Disconnect();
 
+    /// <summary>
+    /// Links a new account (auth method) to the current wallet. The current wallet must be connected and the wallet being linked must not be fully connected ie created.
+    /// </summary>
+    /// <param name="walletToLink">The wallet to link.</param>
+    /// <param name="otp">The OTP code if the wallet to link is an email or phone wallet.</param>
+    /// <param name="isMobile">Set to true if linking OAuth on mobile.</param>
+    /// <param name="browserOpenAction">The action to open the browser if linking OAuth.</param>
+    /// <param name="mobileRedirectScheme">The redirect scheme if linking OAuth on mobile.</param>
+    /// <param name="browser">The browser to use if linking OAuth.</param>
+    /// <param name="chainId">The chain ID if linking an external wallet (SIWE).</param>
+    /// <param name="jwt">The JWT token if linking custom JWT auth.</param>
+    /// <param name="payload">The login payload if linking custom AuthEndpoint auth.</param>
+    /// <returns>A list of <see cref="LinkedAccount"/> objects.</returns>
     Task<List<LinkedAccount>> LinkAccount(
         IThirdwebWallet walletToLink,
         string otp = null,
@@ -142,6 +155,10 @@ public interface IThirdwebWallet
         string payload = null
     );
 
+    /// <summary>
+    /// Returns a list of linked accounts to the current wallet.
+    /// </summary>
+    /// <returns>A list of <see cref="LinkedAccount"/> objects.</returns>
     Task<List<LinkedAccount>> GetLinkedAccounts();
 }
 

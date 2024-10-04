@@ -442,7 +442,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721A_TokensOfOwner()
     {
-        var contract = await this.GetDrop721Contract();
+        var contract = await this.GetERC721AContract();
         var ownerAddress = Constants.ADDRESS_ZERO;
         var tokens = await contract.ERC721A_TokensOfOwner(ownerAddress);
         Assert.NotNull(tokens);
@@ -452,7 +452,7 @@ public class ExtensionsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task ERC721A_TokensOfOwnerIn()
     {
-        var contract = await this.GetDrop721Contract();
+        var contract = await this.GetERC721AContract();
         var ownerAddress = Constants.ADDRESS_ZERO;
         var tokens = await contract.ERC721A_TokensOfOwnerIn(ownerAddress, 0, 1);
         Assert.NotNull(tokens);
