@@ -9,6 +9,16 @@ public static class ThirdwebExtensions
 {
     #region Common
 
+    public static async Task<bool> SupportsInterface(this ThirdwebContract contract, string interfaceId)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        return await ThirdwebContract.Read<bool>(contract, "supportsInterface", interfaceId);
+    }
+
     /// <summary>
     /// Reads data from the contract using the specified method.
     /// </summary>

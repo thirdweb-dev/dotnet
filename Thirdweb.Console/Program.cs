@@ -74,7 +74,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
-// #region AA ZkSync
+#region AA ZkSync
 
 // var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 4654, gasless: true);
 
@@ -89,7 +89,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 // Console.WriteLine($"Transaction hash: {hash}");
 
-// #endregion
+#endregion
 
 #region Ecosystem Wallet
 

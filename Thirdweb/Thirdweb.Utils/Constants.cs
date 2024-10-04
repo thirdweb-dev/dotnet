@@ -2,6 +2,10 @@
 
 public static class Constants
 {
+    public const string IERC20_INTERFACE_ID = "0x36372b07";
+    public const string IERC721_INTERFACE_ID = "0x80ac58cd";
+    public const string IERC1155_INTERFACE_ID = "0xd9b67a26";
+
     public const string ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
     public const string NATIVE_TOKEN_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     public const double DECIMALS_18 = 1000000000000000000;
