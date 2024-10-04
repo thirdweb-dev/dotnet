@@ -10,6 +10,7 @@ using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.ABI.Model;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Hex.HexTypes;
 using Nethereum.Signer;
 using Nethereum.Util;
 using Newtonsoft.Json;
@@ -25,6 +26,7 @@ public static partial class Utils
     private static readonly Dictionary<BigInteger, bool> _eip155EnforcedCache = new();
     private static readonly Dictionary<BigInteger, ThirdwebChainData> _chainDataCache = new();
     private static readonly Dictionary<string, string> _ensCache = new();
+    private static readonly List<string[]> _errorSubstringsComposite = new() { new string[] { "account", "not found!" }, new[] { "wrong", "chainid" } };
 
     /// <summary>
     /// Computes the client ID from the given secret key.
@@ -127,6 +129,16 @@ public static partial class Utils
     public static byte[] HexToBytes(this string hex)
     {
         return hex.HexToByteArray();
+    }
+
+    /// <summary>
+    /// Converts the given hex string to a big integer.
+    /// </summary>
+    /// <param name="hex">The hex string to convert.</param>
+    /// <returns>The big integer.</returns>
+    public static BigInteger HexToBigInt(this string hex)
+    {
+        return new HexBigInteger(hex).Value;
     }
 
     /// <summary>
@@ -294,7 +306,7 @@ public static partial class Utils
     /// <returns>True if it is a zkSync chain ID, otherwise false.</returns>
     public static async Task<bool> IsZkSync(ThirdwebClient client, BigInteger chainId)
     {
-        if (chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124) || chainId.Equals(4654) || chainId.Equals(333271))
+        if (chainId.Equals(324) || chainId.Equals(300) || chainId.Equals(302) || chainId.Equals(11124) || chainId.Equals(4654) || chainId.Equals(333271) || chainId.Equals(37111))
         {
             return true;
         }
@@ -604,9 +616,6 @@ public static partial class Utils
         return list;
     }
 
-    private static readonly string[] _composite1 = new[] { "account", "not found!" };
-    private static readonly string[] _composite2 = new[] { "wrong", "chainid" };
-
     public static async Task<bool> IsEip155Enforced(ThirdwebClient client, BigInteger chainId)
     {
         if (_eip155EnforcedCache.TryGetValue(chainId, out var value))
@@ -651,9 +660,7 @@ public static partial class Utils
             else
             {
                 // Check if all substrings in any of the composite substrings are present
-                var errorSubstringsComposite = new List<string[]> { _composite1, _composite2 };
-
-                result = errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
+                result = _errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
             }
         }
 
@@ -845,6 +852,53 @@ public static partial class Utils
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var code = await rpc.SendRequestAsync<string>("eth_getCode", address, "latest");
         return code != "0x";
+    }
+
+    public static async Task<BigInteger> FetchGasPrice(ThirdwebClient client, BigInteger chainId, bool withBump = true)
+    {
+        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+        var hex = await rpc.SendRequestAsync<string>("eth_gasPrice").ConfigureAwait(false);
+        var gasPrice = hex.HexToBigInt();
+        return withBump ? gasPrice * 10 / 9 : gasPrice;
+    }
+
+    public static async Task<(BigInteger maxFeePerGas, BigInteger maxPriorityFeePerGas)> FetchGasFees(ThirdwebClient client, BigInteger chainId, bool withBump = true)
+    {
+        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+
+        // Polygon Mainnet & Amoy
+        if (chainId == (BigInteger)137 || chainId == (BigInteger)80002)
+        {
+            var gasPrice = await FetchGasPrice(client, chainId, withBump).ConfigureAwait(false);
+            return (gasPrice * 3 / 2, gasPrice * 4 / 3);
+        }
+
+        // Celo Mainnet, Alfajores & Baklava
+        if (chainId == (BigInteger)42220 || chainId == (BigInteger)44787 || chainId == (BigInteger)62320)
+        {
+            var gasPrice = await FetchGasPrice(client, chainId, withBump).ConfigureAwait(false);
+            return (gasPrice, gasPrice);
+        }
+
+        try
+        {
+            var block = await rpc.SendRequestAsync<JObject>("eth_getBlockByNumber", "latest", true).ConfigureAwait(false);
+            var baseBlockFee = block["baseFeePerGas"]?.ToObject<HexBigInteger>();
+            var maxFeePerGas = baseBlockFee.Value * 2;
+            var maxPriorityFeePerGas = ((await rpc.SendRequestAsync<HexBigInteger>("eth_maxPriorityFeePerGas").ConfigureAwait(false))?.Value) ?? maxFeePerGas / 2;
+
+            if (maxPriorityFeePerGas > maxFeePerGas)
+            {
+                maxPriorityFeePerGas = maxFeePerGas / 2;
+            }
+
+            return (maxFeePerGas + (maxPriorityFeePerGas * 10 / 9), maxPriorityFeePerGas * 10 / 9);
+        }
+        catch
+        {
+            var gasPrice = await FetchGasPrice(client, chainId, withBump).ConfigureAwait(false);
+            return (gasPrice, gasPrice);
+        }
     }
 
     public static IThirdwebHttpClient ReconstructHttpClient(IThirdwebHttpClient httpClient, Dictionary<string, string> defaultHeaders = null)

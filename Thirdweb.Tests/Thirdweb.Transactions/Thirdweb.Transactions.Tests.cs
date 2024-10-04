@@ -444,4 +444,16 @@ public class TransactionTests : BaseTests
         var aaReceipt2 = await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, aaTxHash, CancellationToken.None);
         Assert.NotNull(aaReceipt2);
     }
+
+    [Fact(Timeout = 120000)]
+    public async Task WaitForTransactionReceipt_ToStringReturnsJson()
+    {
+        var client = this.Client;
+        var chainId = 421614;
+        var normalTxHash = "0x5a0b6cdb01ecfb25b368d3de1ac844414980ee3c330ec8c1435117b75027b5d7";
+
+        var normalReceipt = await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, normalTxHash);
+        Assert.NotNull(normalReceipt);
+        Assert.StartsWith("{", normalReceipt.ToString());
+    }
 }

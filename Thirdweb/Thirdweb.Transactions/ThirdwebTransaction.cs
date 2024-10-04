@@ -215,9 +215,7 @@ public class ThirdwebTransaction
     /// <returns>The estimated gas price.</returns>
     public static async Task<BigInteger> EstimateGasPrice(ThirdwebTransaction transaction, bool withBump = true)
     {
-        var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
-        var hex = new HexBigInteger(await rpc.SendRequestAsync<string>("eth_gasPrice").ConfigureAwait(false));
-        return withBump ? hex.Value * 10 / 9 : hex.Value;
+        return await Utils.FetchGasPrice(transaction._wallet.Client, transaction.Input.ChainId.Value, withBump).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -238,38 +236,9 @@ public class ThirdwebTransaction
             var maxPriorityFee = fees["max_priority_fee_per_gas"].ToObject<HexBigInteger>().Value;
             return withBump ? (maxFee * 10 / 5, maxPriorityFee * 10 / 5) : (maxFee, maxPriorityFee);
         }
-
-        var gasPrice = await EstimateGasPrice(transaction, withBump).ConfigureAwait(false);
-
-        // Polygon Mainnet & Amoy
-        if (chainId == (BigInteger)137 || chainId == (BigInteger)80002)
+        else
         {
-            return (gasPrice * 3 / 2, gasPrice * 4 / 3);
-        }
-
-        // Celo Mainnet, Alfajores & Baklava
-        if (chainId == (BigInteger)42220 || chainId == (BigInteger)44787 || chainId == (BigInteger)62320)
-        {
-            return (gasPrice, gasPrice);
-        }
-
-        try
-        {
-            var block = await rpc.SendRequestAsync<JObject>("eth_getBlockByNumber", "latest", true).ConfigureAwait(false);
-            var baseBlockFee = block["baseFeePerGas"]?.ToObject<HexBigInteger>();
-            var maxFeePerGas = baseBlockFee.Value * 2;
-            var maxPriorityFeePerGas = ((await rpc.SendRequestAsync<HexBigInteger>("eth_maxPriorityFeePerGas").ConfigureAwait(false))?.Value) ?? maxFeePerGas / 2;
-
-            if (maxPriorityFeePerGas > maxFeePerGas)
-            {
-                maxPriorityFeePerGas = maxFeePerGas / 2;
-            }
-
-            return (maxFeePerGas + (maxPriorityFeePerGas * 10 / 9), maxPriorityFeePerGas * 10 / 9);
-        }
-        catch
-        {
-            return (gasPrice, gasPrice);
+            return await Utils.FetchGasFees(transaction._wallet.Client, chainId, withBump).ConfigureAwait(false);
         }
     }
 

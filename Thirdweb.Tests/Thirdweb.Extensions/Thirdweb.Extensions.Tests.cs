@@ -105,6 +105,18 @@ public class ExtensionsTests : BaseTests
         _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => ThirdwebExtensions.Transfer(wallet, 0, validAddress, 0));
         _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebExtensions.Transfer(wallet, this._chainId, null, 0));
         _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => ThirdwebExtensions.Transfer(wallet, this._chainId, validAddress, -1));
+
+        // GetTransactionCountRaw
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.GetTransactionCountRaw(null, this._chainId, validAddress));
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => ThirdwebExtensions.GetTransactionCountRaw(client, 0, validAddress));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => ThirdwebExtensions.GetTransactionCountRaw(client, this._chainId, null));
+
+        // GetTransactionCount
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.GetTransactionCount(null));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.GetTransactionCount(null, "latest"));
+
+        // ERC721_TokenByIndex
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.ERC721_TokenByIndex(null, 0));
     }
 
     [Fact(Timeout = 120000)]
@@ -269,6 +281,37 @@ public class ExtensionsTests : BaseTests
         Assert.True(receipt.TransactionHash.Length == 66);
     }
 
+    [Fact(Timeout = 120000)]
+    public async Task Contract_Read()
+    {
+        var contract = await this.GetTokenERC20Contract();
+        var result = await contract.Read<string>("name");
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task Contract_Write()
+    {
+        var contract = await this.GetTokenERC20Contract();
+        var wallet = await this.GetSmartWallet();
+        var receipt = await contract.Write(wallet, "approve", 0, contract.Address, BigInteger.Zero);
+        Assert.NotNull(receipt);
+        Assert.True(receipt.TransactionHash.Length == 66);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task Contract_Prepare()
+    {
+        var contract = await this.GetTokenERC20Contract();
+        var wallet = await this.GetSmartWallet();
+        var transaction = await contract.Prepare(wallet, "approve", 0, contract.Address, BigInteger.Zero);
+        Assert.NotNull(transaction);
+        Assert.NotNull(transaction.Input.Data);
+        Assert.NotNull(transaction.Input.To);
+        Assert.NotNull(transaction.Input.Value);
+    }
+
     #endregion
 
     #region ERC20
@@ -390,6 +433,30 @@ public class ExtensionsTests : BaseTests
         var amount = BigInteger.Parse("1000000000000000000");
         var receipt = await contract.ERC20_Approve(wallet, spenderAddress, amount);
         Assert.True(receipt.TransactionHash.Length == 66);
+    }
+
+    #endregion
+
+    #region ERC721A
+
+    [Fact(Timeout = 120000)]
+    public async Task ERC721A_TokensOfOwner()
+    {
+        var contract = await this.GetERC721AContract();
+        var ownerAddress = "0x10a798EC43A776c39BA19978EDb6e4a7706326FA";
+        var tokens = await contract.ERC721A_TokensOfOwner(ownerAddress);
+        Assert.NotNull(tokens);
+        Assert.NotEmpty(tokens);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task ERC721A_TokensOfOwnerIn()
+    {
+        var contract = await this.GetERC721AContract();
+        var ownerAddress = "0x10a798EC43A776c39BA19978EDb6e4a7706326FA";
+        var tokens = await contract.ERC721A_TokensOfOwnerIn(ownerAddress, 0, 1);
+        Assert.NotNull(tokens);
+        Assert.NotEmpty(tokens);
     }
 
     #endregion

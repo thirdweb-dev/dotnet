@@ -45,12 +45,6 @@ public class ThirdwebChainData
     [JsonProperty("icon")]
     public ThirdwebChainIcon Icon { get; set; }
 
-    [JsonProperty("faucets")]
-    public List<object> Faucets { get; set; }
-
-    [JsonProperty("slip44")]
-    public int? Slip44 { get; set; }
-
     [JsonProperty("ens")]
     public ThirdwebChainEns Ens { get; set; }
 
@@ -112,12 +106,6 @@ public class ThirdwebChainExplorer
 
     [JsonProperty("icon")]
     public ThirdwebChainIcon Icon { get; set; }
-}
-
-public class ThirdwebChainBridge
-{
-    [JsonProperty("url")]
-    public string Url { get; set; }
 }
 
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]

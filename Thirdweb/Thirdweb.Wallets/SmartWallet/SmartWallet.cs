@@ -104,6 +104,22 @@ public class SmartWallet : IThirdwebWallet
         this._erc20PaymasterStorageSlot = erc20PaymasterStorageSlot;
     }
 
+    #region Creation
+
+    /// <summary>
+    /// Creates a new instance of <see cref="SmartWallet"/>.
+    /// </summary>
+    /// <param name="personalWallet">The smart wallet's signer to use.</param>
+    /// <param name="chainId">The chain ID.</param>
+    /// <param name="gasless">Whether to sponsor gas for transactions.</param>
+    /// <param name="factoryAddress">Override the default factory address.</param>
+    /// <param name="accountAddressOverride">Override the canonical account address that would be found deterministically based on the signer.</param>
+    /// <param name="entryPoint">Override the default entry point address. We provide Constants for different versions.</param>
+    /// <param name="bundlerUrl">Override the default thirdweb bundler URL.</param>
+    /// <param name="paymasterUrl">Override the default thirdweb paymaster URL.</param>
+    /// <param name="tokenPaymaster">Use an ERC20 paymaster and sponsor gas with ERC20s. If set, factoryAddress and accountAddressOverride are ignored.</param>
+    /// <returns>A new instance of <see cref="SmartWallet"/>.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the personal account is not connected.</exception>
     public static async Task<SmartWallet> Create(
         IThirdwebWallet personalWallet,
         BigInteger chainId,
@@ -177,6 +193,19 @@ public class SmartWallet : IThirdwebWallet
         );
     }
 
+    #endregion
+
+    #region Wallet Specific
+
+    /// <summary>
+    /// Returns the signer that was used to connect to this SmartWallet.
+    /// </summary>
+    /// <returns>The signer.</returns>
+    public Task<IThirdwebWallet> GetPersonalWallet()
+    {
+        return Task.FromResult(this._personalAccount);
+    }
+
     /// <summary>
     /// Attempts to set the active network to the specified chain ID. Requires related contracts to be deterministically deployed on the chain.
     /// </summary>
@@ -206,6 +235,10 @@ public class SmartWallet : IThirdwebWallet
         }
     }
 
+    /// <summary>
+    /// Checks if the smart account is deployed on the current chain. A smart account is typically deployed when a personal message is signed or a transaction is sent.
+    /// </summary>
+    /// <returns>True if deployed, otherwise false.</returns>
     public async Task<bool> IsDeployed()
     {
         if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
@@ -217,66 +250,264 @@ public class SmartWallet : IThirdwebWallet
         return code != "0x";
     }
 
-    public async Task<string> SendTransaction(ThirdwebTransactionInput transactionInput)
+    /// <summary>
+    /// Forces the smart account to deploy on the current chain. This is typically not necessary as the account will deploy automatically when needed.
+    /// </summary>
+    public async Task ForceDeploy()
     {
-        if (transactionInput == null)
-        {
-            throw new InvalidOperationException("SmartAccount.SendTransaction: Transaction input is required.");
-        }
-
-        await this.SwitchNetwork(transactionInput.ChainId.Value).ConfigureAwait(false);
-
-        var transaction = await ThirdwebTransaction
-            .Create(await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false) ? this._personalAccount : this, transactionInput)
-            .ConfigureAwait(false);
-        transaction = await ThirdwebTransaction.Prepare(transaction).ConfigureAwait(false);
-        transactionInput = transaction.Input;
-
         if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
-            if (this._gasless)
-            {
-                (var paymaster, var paymasterInput) = await this.ZkPaymasterData(transactionInput).ConfigureAwait(false);
-                transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
-                var zkTx = await ThirdwebTransaction.ConvertToZkSyncTransaction(transaction).ConfigureAwait(false);
-                var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, this).ConfigureAwait(false);
-                // Match bundler ZkTransactionInput type without recreating
-                var hash = await this.ZkBroadcastTransaction(
-                        new
-                        {
-                            nonce = zkTx.Nonce.ToString(),
-                            from = zkTx.From,
-                            to = zkTx.To,
-                            gas = zkTx.GasLimit.ToString(),
-                            gasPrice = string.Empty,
-                            value = zkTx.Value.ToString(),
-                            data = Utils.BytesToHex(zkTx.Data),
-                            maxFeePerGas = zkTx.MaxFeePerGas.ToString(),
-                            maxPriorityFeePerGas = zkTx.MaxPriorityFeePerGas.ToString(),
-                            chainId = this._chainId.ToString(),
-                            signedTransaction = zkTxSigned,
-                            paymaster
-                        }
-                    )
-                    .ConfigureAwait(false);
-                return hash;
-            }
-            else
-            {
-                return await ThirdwebTransaction.Send(transaction).ConfigureAwait(false);
-            }
+            return;
         }
-        else
+
+        if (await this.IsDeployed().ConfigureAwait(false))
         {
-            var signedOp = await this.SignUserOp(transactionInput).ConfigureAwait(false);
-            return await this.SendUserOp(signedOp).ConfigureAwait(false);
+            return;
+        }
+
+        if (this.IsDeploying)
+        {
+            throw new InvalidOperationException("SmartAccount.ForceDeploy: Account is already deploying.");
+        }
+
+        var input = new ThirdwebTransactionInput(this._chainId)
+        {
+            Data = "0x",
+            To = this._accountContract.Address,
+            Value = new HexBigInteger(0)
+        };
+        var txHash = await this.SendTransaction(input).ConfigureAwait(false);
+        _ = await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Verifies if a signature is valid for a message using EIP-1271.
+    /// </summary>
+    /// <param name="message">The message to verify.</param>
+    /// <param name="signature">The signature to verify.</param>
+    /// <returns>True if the signature is valid, otherwise false.</returns>
+    public async Task<bool> IsValidSignature(string message, string signature)
+    {
+        try
+        {
+            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", message.StringToHex(), signature.HexToBytes()).ConfigureAwait(false);
+            return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
+        }
+        catch
+        {
+            try
+            {
+                var magicValue = await ThirdwebContract
+                    .Read<byte[]>(this._accountContract, "isValidSignature", Encoding.UTF8.GetBytes(message).HashPrefixedMessage(), signature.HexToBytes())
+                    .ConfigureAwait(false);
+                return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 
-    public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
+    /// <summary>
+    /// Gets all admins for the smart account.
+    /// </summary>
+    /// <returns>A list of admin addresses.</returns>
+    public async Task<List<string>> GetAllAdmins()
     {
-        var txHash = await this.SendTransaction(transactionInput).ConfigureAwait(false);
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        {
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+        }
+
+        var result = await ThirdwebContract.Read<List<string>>(this._accountContract, "getAllAdmins").ConfigureAwait(false);
+        return result ?? new List<string>();
+    }
+
+    /// <summary>
+    /// Gets all active signers for the smart account.
+    /// </summary>
+    /// <returns>A list of <see cref="SignerPermissions"/>.</returns>
+    public async Task<List<SignerPermissions>> GetAllActiveSigners()
+    {
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        {
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+        }
+
+        var result = await ThirdwebContract.Read<List<SignerPermissions>>(this._accountContract, "getAllActiveSigners").ConfigureAwait(false);
+        return result ?? new List<SignerPermissions>();
+    }
+
+    /// <summary>
+    /// Creates a new session key for a signer to use with the smart account.
+    /// </summary>
+    /// <param name="signerAddress">The address of the signer to create a session key for.</param>
+    /// <param name="approvedTargets">The list of approved targets for the signer. Use a list of a single Constants.ADDRESS_ZERO to enable all contracts.</param>
+    /// <param name="nativeTokenLimitPerTransactionInWei">The maximum amount of native tokens the signer can send in a single transaction.</param>
+    /// <param name="permissionStartTimestamp">The timestamp when the permission starts. Can be set to zero.</param>
+    /// <param name="permissionEndTimestamp">The timestamp when the permission ends. Make use of our Utils to get UNIX timestamps.</param>
+    /// <param name="reqValidityStartTimestamp">The timestamp when the request validity starts. Can be set to zero.</param>
+    /// <param name="reqValidityEndTimestamp">The timestamp when the request validity ends. Make use of our Utils to get UNIX timestamps.</param>
+    public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
+        string signerAddress,
+        List<string> approvedTargets,
+        string nativeTokenLimitPerTransactionInWei,
+        string permissionStartTimestamp,
+        string permissionEndTimestamp,
+        string reqValidityStartTimestamp,
+        string reqValidityEndTimestamp
+    )
+    {
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        {
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+        }
+
+        var request = new SignerPermissionRequest()
+        {
+            Signer = signerAddress,
+            IsAdmin = 0,
+            ApprovedTargets = approvedTargets,
+            NativeTokenLimitPerTransaction = BigInteger.Parse(nativeTokenLimitPerTransactionInWei),
+            PermissionStartTimestamp = BigInteger.Parse(permissionStartTimestamp),
+            PermissionEndTimestamp = BigInteger.Parse(permissionEndTimestamp),
+            ReqValidityStartTimestamp = BigInteger.Parse(reqValidityStartTimestamp),
+            ReqValidityEndTimestamp = BigInteger.Parse(reqValidityEndTimestamp),
+            Uid = Guid.NewGuid().ToByteArray()
+        };
+
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
+        // Do it this way to avoid triggering an extra sig from estimation
+        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var txInput = new ThirdwebTransactionInput(this._chainId)
+        {
+            To = this._accountContract.Address,
+            Value = new HexBigInteger(0),
+            Data = data
+        };
+        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
         return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Revokes a session key from a signer.
+    /// </summary>
+    /// <param name="signerAddress">The address of the signer to revoke.</param>
+    /// <returns>The transaction receipt.</returns>
+    public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
+    {
+        return await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false)
+            ? throw new InvalidOperationException("Account Permissions are not supported in ZkSync")
+            : await this.CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString()).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Adds a new admin to the smart account.
+    /// </summary>
+    /// <param name="admin">The address of the admin to add.</param>
+    /// <returns>The transaction receipt.</returns>
+    public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
+    {
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        {
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+        }
+
+        var request = new SignerPermissionRequest()
+        {
+            Signer = admin,
+            IsAdmin = 1,
+            ApprovedTargets = new List<string>(),
+            NativeTokenLimitPerTransaction = 0,
+            PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+            PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+            ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            Uid = Guid.NewGuid().ToByteArray()
+        };
+
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount).ConfigureAwait(false);
+        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var txInput = new ThirdwebTransactionInput(this._chainId)
+        {
+            To = this._accountContract.Address,
+            Value = new HexBigInteger(0),
+            Data = data
+        };
+        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Removes an existing admin from the smart account.
+    /// </summary>
+    /// <param name="admin">The address of the admin to remove.</param>
+    /// <returns>The transaction receipt.</returns>
+    public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
+    {
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        {
+            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
+        }
+
+        var request = new SignerPermissionRequest()
+        {
+            Signer = admin,
+            IsAdmin = 2,
+            ApprovedTargets = new List<string>(),
+            NativeTokenLimitPerTransaction = 0,
+            PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+            PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
+            ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
+            Uid = Guid.NewGuid().ToByteArray()
+        };
+
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
+        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var txInput = new ThirdwebTransactionInput(this._chainId)
+        {
+            To = this._accountContract.Address,
+            Value = new HexBigInteger(0),
+            Data = data
+        };
+        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Estimates the gas cost for a user operation. More accurate than ThirdwebTransaction estimation, but slower.
+    /// </summary>
+    /// <param name="transaction">The transaction to estimate.</param>
+    /// <returns>The estimated gas cost.</returns>
+    public async Task<BigInteger> EstimateUserOperationGas(ThirdwebTransactionInput transaction)
+    {
+        await this.SwitchNetwork(transaction.ChainId.Value).ConfigureAwait(false);
+
+        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        {
+            throw new Exception("User Operations are not supported in ZkSync");
+        }
+
+        var signedOp = await this.SignUserOp(transaction, null, simulation: true).ConfigureAwait(false);
+        if (signedOp is UserOperationV6)
+        {
+            var castSignedOp = signedOp as UserOperationV6;
+            var cost = castSignedOp.CallGasLimit + castSignedOp.VerificationGasLimit + castSignedOp.PreVerificationGas;
+            return cost;
+        }
+        else if (signedOp is UserOperationV7)
+        {
+            var castSignedOp = signedOp as UserOperationV7;
+            var cost =
+                castSignedOp.CallGasLimit + castSignedOp.VerificationGasLimit + castSignedOp.PreVerificationGas + castSignedOp.PaymasterVerificationGasLimit + castSignedOp.PaymasterPostOpGasLimit;
+            return cost;
+        }
+        else
+        {
+            throw new Exception("Invalid signed operation type");
+        }
     }
 
     private async Task<(byte[] initCode, string factory, string factoryData)> GetInitCode()
@@ -668,36 +899,70 @@ public class SmartWallet : IThirdwebWallet
         };
     }
 
-    public async Task ForceDeploy()
+    #endregion
+
+    #region IThirdwebWallet
+
+    public async Task<string> SendTransaction(ThirdwebTransactionInput transactionInput)
     {
+        if (transactionInput == null)
+        {
+            throw new InvalidOperationException("SmartAccount.SendTransaction: Transaction input is required.");
+        }
+
+        await this.SwitchNetwork(transactionInput.ChainId.Value).ConfigureAwait(false);
+
+        var transaction = await ThirdwebTransaction
+            .Create(await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false) ? this._personalAccount : this, transactionInput)
+            .ConfigureAwait(false);
+        transaction = await ThirdwebTransaction.Prepare(transaction).ConfigureAwait(false);
+        transactionInput = transaction.Input;
+
         if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
         {
-            return;
+            if (this._gasless)
+            {
+                (var paymaster, var paymasterInput) = await this.ZkPaymasterData(transactionInput).ConfigureAwait(false);
+                transaction = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
+                var zkTx = await ThirdwebTransaction.ConvertToZkSyncTransaction(transaction).ConfigureAwait(false);
+                var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, this).ConfigureAwait(false);
+                // Match bundler ZkTransactionInput type without recreating
+                var hash = await this.ZkBroadcastTransaction(
+                        new
+                        {
+                            nonce = zkTx.Nonce.ToString(),
+                            from = zkTx.From,
+                            to = zkTx.To,
+                            gas = zkTx.GasLimit.ToString(),
+                            gasPrice = string.Empty,
+                            value = zkTx.Value.ToString(),
+                            data = Utils.BytesToHex(zkTx.Data),
+                            maxFeePerGas = zkTx.MaxFeePerGas.ToString(),
+                            maxPriorityFeePerGas = zkTx.MaxPriorityFeePerGas.ToString(),
+                            chainId = this._chainId.ToString(),
+                            signedTransaction = zkTxSigned,
+                            paymaster
+                        }
+                    )
+                    .ConfigureAwait(false);
+                return hash;
+            }
+            else
+            {
+                return await ThirdwebTransaction.Send(transaction).ConfigureAwait(false);
+            }
         }
-
-        if (await this.IsDeployed().ConfigureAwait(false))
+        else
         {
-            return;
+            var signedOp = await this.SignUserOp(transactionInput).ConfigureAwait(false);
+            return await this.SendUserOp(signedOp).ConfigureAwait(false);
         }
-
-        if (this.IsDeploying)
-        {
-            throw new InvalidOperationException("SmartAccount.ForceDeploy: Account is already deploying.");
-        }
-
-        var input = new ThirdwebTransactionInput(this._chainId)
-        {
-            Data = "0x",
-            To = this._accountContract.Address,
-            Value = new HexBigInteger(0)
-        };
-        var txHash = await this.SendTransaction(input).ConfigureAwait(false);
-        _ = await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
     }
 
-    public Task<IThirdwebWallet> GetPersonalWallet()
+    public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
     {
-        return Task.FromResult(this._personalAccount);
+        var txHash = await this.SendTransaction(transactionInput).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
     }
 
     public async Task<string> GetAddress()
@@ -727,6 +992,11 @@ public class SmartWallet : IThirdwebWallet
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Signs a message with the personal account. If the smart account is deployed, the message will be wrapped 712 and signed by the smart account and verified with 1271. If the smart account is not deployed, it will deploy it first.
+    /// </summary>
+    /// <param name="message">The message to sign.</param>
+    /// <returns>The signature.</returns>
     public async Task<string> PersonalSign(string message)
     {
         if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
@@ -779,171 +1049,16 @@ public class SmartWallet : IThirdwebWallet
             : await this.GetAddress().ConfigureAwait(false);
     }
 
-    public async Task<bool> IsValidSignature(string message, string signature)
-    {
-        try
-        {
-            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", message.StringToHex(), signature.HexToBytes()).ConfigureAwait(false);
-            return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
-        }
-        catch
-        {
-            try
-            {
-                var magicValue = await ThirdwebContract
-                    .Read<byte[]>(this._accountContract, "isValidSignature", Encoding.UTF8.GetBytes(message).HashPrefixedMessage(), signature.HexToBytes())
-                    .ConfigureAwait(false);
-                return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
-            }
-            catch
-            {
-                return false;
-            }
-        }
-    }
-
-    public async Task<List<string>> GetAllAdmins()
-    {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
-        {
-            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-        }
-
-        var result = await ThirdwebContract.Read<List<string>>(this._accountContract, "getAllAdmins").ConfigureAwait(false);
-        return result ?? new List<string>();
-    }
-
-    public async Task<List<SignerPermissions>> GetAllActiveSigners()
-    {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
-        {
-            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-        }
-
-        var result = await ThirdwebContract.Read<List<SignerPermissions>>(this._accountContract, "getAllActiveSigners").ConfigureAwait(false);
-        return result ?? new List<SignerPermissions>();
-    }
-
-    public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
-        string signerAddress,
-        List<string> approvedTargets,
-        string nativeTokenLimitPerTransactionInWei,
-        string permissionStartTimestamp,
-        string permissionEndTimestamp,
-        string reqValidityStartTimestamp,
-        string reqValidityEndTimestamp
-    )
-    {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
-        {
-            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-        }
-
-        var request = new SignerPermissionRequest()
-        {
-            Signer = signerAddress,
-            IsAdmin = 0,
-            ApprovedTargets = approvedTargets,
-            NativeTokenLimitPerTransaction = BigInteger.Parse(nativeTokenLimitPerTransactionInWei),
-            PermissionStartTimestamp = BigInteger.Parse(permissionStartTimestamp),
-            PermissionEndTimestamp = BigInteger.Parse(permissionEndTimestamp),
-            ReqValidityStartTimestamp = BigInteger.Parse(reqValidityStartTimestamp),
-            ReqValidityEndTimestamp = BigInteger.Parse(reqValidityEndTimestamp),
-            Uid = Guid.NewGuid().ToByteArray()
-        };
-
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
-        // Do it this way to avoid triggering an extra sig from estimation
-        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-        var txInput = new ThirdwebTransactionInput(this._chainId)
-        {
-            To = this._accountContract.Address,
-            Value = new HexBigInteger(0),
-            Data = data
-        };
-        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
-    }
-
-    public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
-    {
-        return await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false)
-            ? throw new InvalidOperationException("Account Permissions are not supported in ZkSync")
-            : await this.CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString()).ConfigureAwait(false);
-    }
-
-    public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
-    {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
-        {
-            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-        }
-
-        var request = new SignerPermissionRequest()
-        {
-            Signer = admin,
-            IsAdmin = 1,
-            ApprovedTargets = new List<string>(),
-            NativeTokenLimitPerTransaction = 0,
-            PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-            PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-            ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            Uid = Guid.NewGuid().ToByteArray()
-        };
-
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount).ConfigureAwait(false);
-        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-        var txInput = new ThirdwebTransactionInput(this._chainId)
-        {
-            To = this._accountContract.Address,
-            Value = new HexBigInteger(0),
-            Data = data
-        };
-        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
-    }
-
-    public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
-    {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
-        {
-            throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
-        }
-
-        var request = new SignerPermissionRequest()
-        {
-            Signer = admin,
-            IsAdmin = 2,
-            ApprovedTargets = new List<string>(),
-            NativeTokenLimitPerTransaction = 0,
-            PermissionStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-            PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
-            ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            Uid = Guid.NewGuid().ToByteArray()
-        };
-
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
-        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-        var txInput = new ThirdwebTransactionInput(this._chainId)
-        {
-            To = this._accountContract.Address,
-            Value = new HexBigInteger(0),
-            Data = data
-        };
-        var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
-    }
-
     public Task<string> SignTypedDataV4(string json)
     {
+        // TODO: Implement wrapped version
         return this._personalAccount.SignTypedDataV4(json);
     }
 
     public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
         where TDomain : IDomain
     {
+        // TODO: Implement wrapped version
         return this._personalAccount.SignTypedDataV4(data, typedData);
     }
 
@@ -951,35 +1066,6 @@ public class SmartWallet : IThirdwebWallet
         where TDomain : IDomain
     {
         return this._personalAccount.RecoverAddressFromTypedDataV4(data, typedData, signature);
-    }
-
-    public async Task<BigInteger> EstimateUserOperationGas(ThirdwebTransactionInput transaction)
-    {
-        await this.SwitchNetwork(transaction.ChainId.Value).ConfigureAwait(false);
-
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
-        {
-            throw new Exception("User Operations are not supported in ZkSync");
-        }
-
-        var signedOp = await this.SignUserOp(transaction, null, simulation: true).ConfigureAwait(false);
-        if (signedOp is UserOperationV6)
-        {
-            var castSignedOp = signedOp as UserOperationV6;
-            var cost = castSignedOp.CallGasLimit + castSignedOp.VerificationGasLimit + castSignedOp.PreVerificationGas;
-            return cost;
-        }
-        else if (signedOp is UserOperationV7)
-        {
-            var castSignedOp = signedOp as UserOperationV7;
-            var cost =
-                castSignedOp.CallGasLimit + castSignedOp.VerificationGasLimit + castSignedOp.PreVerificationGas + castSignedOp.PaymasterVerificationGasLimit + castSignedOp.PaymasterPostOpGasLimit;
-            return cost;
-        }
-        else
-        {
-            throw new Exception("Invalid signed operation type");
-        }
     }
 
     public async Task<string> SignTransaction(ThirdwebTransactionInput transaction)
@@ -1066,4 +1152,6 @@ public class SmartWallet : IThirdwebWallet
             return await personalWallet.GetLinkedAccounts().ConfigureAwait(false);
         }
     }
+
+    #endregion
 }

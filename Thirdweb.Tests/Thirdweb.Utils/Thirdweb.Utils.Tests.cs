@@ -669,4 +669,98 @@ public class UtilsTests : BaseTests
 
         Assert.Contains("Failed to fetch social profiles", exception.Message);
     }
+
+    [Fact(Timeout = 120000)]
+    public async Task IsEip155Enforced_ReturnsFalse_WhenChainIs1()
+    {
+        var chainId = new BigInteger(1);
+        var isEip155Enforced = await Utils.IsEip155Enforced(this.Client, chainId);
+
+        Assert.False(isEip155Enforced);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task IsEip155Enforced_ReturnsTrue_WhenChainIs842()
+    {
+        var chainId = new BigInteger(842);
+        var isEip155Enforced = await Utils.IsEip155Enforced(this.Client, chainId);
+
+        Assert.True(isEip155Enforced);
+    }
+
+    [Fact(Timeout = 120000)]
+    public void ReconstructHttpClient_WithHeaders()
+    {
+        var newClient = Utils.ReconstructHttpClient(this.Client.HttpClient, this.Client.HttpClient.Headers);
+        var newHeaders = newClient.Headers;
+
+        Assert.NotNull(newHeaders);
+        Assert.Equal(this.Client.HttpClient.Headers, newHeaders);
+    }
+
+    [Fact(Timeout = 120000)]
+    public void ReconstructHttpClient_WithoutHeaders()
+    {
+        var newClient = Utils.ReconstructHttpClient(this.Client.HttpClient);
+        var newHeaders = newClient.Headers;
+
+        Assert.NotNull(newHeaders);
+        Assert.Empty(newHeaders);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task FetchGasPrice_Success()
+    {
+        var gasPrice = await Utils.FetchGasPrice(this.Client, 1);
+        Assert.True(gasPrice > 0);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task FetchGasFees_1()
+    {
+        var (maxFee, maxPrio) = await Utils.FetchGasFees(this.Client, 1);
+        Assert.True(maxFee > 0);
+        Assert.True(maxPrio > 0);
+        Assert.NotEqual(maxFee, maxPrio);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task FetchGasFees_137()
+    {
+        var (maxFee, maxPrio) = await Utils.FetchGasFees(this.Client, 137);
+        Assert.True(maxFee > 0);
+        Assert.True(maxPrio > 0);
+        Assert.True(maxFee > maxPrio);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task FetchGasFees_80002()
+    {
+        var (maxFee, maxPrio) = await Utils.FetchGasFees(this.Client, 80002);
+        Assert.True(maxFee > 0);
+        Assert.True(maxPrio > 0);
+        Assert.True(maxFee > maxPrio);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task FetchGasFees_Celo()
+    {
+        var chainId = new BigInteger(42220);
+        var (maxFee, maxPrio) = await Utils.FetchGasFees(this.Client, chainId);
+        Assert.True(maxFee > 0);
+        Assert.True(maxPrio > 0);
+        Assert.Equal(maxFee, maxPrio);
+
+        chainId = new BigInteger(44787);
+        (maxFee, maxPrio) = await Utils.FetchGasFees(this.Client, chainId);
+        Assert.True(maxFee > 0);
+        Assert.True(maxPrio > 0);
+        Assert.Equal(maxFee, maxPrio);
+
+        chainId = new BigInteger(62320);
+        (maxFee, maxPrio) = await Utils.FetchGasFees(this.Client, chainId);
+        Assert.True(maxFee > 0);
+        Assert.True(maxPrio > 0);
+        Assert.Equal(maxFee, maxPrio);
+    }
 }
