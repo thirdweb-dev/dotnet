@@ -443,7 +443,7 @@ public class ExtensionsTests : BaseTests
     public async Task ERC721A_TokensOfOwner()
     {
         var contract = await this.GetERC721AContract();
-        var ownerAddress = Constants.ADDRESS_ZERO;
+        var ownerAddress = "0x10a798EC43A776c39BA19978EDb6e4a7706326FA";
         var tokens = await contract.ERC721A_TokensOfOwner(ownerAddress);
         Assert.NotNull(tokens);
         Assert.NotEmpty(tokens);
@@ -453,7 +453,7 @@ public class ExtensionsTests : BaseTests
     public async Task ERC721A_TokensOfOwnerIn()
     {
         var contract = await this.GetERC721AContract();
-        var ownerAddress = Constants.ADDRESS_ZERO;
+        var ownerAddress = "0x10a798EC43A776c39BA19978EDb6e4a7706326FA";
         var tokens = await contract.ERC721A_TokensOfOwnerIn(ownerAddress, 0, 1);
         Assert.NotNull(tokens);
         Assert.NotEmpty(tokens);
