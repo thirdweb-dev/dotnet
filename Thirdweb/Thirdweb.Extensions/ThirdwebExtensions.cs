@@ -16,7 +16,7 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(contract));
         }
 
-        return await ThirdwebContract.Read<bool>(contract, "supportsInterface", interfaceId);
+        return await ThirdwebContract.Read<bool>(contract, "supportsInterface", interfaceId.HexToBytes());
     }
 
     /// <summary>
