@@ -12,8 +12,14 @@ public static class ThirdwebMarketplaceExtensions
     /// <param name="contract">The contract instance.</param>
     /// <param name="wallet">The wallet used for the transaction.</param>
     /// <param name="parameters">The parameters of the listing to be created.</param>
+    /// <param name="handleApprovals">Whether to handle token approvals automatically.</param>
     /// <returns>A task that represents the transaction receipt of the listing creation.</returns>
-    public static async Task<ThirdwebTransactionReceipt> Marketplace_DirectListings_CreateListing(this ThirdwebContract contract, IThirdwebWallet wallet, ListingParameters parameters)
+    public static async Task<ThirdwebTransactionReceipt> Marketplace_DirectListings_CreateListing(
+        this ThirdwebContract contract,
+        IThirdwebWallet wallet,
+        ListingParameters parameters,
+        bool handleApprovals = false
+    )
     {
         if (contract == null)
         {
@@ -28,6 +34,56 @@ public static class ThirdwebMarketplaceExtensions
         if (parameters == null)
         {
             throw new ArgumentNullException(nameof(parameters));
+        }
+
+        if (handleApprovals)
+        {
+            var assetContractAddress = parameters.AssetContract;
+
+            var prepTasks = new List<Task>();
+
+            var assetContractTask = ThirdwebContract.Create(contract.Client, assetContractAddress, contract.Chain);
+            prepTasks.Add(assetContractTask);
+
+            var walletAddressTask = wallet.GetAddress();
+            prepTasks.Add(walletAddressTask);
+
+            await Task.WhenAll(prepTasks);
+
+            var assetContract = assetContractTask.Result;
+            var walletAddress = walletAddressTask.Result;
+
+            TokenType assetType;
+            if (await assetContract.SupportsInterface(Constants.IERC1155_INTERFACE_ID))
+            {
+                assetType = TokenType.ERC1155;
+            }
+            else if (await assetContract.SupportsInterface(Constants.IERC721_INTERFACE_ID))
+            {
+                assetType = TokenType.ERC721;
+            }
+            else
+            {
+                throw new ArgumentException("Asset contract does not support ERC1155 or ERC721 interface.");
+            }
+
+            if (assetType == TokenType.ERC721)
+            {
+                var tokenId = parameters.TokenId;
+                var @operator = await assetContract.ERC721_GetApproved(tokenId);
+                if (@operator != contract.Address)
+                {
+                    _ = await assetContract.ERC721_Approve(wallet, contract.Address, tokenId);
+                }
+            }
+            else
+            {
+                var isApprovedForAll = await assetContract.ERC1155_IsApprovedForAll(walletAddress, contract.Address);
+                if (!isApprovedForAll)
+                {
+                    _ = await assetContract.ERC1155_SetApprovalForAll(wallet, contract.Address, true);
+                }
+            }
         }
 
         return await contract.Write(wallet, "createListing", 0, parameters);
@@ -264,8 +320,14 @@ public static class ThirdwebMarketplaceExtensions
     /// <param name="contract">The contract instance.</param>
     /// <param name="wallet">The wallet used for the transaction.</param>
     /// <param name="parameters">The parameters of the auction to be created.</param>
+    /// <param name="handleApprovals">Whether to handle token approvals automatically.</param>
     /// <returns>A task that represents the transaction receipt of the auction creation.</returns>
-    public static async Task<ThirdwebTransactionReceipt> Marketplace_EnglishAuctions_CreateAuction(this ThirdwebContract contract, IThirdwebWallet wallet, AuctionParameters parameters)
+    public static async Task<ThirdwebTransactionReceipt> Marketplace_EnglishAuctions_CreateAuction(
+        this ThirdwebContract contract,
+        IThirdwebWallet wallet,
+        AuctionParameters parameters,
+        bool handleApprovals = false
+    )
     {
         if (contract == null)
         {
@@ -280,6 +342,56 @@ public static class ThirdwebMarketplaceExtensions
         if (parameters == null)
         {
             throw new ArgumentNullException(nameof(parameters));
+        }
+
+        if (handleApprovals)
+        {
+            var assetContractAddress = parameters.AssetContract;
+
+            var prepTasks = new List<Task>();
+
+            var assetContractTask = ThirdwebContract.Create(contract.Client, assetContractAddress, contract.Chain);
+            prepTasks.Add(assetContractTask);
+
+            var walletAddressTask = wallet.GetAddress();
+            prepTasks.Add(walletAddressTask);
+
+            await Task.WhenAll(prepTasks);
+
+            var assetContract = assetContractTask.Result;
+            var walletAddress = walletAddressTask.Result;
+
+            TokenType assetType;
+            if (await assetContract.SupportsInterface(Constants.IERC1155_INTERFACE_ID))
+            {
+                assetType = TokenType.ERC1155;
+            }
+            else if (await assetContract.SupportsInterface(Constants.IERC721_INTERFACE_ID))
+            {
+                assetType = TokenType.ERC721;
+            }
+            else
+            {
+                throw new ArgumentException("Asset contract does not support ERC1155 or ERC721 interface.");
+            }
+
+            if (assetType == TokenType.ERC721)
+            {
+                var tokenId = parameters.TokenId;
+                var @operator = await assetContract.ERC721_GetApproved(tokenId);
+                if (@operator != contract.Address)
+                {
+                    _ = await assetContract.ERC721_Approve(wallet, contract.Address, tokenId);
+                }
+            }
+            else
+            {
+                var isApprovedForAll = await assetContract.ERC1155_IsApprovedForAll(walletAddress, contract.Address);
+                if (!isApprovedForAll)
+                {
+                    _ = await assetContract.ERC1155_SetApprovalForAll(wallet, contract.Address, true);
+                }
+            }
         }
 
         return await contract.Write(wallet, "createAuction", 0, parameters);
