@@ -214,6 +214,7 @@ public static class ThirdwebMarketplaceExtensions
     /// <param name="quantity">The quantity of NFTs to buy.</param>
     /// <param name="currency">The currency to use for the purchase.</param>
     /// <param name="expectedTotalPrice">The expected total price to pay.</param>
+    /// <param name="handleApprovals">Whether to handle token approvals automatically.</param>
     /// <returns>A task that represents the transaction receipt of the purchase.</returns>
     public static async Task<ThirdwebTransactionReceipt> Marketplace_DirectListings_BuyFromListing(
         this ThirdwebContract contract,
@@ -222,7 +223,8 @@ public static class ThirdwebMarketplaceExtensions
         string buyFor,
         BigInteger quantity,
         string currency,
-        BigInteger expectedTotalPrice
+        BigInteger expectedTotalPrice,
+        bool handleApprovals = false
     )
     {
         if (contract == null)
@@ -240,6 +242,29 @@ public static class ThirdwebMarketplaceExtensions
         if (currency == Constants.NATIVE_TOKEN_ADDRESS)
         {
             value = expectedTotalPrice;
+        }
+        else if (handleApprovals)
+        {
+            var tokenContractAddress = currency;
+
+            var prepTasks = new List<Task>();
+
+            var tokenContractTask = ThirdwebContract.Create(contract.Client, tokenContractAddress, contract.Chain);
+            prepTasks.Add(tokenContractTask);
+
+            var walletAddressTask = wallet.GetAddress();
+            prepTasks.Add(walletAddressTask);
+
+            await Task.WhenAll(prepTasks);
+
+            var tokenContract = tokenContractTask.Result;
+            var walletAddress = walletAddressTask.Result;
+
+            var allowance = await tokenContract.ERC20_Allowance(walletAddress, contract.Address);
+            if (allowance < expectedTotalPrice)
+            {
+                _ = await tokenContract.ERC20_Approve(wallet, contract.Address, expectedTotalPrice);
+            }
         }
 
         return await contract.Write(wallet, "buyFromListing", value, listingId, buyFor, quantity, currency, expectedTotalPrice);
@@ -470,8 +495,15 @@ public static class ThirdwebMarketplaceExtensions
     /// <param name="wallet">The wallet used for the transaction.</param>
     /// <param name="auctionId">The ID of the auction to bid in.</param>
     /// <param name="bidAmount">The bid amount to place.</param>
+    /// <param name="handleApprovals">Whether to handle token approvals automatically.</param>
     /// <returns>A task that represents the transaction receipt of the placed bid.</returns>
-    public static async Task<ThirdwebTransactionReceipt> Marketplace_EnglishAuctions_BidInAuction(this ThirdwebContract contract, IThirdwebWallet wallet, BigInteger auctionId, BigInteger bidAmount)
+    public static async Task<ThirdwebTransactionReceipt> Marketplace_EnglishAuctions_BidInAuction(
+        this ThirdwebContract contract,
+        IThirdwebWallet wallet,
+        BigInteger auctionId,
+        BigInteger bidAmount,
+        bool handleApprovals = false
+    )
     {
         if (contract == null)
         {
@@ -489,6 +521,29 @@ public static class ThirdwebMarketplaceExtensions
         if (auctionDetails.Currency == Constants.NATIVE_TOKEN_ADDRESS)
         {
             value = bidAmount;
+        }
+        else if (handleApprovals)
+        {
+            var tokenContractAddress = auctionDetails.Currency;
+
+            var prepTasks = new List<Task>();
+
+            var tokenContractTask = ThirdwebContract.Create(contract.Client, tokenContractAddress, contract.Chain);
+            prepTasks.Add(tokenContractTask);
+
+            var walletAddressTask = wallet.GetAddress();
+            prepTasks.Add(walletAddressTask);
+
+            await Task.WhenAll(prepTasks);
+
+            var tokenContract = tokenContractTask.Result;
+            var walletAddress = walletAddressTask.Result;
+
+            var allowance = await tokenContract.ERC20_Allowance(walletAddress, contract.Address);
+            if (allowance < bidAmount)
+            {
+                _ = await tokenContract.ERC20_Approve(wallet, contract.Address, bidAmount);
+            }
         }
 
         return await contract.Write(wallet, "bidInAuction", value, auctionId, bidAmount);
