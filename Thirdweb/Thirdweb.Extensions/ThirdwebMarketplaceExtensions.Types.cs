@@ -114,7 +114,7 @@ public class ListingParameters
 /// <summary>
 /// Represents a listing in the marketplace.
 /// </summary>
-[Struct("Listing")]
+[FunctionOutput]
 public class Listing
 {
     /// <summary>
@@ -264,7 +264,7 @@ public class AuctionParameters
 /// <summary>
 /// Represents an auction in the marketplace.
 /// </summary>
-[Struct("Auction")]
+[FunctionOutput]
 public class Auction
 {
     /// <summary>

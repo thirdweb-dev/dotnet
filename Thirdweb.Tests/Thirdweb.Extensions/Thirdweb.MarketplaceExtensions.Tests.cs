@@ -4,17 +4,27 @@ namespace Thirdweb.Tests.Extensions;
 
 public class MarketplaceExtensionsTests : BaseTests
 {
-    private readonly string _marketplaceContractAddress = "0xc9671F631E8313D53ec0b5358e1a499c574fCe6A";
+    private readonly string _marketplaceContractAddress = "0xb80E83b73571e63b3581b68f20bFC9E97965F329";
+    private readonly string _drop1155ContractAddress = "0x37116cAe5e152C1A7345AAB0EC286Ff6E97c0605";
 
     private readonly BigInteger _chainId = 421614;
 
     public MarketplaceExtensionsTests(ITestOutputHelper output)
         : base(output) { }
 
-    private async Task<IThirdwebWallet> GetSmartWallet()
+    private async Task<IThirdwebWallet> GetSmartWallet(int claimAmount)
     {
         var privateKeyWallet = await PrivateKeyWallet.Generate(this.Client);
-        return await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614);
+        var smartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614);
+
+        if (claimAmount > 0)
+        {
+            var drop1155Contract = await ThirdwebContract.Create(this.Client, this._drop1155ContractAddress, this._chainId);
+            var tokenId = 0;
+            _ = await drop1155Contract.DropERC1155_Claim(smartWallet, await smartWallet.GetAddress(), tokenId, claimAmount);
+        }
+
+        return smartWallet;
     }
 
     private async Task<ThirdwebContract> GetMarketplaceContract()
@@ -23,6 +33,155 @@ public class MarketplaceExtensionsTests : BaseTests
     }
 
     #region IDirectListings
+
+    [Fact(Timeout = 120000)]
+    public async Task Marketplace_DirectListings_CreateListing_Success()
+    {
+        var contract = await this.GetMarketplaceContract();
+        var wallet = await this.GetSmartWallet(1);
+
+        var listingParams = new ListingParameters()
+        {
+            AssetContract = this._drop1155ContractAddress,
+            TokenId = 0,
+            Quantity = 1,
+            Currency = Constants.NATIVE_TOKEN_ADDRESS,
+            PricePerToken = 1,
+            StartTimestamp = Utils.GetUnixTimeStampNow(),
+            EndTimestamp = Utils.GetUnixTimeStampNow() + 3600,
+            Reserved = false
+        };
+
+        var receipt = await contract.Marketplace_DirectListings_CreateListing(wallet, listingParams, true);
+
+        Assert.NotNull(receipt);
+        Assert.True(receipt.TransactionHash.Length == 66);
+
+        var listingId = await contract.Marketplace_DirectListings_TotalListings() - 1;
+        var listing = await contract.Marketplace_DirectListings_GetListing(listingId);
+
+        Assert.NotNull(listing);
+        Assert.Equal(listing.ListingId, listingId);
+        Assert.Equal(listing.TokenId, listingParams.TokenId);
+        Assert.Equal(listing.Quantity, listingParams.Quantity);
+        Assert.Equal(listing.PricePerToken, listingParams.PricePerToken);
+        Assert.True(listing.StartTimestamp >= listingParams.StartTimestamp);
+        Assert.True(listing.EndTimestamp >= listingParams.EndTimestamp);
+        Assert.Equal(listing.ListingCreator, await wallet.GetAddress());
+        Assert.Equal(listing.AssetContract, listingParams.AssetContract);
+        Assert.Equal(listing.Currency, listingParams.Currency);
+        Assert.Equal(TokenType.ERC1155, listing.TokenTypeEnum);
+        Assert.Equal(Status.CREATED, listing.StatusEnum);
+        Assert.Equal(listing.Reserved, listingParams.Reserved);
+
+        var isCurrencyApproved = await contract.Marketplace_DirectListings_IsCurrencyApprovedForListing(listingId, Constants.NATIVE_TOKEN_ADDRESS);
+        Assert.True(isCurrencyApproved);
+
+        var currencyPriceForListing = await contract.Marketplace_DirectListings_CurrencyPriceForListing(listingId, Constants.NATIVE_TOKEN_ADDRESS);
+        Assert.Equal(currencyPriceForListing, listingParams.PricePerToken);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task Marketplace_DirectListings_UpdateListing_Success()
+    {
+        var contract = await this.GetMarketplaceContract();
+        var wallet = await this.GetSmartWallet(1);
+
+        var originalTotal = await contract.Marketplace_DirectListings_TotalListings();
+
+        var originalListing = new ListingParameters()
+        {
+            AssetContract = this._drop1155ContractAddress,
+            TokenId = 0,
+            Quantity = 1,
+            Currency = Constants.NATIVE_TOKEN_ADDRESS,
+            PricePerToken = 1,
+            StartTimestamp = Utils.GetUnixTimeStampNow() + 1800,
+            EndTimestamp = Utils.GetUnixTimeStampNow() + 3600,
+            Reserved = false
+        };
+
+        var receipt = await contract.Marketplace_DirectListings_CreateListing(wallet, originalListing, true);
+        Assert.NotNull(receipt);
+
+        var listingId = await contract.Marketplace_DirectListings_TotalListings() - 1;
+        Assert.True(listingId == originalTotal);
+
+        var updatedListingParams = originalListing;
+        updatedListingParams.PricePerToken = 2;
+
+        var updatedReceipt = await contract.Marketplace_DirectListings_UpdateListing(wallet, listingId, updatedListingParams);
+        Assert.NotNull(updatedReceipt);
+        Assert.True(updatedReceipt.TransactionHash.Length == 66);
+
+        var listing = await contract.Marketplace_DirectListings_GetListing(listingId);
+        Assert.NotNull(listing);
+        Assert.Equal(listing.PricePerToken, 2);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task Marketplace_DirectListings_CancelListing_Success()
+    {
+        var contract = await this.GetMarketplaceContract();
+        var wallet = await this.GetSmartWallet(1);
+
+        var originalTotal = await contract.Marketplace_DirectListings_TotalListings();
+
+        var originalListing = new ListingParameters()
+        {
+            AssetContract = this._drop1155ContractAddress,
+            TokenId = 0,
+            Quantity = 1,
+            Currency = Constants.NATIVE_TOKEN_ADDRESS,
+            PricePerToken = 1,
+            StartTimestamp = Utils.GetUnixTimeStampNow() + 1800,
+            EndTimestamp = Utils.GetUnixTimeStampNow() + 3600,
+            Reserved = false
+        };
+
+        var receipt = await contract.Marketplace_DirectListings_CreateListing(wallet, originalListing, true);
+        Assert.NotNull(receipt);
+
+        var listingId = await contract.Marketplace_DirectListings_TotalListings() - 1;
+        Assert.True(listingId == originalTotal);
+
+        var removeReceipt = await contract.Marketplace_DirectListings_CancelListing(wallet, listingId);
+        Assert.NotNull(removeReceipt);
+        Assert.True(removeReceipt.TransactionHash.Length == 66);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task Marketplace_DirectListings_ApproveBuyerForListing()
+    {
+        var contract = await this.GetMarketplaceContract();
+        var wallet = await this.GetSmartWallet(1);
+
+        var reservedListing = new ListingParameters()
+        {
+            AssetContract = this._drop1155ContractAddress,
+            TokenId = 0,
+            Quantity = 1,
+            Currency = Constants.NATIVE_TOKEN_ADDRESS,
+            PricePerToken = 1,
+            StartTimestamp = Utils.GetUnixTimeStampNow(),
+            EndTimestamp = Utils.GetUnixTimeStampNow() + 3600,
+            Reserved = true
+        };
+
+        var receipt = await contract.Marketplace_DirectListings_CreateListing(wallet, reservedListing, true);
+        Assert.NotNull(receipt);
+        Assert.True(receipt.TransactionHash.Length == 66);
+
+        var listingId = await contract.Marketplace_DirectListings_TotalListings() - 1;
+
+        var buyer = await PrivateKeyWallet.Generate(this.Client);
+        var approveReceipt = await contract.Marketplace_DirectListings_ApproveBuyerForListing(wallet, listingId, await buyer.GetAddress(), true);
+        Assert.NotNull(approveReceipt);
+        Assert.True(approveReceipt.TransactionHash.Length == 66);
+
+        var isApproved = await contract.Marketplace_DirectListings_IsBuyerApprovedForListing(listingId, await buyer.GetAddress());
+        Assert.True(isApproved);
+    }
 
     [Fact(Timeout = 120000)]
     public async Task Marketplace_DirectListings_TotalListings_Success()

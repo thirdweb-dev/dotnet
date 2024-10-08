@@ -335,6 +335,57 @@ public static class ThirdwebMarketplaceExtensions
         return await contract.Read<Listing>("getListing", listingId);
     }
 
+    /// <summary>
+    /// Checks whether a buyer is approved for a direct listing.
+    /// </summary>
+    /// <param name="contract">The contract instance.</param>
+    /// <param name="listingId">The ID of the listing.</param>
+    /// <param name="buyer">The address of the buyer to check.</param>
+    /// <returns>A task that represents a boolean indicating if the buyer is approved.</returns>
+    public static async Task<bool> Marketplace_DirectListings_IsBuyerApprovedForListing(this ThirdwebContract contract, BigInteger listingId, string buyer)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        return await contract.Read<bool>("isBuyerApprovedForListing", listingId, buyer);
+    }
+
+    /// <summary>
+    /// Checks whether a currency is approved for a direct listing.
+    /// </summary>
+    /// <param name="contract">The contract instance.</param>
+    /// <param name="listingId">The ID of the listing.</param>
+    /// <param name="currency">The address of the currency to check.</param>
+    /// <returns>A task that represents a boolean indicating if the currency is approved.</returns>
+    public static async Task<bool> Marketplace_DirectListings_IsCurrencyApprovedForListing(this ThirdwebContract contract, BigInteger listingId, string currency)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        return await contract.Read<bool>("isCurrencyApprovedForListing", listingId, currency);
+    }
+
+    /// <summary>
+    /// Gets the price per token for a direct listing in the specified currency.
+    /// </summary>
+    /// <param name="contract">The contract instance.</param>
+    /// <param name="listingId">The ID of the listing.</param>
+    /// <param name="currency">The address of the currency to check.</param>
+    /// <returns>A task that represents the price per token in the specified currency.</returns>
+    public static async Task<BigInteger> Marketplace_DirectListings_CurrencyPriceForListing(this ThirdwebContract contract, BigInteger listingId, string currency)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        return await contract.Read<BigInteger>("currencyPriceForListing", listingId, currency);
+    }
+
     #endregion
 
     #region IEnglishAuctions
