@@ -117,6 +117,33 @@ public class ExtensionsTests : BaseTests
 
         // ERC721_TokenByIndex
         _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.ERC721_TokenByIndex(null, 0));
+
+        // SupportsInterface
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => ThirdwebExtensions.SupportsInterface(null, "0x01ffc9a7"));
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SupportsInterface_ERC721()
+    {
+        var contract = await this.GetDrop721Contract();
+        var supportsInterface = await contract.SupportsInterface(Constants.IERC721_INTERFACE_ID);
+        Assert.True(supportsInterface);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SupportsInterface_ERC1155()
+    {
+        var contract = await this.GetDrop1155Contract();
+        var supportsInterface = await contract.SupportsInterface(Constants.IERC1155_INTERFACE_ID);
+        Assert.True(supportsInterface);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SupportsInterface_False()
+    {
+        var contract = await this.GetTokenERC20Contract();
+        var supportsInterface = await contract.SupportsInterface(Constants.IERC721_INTERFACE_ID);
+        Assert.False(supportsInterface);
     }
 
     [Fact(Timeout = 120000)]
