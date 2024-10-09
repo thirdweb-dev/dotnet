@@ -240,25 +240,25 @@ public class AuctionParameters
     /// The buffer time in seconds to extend the auction expiration if a new bid is made.
     /// </summary>
     [Parameter("uint64", "timeBufferInSeconds", 7)]
-    public ulong TimeBufferInSeconds { get; set; }
+    public long TimeBufferInSeconds { get; set; }
 
     /// <summary>
     /// The bid buffer in basis points to ensure a new bid must be a certain percentage higher than the current bid.
     /// </summary>
     [Parameter("uint64", "bidBufferBps", 8)]
-    public ulong BidBufferBps { get; set; }
+    public long BidBufferBps { get; set; }
 
     /// <summary>
     /// The timestamp at and after which bids can be made to the auction.
     /// </summary>
     [Parameter("uint64", "startTimestamp", 9)]
-    public ulong StartTimestamp { get; set; }
+    public long StartTimestamp { get; set; }
 
     /// <summary>
     /// The timestamp after which bids cannot be made to the auction.
     /// </summary>
     [Parameter("uint64", "endTimestamp", 10)]
-    public ulong EndTimestamp { get; set; }
+    public long EndTimestamp { get; set; }
 }
 
 /// <summary>
@@ -301,25 +301,25 @@ public class Auction
     /// The buffer time in seconds to extend the auction expiration if a new bid is made.
     /// </summary>
     [Parameter("uint64", "timeBufferInSeconds", 6)]
-    public ulong TimeBufferInSeconds { get; set; }
+    public long TimeBufferInSeconds { get; set; }
 
     /// <summary>
     /// The bid buffer in basis points to ensure a new bid must be a certain percentage higher than the current bid.
     /// </summary>
     [Parameter("uint64", "bidBufferBps", 7)]
-    public ulong BidBufferBps { get; set; }
+    public long BidBufferBps { get; set; }
 
     /// <summary>
     /// The timestamp at and after which bids can be made to the auction.
     /// </summary>
     [Parameter("uint64", "startTimestamp", 8)]
-    public ulong StartTimestamp { get; set; }
+    public long StartTimestamp { get; set; }
 
     /// <summary>
     /// The timestamp after which bids cannot be made to the auction.
     /// </summary>
     [Parameter("uint64", "endTimestamp", 9)]
-    public ulong EndTimestamp { get; set; }
+    public long EndTimestamp { get; set; }
 
     /// <summary>
     /// The address of the auction creator.
@@ -350,50 +350,6 @@ public class Auction
     /// </summary>
     [Parameter("uint8", "status", 14)]
     public Status StatusEnum { get; set; }
-}
-
-/// <summary>
-/// Represents a bid in an auction.
-/// </summary>
-[Struct("Bid")]
-public class Bid
-{
-    /// <summary>
-    /// The unique ID of the auction for which the bid is placed.
-    /// </summary>
-    [Parameter("uint256", "auctionId", 1)]
-    public BigInteger AuctionId { get; set; }
-
-    /// <summary>
-    /// The address of the bidder.
-    /// </summary>
-    [Parameter("address", "bidder", 2)]
-    public string Bidder { get; set; }
-
-    /// <summary>
-    /// The bid amount for the auction.
-    /// </summary>
-    [Parameter("uint256", "bidAmount", 3)]
-    public BigInteger BidAmount { get; set; }
-}
-
-/// <summary>
-/// Represents the status of the payout for an auction.
-/// </summary>
-[Struct("AuctionPayoutStatus")]
-public class AuctionPayoutStatus
-{
-    /// <summary>
-    /// Whether the auction tokens have been paid out.
-    /// </summary>
-    [Parameter("bool", "paidOutAuctionTokens", 1)]
-    public bool PaidOutAuctionTokens { get; set; }
-
-    /// <summary>
-    /// Whether the bid amount has been paid out.
-    /// </summary>
-    [Parameter("bool", "paidOutBidAmount", 2)]
-    public bool PaidOutBidAmount { get; set; }
 }
 
 #endregion
@@ -446,7 +402,7 @@ public class OfferParams
 /// <summary>
 /// Represents an offer made on NFTs.
 /// </summary>
-[Struct("Offer")]
+[FunctionOutput]
 public class Offer
 {
     /// <summary>

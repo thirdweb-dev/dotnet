@@ -700,6 +700,21 @@ public static class ThirdwebMarketplaceExtensions
         return await contract.Read<bool>("isAuctionExpired", auctionId);
     }
 
+    /// <summary>
+    /// Gets the total number of auctions created.
+    /// </summary>
+    /// <param name="contract">The contract instance.</param>
+    /// <returns>A task that represents the total number of auctions.</returns>
+    public static async Task<BigInteger> Marketplace_EnglishAuctions_TotalAuctions(this ThirdwebContract contract)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        return await contract.Read<BigInteger>("totalAuctions");
+    }
+
     #endregion
 
     #region IOffers
@@ -852,6 +867,21 @@ public static class ThirdwebMarketplaceExtensions
         }
 
         return await contract.Read<List<Offer>>("getAllValidOffers", startId, endId);
+    }
+
+    /// <summary>
+    /// Gets the total number of offers created.
+    /// </summary>
+    /// <param name="contract">The contract instance.</param>
+    /// <returns>A task that represents the total number of offers.</returns>
+    public static async Task<BigInteger> Marketplace_Offers_TotalOffers(this ThirdwebContract contract)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        return await contract.Read<BigInteger>("totalOffers");
     }
 
     #endregion

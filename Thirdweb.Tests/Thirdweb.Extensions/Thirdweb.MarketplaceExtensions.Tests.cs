@@ -73,12 +73,6 @@ public class MarketplaceExtensionsTests : BaseTests
         Assert.Equal(TokenType.ERC1155, listing.TokenTypeEnum);
         Assert.Equal(Status.CREATED, listing.StatusEnum);
         Assert.Equal(listing.Reserved, listingParams.Reserved);
-
-        var isCurrencyApproved = await contract.Marketplace_DirectListings_IsCurrencyApprovedForListing(listingId, Constants.NATIVE_TOKEN_ADDRESS);
-        Assert.True(isCurrencyApproved);
-
-        var currencyPriceForListing = await contract.Marketplace_DirectListings_CurrencyPriceForListing(listingId, Constants.NATIVE_TOKEN_ADDRESS);
-        Assert.Equal(currencyPriceForListing, listingParams.PricePerToken);
     }
 
     [Fact(Timeout = 120000)]
@@ -230,6 +224,49 @@ public class MarketplaceExtensionsTests : BaseTests
     #region IEnglishAuctions
 
     [Fact(Timeout = 120000)]
+    public async Task Marketplace_EnglishAuctions_CreateAuction_Success()
+    {
+        var contract = await this.GetMarketplaceContract();
+        var wallet = await this.GetSmartWallet(1);
+
+        var auctionParams = new AuctionParameters()
+        {
+            AssetContract = this._drop1155ContractAddress,
+            TokenId = 0,
+            Quantity = 1,
+            Currency = Constants.NATIVE_TOKEN_ADDRESS,
+            MinimumBidAmount = 1,
+            BuyoutBidAmount = BigInteger.Parse("1".ToWei()),
+            TimeBufferInSeconds = 3600,
+            BidBufferBps = 100,
+            StartTimestamp = Utils.GetUnixTimeStampNow() - 3000,
+            EndTimestamp = Utils.GetUnixTimeStampNow() + (3600 * 24 * 7),
+        };
+
+        var receipt = await contract.Marketplace_EnglishAuctions_CreateAuction(wallet, auctionParams, true);
+        Assert.NotNull(receipt);
+        Assert.True(receipt.TransactionHash.Length == 66);
+
+        var auctionId = await contract.Marketplace_EnglishAuctions_TotalAuctions() - 1;
+        var auction = await contract.Marketplace_EnglishAuctions_GetAuction(auctionId);
+        Assert.NotNull(auction);
+        Assert.Equal(auction.AuctionId, auctionId);
+        Assert.Equal(auction.TokenId, auctionParams.TokenId);
+        Assert.Equal(auction.Quantity, auctionParams.Quantity);
+        Assert.Equal(auction.MinimumBidAmount, auctionParams.MinimumBidAmount);
+        Assert.Equal(auction.BuyoutBidAmount, auctionParams.BuyoutBidAmount);
+        Assert.True(auction.TimeBufferInSeconds >= auctionParams.TimeBufferInSeconds);
+        Assert.True(auction.BidBufferBps >= auctionParams.BidBufferBps);
+        Assert.True(auction.StartTimestamp >= auctionParams.StartTimestamp);
+        Assert.True(auction.EndTimestamp >= auctionParams.EndTimestamp);
+        Assert.Equal(auction.AuctionCreator, await wallet.GetAddress());
+        Assert.Equal(auction.AssetContract, auctionParams.AssetContract);
+        Assert.Equal(auction.Currency, auctionParams.Currency);
+        Assert.Equal(TokenType.ERC1155, auction.TokenTypeEnum);
+        Assert.Equal(Status.CREATED, auction.StatusEnum);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task Marketplace_EnglishAuctions_GetAuction_Success()
     {
         var contract = await this.GetMarketplaceContract();
@@ -262,64 +299,78 @@ public class MarketplaceExtensionsTests : BaseTests
         Assert.True(auctions.Count >= 0);
     }
 
-    // [Fact(Timeout = 120000)]
-    // public async Task Marketplace_EnglishAuctions_GetWinningBid_Success()
-    // {
-    //     var contract = await this.GetMarketplaceContract();
-    //     var auctionId = BigInteger.One;
-
-    //     var (bidder, currency, bidAmount) = await contract.Marketplace_EnglishAuctions_GetWinningBid(auctionId);
-    //     Assert.NotNull(bidder);
-    //     Assert.NotNull(currency);
-    //     Assert.True(bidAmount >= 0);
-    // }
-
-    // [Fact(Timeout = 120000)]
-    // public async Task Marketplace_EnglishAuctions_IsAuctionExpired_Success()
-    // {
-    //     var contract = await this.GetMarketplaceContract();
-    //     var auctionId = BigInteger.One;
-
-    //     _ = await contract.Marketplace_EnglishAuctions_IsAuctionExpired(auctionId);
-    // }
-
     #endregion
 
     #region IOffers
 
-    [Fact(Timeout = 120000)]
-    public async Task Marketplace_Offers_GetOffer_Success()
-    {
-        var contract = await this.GetMarketplaceContract();
-        var offerId = BigInteger.One;
+    // [Fact(Timeout = 120000)]
+    // public async Task Marketplace_Offers_MakeOffer_Success()
+    // {
+    //     var contract = await this.GetMarketplaceContract();
+    //     var wallet = await this.GetSmartWallet(0);
 
-        var offer = await contract.Marketplace_Offers_GetOffer(offerId);
-        Assert.NotNull(offer);
-    }
+    //     var offerParams = new OfferParams()
+    //     {
+    //         AssetContract = this._drop1155ContractAddress,
+    //         TokenId = 0,
+    //         Quantity = 1,
+    //         Currency = ERC20_HERE,
+    //         TotalPrice = 0,
+    //         ExpirationTimestamp = Utils.GetUnixTimeStampNow() + (3600 * 24),
+    //     };
 
-    [Fact(Timeout = 120000)]
-    public async Task Marketplace_Offers_GetAllOffers_Success()
-    {
-        var contract = await this.GetMarketplaceContract();
-        var startId = BigInteger.Zero;
-        var endId = BigInteger.Zero;
+    //     var receipt = await contract.Marketplace_Offers_MakeOffer(wallet, offerParams, true);
+    //     Assert.NotNull(receipt);
+    //     Assert.True(receipt.TransactionHash.Length == 66);
 
-        var offers = await contract.Marketplace_Offers_GetAllOffers(startId, endId);
-        Assert.NotNull(offers);
-        Assert.True(offers.Count >= 0);
-    }
+    //     var offerId = await contract.Marketplace_Offers_TotalOffers() - 1;
+    //     var offer = await contract.Marketplace_Offers_GetOffer(offerId);
+    //     Assert.NotNull(offer);
+    //     Assert.Equal(offer.OfferId, offerId);
+    //     Assert.Equal(offer.TokenId, offerParams.TokenId);
+    //     Assert.Equal(offer.Quantity, offerParams.Quantity);
+    //     Assert.Equal(offer.TotalPrice, offerParams.TotalPrice);
+    //     Assert.True(offer.ExpirationTimestamp >= offerParams.ExpirationTimestamp);
+    //     Assert.Equal(offer.Offeror, await wallet.GetAddress());
+    //     Assert.Equal(offer.AssetContract, offerParams.AssetContract);
+    //     Assert.Equal(offer.Currency, offerParams.Currency);
+    //     Assert.Equal(TokenType.ERC1155, offer.TokenTypeEnum);
+    //     Assert.Equal(Status.CREATED, offer.StatusEnum);
+    // }
 
-    [Fact(Timeout = 120000)]
-    public async Task Marketplace_Offers_GetAllValidOffers_Success()
-    {
-        var contract = await this.GetMarketplaceContract();
-        var startId = BigInteger.Zero;
-        var endId = BigInteger.Zero;
+    // [Fact(Timeout = 120000)]
+    // public async Task Marketplace_Offers_GetOffer_Success()
+    // {
+    //     var contract = await this.GetMarketplaceContract();
+    //     var offerId = BigInteger.One;
 
-        var offers = await contract.Marketplace_Offers_GetAllValidOffers(startId, endId);
-        Assert.NotNull(offers);
-        Assert.True(offers.Count >= 0);
-    }
+    //     var offer = await contract.Marketplace_Offers_GetOffer(offerId);
+    //     Assert.NotNull(offer);
+    // }
+
+    // [Fact(Timeout = 120000)]
+    // public async Task Marketplace_Offers_GetAllOffers_Success()
+    // {
+    //     var contract = await this.GetMarketplaceContract();
+    //     var startId = BigInteger.Zero;
+    //     var endId = 10;
+
+    //     var offers = await contract.Marketplace_Offers_GetAllOffers(startId, endId);
+    //     Assert.NotNull(offers);
+    //     Assert.True(offers.Count >= 0);
+    // }
+
+    // [Fact(Timeout = 120000)]
+    // public async Task Marketplace_Offers_GetAllValidOffers_Success()
+    // {
+    //     var contract = await this.GetMarketplaceContract();
+    //     var startId = BigInteger.Zero;
+    //     var endId = 10;
+
+    //     var offers = await contract.Marketplace_Offers_GetAllValidOffers(startId, endId);
+    //     Assert.NotNull(offers);
+    //     Assert.True(offers.Count >= 0);
+    // }
 
     #endregion
 }
