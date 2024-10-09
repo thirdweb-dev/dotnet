@@ -680,10 +680,7 @@ public class SmartWallet : IThirdwebWallet
                 var abiEncoder = new ABIEncode();
                 var slotBytes = abiEncoder.GetABIEncoded(new ABIValue("address", this._accountContract.Address), new ABIValue("uint256", this._erc20PaymasterStorageSlot));
                 var desiredBalance = BigInteger.Pow(2, 96) - 1;
-                var storageDict = new Dictionary<string, string>
-                {
-                    { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex().ToString(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() }
-                };
+                var storageDict = new Dictionary<string, string> { { new Sha3Keccack().CalculateHash(slotBytes).BytesToHex(), desiredBalance.ToHexBigInteger().HexValue.HexToBytes32().BytesToHex() } };
                 stateDict = new Dictionary<string, object> { { this._erc20PaymasterToken, new { stateDiff = storageDict } } };
             }
             else
