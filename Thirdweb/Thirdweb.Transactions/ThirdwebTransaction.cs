@@ -269,7 +269,7 @@ public class ThirdwebTransaction
         }
         else
         {
-            var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest").ConfigureAwait(false);
+            var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input).ConfigureAwait(false);
             return new HexBigInteger(hex).Value * 10 / 7;
         }
     }
