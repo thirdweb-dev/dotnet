@@ -57,10 +57,11 @@ internal partial class Server : ServerBase
     internal override async Task<List<LinkedAccount>> LinkAccountAsync(string currentAccountToken, string authTokenToConnect)
     {
         var uri = MakeUri2024("/account/connect");
-        var content = MakeHttpContent(new { accountAuthTokenToConnect = authTokenToConnect });
-        this._httpClient.AddHeader("Authorization", $"Bearer iaw-auth-token:{currentAccountToken}");
-        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
-        this._httpClient.RemoveHeader("Authorization");
+        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = MakeHttpContent(new { accountAuthTokenToConnect = authTokenToConnect })
+        };
+        var response = await this.SendHttpWithAuthAsync(request, currentAccountToken).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var res = await DeserializeAsync<AccountConnectResponse>(response).ConfigureAwait(false);
