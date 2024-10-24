@@ -1,6 +1,9 @@
 ﻿using System.Numerics;
+using Nethereum.ABI.FunctionEncoding;
+using Nethereum.ABI.Model;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
+using Newtonsoft.Json;
 
 namespace Thirdweb;
 
@@ -119,7 +122,18 @@ public class ThirdwebContract
         var data = function.GetData(parameters);
         var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data }, "latest").ConfigureAwait(false);
 
-        return function.DecodeTypeOutput<T>(resultData);
+        if ((typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(List<>)) || typeof(T).IsArray)
+        {
+            var functionAbi = contractRaw.ContractBuilder.ContractABI.FindFunctionABIFromInputData(data);
+            var outputList = new FunctionCallDecoder().DecodeDefaultData(resultData.HexToBytes(), functionAbi.OutputParameters);
+            var resultList = outputList.Select(x => x.Result).ToList();
+            var json = JsonConvert.SerializeObject(resultList);
+            return JsonConvert.DeserializeObject<T>(json);
+        }
+        else
+        {
+            return function.DecodeTypeOutput<T>(resultData);
+        }
     }
 
     /// <summary>

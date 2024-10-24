@@ -102,6 +102,26 @@ public class ContractsTests : BaseTests
         Assert.Contains("Method signature not found in contract ABI.", exception.Message);
     }
 
+    [Fact(Timeout = 120000)]
+    public async Task ReadTest_TupleIntoArray()
+    {
+        var contract = await ThirdwebContract.Create(this.Client, "0xEb4AAB0253a50918a2Cbb7ADBaab78Ad19C07Bb1", 421614);
+        var result = await contract.Read<List<object>>("getReserves");
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.True(result.Count == 3);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task ReadTest_TupleIntoList()
+    {
+        var contract = await ThirdwebContract.Create(this.Client, "0xEb4AAB0253a50918a2Cbb7ADBaab78Ad19C07Bb1", 421614);
+        var result = await contract.Read<List<object>>("getReserves");
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.True(result.Count == 3);
+    }
+
     private sealed class AllowlistProof
     {
         public List<byte[]> Proof { get; set; } = new List<byte[]>();
