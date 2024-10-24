@@ -95,6 +95,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             AuthProvider.X => "X",
             AuthProvider.Coinbase => "Coinbase",
             AuthProvider.Github => "Github",
+            AuthProvider.Twitch => "Twitch",
             AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -360,6 +361,7 @@ public partial class EcosystemWallet : PrivateKeyWallet
             case "X":
             case "Coinbase":
             case "Github":
+            case "Twitch":
                 serverRes = await ecosystemWallet.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:

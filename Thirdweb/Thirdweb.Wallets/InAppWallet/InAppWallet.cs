@@ -25,7 +25,8 @@ public enum AuthProvider
     Guest,
     X,
     Coinbase,
-    Github
+    Github,
+    Twitch
 }
 
 public struct LinkedAccount
@@ -109,6 +110,7 @@ public class InAppWallet : PrivateKeyWallet
             Thirdweb.AuthProvider.X => "X",
             Thirdweb.AuthProvider.Coinbase => "Coinbase",
             Thirdweb.AuthProvider.Github => "Github",
+            Thirdweb.AuthProvider.Twitch => "Twitch",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -241,6 +243,7 @@ public class InAppWallet : PrivateKeyWallet
             case "X":
             case "Coinbase":
             case "Github":
+            case "Twitch":
                 serverRes = await inAppWallet.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:

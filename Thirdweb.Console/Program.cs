@@ -349,7 +349,7 @@ Console.WriteLine($"Smart Ecosystem Wallet address: {addy}");
 
 #region InAppWallet - OAuth
 
-// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Github);
+// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Twitch);
 // if (!await inAppWalletOAuth.IsConnected())
 // {
 //     _ = await inAppWalletOAuth.LoginWithOauth(
