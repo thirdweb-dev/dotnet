@@ -91,6 +91,26 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region Smart Ecosystem Wallet
+
+var eco = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Telegram);
+if (!await eco.IsConnected())
+{
+    _ = await eco.LoginWithOauth(
+        isMobile: false,
+        browserOpenAction: (url) =>
+        {
+            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+            _ = Process.Start(psi);
+        }
+    );
+}
+var smartEco = await SmartWallet.Create(eco, 421614);
+var addy = await smartEco.GetAddress();
+Console.WriteLine($"Smart Ecosystem Wallet address: {addy}");
+
+#endregion
+
 #region Ecosystem Wallet
 
 // var ecosystemWallet = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Telegram);

@@ -264,6 +264,15 @@ public partial class EcosystemWallet : PrivateKeyWallet
         return this._phoneNumber;
     }
 
+    public async Task<EcosystemDetails> GetEcosystemDetails()
+    {
+        var url = $"{EMBEDDED_WALLET_PATH_2024}/ecosystem-wallet";
+        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        return JsonConvert.DeserializeObject<EcosystemDetails>(content);
+    }
+
     #endregion
 
     #region Account Linking
