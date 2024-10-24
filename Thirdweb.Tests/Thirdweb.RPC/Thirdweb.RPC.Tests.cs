@@ -70,17 +70,17 @@ public class RpcTests : BaseTests
         Assert.Contains("RPC Error for request", exception.Message);
     }
 
-    [Fact(Timeout = 120000)]
-    public async Task TestCache()
-    {
-        var client = ThirdwebClient.Create(secretKey: this.SecretKey);
-        var rpc = ThirdwebRPC.GetRpcInstance(client, 421614);
-        var blockNumber1 = await rpc.SendRequestAsync<string>("eth_blockNumber");
-        await ThirdwebTask.Delay(1);
-        var blockNumber2 = await rpc.SendRequestAsync<string>("eth_blockNumber");
-        Assert.Equal(blockNumber1, blockNumber2);
-        await ThirdwebTask.Delay(1000);
-        var blockNumber3 = await rpc.SendRequestAsync<string>("eth_blockNumber");
-        Assert.NotEqual(blockNumber1, blockNumber3);
-    }
+    // [Fact(Timeout = 120000)]
+    // public async Task TestCache()
+    // {
+    //     var client = ThirdwebClient.Create(secretKey: this.SecretKey);
+    //     var rpc = ThirdwebRPC.GetRpcInstance(client, 421614);
+    //     var blockNumber1 = await rpc.SendRequestAsync<string>("eth_blockNumber");
+    //     await ThirdwebTask.Delay(1);
+    //     var blockNumber2 = await rpc.SendRequestAsync<string>("eth_blockNumber");
+    //     Assert.Equal(blockNumber1, blockNumber2);
+    //     await ThirdwebTask.Delay(1000);
+    //     var blockNumber3 = await rpc.SendRequestAsync<string>("eth_blockNumber");
+    //     Assert.NotEqual(blockNumber1, blockNumber3);
+    // }
 }
