@@ -24,10 +24,10 @@ public partial class EcosystemWallet : IThirdwebWallet
     internal readonly string PhoneNumber;
     internal readonly string AuthProvider;
 
+    internal string Address;
+
     private readonly string _ecosystemId;
     private readonly string _ecosystemPartnerId;
-
-    private string _address;
 
     private const string EMBEDDED_WALLET_BASE_PATH = "https://embedded-wallet.thirdweb.com/api";
     private const string EMBEDDED_WALLET_PATH_2024 = $"{EMBEDDED_WALLET_BASE_PATH}/2024-05-05";
@@ -128,12 +128,12 @@ public partial class EcosystemWallet : IThirdwebWallet
         try
         {
             var userAddress = await ResumeEnclaveSession(enclaveHttpClient, embeddedWallet, email, phoneNumber, authproviderStr).ConfigureAwait(false);
-            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = userAddress };
+            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { Address = userAddress };
         }
         catch
         {
             enclaveHttpClient.RemoveHeader("Authorization");
-            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { _address = null };
+            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { Address = null };
         }
     }
 
@@ -156,6 +156,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{sessionData.AuthToken}");
 
         var userStatus = await GetUserStatus(httpClient).ConfigureAwait(false);
+        Console.WriteLine($"User status: {JsonConvert.SerializeObject(userStatus)}");
         if (userStatus.Wallets[0].Type == "enclave")
         {
             return userStatus.Wallets[0].Address.ToChecksumAddress();
@@ -223,8 +224,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         else
         {
             CreateEnclaveSession(this.EmbeddedWallet, result.AuthToken, this.Email, this.PhoneNumber, this.AuthProvider, result.AuthIdentifier);
-            this._address = address.ToChecksumAddress();
-            return this._address;
+            this.Address = address.ToChecksumAddress();
+            return this.Address;
         }
     }
 
@@ -254,11 +255,22 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     #region Wallet Specific
 
+    /// <summary>
+    /// Gets the user details from the enclave wallet.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the user details.</returns>
+    public async Task<EnclaveUserStatusResponse> GetUserDetails()
+    {
+        return await GetUserStatus(this.HttpClient).ConfigureAwait(false);
+    }
+
+    [Obsolete("Use GetUserDetails instead.")]
     public string GetEmail()
     {
         return this.Email;
     }
 
+    [Obsolete("Use GetUserDetails instead.")]
     public string GetPhoneNumber()
     {
         return this.PhoneNumber;
@@ -408,7 +420,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     #region OTP Auth
 
-    public async Task<(bool isNewUser, bool isNewDevice)> SendOTP()
+    public async Task SendOTP()
     {
         if (string.IsNullOrEmpty(this.Email) && string.IsNullOrEmpty(this.PhoneNumber))
         {
@@ -417,9 +429,14 @@ public partial class EcosystemWallet : IThirdwebWallet
 
         try
         {
-            return this.Email == null
-                ? await this.EmbeddedWallet.SendPhoneOtpAsync(this.PhoneNumber).ConfigureAwait(false)
-                : await this.EmbeddedWallet.SendEmailOtpAsync(this.Email).ConfigureAwait(false);
+            if (this.Email == null)
+            {
+                await this.EmbeddedWallet.SendPhoneOtpAsync(this.PhoneNumber).ConfigureAwait(false);
+            }
+            else
+            {
+                await this.EmbeddedWallet.SendEmailOtpAsync(this.Email).ConfigureAwait(false);
+            }
         }
         catch (Exception e)
         {
@@ -629,13 +646,13 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     public Task<string> GetAddress()
     {
-        if (!string.IsNullOrEmpty(this._address))
+        if (!string.IsNullOrEmpty(this.Address))
         {
-            return Task.FromResult(this._address.ToChecksumAddress());
+            return Task.FromResult(this.Address.ToChecksumAddress());
         }
         else
         {
-            return Task.FromResult(this._address);
+            return Task.FromResult(this.Address);
         }
     }
 
@@ -763,7 +780,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     public Task<bool> IsConnected()
     {
-        return Task.FromResult(this._address != null);
+        return Task.FromResult(this.Address != null);
     }
 
     public Task<string> SendTransaction(ThirdwebTransactionInput transaction)
@@ -778,7 +795,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     public async Task Disconnect()
     {
-        this._address = null;
+        this.Address = null;
         await this.EmbeddedWallet.SignOutAsync().ConfigureAwait(false);
     }
 

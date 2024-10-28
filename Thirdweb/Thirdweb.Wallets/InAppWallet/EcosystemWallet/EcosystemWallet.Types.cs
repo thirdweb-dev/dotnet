@@ -4,7 +4,7 @@ namespace Thirdweb;
 
 public partial class EcosystemWallet
 {
-    internal class EnclaveUserStatusResponse
+    public class EnclaveUserStatusResponse
     {
         [JsonProperty("linkedAccounts")]
         internal List<LinkedAccount> LinkedAccounts { get; set; }

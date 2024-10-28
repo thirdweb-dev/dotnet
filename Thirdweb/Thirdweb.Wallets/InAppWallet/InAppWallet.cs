@@ -7,8 +7,20 @@ namespace Thirdweb;
 /// </summary>
 public class InAppWallet : EcosystemWallet
 {
-    internal InAppWallet(ThirdwebClient client, EmbeddedWallet embeddedWallet, IThirdwebHttpClient httpClient, string email, string phoneNumber, string authProvider, IThirdwebWallet siweSigner)
-        : base(null, null, client, embeddedWallet, httpClient, email, phoneNumber, authProvider, siweSigner) { }
+    internal InAppWallet(
+        ThirdwebClient client,
+        EmbeddedWallet embeddedWallet,
+        IThirdwebHttpClient httpClient,
+        string email,
+        string phoneNumber,
+        string authProvider,
+        IThirdwebWallet siweSigner,
+        string address
+    )
+        : base(null, null, client, embeddedWallet, httpClient, email, phoneNumber, authProvider, siweSigner)
+    {
+        this.Address = address;
+    }
 
     /// <summary>
     /// Creates a new instance of the <see cref="InAppWallet"/> class.
@@ -32,6 +44,15 @@ public class InAppWallet : EcosystemWallet
     {
         storageDirectoryPath ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Thirdweb", "InAppWallet");
         var ecoWallet = await Create(client, null, null, email, phoneNumber, authProvider, storageDirectoryPath, siweSigner);
-        return new InAppWallet(ecoWallet.Client, ecoWallet.EmbeddedWallet, ecoWallet.HttpClient, ecoWallet.Email, ecoWallet.PhoneNumber, ecoWallet.AuthProvider, ecoWallet.SiweSigner);
+        return new InAppWallet(
+            ecoWallet.Client,
+            ecoWallet.EmbeddedWallet,
+            ecoWallet.HttpClient,
+            ecoWallet.Email,
+            ecoWallet.PhoneNumber,
+            ecoWallet.AuthProvider,
+            ecoWallet.SiweSigner,
+            ecoWallet.Address
+        );
     }
 }

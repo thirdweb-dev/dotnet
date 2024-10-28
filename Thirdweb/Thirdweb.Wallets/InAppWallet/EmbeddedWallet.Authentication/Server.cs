@@ -9,9 +9,6 @@ internal abstract class ServerBase
     internal abstract Task<List<Server.LinkedAccount>> LinkAccountAsync(string currentAccountToken, string authTokenToConnect);
     internal abstract Task<List<Server.LinkedAccount>> GetLinkedAccountsAsync(string currentAccountToken);
 
-    internal abstract Task<Server.UserWallet> FetchUserDetailsAsync(string emailAddress, string authToken);
-    internal abstract Task StoreAddressAndSharesAsync(string walletAddress, string authShare, string encryptedRecoveryShare, string authToken);
-
     internal abstract Task<(string authShare, string recoveryShare)> FetchAuthAndRecoverySharesAsync(string authToken);
     internal abstract Task<string> FetchAuthShareAsync(string authToken);
 
@@ -77,46 +74,6 @@ internal partial class Server : ServerBase
 
         var res = await DeserializeAsync<AccountConnectResponse>(response).ConfigureAwait(false);
         return res == null || res.LinkedAccounts == null || res.LinkedAccounts.Count == 0 ? [] : res.LinkedAccounts;
-    }
-
-    // embedded-wallet/embedded-wallet-user-details
-    internal override async Task<UserWallet> FetchUserDetailsAsync(string emailOrPhone, string authToken)
-    {
-        Dictionary<string, string> queryParams = new();
-        if (emailOrPhone == null && authToken == null)
-        {
-            throw new InvalidOperationException("Must provide either email address or auth token");
-        }
-
-        queryParams.Add("email", emailOrPhone ?? "uninitialized");
-        queryParams.Add("clientId", this._clientId);
-
-        var uri = MakeUri2023("/embedded-wallet/embedded-wallet-user-details", queryParams);
-        var response = await this.SendHttpWithAuthAsync(uri, authToken ?? "").ConfigureAwait(false);
-        await CheckStatusCodeAsync(response).ConfigureAwait(false);
-        var rv = await DeserializeAsync<UserWallet>(response).ConfigureAwait(false);
-        return rv;
-    }
-
-    // embedded-wallet/embedded-wallet-shares POST
-    internal override async Task StoreAddressAndSharesAsync(string walletAddress, string authShare, string encryptedRecoveryShare, string authToken)
-    {
-        var encryptedRecoveryShares = new[] { new { share = encryptedRecoveryShare, isClientEncrypted = "true" } };
-
-        HttpRequestMessage httpRequestMessage =
-            new(HttpMethod.Post, MakeUri2023("/embedded-wallet/embedded-wallet-shares"))
-            {
-                Content = MakeHttpContent(
-                    new
-                    {
-                        authShare,
-                        maybeEncryptedRecoveryShares = encryptedRecoveryShares,
-                        walletAddress,
-                    }
-                ),
-            };
-        var response = await this.SendHttpWithAuthAsync(httpRequestMessage, authToken).ConfigureAwait(false);
-        await CheckStatusCodeAsync(response).ConfigureAwait(false);
     }
 
     // embedded-wallet/embedded-wallet-shares GET
