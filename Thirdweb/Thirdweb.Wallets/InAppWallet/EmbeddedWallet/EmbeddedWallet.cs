@@ -5,7 +5,6 @@ internal partial class EmbeddedWallet
     private readonly LocalStorage _localStorage;
     private readonly Server _server;
     private readonly IvGenerator _ivGenerator;
-    private User _user;
 
     private const int DEVICE_SHARE_ID = 1;
     private const int KEY_SIZE = 256 / 8;

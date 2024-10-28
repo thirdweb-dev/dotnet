@@ -20,7 +20,9 @@ public enum AuthProvider
     Line,
     Guest,
     X,
-    Coinbase
+    Coinbase,
+    Github,
+    Twitch
 }
 
 /// <summary>

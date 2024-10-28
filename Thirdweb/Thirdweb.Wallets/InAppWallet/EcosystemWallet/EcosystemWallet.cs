@@ -82,22 +82,22 @@ public partial class EcosystemWallet : IThirdwebWallet
 
         var authproviderStr = authProvider switch
         {
-            AuthProvider.Google => "Google",
-            AuthProvider.Apple => "Apple",
-            AuthProvider.Facebook => "Facebook",
-            AuthProvider.JWT => "JWT",
-            AuthProvider.AuthEndpoint => "AuthEndpoint",
-            AuthProvider.Discord => "Discord",
-            AuthProvider.Farcaster => "Farcaster",
-            AuthProvider.Telegram => "Telegram",
-            AuthProvider.Siwe => "Siwe",
-            AuthProvider.Line => "Line",
-            AuthProvider.Guest => "Guest",
-            AuthProvider.X => "X",
-            AuthProvider.Coinbase => "Coinbase",
-            AuthProvider.Github => "Github",
-            AuthProvider.Twitch => "Twitch",
-            AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
+            Thirdweb.AuthProvider.Google => "Google",
+            Thirdweb.AuthProvider.Apple => "Apple",
+            Thirdweb.AuthProvider.Facebook => "Facebook",
+            Thirdweb.AuthProvider.JWT => "JWT",
+            Thirdweb.AuthProvider.AuthEndpoint => "AuthEndpoint",
+            Thirdweb.AuthProvider.Discord => "Discord",
+            Thirdweb.AuthProvider.Farcaster => "Farcaster",
+            Thirdweb.AuthProvider.Telegram => "Telegram",
+            Thirdweb.AuthProvider.Siwe => "Siwe",
+            Thirdweb.AuthProvider.Line => "Line",
+            Thirdweb.AuthProvider.Guest => "Guest",
+            Thirdweb.AuthProvider.X => "X",
+            Thirdweb.AuthProvider.Coinbase => "Coinbase",
+            Thirdweb.AuthProvider.Github => "Github",
+            Thirdweb.AuthProvider.Twitch => "Twitch",
+            Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
 
@@ -281,7 +281,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     public async Task<EcosystemDetails> GetEcosystemDetails()
     {
         var url = $"{EMBEDDED_WALLET_PATH_2024}/ecosystem-wallet";
-        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        var response = await this.HttpClient.GetAsync(url).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         return JsonConvert.DeserializeObject<EcosystemDetails>(content);

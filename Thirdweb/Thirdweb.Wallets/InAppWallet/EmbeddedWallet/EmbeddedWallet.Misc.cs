@@ -17,7 +17,6 @@ internal partial class EmbeddedWallet
 
     public async Task SignOutAsync()
     {
-        this._user = null;
         await this._localStorage.SaveDataAsync(new LocalStorage.DataStorage(null, null, null, null, null, null, null)).ConfigureAwait(false);
     }
 
