@@ -158,7 +158,6 @@ public partial class EcosystemWallet : IThirdwebWallet
         httpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{sessionData.AuthToken}");
 
         var userStatus = await GetUserStatus(httpClient).ConfigureAwait(false);
-        Console.WriteLine($"User status: {JsonConvert.SerializeObject(userStatus)}");
         if (userStatus.Wallets[0].Type == "enclave")
         {
             return userStatus.Wallets[0].Address.ToChecksumAddress();
