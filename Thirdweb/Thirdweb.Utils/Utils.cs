@@ -312,8 +312,16 @@ public static partial class Utils
         }
         else
         {
-            var chainData = await GetChainMetadata(client, chainId).ConfigureAwait(false);
-            return !string.IsNullOrEmpty(chainData.StackType) && chainData.StackType.Contains("zksync", StringComparison.OrdinalIgnoreCase);
+            try
+            {
+                var chainData = await GetChainMetadata(client, chainId).ConfigureAwait(false);
+                return !string.IsNullOrEmpty(chainData.StackType) && chainData.StackType.Contains("zksync", StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                // Assume it is not zkSync if the chain data could not be fetched
+                return false;
+            }
         }
     }
 

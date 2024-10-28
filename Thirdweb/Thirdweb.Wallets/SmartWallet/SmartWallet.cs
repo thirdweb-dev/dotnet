@@ -123,7 +123,7 @@ public class SmartWallet : IThirdwebWallet
     public static async Task<SmartWallet> Create(
         IThirdwebWallet personalWallet,
         BigInteger chainId,
-        bool gasless = true,
+        bool? gasless = null,
         string factoryAddress = null,
         string accountAddressOverride = null,
         string entryPoint = null,
@@ -137,10 +137,28 @@ public class SmartWallet : IThirdwebWallet
             throw new InvalidOperationException("SmartAccount.Connect: Personal account must be connected.");
         }
 
+        if (personalWallet is EcosystemWallet ecoWallet)
+        {
+            try
+            {
+                var ecoDetails = await ecoWallet.GetEcosystemDetails();
+                if (ecoDetails.SmartAccountOptions.HasValue)
+                {
+                    gasless ??= ecoDetails.SmartAccountOptions?.SponsorGas;
+                    factoryAddress ??= string.IsNullOrEmpty(ecoDetails.SmartAccountOptions?.AccountFactoryAddress) ? null : ecoDetails.SmartAccountOptions?.AccountFactoryAddress;
+                }
+            }
+            catch
+            {
+                // no-op
+            }
+        }
+
         entryPoint ??= Constants.ENTRYPOINT_ADDRESS_V06;
 
         var entryPointVersion = Utils.GetEntryPointVersion(entryPoint);
 
+        gasless ??= true;
         bundlerUrl ??= $"https://{chainId}.bundler.thirdweb.com/v2";
         paymasterUrl ??= $"https://{chainId}.bundler.thirdweb.com/v2";
         factoryAddress ??= entryPointVersion == 6 ? Constants.DEFAULT_FACTORY_ADDRESS_V06 : Constants.DEFAULT_FACTORY_ADDRESS_V07;
@@ -180,7 +198,7 @@ public class SmartWallet : IThirdwebWallet
 
         return new SmartWallet(
             personalWallet,
-            gasless,
+            gasless.Value,
             chainId,
             bundlerUrl,
             paymasterUrl,

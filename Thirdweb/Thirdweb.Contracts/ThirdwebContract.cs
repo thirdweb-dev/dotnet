@@ -1,6 +1,9 @@
 ﻿using System.Numerics;
+using Nethereum.ABI.FunctionEncoding;
+using Nethereum.ABI.Model;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
+using Newtonsoft.Json;
 
 namespace Thirdweb;
 
@@ -119,7 +122,39 @@ public class ThirdwebContract
         var data = function.GetData(parameters);
         var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data }, "latest").ConfigureAwait(false);
 
-        return function.DecodeTypeOutput<T>(resultData);
+        if ((typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(List<>)) || typeof(T).IsArray)
+        {
+            var functionAbi = contractRaw.ContractBuilder.ContractABI.FindFunctionABIFromInputData(data);
+            var decoder = new FunctionCallDecoder();
+            var outputList = new FunctionCallDecoder().DecodeDefaultData(resultData.HexToBytes(), functionAbi.OutputParameters);
+            var resultList = outputList.Select(x => x.Result).ToList();
+
+            if (typeof(T) == typeof(List<object>))
+            {
+                return (T)(object)resultList;
+            }
+
+            if (typeof(T) == typeof(object[]))
+            {
+                return (T)(object)resultList.ToArray();
+            }
+
+            try
+            {
+                var json = JsonConvert.SerializeObject(resultList);
+                return JsonConvert.DeserializeObject<T>(json);
+            }
+            catch (Exception)
+            {
+                var dict = outputList.ConvertToObjectDictionary();
+                var ser = JsonConvert.SerializeObject(dict.First().Value);
+                return JsonConvert.DeserializeObject<T>(ser);
+            }
+        }
+        else
+        {
+            return function.DecodeTypeOutput<T>(resultData);
+        }
     }
 
     /// <summary>
