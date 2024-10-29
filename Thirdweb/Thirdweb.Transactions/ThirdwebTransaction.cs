@@ -233,11 +233,12 @@ public class ThirdwebTransaction
 
         if (Utils.IsZkSync(transaction.Input.ChainId.Value))
         {
-            if (transaction.Input.ZkSync.HasValue && transaction.Input.ZkSync?.FactoryDeps.Count > 0)
+            var zkInput = transaction.Input;
+            if (zkInput.ZkSync.HasValue && zkInput.ZkSync?.FactoryDeps.Count > 0)
             {
-                return (1000000, 1000000);
+                zkInput.CustomData = new { factoryDeps = zkInput.ZkSync?.FactoryDeps.Select(x => x.BytesToHex()) };
             }
-            var fees = await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false);
+            var fees = await rpc.SendRequestAsync<JToken>("zks_estimateFee", zkInput).ConfigureAwait(false);
             var maxFee = fees["max_fee_per_gas"].ToObject<HexBigInteger>().Value;
             var maxPriorityFee = fees["max_priority_fee_per_gas"].ToObject<HexBigInteger>().Value;
             return withBump ? (maxFee * 10 / 5, maxPriorityFee * 10 / 5) : (maxFee, maxPriorityFee);
@@ -299,11 +300,12 @@ public class ThirdwebTransaction
 
         if (Utils.IsZkSync(transaction.Input.ChainId.Value))
         {
-            if (transaction.Input.ZkSync.HasValue && transaction.Input.ZkSync?.FactoryDeps.Count > 0)
+            var zkInput = transaction.Input;
+            if (zkInput.ZkSync.HasValue && zkInput.ZkSync?.FactoryDeps.Count > 0)
             {
-                return 1000000;
+                zkInput.CustomData = new { factoryDeps = zkInput.ZkSync?.FactoryDeps.Select(x => x.BytesToHex()) };
             }
-            var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_limit"].ToString();
+            var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", zkInput).ConfigureAwait(false))["gas_limit"].ToString();
             return new HexBigInteger(hex).Value * 10 / 5;
         }
         else
@@ -325,12 +327,13 @@ public class ThirdwebTransaction
 
     private static async Task<BigInteger> GetGasPerPubData(ThirdwebTransaction transaction)
     {
-        if (transaction.Input.ZkSync.HasValue && transaction.Input.ZkSync?.FactoryDeps.Count > 0)
+        var zkInput = transaction.Input;
+        if (zkInput.ZkSync.HasValue && zkInput.ZkSync?.FactoryDeps.Count > 0)
         {
-            return 100000;
+            zkInput.CustomData = new { factoryDeps = zkInput.ZkSync?.FactoryDeps.Select(x => x.BytesToHex()) };
         }
-        var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
-        var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_per_pubdata_limit"].ToString();
+        var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, zkInput.ChainId.Value);
+        var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", zkInput).ConfigureAwait(false))["gas_per_pubdata_limit"].ToString();
         var finalGasPerPubData = new HexBigInteger(hex).Value * 10 / 5;
         return finalGasPerPubData < 10000 ? 10000 : finalGasPerPubData;
     }

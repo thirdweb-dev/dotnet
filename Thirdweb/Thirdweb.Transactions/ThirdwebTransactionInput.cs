@@ -123,6 +123,9 @@ public class ThirdwebTransactionInput
     /// </summary>
     [JsonProperty(PropertyName = "zkSyncOptions", NullValueHandling = NullValueHandling.Ignore)]
     public ZkSyncOptions? ZkSync { get; set; }
+
+    [JsonProperty(PropertyName = "customData", NullValueHandling = NullValueHandling.Ignore)]
+    internal object CustomData;
 }
 
 /// <summary>

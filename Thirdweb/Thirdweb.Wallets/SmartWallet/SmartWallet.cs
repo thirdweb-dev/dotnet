@@ -242,15 +242,7 @@ public class SmartWallet : IThirdwebWallet
                 string paymasterInput;
 
                 // Until Sophon is out of beta
-                if (this._chainId == 531050104)
-                {
-                    paymaster = "0x950e3Bb8C6bab20b56a70550EC037E22032A413e";
-                    paymasterInput = "0x8c5a344500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000";
-                }
-                else
-                {
-                    (paymaster, paymasterInput) = await this.ZkPaymasterData(transactionInput).ConfigureAwait(false);
-                }
+                (paymaster, paymasterInput) = await this.ZkPaymasterData(transactionInput).ConfigureAwait(false);
 
                 if (transaction.Input.ZkSync != null)
                 {
@@ -266,12 +258,6 @@ public class SmartWallet : IThirdwebWallet
                 else
                 {
                     _ = transaction.SetZkSyncOptions(new ZkSyncOptions(paymaster: paymaster, paymasterInput: paymasterInput));
-                }
-
-                // Until Sophon is out of beta
-                if (this._chainId == 531050104)
-                {
-                    return await ThirdwebTransaction.Send(transaction).ConfigureAwait(false);
                 }
 
                 var zkTx = await ThirdwebTransaction.ConvertToZkSyncTransaction(transaction).ConfigureAwait(false);
