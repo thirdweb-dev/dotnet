@@ -22,7 +22,7 @@ var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000));
 
 // Create a private key wallet
-var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
+var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 // var walletAddress = await privateKeyWallet.GetAddress();
 // Console.WriteLine($"PK Wallet address: {walletAddress}");
@@ -324,6 +324,31 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region ERC20 Smart Wallet - Celo Dollar
+
+// var erc20SmartWallet = await SmartWallet.Create(
+//     personalWallet: privateKeyWallet,
+//     chainId: 42220, // celo mainnet
+//     gasless: true,
+//     factoryAddress: Constants.DEFAULT_FACTORY_ADDRESS_V07,
+//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07,
+//     tokenPaymaster: TokenPaymaster.CELO_CUSD
+// );
+// var erc20SmartWalletAddress = await erc20SmartWallet.GetAddress();
+// Console.WriteLine($"ERC20 Smart Wallet address: {erc20SmartWalletAddress}");
+
+// var selfTransfer = await ThirdwebTransaction.Create(wallet: erc20SmartWallet, txInput: new ThirdwebTransactionInput(chainId: 42220, to: erc20SmartWalletAddress, value: 0, data: "0x"));
+
+// var estimateGas = await ThirdwebTransaction.EstimateGasCosts(selfTransfer);
+// Console.WriteLine($"Self transfer gas estimate: {estimateGas.Ether}");
+// Console.WriteLine("Make sure you have enough cUSD!");
+// Console.ReadLine();
+
+// var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(selfTransfer);
+// Console.WriteLine($"Self transfer receipt: {JsonConvert.SerializeObject(receipt, Formatting.Indented)}");
+
+#endregion
+
 #region Chain Data Fetching
 
 // var chainData = await Utils.GetChainMetadata(client, 421614);
@@ -365,6 +390,21 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // }
 // var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
 // Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
+
+#endregion
+
+#region InAppWallet - Email
+
+// var inAppWalletEmail = await InAppWallet.Create(client: client, email: "firekeeper@thirdweb.com");
+// if (!await inAppWalletEmail.IsConnected())
+// {
+//     _ = await inAppWalletEmail.SendOTP();
+//     Console.WriteLine("Enter OTP:");
+//     var otp = Console.ReadLine();
+//     _ = await inAppWalletEmail.LoginWithOtp(otp);
+// }
+// var inAppWalletOAuthAddress = await inAppWalletEmail.GetAddress();
+// Console.WriteLine($"InAppWallet address: {inAppWalletOAuthAddress}");
 
 #endregion
 

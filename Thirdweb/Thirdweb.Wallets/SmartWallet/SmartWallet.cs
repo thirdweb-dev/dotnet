@@ -15,6 +15,7 @@ public enum TokenPaymaster
 {
     NONE,
     BASE_USDC,
+    CELO_CUSD,
 }
 
 public class SmartWallet : IThirdwebWallet
@@ -69,6 +70,16 @@ public class SmartWallet : IThirdwebWallet
                     PaymasterAddress = "0xff4d12b1f8d276aa4a9e8cc80539e806791bfe28",
                     TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
                     BalanceStorageSlot = 9
+                }
+            },
+            {
+                TokenPaymaster.CELO_CUSD,
+                new TokenPaymasterConfig()
+                {
+                    ChainId = 42220,
+                    PaymasterAddress = "0x61382940b029f8Df0c9FfB12638f20EF6B526853",
+                    TokenAddress = "0x765DE816845861e75A25fCA122bb6898B8B1282a",
+                    BalanceStorageSlot = 9,
                 }
             }
         };
