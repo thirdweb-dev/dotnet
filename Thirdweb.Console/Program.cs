@@ -1,6 +1,7 @@
 ﻿using Thirdweb;
 using dotenv.net;
 using System.Numerics;
+using Newtonsoft.Json;
 
 DotEnv.Load();
 
@@ -17,7 +18,7 @@ Console.WriteLine($"Deploying entry point 6 to chain {chainId}...");
 try
 {
     var receipt = await Utils.DeployEntryPoint(client, chainId, 6, gasLimitOverride);
-    Console.WriteLine($"Deployed entry point 6 to chain {chainId} with receipt {receipt}");
+    Console.WriteLine($"Deployed entry point 6 to chain {chainId} with receipt {JsonConvert.SerializeObject(receipt)}");
 }
 catch (Exception e)
 {
@@ -29,7 +30,7 @@ Console.WriteLine($"Deploying entry point 7 to chain {chainId}...");
 try
 {
     var receipt = await Utils.DeployEntryPoint(client, chainId, 7, gasLimitOverride);
-    Console.WriteLine($"Deployed entry point 7 to chain {chainId} with receipt {receipt}");
+    Console.WriteLine($"Deployed entry point 7 to chain {chainId} with receipt {JsonConvert.SerializeObject(receipt)}");
 }
 catch (Exception e)
 {

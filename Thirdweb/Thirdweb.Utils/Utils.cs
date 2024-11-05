@@ -635,7 +635,7 @@ namespace Thirdweb
             var gasLimit = gasLimitOverride ?? 6600000;
 
             var finalData = entryPointVersion == 7 ? Constants.ENTRY_POINT_07_SALT + Constants.ENTRY_POINT_07_DATA : Constants.ENTRY_POINT_06_DATA;
-            var signedTx = privateKeyWallet.SignTransactionLegacy(to: arachnid, value: 0, nonce: nonce, gasPrice: gasPrice, gas: gasLimit, data: finalData, chainId: null);
+            var signedTx = privateKeyWallet.SignTransactionLegacy(to: arachnid, value: 0, nonce: nonce, gasPrice: gasPrice, gas: gasLimit, data: finalData, chainId: chainId);
 
             var hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx);
             Console.WriteLine($"Transaction hash: {hash}");
