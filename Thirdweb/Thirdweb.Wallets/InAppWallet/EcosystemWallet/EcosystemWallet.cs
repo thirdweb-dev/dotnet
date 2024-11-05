@@ -23,6 +23,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     internal readonly string Email;
     internal readonly string PhoneNumber;
     internal readonly string AuthProvider;
+    internal readonly string LegacyEncryptionKey;
 
     internal string Address;
 
@@ -43,12 +44,14 @@ public partial class EcosystemWallet : IThirdwebWallet
         string email,
         string phoneNumber,
         string authProvider,
-        IThirdwebWallet siweSigner
+        IThirdwebWallet siweSigner,
+        string legacyEncryptionKey
     )
     {
         this.Client = client;
         this._ecosystemId = ecosystemId;
         this._ecosystemPartnerId = ecosystemPartnerId;
+        this.LegacyEncryptionKey = legacyEncryptionKey;
         this.EmbeddedWallet = embeddedWallet;
         this.HttpClient = httpClient;
         this.Email = email;
@@ -59,6 +62,20 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     #region Creation
 
+    /// <summary>
+    /// Creates a new instance of the <see cref="EcosystemWallet"/> class.
+    /// </summary>
+    /// <param name="ecosystemId">Your ecosystem ID (see thirdweb dashboard e.g. ecosystem.the-bonfire).</param>
+    /// <param name="ecosystemPartnerId">Your ecosystem partner ID (required if you are integrating someone else's ecosystem).</param>
+    /// <param name="client">The Thirdweb client instance.</param>
+    /// <param name="email">The email address for Email OTP authentication.</param>
+    /// <param name="phoneNumber">The phone number for Phone OTP authentication.</param>
+    /// <param name="authProvider">The authentication provider to use.</param>
+    /// <param name="storageDirectoryPath">The path to the storage directory.</param>
+    /// <param name="siweSigner">The SIWE signer wallet for SIWE authentication.</param>
+    /// <param name="legacyEncryptionKey">The encryption key that is no longer required but was used in the past. Only pass this if you had used custom auth before this was deprecated.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the created in-app wallet.</returns>
+    /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
     public static async Task<EcosystemWallet> Create(
         ThirdwebClient client,
         string ecosystemId,
@@ -67,7 +84,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         string phoneNumber = null,
         AuthProvider authProvider = Thirdweb.AuthProvider.Default,
         string storageDirectoryPath = null,
-        IThirdwebWallet siweSigner = null
+        IThirdwebWallet siweSigner = null,
+        string legacyEncryptionKey = null
     )
     {
         if (client == null)
@@ -130,12 +148,18 @@ public partial class EcosystemWallet : IThirdwebWallet
         try
         {
             var userAddress = await ResumeEnclaveSession(enclaveHttpClient, embeddedWallet, email, phoneNumber, authproviderStr).ConfigureAwait(false);
-            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { Address = userAddress };
+            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, legacyEncryptionKey)
+            {
+                Address = userAddress
+            };
         }
         catch
         {
             enclaveHttpClient.RemoveHeader("Authorization");
-            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner) { Address = null };
+            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, legacyEncryptionKey)
+            {
+                Address = null
+            };
         }
     }
 
@@ -175,13 +199,13 @@ public partial class EcosystemWallet : IThirdwebWallet
         embeddedWallet.UpdateSessionData(data);
     }
 
-    private static async Task<EnclaveUserStatusResponse> GetUserStatus(IThirdwebHttpClient httpClient)
+    private static async Task<UserStatusResponse> GetUserStatus(IThirdwebHttpClient httpClient)
     {
         var url = $"{EMBEDDED_WALLET_PATH_2024}/accounts";
         var response = await httpClient.GetAsync(url).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        var userStatus = JsonConvert.DeserializeObject<EnclaveUserStatusResponse>(content);
+        var userStatus = JsonConvert.DeserializeObject<UserStatusResponse>(content);
         return userStatus;
     }
 
@@ -233,7 +257,9 @@ public partial class EcosystemWallet : IThirdwebWallet
     private async Task<string> MigrateShardToEnclave(Server.VerifyResult authResult)
     {
         // TODO: For recovery code, allow old encryption keys as overrides to migrate sharded custom auth?
-        var (address, encryptedPrivateKeyB64, ivB64, kmsCiphertextB64) = await this.EmbeddedWallet.GenerateEncryptionDataAsync(authResult.AuthToken, authResult.RecoveryCode).ConfigureAwait(false);
+        var (address, encryptedPrivateKeyB64, ivB64, kmsCiphertextB64) = await this.EmbeddedWallet
+            .GenerateEncryptionDataAsync(authResult.AuthToken, this.LegacyEncryptionKey ?? authResult.RecoveryCode)
+            .ConfigureAwait(false);
 
         var url = $"{ENCLAVE_PATH}/migrate";
         var payload = new
@@ -260,7 +286,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// Gets the user details from the enclave wallet.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation. The task result contains the user details.</returns>
-    public async Task<EnclaveUserStatusResponse> GetUserDetails()
+    public async Task<UserStatusResponse> GetUserDetails()
     {
         return await GetUserStatus(this.HttpClient).ConfigureAwait(false);
     }

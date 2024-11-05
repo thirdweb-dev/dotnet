@@ -15,9 +15,10 @@ public class InAppWallet : EcosystemWallet
         string phoneNumber,
         string authProvider,
         IThirdwebWallet siweSigner,
-        string address
+        string address,
+        string legacyEncryptionKey
     )
-        : base(null, null, client, embeddedWallet, httpClient, email, phoneNumber, authProvider, siweSigner)
+        : base(null, null, client, embeddedWallet, httpClient, email, phoneNumber, authProvider, siweSigner, legacyEncryptionKey)
     {
         this.Address = address;
     }
@@ -31,6 +32,7 @@ public class InAppWallet : EcosystemWallet
     /// <param name="authProvider">The authentication provider to use.</param>
     /// <param name="storageDirectoryPath">The path to the storage directory.</param>
     /// <param name="siweSigner">The SIWE signer wallet for SIWE authentication.</param>
+    /// <param name="legacyEncryptionKey">The encryption key that is no longer required but was used in the past. Only pass this if you had used custom auth before this was deprecated.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the created in-app wallet.</returns>
     /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
     public static async Task<InAppWallet> Create(
@@ -39,11 +41,12 @@ public class InAppWallet : EcosystemWallet
         string phoneNumber = null,
         AuthProvider authProvider = Thirdweb.AuthProvider.Default,
         string storageDirectoryPath = null,
-        IThirdwebWallet siweSigner = null
+        IThirdwebWallet siweSigner = null,
+        string legacyEncryptionKey = null
     )
     {
         storageDirectoryPath ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Thirdweb", "InAppWallet");
-        var ecoWallet = await Create(client, null, null, email, phoneNumber, authProvider, storageDirectoryPath, siweSigner);
+        var ecoWallet = await Create(client, null, null, email, phoneNumber, authProvider, storageDirectoryPath, siweSigner, legacyEncryptionKey);
         return new InAppWallet(
             ecoWallet.Client,
             ecoWallet.EmbeddedWallet,
@@ -52,7 +55,8 @@ public class InAppWallet : EcosystemWallet
             ecoWallet.PhoneNumber,
             ecoWallet.AuthProvider,
             ecoWallet.SiweSigner,
-            ecoWallet.Address
+            ecoWallet.Address,
+            ecoWallet.LegacyEncryptionKey
         );
     }
 }
