@@ -1,5 +1,10 @@
 using System.Security.Cryptography;
 using Nethereum.Web3.Accounts;
+using System;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Paddings;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Parameters;
 
 namespace Thirdweb.EWS;
 
@@ -58,6 +63,7 @@ internal partial class EmbeddedWallet
         var privateKeyBytes = utf8WithoutBom.GetBytes(privateKey);
 
         byte[] encryptedPrivateKeyBytes;
+
         try
         {
             using var aes = Aes.Create();
@@ -71,9 +77,32 @@ internal partial class EmbeddedWallet
             using var encryptor = aes.CreateEncryptor();
             encryptedPrivateKeyBytes = encryptor.TransformFinalBlock(privateKeyBytes, 0, privateKeyBytes.Length);
         }
-        catch (Exception ex)
+        // Fallback to BouncyCastle
+        catch (Exception)
         {
-            throw new InvalidOperationException("Encryption failed.", ex);
+            try
+            {
+                var key = Convert.FromBase64String(plainTextBase64);
+
+                var engine = new AesEngine();
+                var blockCipher = new Org.BouncyCastle.Crypto.Modes.CbcBlockCipher(engine);
+                var cipher = new PaddedBufferedBlockCipher(blockCipher, new Pkcs7Padding());
+
+                var keyParam = new KeyParameter(key);
+                var keyParamWithIV = new ParametersWithIV(keyParam, iv);
+
+                cipher.Init(true, keyParamWithIV);
+
+                encryptedPrivateKeyBytes = new byte[cipher.GetOutputSize(privateKeyBytes.Length)];
+                var length = cipher.ProcessBytes(privateKeyBytes, 0, privateKeyBytes.Length, encryptedPrivateKeyBytes, 0);
+                length += cipher.DoFinal(encryptedPrivateKeyBytes, length);
+
+                Array.Resize(ref encryptedPrivateKeyBytes, length);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Migration failed", ex);
+            }
         }
 
         var encryptedData = new byte[iv.Length + encryptedPrivateKeyBytes.Length];
