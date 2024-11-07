@@ -309,6 +309,16 @@ public class ExtensionsTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task TransferERC20Override()
+    {
+        var token = await this.GetTokenERC20Contract();
+        var wallet = await this.GetSmartWallet();
+        var receipt = await wallet.Transfer(this._chainId, await wallet.GetAddress(), BigInteger.Zero, token.Address);
+        Assert.NotNull(receipt);
+        Assert.True(receipt.TransactionHash.Length == 66);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task Contract_Read()
     {
         var contract = await this.GetTokenERC20Contract();

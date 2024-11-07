@@ -265,17 +265,25 @@ public static class ThirdwebExtensions
     }
 
     /// <summary>
-    /// Transfers the specified amount of Wei to the specified address.
+    /// Transfers the specified amount of Wei to the specified address. Passing tokenAddress will override this function to transfer ERC20 tokens.
     /// </summary>
     /// <param name="wallet">The wallet to transfer from.</param>
     /// <param name="chainId">The chain ID to transfer on.</param>
     /// <param name="toAddress">The address to transfer to.</param>
     /// <param name="weiAmount">The amount of Wei to transfer.</param>
+    /// <param name="tokenAddress">The optional token address to transfer from. Defaults to the native token address (ETH or equivalent).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the transaction receipt.</returns>
     /// <returns>A task that represents the asynchronous operation. The task result contains the transaction receipt.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the wallet is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the chain ID is less than or equal to 0.</exception>
     /// <exception cref="ArgumentException">Thrown when the recipient address is null or empty.</exception>
-    public static async Task<ThirdwebTransactionReceipt> Transfer(this IThirdwebWallet wallet, BigInteger chainId, string toAddress, BigInteger weiAmount)
+    public static async Task<ThirdwebTransactionReceipt> Transfer(
+        this IThirdwebWallet wallet,
+        BigInteger chainId,
+        string toAddress,
+        BigInteger weiAmount,
+        string tokenAddress = Constants.NATIVE_TOKEN_ADDRESS
+    )
     {
         if (wallet == null)
         {
@@ -297,9 +305,17 @@ public static class ThirdwebExtensions
             throw new ArgumentOutOfRangeException(nameof(weiAmount), "Amount must be 0 or greater.");
         }
 
-        var txInput = new ThirdwebTransactionInput(chainId) { To = toAddress, Value = new HexBigInteger(weiAmount) };
-        var tx = await ThirdwebTransaction.Create(wallet, txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx).ConfigureAwait(false);
+        if (tokenAddress != Constants.NATIVE_TOKEN_ADDRESS)
+        {
+            var erc20Contract = await ThirdwebContract.Create(wallet.Client, tokenAddress, chainId).ConfigureAwait(false);
+            return await erc20Contract.ERC20_Transfer(wallet, toAddress, weiAmount).ConfigureAwait(false);
+        }
+        else
+        {
+            var txInput = new ThirdwebTransactionInput(chainId) { To = toAddress, Value = new HexBigInteger(weiAmount) };
+            var tx = await ThirdwebTransaction.Create(wallet, txInput).ConfigureAwait(false);
+            return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
