@@ -1031,7 +1031,7 @@ public static class ThirdwebExtensions
         string toAddress,
         BigInteger tokenId,
         BigInteger amount,
-        byte[] data
+        byte[] data = null
     )
     {
         if (contract == null)
@@ -1056,7 +1056,7 @@ public static class ThirdwebExtensions
 
         return tokenId < 0
             ? throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0")
-            : await ThirdwebContract.Write(wallet, contract, "safeTransferFrom", 0, fromAddress, toAddress, tokenId, amount, data);
+            : await ThirdwebContract.Write(wallet, contract, "safeTransferFrom", 0, fromAddress, toAddress, tokenId, amount, data ?? Array.Empty<byte>());
     }
 
     /// <summary>
@@ -1079,7 +1079,7 @@ public static class ThirdwebExtensions
         string toAddress,
         BigInteger[] tokenIds,
         BigInteger[] amounts,
-        byte[] data
+        byte[] data = null
     )
     {
         if (contract == null)
@@ -1104,7 +1104,7 @@ public static class ThirdwebExtensions
 
         return tokenIds == null || amounts == null
             ? throw new ArgumentException("Token IDs and amounts must be provided")
-            : await ThirdwebContract.Write(wallet, contract, "safeBatchTransferFrom", 0, fromAddress, toAddress, tokenIds, amounts, data);
+            : await ThirdwebContract.Write(wallet, contract, "safeBatchTransferFrom", 0, fromAddress, toAddress, tokenIds, amounts, data ?? Array.Empty<byte>());
     }
 
     /// <summary>
