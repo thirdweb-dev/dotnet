@@ -53,7 +53,7 @@ internal class AWS
         };
     }
 
-    private static async Task<JToken> GenerateDataKey(AwsCredentials credentials, IThirdwebHttpClient httpClient)
+    private static async Task<JToken> GenerateDataKey(AwsCredentials credentials, IThirdwebHttpClient httpClient, DateTime? dateOverride = null)
     {
         var client = Utils.ReconstructHttpClient(httpClient);
         var endpoint = $"https://kms.{AWS_REGION}.amazonaws.com/";
@@ -64,9 +64,10 @@ internal class AWS
 
         client.AddHeader("X-Amz-Target", "TrentService.GenerateDataKey");
 
-        var dateTimeNow = DateTime.UtcNow;
+        var dateTimeNow = dateOverride ?? DateTime.UtcNow;
         var dateStamp = dateTimeNow.ToString("yyyyMMdd");
-        var amzDate = dateTimeNow.ToString("yyyyMMddTHHmmssZ");
+        var amzDateFormat = "yyyyMMddTHHmmssZ";
+        var amzDate = dateTimeNow.ToString(amzDateFormat);
         var canonicalUri = "/";
 
         var canonicalHeaders = $"host:kms.{AWS_REGION}.amazonaws.com\nx-amz-date:{amzDate}\n";
@@ -104,6 +105,12 @@ internal class AWS
 
         if (!response.IsSuccessStatusCode)
         {
+            if (dateOverride == null && responseContent.Contains("InvalidSignatureException"))
+            {
+                var parsedTime = responseContent.Substring(responseContent.LastIndexOf('(') + 1, amzDate.Length);
+                return await GenerateDataKey(credentials, httpClient, DateTime.ParseExact(parsedTime, amzDateFormat, System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime())
+                    .ConfigureAwait(false);
+            }
             throw new Exception($"Failed to generate data key: {responseContent}");
         }
 
