@@ -157,7 +157,7 @@ public struct NFT
     public NFTMetadata Metadata { get; set; }
 
     /// <summary>
-    /// Gets or sets the owner address of the NFT.
+    /// Gets or sets the owner address of the NFT. This is only applicable for ERC721 tokens.
     /// </summary>
     public string Owner { get; set; }
 
@@ -172,7 +172,7 @@ public struct NFT
     public BigInteger? Supply { get; set; }
 
     /// <summary>
-    /// Gets or sets the quantity owned by the user.
+    /// Gets or sets the quantity owned by the user. This is only applicable for ERC1155 tokens.
     /// </summary>
     public BigInteger? QuantityOwned { get; set; }
 }
