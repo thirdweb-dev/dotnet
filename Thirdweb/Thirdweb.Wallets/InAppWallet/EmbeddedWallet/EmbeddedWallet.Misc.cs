@@ -54,6 +54,10 @@ internal partial class EmbeddedWallet
         }
 
         var privateKey = account.PrivateKey;
+        if (privateKey.Length == 62)
+        {
+            privateKey = "00" + privateKey;
+        }
         var utf8WithoutBom = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
         var privateKeyBytes = utf8WithoutBom.GetBytes(privateKey);
 
