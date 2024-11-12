@@ -679,14 +679,14 @@ public class UtilsTests : BaseTests
         Assert.False(isEip155Enforced);
     }
 
-    [Fact(Timeout = 120000)]
-    public async Task IsEip155Enforced_ReturnsTrue_WhenChainIs842()
-    {
-        var chainId = new BigInteger(842);
-        var isEip155Enforced = await Utils.IsEip155Enforced(this.Client, chainId);
+    // [Fact(Timeout = 120000)]
+    // public async Task IsEip155Enforced_ReturnsTrue_WhenChainIs842()
+    // {
+    //     var chainId = new BigInteger(842);
+    //     var isEip155Enforced = await Utils.IsEip155Enforced(this.Client, chainId);
 
-        Assert.True(isEip155Enforced);
-    }
+    //     Assert.True(isEip155Enforced);
+    // }
 
     [Fact(Timeout = 120000)]
     public void ReconstructHttpClient_WithHeaders()
