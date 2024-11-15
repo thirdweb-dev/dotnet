@@ -967,14 +967,14 @@ public static partial class Utils
         {
             if (token is JObject obj)
             {
-                foreach (var property in obj.Properties())
+                foreach (var property in obj.Properties().ToList())
                 {
                     StringifyLargeNumbers(property.Value);
                 }
             }
             else if (token is JArray array)
             {
-                foreach (var item in array)
+                foreach (var item in array.ToList())
                 {
                     StringifyLargeNumbers(item);
                 }
