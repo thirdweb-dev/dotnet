@@ -953,4 +953,54 @@ public static partial class Utils
 
         return new SocialProfiles(deserializedResponse.Data);
     }
+
+    /// <summary>
+    /// Preprocesses the typed data JSON to stringify large numbers.
+    /// </summary>
+    /// <param name="json">The typed data JSON.</param>
+    /// <returns>The preprocessed typed data JSON.</returns>
+    public static string PreprocessTypedDataJson(string json)
+    {
+        var jObject = JObject.Parse(json);
+
+        static void StringifyLargeNumbers(JToken token)
+        {
+            if (token is JObject obj)
+            {
+                foreach (var property in obj.Properties())
+                {
+                    StringifyLargeNumbers(property.Value);
+                }
+            }
+            else if (token is JArray array)
+            {
+                foreach (var item in array)
+                {
+                    StringifyLargeNumbers(item);
+                }
+            }
+            else if (token is JValue value)
+            {
+                if (value.Type == JTokenType.Integer)
+                {
+                    try
+                    {
+                        var bigInt = BigInteger.Parse(value.ToString());
+                        if (bigInt > new BigInteger(uint.MaxValue) || bigInt < BigInteger.Zero)
+                        {
+                            value.Replace(bigInt.ToString());
+                        }
+                    }
+                    catch (FormatException)
+                    {
+                        // Skip if the value isn't properly formatted as an integer
+                    }
+                }
+            }
+        }
+
+        StringifyLargeNumbers(jObject);
+
+        return jObject.ToString();
+    }
 }

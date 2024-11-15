@@ -776,9 +776,11 @@ public partial class EcosystemWallet : IThirdwebWallet
             throw new ArgumentNullException(nameof(json), "Json to sign cannot be null.");
         }
 
+        var processedJson = Utils.PreprocessTypedDataJson(json);
+
         var url = $"{ENCLAVE_PATH}/sign-typed-data";
 
-        var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
+        var requestContent = new StringContent(processedJson, Encoding.UTF8, "application/json");
 
         var response = await this.HttpClient.PostAsync(url, requestContent).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
