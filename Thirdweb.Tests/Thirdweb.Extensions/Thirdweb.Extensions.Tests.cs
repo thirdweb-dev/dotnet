@@ -894,12 +894,33 @@ public class ExtensionsTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task GetNFT_721_NoOwner()
+    {
+        var contract = await this.GetTokenERC721Contract();
+        var nft = await contract.ERC721_GetNFT(0, false);
+        Assert.Equal(Constants.ADDRESS_ZERO, nft.Owner);
+        Assert.Equal(NFTType.ERC721, nft.Type);
+        Assert.True(nft.Supply == 1);
+        Assert.True(nft.QuantityOwned == 1);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task GetAllNFTs_721()
     {
         var contract = await this.GetTokenERC721Contract();
         var nfts = await contract.ERC721_GetAllNFTs();
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetAllNFTs_721_NoOwner()
+    {
+        var contract = await this.GetTokenERC721Contract();
+        var nfts = await contract.ERC721_GetAllNFTs(fillOwner: false);
+        Assert.NotNull(nfts);
+        Assert.NotEmpty(nfts);
+        Assert.True(nfts.All(nft => nft.Owner == Constants.ADDRESS_ZERO));
     }
 
     [Fact(Timeout = 120000)]
@@ -985,12 +1006,31 @@ public class ExtensionsTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task GetNFT_1155_NoSupply()
+    {
+        var contract = await this.GetTokenERC1155Contract();
+        var nft = await contract.ERC1155_GetNFT(0, false);
+        Assert.Equal(NFTType.ERC1155, nft.Type);
+        Assert.True(nft.Supply == -1);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task GetAllNFTs_1155()
     {
         var contract = await this.GetTokenERC1155Contract();
         var nfts = await contract.ERC1155_GetAllNFTs();
         Assert.NotNull(nfts);
         Assert.NotEmpty(nfts);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GetAllNFTs_1155_NoSupply()
+    {
+        var contract = await this.GetTokenERC1155Contract();
+        var nfts = await contract.ERC1155_GetAllNFTs(fillSupply: false);
+        Assert.NotNull(nfts);
+        Assert.NotEmpty(nfts);
+        Assert.True(nfts.All(nft => nft.Supply == -1));
     }
 
     [Fact(Timeout = 120000)]
