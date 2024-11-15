@@ -507,7 +507,7 @@ public class UtilsTests : BaseTests
         var verifyingContract = await pkWallet.GetAddress(); // doesn't matter here
         var typedDataRaw = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 137, verifyingContract);
         var json = Utils.ToJsonExternalWalletFriendly(typedDataRaw, msg);
-        var jsonObject = Newtonsoft.Json.Linq.JObject.Parse(json);
+        var jsonObject = JObject.Parse(json);
         var internalMsg = jsonObject.SelectToken("$.message.message");
         Assert.NotNull(internalMsg);
         Assert.Equal("0x01020304", internalMsg);
@@ -826,9 +826,11 @@ public class UtilsTests : BaseTests
 
         // Act
         var processedJson = Utils.PreprocessTypedDataJson(inputJson);
+        var expectedJObject = JObject.Parse(inputJson);
+        var processedJObject = JObject.Parse(processedJson);
 
         // Assert
-        Assert.Equal(inputJson.Replace("\r\n", "").Replace(" ", ""), processedJson.Replace("\r\n", "").Replace(" ", ""));
+        Assert.Equal(expectedJObject, processedJObject);
     }
 
     [Fact]
