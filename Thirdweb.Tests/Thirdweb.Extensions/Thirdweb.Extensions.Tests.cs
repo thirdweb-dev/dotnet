@@ -890,7 +890,7 @@ public class ExtensionsTests : BaseTests
         Assert.NotEmpty(nft.Owner);
         Assert.Equal(NFTType.ERC721, nft.Type);
         Assert.True(nft.Supply == 1);
-        Assert.Null(nft.QuantityOwned);
+        Assert.True(nft.QuantityOwned == 1);
     }
 
     [Fact(Timeout = 120000)]
