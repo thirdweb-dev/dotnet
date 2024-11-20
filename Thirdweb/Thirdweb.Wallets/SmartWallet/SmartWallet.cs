@@ -14,7 +14,7 @@ namespace Thirdweb;
 public enum TokenPaymaster
 {
     NONE,
-    BASE_USDC,
+    LISK_LSK
 }
 
 public class SmartWallet : IThirdwebWallet
@@ -62,12 +62,12 @@ public class SmartWallet : IThirdwebWallet
                 }
             },
             {
-                TokenPaymaster.BASE_USDC,
+                TokenPaymaster.LISK_LSK,
                 new TokenPaymasterConfig()
                 {
-                    ChainId = 8453,
-                    PaymasterAddress = "0xff4d12b1f8d276aa4a9e8cc80539e806791bfe28",
-                    TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                    ChainId = 1135,
+                    PaymasterAddress = "0xD1D1408b198C151bbe66F34D84b404a6e94f816f",
+                    TokenAddress = "0xac485391EB2d7D88253a7F1eF18C37f4242D1A24",
                     BalanceStorageSlot = 9
                 }
             }
