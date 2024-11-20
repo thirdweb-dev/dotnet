@@ -14,6 +14,8 @@ namespace Thirdweb;
 public enum TokenPaymaster
 {
     NONE,
+    BASE_USDC,
+    CELO_CUSD,
     LISK_LSK
 }
 
@@ -59,6 +61,26 @@ public class SmartWallet : IThirdwebWallet
                     PaymasterAddress = null,
                     TokenAddress = null,
                     BalanceStorageSlot = 0
+                }
+            },
+            {
+                TokenPaymaster.BASE_USDC,
+                new TokenPaymasterConfig()
+                {
+                    ChainId = 8453,
+                    PaymasterAddress = "0x34d19b49Eae24Ce4334c25f61865aA0C78467cF3",
+                    TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                    BalanceStorageSlot = 9
+                }
+            },
+            {
+                TokenPaymaster.CELO_CUSD,
+                new TokenPaymasterConfig()
+                {
+                    ChainId = 42220,
+                    PaymasterAddress = "0xBD17517383512E5b9eEEB7320A1BCfde66B78ac5",
+                    TokenAddress = "0x765DE816845861e75A25fCA122bb6898B8B1282a",
+                    BalanceStorageSlot = 9
                 }
             },
             {
@@ -719,7 +741,7 @@ public class SmartWallet : IThirdwebWallet
                 partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
                 partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
                 partialUserOp.PaymasterVerificationGasLimit = new HexBigInteger(gasEstimates.PaymasterVerificationGasLimit).Value;
-                partialUserOp.PaymasterPostOpGasLimit = new HexBigInteger(gasEstimates.PaymasterPostOpGasLimit).Value;
+                partialUserOp.PaymasterPostOpGasLimit = this.UseERC20Paymaster && !this._isApproving ? 500_000 : new HexBigInteger(gasEstimates.PaymasterPostOpGasLimit).Value;
             }
 
             // Hash, sign and encode the user operation
