@@ -115,6 +115,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             Thirdweb.AuthProvider.Coinbase => "Coinbase",
             Thirdweb.AuthProvider.Github => "Github",
             Thirdweb.AuthProvider.Twitch => "Twitch",
+            Thirdweb.AuthProvider.Steam => "Steam",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -415,6 +416,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             case "Coinbase":
             case "Github":
             case "Twitch":
+            case "Steam":
                 serverRes = await ecosystemWallet.PreAuth_OAuth(isMobile ?? false, browserOpenAction, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             default:

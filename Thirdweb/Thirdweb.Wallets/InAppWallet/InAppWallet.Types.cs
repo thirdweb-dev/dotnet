@@ -22,7 +22,8 @@ public enum AuthProvider
     X,
     Coinbase,
     Github,
-    Twitch
+    Twitch,
+    Steam
 }
 
 /// <summary>
