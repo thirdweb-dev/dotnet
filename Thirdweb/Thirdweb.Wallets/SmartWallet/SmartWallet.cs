@@ -68,7 +68,7 @@ public class SmartWallet : IThirdwebWallet
                 new TokenPaymasterConfig()
                 {
                     ChainId = 8453,
-                    PaymasterAddress = "0x34d19b49Eae24Ce4334c25f61865aA0C78467cF3",
+                    PaymasterAddress = "0x2222f2738BE6bB7aA0Bfe4AEeAf2908172CF5539",
                     TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
                     BalanceStorageSlot = 9
                 }
@@ -78,7 +78,7 @@ public class SmartWallet : IThirdwebWallet
                 new TokenPaymasterConfig()
                 {
                     ChainId = 42220,
-                    PaymasterAddress = "0xBD17517383512E5b9eEEB7320A1BCfde66B78ac5",
+                    PaymasterAddress = "0x3feA3c5744D715ff46e91C4e5C9a94426DfF2aF9",
                     TokenAddress = "0x765DE816845861e75A25fCA122bb6898B8B1282a",
                     BalanceStorageSlot = 9
                 }
@@ -88,7 +88,7 @@ public class SmartWallet : IThirdwebWallet
                 new TokenPaymasterConfig()
                 {
                     ChainId = 1135,
-                    PaymasterAddress = "0xD1D1408b198C151bbe66F34D84b404a6e94f816f",
+                    PaymasterAddress = "0x9eb8cf7fBa5ed9EeDCC97a0d52254cc0e9B1AC25",
                     TokenAddress = "0xac485391EB2d7D88253a7F1eF18C37f4242D1A24",
                     BalanceStorageSlot = 9
                 }
@@ -176,7 +176,7 @@ public class SmartWallet : IThirdwebWallet
             }
         }
 
-        entryPoint ??= Constants.ENTRYPOINT_ADDRESS_V06;
+        entryPoint ??= tokenPaymaster == TokenPaymaster.NONE ? Constants.ENTRYPOINT_ADDRESS_V06 : Constants.ENTRYPOINT_ADDRESS_V07;
 
         var entryPointVersion = Utils.GetEntryPointVersion(entryPoint);
 

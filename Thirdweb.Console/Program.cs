@@ -301,57 +301,42 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region TokenPaymaster - Celo CUSD
 
-// var erc20SmartWallet = await SmartWallet.Create(
-//     personalWallet: privateKeyWallet,
-//     chainId: 42220, // celo
-//     gasless: true,
-//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07,
-//     tokenPaymaster: TokenPaymaster.CELO_CUSD
-// );
+// var chainId = 42220; // celo
+
+// var erc20SmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: chainId, tokenPaymaster: TokenPaymaster.CELO_CUSD);
+
 // var erc20SmartWalletAddress = await erc20SmartWallet.GetAddress();
 // Console.WriteLine($"ERC20 Smart Wallet address: {erc20SmartWalletAddress}");
 
-// var selfTransfer = await ThirdwebTransaction.Create(wallet: erc20SmartWallet, txInput: new ThirdwebTransactionInput(chainId: 42220, to: erc20SmartWalletAddress, value: 0, data: "0x"));
-
-// var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(selfTransfer);
+// var receipt = await erc20SmartWallet.Transfer(chainId: chainId, toAddress: erc20SmartWalletAddress, weiAmount: 0);
 // Console.WriteLine($"Receipt: {JsonConvert.SerializeObject(receipt, Formatting.Indented)}");
 
 #endregion
 
 #region TokenPaymaster - Base USDC
 
-// var erc20SmartWallet = await SmartWallet.Create(
-//     personalWallet: privateKeyWallet,
-//     chainId: 8453, // base
-//     gasless: true,
-//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07,
-//     tokenPaymaster: TokenPaymaster.BASE_USDC
-// );
+// var chainId = 8453; // base
+
+// var erc20SmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: chainId, tokenPaymaster: TokenPaymaster.BASE_USDC);
+
 // var erc20SmartWalletAddress = await erc20SmartWallet.GetAddress();
 // Console.WriteLine($"ERC20 Smart Wallet address: {erc20SmartWalletAddress}");
 
-// var selfTransfer = await ThirdwebTransaction.Create(wallet: erc20SmartWallet, txInput: new ThirdwebTransactionInput(chainId: 8453, to: erc20SmartWalletAddress, value: 0, data: "0x"));
-
-// var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(selfTransfer);
+// var receipt = await erc20SmartWallet.Transfer(chainId: chainId, toAddress: erc20SmartWalletAddress, weiAmount: 0);
 // Console.WriteLine($"Receipt: {JsonConvert.SerializeObject(receipt, Formatting.Indented)}");
 
 #endregion
 
 #region TokenPaymaster - Lisk LSK
 
-// var erc20SmartWallet = await SmartWallet.Create(
-//     personalWallet: privateKeyWallet,
-//     chainId: 1135, // lisk
-//     gasless: true,
-//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07,
-//     tokenPaymaster: TokenPaymaster.LISK_LSK
-// );
+// var chainId = 1135; // lisk
+
+// var erc20SmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: chainId, tokenPaymaster: TokenPaymaster.LISK_LSK);
+
 // var erc20SmartWalletAddress = await erc20SmartWallet.GetAddress();
 // Console.WriteLine($"ERC20 Smart Wallet address: {erc20SmartWalletAddress}");
 
-// var selfTransfer = await ThirdwebTransaction.Create(wallet: erc20SmartWallet, txInput: new ThirdwebTransactionInput(chainId: 1135, to: erc20SmartWalletAddress, value: 0, data: "0x"));
-
-// var receipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(selfTransfer);
+// var receipt = await erc20SmartWallet.Transfer(chainId: chainId, toAddress: erc20SmartWalletAddress, weiAmount: 0);
 // Console.WriteLine($"Receipt: {JsonConvert.SerializeObject(receipt, Formatting.Indented)}");
 
 #endregion
