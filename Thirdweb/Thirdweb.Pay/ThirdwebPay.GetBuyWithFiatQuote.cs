@@ -26,6 +26,7 @@ public partial class ThirdwebPay
             { "toTokenAddress", buyWithFiatParams.ToTokenAddress },
             { "toAmount", buyWithFiatParams.ToAmount },
             { "toAmountWei", buyWithFiatParams.ToAmountWei },
+            { "preferredProvider", buyWithFiatParams.PreferredProvider },
             { "maxSlippageBPS", buyWithFiatParams.MaxSlippageBPS?.ToString() }
         };
 
