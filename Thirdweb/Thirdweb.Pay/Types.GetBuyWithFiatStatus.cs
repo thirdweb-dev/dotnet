@@ -60,6 +60,12 @@ public class BuyWithFiatStatusResult
     /// </summary>
     [JsonProperty("failureMessage")]
     public string FailureMessage { get; set; }
+
+    /// <summary>
+    /// Additional data for the purchase. Useful with direct transfer flow.
+    /// </summary>
+    [JsonProperty("purchaseData")]
+    public object PurchaseData { get; set; }
 }
 
 /// <summary>

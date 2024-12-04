@@ -21,7 +21,8 @@ public class BuyWithCryptoQuoteParams(
     string toAmountWei = null,
     string toAddress = null,
     double? maxSlippageBPS = null,
-    string intentId = null
+    string intentId = null,
+    object purchaseData = null
     )
 {
     /// <summary>
@@ -95,6 +96,12 @@ public class BuyWithCryptoQuoteParams(
     /// </summary>
     [JsonProperty("intentId")]
     public string IntentId { get; set; } = intentId;
+
+    /// <summary>
+    /// Additional data for the purchase. Useful with direct transfer flow.
+    /// </summary>
+    [JsonProperty("purchaseData")]
+    public object PurchaseData { get; set; } = purchaseData;
 }
 
 /// <summary>

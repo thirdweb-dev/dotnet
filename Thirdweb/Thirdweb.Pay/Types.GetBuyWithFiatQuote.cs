@@ -19,7 +19,8 @@ public class BuyWithFiatQuoteParams(
     string toAmountWei = null,
     double? maxSlippageBPS = null,
     bool isTestMode = false,
-    string preferredProvider = null
+    string preferredProvider = null,
+    object purchaseData = null
     )
 {
     /// <summary>
@@ -40,11 +41,6 @@ public class BuyWithFiatQuoteParams(
     [JsonProperty("fromAmountUnits")]
     public string FromAmountUnits { get; set; } = fromAmountUnits;
 
-    /// <summary>
-    /// The provider to use on the application for thirdweb pay
-    /// </summary>
-    [JsonProperty("preferredProvider")]
-    public string PreferredProvider { get; set; } = preferredProvider;
     /// <summary>
     /// The address to receive the purchased tokens.
     /// </summary>
@@ -86,6 +82,18 @@ public class BuyWithFiatQuoteParams(
     /// </summary>
     [JsonProperty("isTestMode")]
     public bool IsTestMode { get; set; } = isTestMode;
+
+    /// <summary>
+    /// The provider to use on the application for thirdweb pay
+    /// </summary>
+    [JsonProperty("preferredProvider")]
+    public string PreferredProvider { get; set; } = preferredProvider;
+
+    /// <summary>
+    /// Additional data for the purchase. Useful with direct transfer flow.
+    /// </summary>
+    [JsonProperty("purchaseData")]
+    public object PurchaseData { get; set; } = purchaseData;
 }
 
 /// <summary>

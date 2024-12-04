@@ -16,30 +16,18 @@ public partial class ThirdwebPay
     /// <exception cref="Exception">Thrown if the HTTP response is not successful.</exception>
     public static async Task<BuyWithCryptoQuoteResult> GetBuyWithCryptoQuote(ThirdwebClient client, BuyWithCryptoQuoteParams buyWithCryptoParams)
     {
-        var queryString = new Dictionary<string, string>
-        {
-            { "fromAddress", buyWithCryptoParams.FromAddress },
-            { "fromChainId", buyWithCryptoParams.FromChainId?.ToString() },
-            { "fromTokenAddress", buyWithCryptoParams.FromTokenAddress },
-            { "fromAmount", buyWithCryptoParams.FromAmount },
-            { "fromAmountWei", buyWithCryptoParams.FromAmountWei },
-            { "toChainId", buyWithCryptoParams.ToChainId?.ToString() },
-            { "toTokenAddress", buyWithCryptoParams.ToTokenAddress },
-            { "toAmount", buyWithCryptoParams.ToAmount },
-            { "toAmountWei", buyWithCryptoParams.ToAmountWei },
-            { "toAddress", buyWithCryptoParams.ToAddress },
-            { "maxSlippageBPS", buyWithCryptoParams.MaxSlippageBPS?.ToString() },
-            { "intentId", buyWithCryptoParams.IntentId }
-        };
+        var response = await client.HttpClient.PostAsync(
+            THIRDWEB_PAY_CRYPTO_QUOTE_ENDPOINT,
+            new StringContent(
+                JsonConvert.SerializeObject(buyWithCryptoParams, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }),
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
 
-        var queryStringFormatted = string.Join("&", queryString.Where(kv => kv.Value != null).Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
-        var url = $"{THIRDWEB_PAY_CRYPTO_QUOTE_ENDPOINT}?{queryStringFormatted}";
+        var content = await response.Content.ReadAsStringAsync();
 
-        var getResponse = await client.HttpClient.GetAsync(url);
-
-        var content = await getResponse.Content.ReadAsStringAsync();
-
-        if (!getResponse.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode)
         {
             ErrorResponse error;
             try
@@ -56,14 +44,12 @@ public partial class ThirdwebPay
                         Reason = "Unknown",
                         Code = "Unknown",
                         Stack = "Unknown",
-                        StatusCode = (int)getResponse.StatusCode
+                        StatusCode = (int)response.StatusCode
                     }
                 };
             }
 
-            throw new Exception(
-                $"HTTP error! Code: {error.Error.Code} Message: {error.Error.Message} Reason: {error.Error.Reason} StatusCode: {error.Error.StatusCode} Stack: {error.Error.Stack}"
-            );
+            throw new Exception($"HTTP error! Code: {error.Error.Code} Message: {error.Error.Message} Reason: {error.Error.Reason} StatusCode: {error.Error.StatusCode} Stack: {error.Error.Stack}");
         }
 
         var data = JsonConvert.DeserializeObject<GetSwapQuoteResponse>(content);
