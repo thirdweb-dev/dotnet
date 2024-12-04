@@ -16,29 +16,18 @@ public partial class ThirdwebPay
     /// <exception cref="Exception">Thrown if the HTTP response is not successful.</exception>
     public static async Task<BuyWithFiatQuoteResult> GetBuyWithFiatQuote(ThirdwebClient client, BuyWithFiatQuoteParams buyWithFiatParams)
     {
-        var queryString = new Dictionary<string, string>
-        {
-            { "fromCurrencySymbol", buyWithFiatParams.FromCurrencySymbol },
-            { "fromAmount", buyWithFiatParams.FromAmount },
-            { "fromAmountUnits", buyWithFiatParams.FromAmountUnits },
-            { "toAddress", buyWithFiatParams.ToAddress },
-            { "toChainId", buyWithFiatParams.ToChainId },
-            { "toTokenAddress", buyWithFiatParams.ToTokenAddress },
-            { "toAmount", buyWithFiatParams.ToAmount },
-            { "toAmountWei", buyWithFiatParams.ToAmountWei },
-            { "preferredProvider", buyWithFiatParams.PreferredProvider },
-            { "maxSlippageBPS", buyWithFiatParams.MaxSlippageBPS?.ToString() }
-        };
+        var response = await client.HttpClient.PostAsync(
+            THIRDWEB_PAY_FIAT_QUOTE_ENDPOINT,
+            new StringContent(
+                JsonConvert.SerializeObject(buyWithFiatParams, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }),
+                System.Text.Encoding.UTF8,
+                "application/json"
+            )
+        );
 
-        var queryStringFormatted = string.Join("&", queryString.Where(kv => kv.Value != null).Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
-        var url = $"{THIRDWEB_PAY_FIAT_QUOTE_ENDPOINT}?{queryStringFormatted}";
-        url += buyWithFiatParams.IsTestMode ? "&isTestMode=true" : "&isTestMode=false";
+        var content = await response.Content.ReadAsStringAsync();
 
-        var getResponse = await client.HttpClient.GetAsync(url);
-
-        var content = await getResponse.Content.ReadAsStringAsync();
-
-        if (!getResponse.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode)
         {
             ErrorResponse error;
             try
@@ -55,14 +44,12 @@ public partial class ThirdwebPay
                         Reason = "Unknown",
                         Code = "Unknown",
                         Stack = "Unknown",
-                        StatusCode = (int)getResponse.StatusCode
+                        StatusCode = (int)response.StatusCode
                     }
                 };
             }
 
-            throw new Exception(
-                $"HTTP error! Code: {error.Error.Code} Message: {error.Error.Message} Reason: {error.Error.Reason} StatusCode: {error.Error.StatusCode} Stack: {error.Error.Stack}"
-            );
+            throw new Exception($"HTTP error! Code: {error.Error.Code} Message: {error.Error.Message} Reason: {error.Error.Reason} StatusCode: {error.Error.StatusCode} Stack: {error.Error.Stack}");
         }
 
         var data = JsonConvert.DeserializeObject<GetFiatQuoteResponse>(content);

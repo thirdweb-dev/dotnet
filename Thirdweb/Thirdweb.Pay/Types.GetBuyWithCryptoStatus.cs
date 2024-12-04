@@ -78,6 +78,12 @@ public class BuyWithCryptoStatusResult
     /// </summary>
     [JsonProperty("bridge")]
     public string Bridge { get; set; }
+
+    /// <summary>
+    /// Additional data for the purchase. Useful with direct transfer flow.
+    /// </summary>
+    [JsonProperty("purchaseData")]
+    public object PurchaseData { get; set; }
 }
 
 /// <summary>
