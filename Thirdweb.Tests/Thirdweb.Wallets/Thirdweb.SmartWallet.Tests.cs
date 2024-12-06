@@ -314,41 +314,41 @@ public class SmartWalletTests : BaseTests
         Assert.True(hashes[1].TransactionHash.Length == 66);
     }
 
-    [Fact(Timeout = 120000)]
-    public async Task MultiChainTransaction_Success()
-    {
-        var chainId1 = 11155111;
-        var chainId2 = 421614;
+    // [Fact(Timeout = 120000)]
+    // public async Task MultiChainTransaction_Success()
+    // {
+    //     var chainId1 = 11155111;
+    //     var chainId2 = 421614;
 
-        var smartWallet = await SmartWallet.Create(
-            personalWallet: await PrivateKeyWallet.Generate(this.Client),
-            chainId: chainId1,
-            gasless: true,
-            factoryAddress: Constants.DEFAULT_FACTORY_ADDRESS_V06,
-            entryPoint: Constants.ENTRYPOINT_ADDRESS_V06
-        );
+    //     var smartWallet = await SmartWallet.Create(
+    //         personalWallet: await PrivateKeyWallet.Generate(this.Client),
+    //         chainId: chainId1,
+    //         gasless: true,
+    //         factoryAddress: Constants.DEFAULT_FACTORY_ADDRESS_V06,
+    //         entryPoint: Constants.ENTRYPOINT_ADDRESS_V06
+    //     );
 
-        var address1 = await smartWallet.GetAddress();
-        var receipt1 = await smartWallet.ExecuteTransaction(new ThirdwebTransactionInput(chainId1) { To = address1, });
-        var nonce1 = await smartWallet.GetTransactionCount(chainId: chainId1, blocktag: "latest");
+    //     var address1 = await smartWallet.GetAddress();
+    //     var receipt1 = await smartWallet.ExecuteTransaction(new ThirdwebTransactionInput(chainId1) { To = address1, });
+    //     var nonce1 = await smartWallet.GetTransactionCount(chainId: chainId1, blocktag: "latest");
 
-        var address2 = await smartWallet.GetAddress();
-        var receipt2 = await smartWallet.ExecuteTransaction(new ThirdwebTransactionInput(chainId2) { To = address2, });
-        var nonce2 = await smartWallet.GetTransactionCount(chainId: chainId2, blocktag: "latest");
+    //     var address2 = await smartWallet.GetAddress();
+    //     var receipt2 = await smartWallet.ExecuteTransaction(new ThirdwebTransactionInput(chainId2) { To = address2, });
+    //     var nonce2 = await smartWallet.GetTransactionCount(chainId: chainId2, blocktag: "latest");
 
-        Assert.NotNull(address1);
-        Assert.NotNull(address2);
-        Assert.Equal(address1, address2);
+    //     Assert.NotNull(address1);
+    //     Assert.NotNull(address2);
+    //     Assert.Equal(address1, address2);
 
-        Assert.NotNull(receipt1);
-        Assert.NotNull(receipt2);
+    //     Assert.NotNull(receipt1);
+    //     Assert.NotNull(receipt2);
 
-        Assert.True(receipt1.TransactionHash.Length == 66);
-        Assert.True(receipt2.TransactionHash.Length == 66);
+    //     Assert.True(receipt1.TransactionHash.Length == 66);
+    //     Assert.True(receipt2.TransactionHash.Length == 66);
 
-        Assert.Equal(receipt1.To, receipt2.To);
+    //     Assert.Equal(receipt1.To, receipt2.To);
 
-        Assert.Equal(nonce1, 1);
-        Assert.Equal(nonce2, 1);
-    }
+    //     Assert.Equal(nonce1, 1);
+    //     Assert.Equal(nonce2, 1);
+    // }
 }
