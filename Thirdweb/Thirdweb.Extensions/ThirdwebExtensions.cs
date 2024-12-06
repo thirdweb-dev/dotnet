@@ -9,6 +9,13 @@ public static class ThirdwebExtensions
 {
     #region Common
 
+    /// <summary>
+    /// Returns whether the contract supports the specified interface.
+    /// </summary>
+    /// <param name="contract">The contract instance.</param>
+    /// <param name="interfaceId">The interface ID to check.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a boolean indicating whether the contract supports the interface.</returns>
+    /// <exception cref="ArgumentNullException"></exception>
     public static async Task<bool> SupportsInterface(this ThirdwebContract contract, string interfaceId)
     {
         if (contract == null)
@@ -17,6 +24,19 @@ public static class ThirdwebExtensions
         }
 
         return await ThirdwebContract.Read<bool>(contract, "supportsInterface", interfaceId.HexToBytes());
+    }
+
+    /// <summary>
+    /// Encodes the function call for the specified method and parameters.
+    /// </summary>
+    /// <param name="contract">The contract instance.</param>
+    /// <param name="method">The method to call.</param>
+    /// <param name="parameters">The parameters for the method.</param>
+    /// <returns>The generated calldata.</returns>
+    public static string CreateCallData(this ThirdwebContract contract, string method, params object[] parameters)
+    {
+        (var data, _) = ThirdwebContract.EncodeFunctionCall(contract, method, parameters);
+        return data;
     }
 
     /// <summary>

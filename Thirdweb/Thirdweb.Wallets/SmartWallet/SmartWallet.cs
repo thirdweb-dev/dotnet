@@ -321,19 +321,66 @@ public class SmartWallet : IThirdwebWallet
     }
 
     /// <summary>
-    /// Verifies if a signature is valid for a message using EIP-1271.
+    /// Verifies if a signature is valid for a message using EIP-1271 or ERC-6492.
     /// </summary>
     /// <param name="message">The message to verify.</param>
     /// <param name="signature">The signature to verify.</param>
     /// <returns>True if the signature is valid, otherwise false.</returns>
     public async Task<bool> IsValidSignature(string message, string signature)
     {
-        try
+        var isCounterFactual = signature.EndsWith(Constants.ERC_6492_MAGIC_VALUE[2..]);
+
+        // ERC-6492
+        if (isCounterFactual)
         {
-            var magicValue = await ThirdwebContract.Read<byte[]>(this._accountContract, "isValidSignature", message.StringToHex(), signature.HexToBytes()).ConfigureAwait(false);
-            return magicValue.BytesToHex() == new byte[] { 0x16, 0x26, 0xba, 0x7e }.BytesToHex();
+            var erc6492Sig = new ABIEncode().DecodeEncodedComplexType<Erc6492Signature>(signature.HexToBytes().Take(signature.Length - 32).ToArray());
+            var multicall3 = await ThirdwebContract.Create(this.Client, Constants.MULTICALL3_ADDRESS, this._chainId).ConfigureAwait(false);
+            List<Multicall3_Result> result;
+            try
+            {
+                result = await multicall3
+                    .Read<List<Multicall3_Result>>(
+                        method: "aggregate3",
+                        parameters: new object[]
+                        {
+                            new List<Multicall3_Call3>
+                            {
+                                new()
+                                {
+                                    Target = erc6492Sig.Create2Factory,
+                                    AllowFailure = true,
+                                    CallData = erc6492Sig.FactoryCalldata
+                                },
+                                new()
+                                {
+                                    Target = this._accountContract.Address,
+                                    AllowFailure = true,
+                                    CallData = this._accountContract.CreateCallData("isValidSignature", message.HashPrefixedMessage().HexToBytes(), erc6492Sig.SigToValidate).HexToBytes()
+                                }
+                            }
+                        }
+                    )
+                    .ConfigureAwait(false);
+
+                var success = result[1].Success;
+                var returnData = result[1].ReturnData.BytesToHex();
+                if (!success)
+                {
+                    var revertMsg = new Nethereum.ABI.FunctionEncoding.FunctionCallDecoder().DecodeFunctionErrorMessage(returnData);
+                    throw new Exception($"SmartAccount.IsValidSignature: Call to account contract failed: {revertMsg}");
+                }
+                else
+                {
+                    return returnData == Constants.EIP_1271_MAGIC_VALUE;
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
-        catch
+        // EIP-1271
+        else
         {
             try
             {
@@ -1030,7 +1077,7 @@ public class SmartWallet : IThirdwebWallet
     }
 
     /// <summary>
-    /// Signs a message with the personal account. If the smart account is deployed, the message will be wrapped 712 and signed by the smart account and verified with 1271. If the smart account is not deployed, it will deploy it first.
+    /// Signs a message with the personal account. The message will be verified using EIPs 1271 and 6492 if applicable.
     /// </summary>
     /// <param name="message">The message to sign.</param>
     /// <returns>The signature.</returns>
@@ -1041,42 +1088,20 @@ public class SmartWallet : IThirdwebWallet
             return await this._personalAccount.PersonalSign(message).ConfigureAwait(false);
         }
 
-        if (!await this.IsDeployed())
+        var originalMsgHash = Encoding.UTF8.GetBytes(message).HashPrefixedMessage();
+
+        var sig = await EIP712
+            .GenerateSignature_SmartAccount_AccountMessage("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), originalMsgHash, this._personalAccount)
+            .ConfigureAwait(false);
+
+        if (!await this.IsDeployed().ConfigureAwait(false))
         {
-            while (this.IsDeploying)
-            {
-                await ThirdwebTask.Delay(100).ConfigureAwait(false);
-            }
-            await this.ForceDeploy().ConfigureAwait(false);
+            (_, var factory, var factoryData) = await this.GetInitCode();
+            sig = Utils.SerializeErc6492Signature(address: factory, data: factoryData.HexToBytes(), signature: sig.HexToBytes());
         }
 
-        if (await this.IsDeployed().ConfigureAwait(false))
-        {
-            var originalMsgHash = Encoding.UTF8.GetBytes(message).HashPrefixedMessage();
-            bool factorySupports712;
-            try
-            {
-                _ = await ThirdwebContract.Read<byte[]>(this._accountContract, "getMessageHash", originalMsgHash).ConfigureAwait(false);
-                factorySupports712 = true;
-            }
-            catch
-            {
-                factorySupports712 = false;
-            }
-
-            var sig = factorySupports712
-                ? await EIP712
-                    .GenerateSignature_SmartAccount_AccountMessage("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), originalMsgHash, this._personalAccount)
-                    .ConfigureAwait(false)
-                : await this._personalAccount.PersonalSign(message).ConfigureAwait(false);
-
-            var isValid = await this.IsValidSignature(message, sig);
-            return isValid ? sig : throw new Exception("Invalid signature.");
-        }
-        else
-        {
-            throw new Exception("Smart account could not be deployed, unable to sign message.");
-        }
+        var isValid = await this.IsValidSignature(message, sig);
+        return isValid ? sig : throw new Exception("Invalid signature.");
     }
 
     public async Task<string> RecoverAddressFromPersonalSign(string message, string signature)

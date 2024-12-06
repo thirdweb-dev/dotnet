@@ -144,8 +144,15 @@ public class SmartWalletTests : BaseTests
     public async Task PersonalSign() // This is the only different signing mechanism for smart wallets, also tests isValidSignature
     {
         var account = await this.GetSmartAccount();
+
+        // ERC-6942 Verification
         var sig = await account.PersonalSign("Hello, world!");
         Assert.NotNull(sig);
+
+        // Raw EIP-1271 Verification
+        await account.ForceDeploy();
+        var sig2 = await account.PersonalSign("Hello, world!");
+        Assert.NotNull(sig2);
     }
 
     [Fact(Timeout = 120000)]
