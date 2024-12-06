@@ -452,3 +452,36 @@ public class SignerPermissions
     [Parameter("uint128", "endTimestamp", 5)]
     public virtual BigInteger EndTimestamp { get; set; }
 }
+
+public class Multicall3_Call3
+{
+    [Parameter("address", "target", 1)]
+    public virtual string Target { get; set; }
+
+    [Parameter("bool", "allowFailure", 2)]
+    public virtual bool AllowFailure { get; set; }
+
+    [Parameter("bytes", "callData", 3)]
+    public virtual byte[] CallData { get; set; }
+}
+
+public class Multicall3_Result
+{
+    [Parameter("bool", "success", 1)]
+    public virtual bool Success { get; set; }
+
+    [Parameter("bytes", "returnData", 2)]
+    public virtual byte[] ReturnData { get; set; }
+}
+
+public class Erc6492Signature
+{
+    [Parameter("address", "create2Factory", 1)]
+    public string Create2Factory { get; set; }
+
+    [Parameter("bytes", "factoryCalldata", 2)]
+    public byte[] FactoryCalldata { get; set; }
+
+    [Parameter("bytes", "callData", 3)]
+    public byte[] SigToValidate { get; set; }
+}

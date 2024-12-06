@@ -102,28 +102,12 @@ public class ThirdwebContract
     public static async Task<T> Read<T>(ThirdwebContract contract, string method, params object[] parameters)
     {
         var rpc = ThirdwebRPC.GetRpcInstance(contract.Client, contract.Chain);
-        var contractRaw = new Contract(null, contract.Abi, contract.Address);
-
-        var function = GetFunctionMatchSignature(contractRaw, method, parameters);
-        if (function == null)
-        {
-            if (method.Contains('('))
-            {
-                var canonicalSignature = ExtractCanonicalSignature(method);
-                var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
-                function = contractRaw.GetFunctionBySignature(selector);
-            }
-            else
-            {
-                throw new ArgumentException("Method signature not found in contract ABI.");
-            }
-        }
-
-        var data = function.GetData(parameters);
+        (var data, var function) = EncodeFunctionCall(contract, method, parameters);
         var resultData = await rpc.SendRequestAsync<string>("eth_call", new { to = contract.Address, data }, "latest").ConfigureAwait(false);
 
         if ((typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(List<>)) || typeof(T).IsArray)
         {
+            var contractRaw = new Contract(null, contract.Abi, contract.Address);
             var functionAbi = contractRaw.ContractBuilder.ContractABI.FindFunctionABIFromInputData(data);
             var decoder = new FunctionCallDecoder();
             var outputList = new FunctionCallDecoder().DecodeDefaultData(resultData.HexToBytes(), functionAbi.OutputParameters);
@@ -168,23 +152,7 @@ public class ThirdwebContract
     /// <returns>A prepared transaction.</returns>
     public static async Task<ThirdwebTransaction> Prepare(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
     {
-        var contractRaw = new Contract(null, contract.Abi, contract.Address);
-        var function = GetFunctionMatchSignature(contractRaw, method, parameters);
-        if (function == null)
-        {
-            if (method.Contains('('))
-            {
-                var canonicalSignature = ExtractCanonicalSignature(method);
-                var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
-                function = contractRaw.GetFunctionBySignature(selector);
-            }
-            else
-            {
-                throw new ArgumentException("Method signature not found in contract ABI.");
-            }
-        }
-
-        var data = function.GetData(parameters);
+        var data = contract.CreateCallData(method, parameters);
         var transaction = new ThirdwebTransactionInput(chainId: contract.Chain)
         {
             To = contract.Address,
@@ -208,6 +176,26 @@ public class ThirdwebContract
     {
         var thirdwebTx = await Prepare(wallet, contract, method, weiValue, parameters).ConfigureAwait(false);
         return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(thirdwebTx).ConfigureAwait(false);
+    }
+
+    internal static (string callData, Function function) EncodeFunctionCall(ThirdwebContract contract, string method, params object[] parameters)
+    {
+        var contractRaw = new Contract(null, contract.Abi, contract.Address);
+        var function = GetFunctionMatchSignature(contractRaw, method, parameters);
+        if (function == null)
+        {
+            if (method.Contains('('))
+            {
+                var canonicalSignature = ExtractCanonicalSignature(method);
+                var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
+                function = contractRaw.GetFunctionBySignature(selector);
+            }
+            else
+            {
+                throw new ArgumentException("Method signature not found in contract ABI.");
+            }
+        }
+        return (function.GetData(parameters), function);
     }
 
     /// <summary>

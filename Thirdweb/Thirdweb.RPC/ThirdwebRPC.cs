@@ -77,7 +77,7 @@ public class ThirdwebRPC : IDisposable
     {
         lock (this._cacheLock)
         {
-            var cacheKey = GetCacheKey(method, parameters);
+            var cacheKey = GetCacheKey(this._rpcUrl.ToString(), method, parameters);
             if (this._cache.TryGetValue(cacheKey, out var cachedItem) && (DateTime.Now - cachedItem.Timestamp) < this._cacheDuration)
             {
                 if (cachedItem.Response is TResponse cachedResponse)
@@ -121,7 +121,7 @@ public class ThirdwebRPC : IDisposable
         {
             lock (this._cacheLock)
             {
-                var cacheKey = GetCacheKey(method, parameters);
+                var cacheKey = GetCacheKey(this._rpcUrl.ToString(), method, parameters);
                 this._cache[cacheKey] = (response, DateTime.Now);
             }
             return response;
@@ -133,7 +133,7 @@ public class ThirdwebRPC : IDisposable
                 var deserializedResponse = JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(result));
                 lock (this._cacheLock)
                 {
-                    var cacheKey = GetCacheKey(method, parameters);
+                    var cacheKey = GetCacheKey(this._rpcUrl.ToString(), method, parameters);
                     this._cache[cacheKey] = (deserializedResponse, DateTime.Now);
                 }
                 return deserializedResponse;
@@ -238,9 +238,11 @@ public class ThirdwebRPC : IDisposable
         }
     }
 
-    private static string GetCacheKey(string method, params object[] parameters)
+    private static string GetCacheKey(string rpcUrl, string method, params object[] parameters)
     {
         var keyBuilder = new StringBuilder();
+
+        _ = keyBuilder.Append(rpcUrl);
 
         _ = keyBuilder.Append(method);
 
