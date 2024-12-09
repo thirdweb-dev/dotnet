@@ -315,6 +315,56 @@ public class SmartWalletTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task SwitchNetwork_Success()
+    {
+        var smartWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(this.Client), chainId: 11155111);
+        var addy1 = await smartWallet.GetAddress();
+        await smartWallet.SwitchNetwork(421614);
+        var addy2 = await smartWallet.GetAddress();
+        Assert.Equal(addy1, addy2);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SwitchNetwork_WithCustomFactory_ToZk_Success()
+    {
+        var smartWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(this.Client), chainId: 11155111, factoryAddress: "0xc5A43D081Dc10316EE640504Ea1cBc74666F3874");
+        var addy1 = await smartWallet.GetAddress();
+        await smartWallet.SwitchNetwork(300);
+        var addy2 = await smartWallet.GetAddress();
+        Assert.NotEqual(addy1, addy2);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SwitchNetwork_WithCustomFactory_FromZk_Success()
+    {
+        var smartWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(this.Client), chainId: 300, factoryAddress: "0xc5A43D081Dc10316EE640504Ea1cBc74666F3874");
+        var addy1 = await smartWallet.GetAddress();
+        await smartWallet.SwitchNetwork(11155111);
+        var addy2 = await smartWallet.GetAddress();
+        Assert.NotEqual(addy1, addy2);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SwitchNetwork_ZkToNonZkSuccess()
+    {
+        var smartWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(this.Client), chainId: 300);
+        var addy1 = await smartWallet.GetAddress();
+        await smartWallet.SwitchNetwork(421614);
+        var addy2 = await smartWallet.GetAddress();
+        Assert.NotEqual(addy1, addy2);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SwitchNetwork_NonZkToZk_Success()
+    {
+        var smartWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(this.Client), chainId: 421614);
+        var addy1 = await smartWallet.GetAddress();
+        await smartWallet.SwitchNetwork(300);
+        var addy2 = await smartWallet.GetAddress();
+        Assert.NotEqual(addy1, addy2);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task MultiChainTransaction_Success()
     {
         var chainId1 = 11155111;
@@ -322,13 +372,15 @@ public class SmartWalletTests : BaseTests
 
         var smartWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(this.Client), chainId: chainId1, gasless: true);
 
-        var address1 = await smartWallet.GetAddress();
-        var receipt1 = await smartWallet.ExecuteTransaction(new ThirdwebTransactionInput(chainId1) { To = address1, });
-        var nonce1 = await smartWallet.GetTransactionCount(chainId: chainId1, blocktag: "latest");
+        var randomAddy = await (await PrivateKeyWallet.Generate(this.Client)).GetAddress();
 
-        var address2 = await smartWallet.GetAddress();
-        var receipt2 = await smartWallet.ExecuteTransaction(new ThirdwebTransactionInput(chainId2) { To = address2, });
+        var receipt1 = await smartWallet.ExecuteTransaction(new ThirdwebTransactionInput(chainId1) { To = randomAddy, });
+        var nonce1 = await smartWallet.GetTransactionCount(chainId: chainId1, blocktag: "latest");
+        var address1 = await smartWallet.GetAddress();
+
+        var receipt2 = await smartWallet.ExecuteTransaction(new ThirdwebTransactionInput(chainId2) { To = randomAddy, });
         var nonce2 = await smartWallet.GetTransactionCount(chainId: chainId2, blocktag: "latest");
+        var address2 = await smartWallet.GetAddress();
 
         Assert.NotNull(address1);
         Assert.NotNull(address2);
