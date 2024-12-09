@@ -185,19 +185,15 @@ public class SmartWallet : IThirdwebWallet
         paymasterUrl ??= $"https://{chainId}.bundler.thirdweb.com/v2";
         factoryAddress ??= entryPointVersion == 6 ? Constants.DEFAULT_FACTORY_ADDRESS_V06 : Constants.DEFAULT_FACTORY_ADDRESS_V07;
 
-        ThirdwebContract entryPointContract = null;
-        ThirdwebContract factoryContract = null;
-        ThirdwebContract accountContract = null;
+        var entryPointAbi = entryPointVersion == 6 ? Constants.ENTRYPOINT_V06_ABI : Constants.ENTRYPOINT_V07_ABI;
+        var factoryAbi = entryPointVersion == 6 ? Constants.FACTORY_V06_ABI : Constants.FACTORY_V07_ABI;
+        var entryPointContract = await ThirdwebContract.Create(personalWallet.Client, entryPoint, chainId, entryPointAbi).ConfigureAwait(false);
+        var factoryContract = await ThirdwebContract.Create(personalWallet.Client, factoryAddress, chainId, factoryAbi).ConfigureAwait(false);
 
+        ThirdwebContract accountContract = null;
         if (!await Utils.IsZkSync(personalWallet.Client, chainId).ConfigureAwait(false))
         {
-            var entryPointAbi = entryPointVersion == 6 ? Constants.ENTRYPOINT_V06_ABI : Constants.ENTRYPOINT_V07_ABI;
-            var factoryAbi = entryPointVersion == 6 ? Constants.FACTORY_V06_ABI : Constants.FACTORY_V07_ABI;
             var accountAbi = entryPointVersion == 6 ? Constants.ACCOUNT_V06_ABI : Constants.ACCOUNT_V07_ABI;
-
-            entryPointContract = await ThirdwebContract.Create(personalWallet.Client, entryPoint, chainId, entryPointAbi).ConfigureAwait(false);
-            factoryContract = await ThirdwebContract.Create(personalWallet.Client, factoryAddress, chainId, factoryAbi).ConfigureAwait(false);
-
             var personalAddress = await personalWallet.GetAddress().ConfigureAwait(false);
             var accountAddress = accountAddressOverride ?? await ThirdwebContract.Read<string>(factoryContract, "getAddress", personalAddress, Array.Empty<byte>()).ConfigureAwait(false);
 
@@ -263,7 +259,6 @@ public class SmartWallet : IThirdwebWallet
             throw new InvalidOperationException("You cannot switch networks when using an ERC20 paymaster yet.");
         }
 
-        this._chainId = chainId;
         this._bundlerUrl = this._bundlerUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._bundlerUrl;
         this._paymasterUrl = this._paymasterUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._paymasterUrl;
 
@@ -271,8 +266,13 @@ public class SmartWallet : IThirdwebWallet
         {
             this._entryPointContract = await ThirdwebContract.Create(this.Client, this._entryPointContract.Address, chainId, this._entryPointContract.Abi).ConfigureAwait(false);
             this._factoryContract = await ThirdwebContract.Create(this.Client, this._factoryContract.Address, chainId, this._factoryContract.Abi).ConfigureAwait(false);
-            this._accountContract = await ThirdwebContract.Create(this.Client, this._accountContract.Address, chainId, this._accountContract.Abi).ConfigureAwait(false);
+
+            var personalAddress = await this._personalAccount.GetAddress().ConfigureAwait(false);
+            var accountAddress = await ThirdwebContract.Read<string>(this._factoryContract, "getAddress", personalAddress, Array.Empty<byte>()).ConfigureAwait(false);
+            this._accountContract = await ThirdwebContract.Create(this._personalAccount.Client, accountAddress, chainId, Constants.ACCOUNT_V06_ABI).ConfigureAwait(false);
         }
+
+        this._chainId = chainId;
     }
 
     /// <summary>
