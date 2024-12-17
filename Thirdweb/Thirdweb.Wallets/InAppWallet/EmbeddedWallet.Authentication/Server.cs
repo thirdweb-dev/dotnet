@@ -6,7 +6,7 @@ namespace Thirdweb.EWS;
 
 internal abstract class ServerBase
 {
-    internal abstract Task<List<Server.LinkedAccount>> UnlinkAccountAsync(string currentAccountToken, string linkedType, object linkedDetails);
+    internal abstract Task<List<Server.LinkedAccount>> UnlinkAccountAsync(string currentAccountToken, Server.LinkedAccount linkedAccount);
     internal abstract Task<List<Server.LinkedAccount>> LinkAccountAsync(string currentAccountToken, string authTokenToConnect);
     internal abstract Task<List<Server.LinkedAccount>> GetLinkedAccountsAsync(string currentAccountToken);
 
@@ -52,12 +52,12 @@ internal partial class Server : ServerBase
     }
 
     // account/disconnect
-    internal override async Task<List<LinkedAccount>> UnlinkAccountAsync(string currentAccountToken, string linkedType, object linkedDetails)
+    internal override async Task<List<LinkedAccount>> UnlinkAccountAsync(string currentAccountToken, LinkedAccount linkedAccount)
     {
         var uri = MakeUri2024("/account/disconnect");
         var request = new HttpRequestMessage(HttpMethod.Post, uri)
         {
-            Content = MakeHttpContent(new { type = linkedType, details = linkedDetails })
+            Content = MakeHttpContent(linkedAccount)
         };
         var response = await this.SendHttpWithAuthAsync(request, currentAccountToken).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);

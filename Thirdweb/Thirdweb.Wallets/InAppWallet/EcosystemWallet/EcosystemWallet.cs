@@ -332,7 +332,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     #region Account Linking
 
-    public async Task<List<LinkedAccount>> UnlinkAccount(string linkedType, string address = null, string email = null, string phone = null, string id = null)
+    public async Task<List<LinkedAccount>> UnlinkAccount(LinkedAccount accountToUnlink)
     {
         if (!await this.IsConnected().ConfigureAwait(false))
         {
@@ -340,15 +340,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         }
 
         var currentAccountToken = this.EmbeddedWallet.GetSessionData()?.AuthToken;
-        var linkedDetails = new
-        {
-            address,
-            email,
-            phone,
-            id
-        };
 
-        var serverLinkedAccounts = await this.EmbeddedWallet.UnlinkAccountAsync(currentAccountToken, linkedType, linkedDetails).ConfigureAwait(false);
+        var serverLinkedAccounts = await this.EmbeddedWallet.UnlinkAccountAsync(currentAccountToken, accountToUnlink).ConfigureAwait(false);
         var linkedAccounts = new List<LinkedAccount>();
         foreach (var linkedAccount in serverLinkedAccounts)
         {
