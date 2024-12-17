@@ -241,7 +241,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Account Linking
 
-// var inAppWalletMain = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+// var inAppWalletMain = await InAppWallet.Create(client: client, authProvider: AuthProvider.Telegram);
 // if (!await inAppWalletMain.IsConnected())
 // {
 //     _ = await inAppWalletMain.LoginWithOauth(
@@ -260,11 +260,25 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // var oldLinkedAccounts = await inAppWalletMain.GetLinkedAccounts();
 // Console.WriteLine($"Old linked accounts: {JsonConvert.SerializeObject(oldLinkedAccounts, Formatting.Indented)}");
 
-// var inAppWalletToLink = await InAppWallet.Create(client: client, authProvider: AuthProvider.Guest);
-// _ = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink);
+// External wallet variant
+// var externalWallet = await PrivateKeyWallet.Generate(client: client);
+// var externalWalletAddress = await externalWallet.GetAddress();
+// var inAppWalletToLink = await InAppWallet.Create(client: client, authProvider: AuthProvider.Siwe, siweSigner: externalWallet);
+// _ = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink, chainId: 421614);
+
+// Email variant
+// var linkedEmail = "firekeeper+unlinkingtest@thirdweb.com";
+// var inAppWalletToLink = await InAppWallet.Create(client: client, email: linkedEmail);
+// await inAppWalletToLink.SendOTP();
+// Console.WriteLine("Enter OTP:");
+// var otp = Console.ReadLine();
+// _ = await inAppWalletMain.LinkAccount(walletToLink: inAppWalletToLink, otp: otp);
 
 // var linkedAccounts = await inAppWalletMain.GetLinkedAccounts();
 // Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
+
+// var unlinkingResult = await inAppWalletMain.UnlinkAccount(authProviderToUnlink: UnlinkingType.email, email: linkedEmail);
+// Console.WriteLine($"Unlinking result: {JsonConvert.SerializeObject(unlinkingResult, Formatting.Indented)}");
 
 #endregion
 
