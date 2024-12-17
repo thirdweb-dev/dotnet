@@ -31,14 +31,24 @@ public enum AuthProvider
 /// </summary>
 public struct LinkedAccount
 {
+    [JsonProperty("type")]
     public string Type { get; set; }
+
+    [JsonProperty("details")]
     public LinkedAccountDetails Details { get; set; }
 
     public struct LinkedAccountDetails
     {
+        [JsonProperty("email")]
         public string Email { get; set; }
+
+        [JsonProperty("name")]
         public string Address { get; set; }
+
+        [JsonProperty("phone")]
         public string Phone { get; set; }
+
+        [JsonProperty("id")]
         public string Id { get; set; }
     }
 

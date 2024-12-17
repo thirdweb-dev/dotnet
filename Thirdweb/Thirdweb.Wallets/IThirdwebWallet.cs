@@ -156,6 +156,12 @@ public interface IThirdwebWallet
     );
 
     /// <summary>
+    /// Unlinks an account (auth method) from the current wallet.
+    /// </summary>
+    /// <param name="accountToUnlink">The linked account to unlink. Same type returned by <see cref="GetLinkedAccounts"/>.</param>
+    Task<List<LinkedAccount>> UnlinkAccount(LinkedAccount accountToUnlink);
+
+    /// <summary>
     /// Returns a list of linked accounts to the current wallet.
     /// </summary>
     /// <returns>A list of <see cref="LinkedAccount"/> objects.</returns>

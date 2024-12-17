@@ -6,6 +6,7 @@ namespace Thirdweb.EWS;
 
 internal abstract class ServerBase
 {
+    internal abstract Task<List<Server.LinkedAccount>> UnlinkAccountAsync(string currentAccountToken, Server.LinkedAccount linkedAccount);
     internal abstract Task<List<Server.LinkedAccount>> LinkAccountAsync(string currentAccountToken, string authTokenToConnect);
     internal abstract Task<List<Server.LinkedAccount>> GetLinkedAccountsAsync(string currentAccountToken);
 
@@ -48,6 +49,21 @@ internal partial class Server : ServerBase
     {
         this._clientId = client.ClientId;
         this._httpClient = httpClient;
+    }
+
+    // account/disconnect
+    internal override async Task<List<LinkedAccount>> UnlinkAccountAsync(string currentAccountToken, LinkedAccount linkedAccount)
+    {
+        var uri = MakeUri2024("/account/disconnect");
+        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = MakeHttpContent(linkedAccount)
+        };
+        var response = await this.SendHttpWithAuthAsync(request, currentAccountToken).ConfigureAwait(false);
+        await CheckStatusCodeAsync(response).ConfigureAwait(false);
+
+        var res = await DeserializeAsync<AccountConnectResponse>(response).ConfigureAwait(false);
+        return res == null || res.LinkedAccounts == null || res.LinkedAccounts.Count == 0 ? throw new InvalidOperationException("No linked accounts returned") : res.LinkedAccounts;
     }
 
     // account/connect

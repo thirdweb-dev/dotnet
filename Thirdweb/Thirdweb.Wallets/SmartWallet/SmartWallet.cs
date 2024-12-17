@@ -1167,6 +1167,16 @@ public class SmartWallet : IThirdwebWallet
         return Task.CompletedTask;
     }
 
+    public async Task<List<LinkedAccount>> UnlinkAccount(LinkedAccount accountToUnlink)
+    {
+        var personalWallet = await this.GetPersonalWallet().ConfigureAwait(false);
+        if (personalWallet is not InAppWallet and not EcosystemWallet)
+        {
+            throw new Exception("SmartWallet.UnlinkAccount is only supported if the signer is an InAppWallet or EcosystemWallet");
+        }
+        return await personalWallet.UnlinkAccount(accountToUnlink).ConfigureAwait(false);
+    }
+
     public async Task<List<LinkedAccount>> LinkAccount(
         IThirdwebWallet walletToLink,
         string otp = null,
