@@ -332,7 +332,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     #region Account Linking
 
-    public async Task<List<LinkedAccount>> UnlinkAccount(UnlinkingType authProviderToUnlink, string address = null, string email = null, string phone = null, string id = null)
+    public async Task<List<LinkedAccount>> UnlinkAccount(string linkedType, string address = null, string email = null, string phone = null, string id = null)
     {
         if (!await this.IsConnected().ConfigureAwait(false))
         {
@@ -340,7 +340,6 @@ public partial class EcosystemWallet : IThirdwebWallet
         }
 
         var currentAccountToken = this.EmbeddedWallet.GetSessionData()?.AuthToken;
-        var linkedType = authProviderToUnlink.ToString();
         var linkedDetails = new
         {
             address,

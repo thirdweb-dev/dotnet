@@ -380,7 +380,7 @@ public class PrivateKeyWallet : IThirdwebWallet
         throw new InvalidOperationException("GetLinkedAccounts is not supported for private key wallets.");
     }
 
-    public Task<List<LinkedAccount>> UnlinkAccount(UnlinkingType authProviderToUnlink, string address = null, string email = null, string phone = null, string id = null)
+    public Task<List<LinkedAccount>> UnlinkAccount(string linkedType, string address = null, string email = null, string phone = null, string id = null)
     {
         throw new InvalidOperationException("UnlinkAccount is not supported for private key wallets.");
     }

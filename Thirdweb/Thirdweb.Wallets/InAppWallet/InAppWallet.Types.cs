@@ -26,28 +26,6 @@ public enum AuthProvider
     Steam
 }
 
-public enum UnlinkingType
-{
-    apple,
-    coinbase,
-    discord,
-    email,
-    facebook,
-    farcaster,
-    github,
-    google,
-    guest,
-    line,
-    passkey,
-    phone,
-    siwe,
-    steam,
-    telegram,
-    twitch,
-    x,
-    wallet
-}
-
 /// <summary>
 /// Represents a linked account.
 /// </summary>
