@@ -357,7 +357,33 @@ public class ThirdwebTransaction
 
         var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
         string hash;
-        if (await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false) && transaction.Input.ZkSync.HasValue)
+
+        if (transaction.Input.AuthorizationList != null)
+        {
+            var authorization = transaction.Input.AuthorizationList[0];
+            hash = await rpc.SendRequestAsync<string>(
+                    "wallet_sendTransaction",
+                    new
+                    {
+                        authorizationList = new[]
+                        {
+                            new
+                            {
+                                address = authorization.Address,
+                                chainId = authorization.ChainId.HexToBigInt(),
+                                nonce = authorization.Nonce.HexToBigInt(),
+                                r = authorization.R,
+                                s = authorization.S,
+                                yParity = authorization.YParity == "0x00" ? 0 : 1
+                            }
+                        },
+                        data = transaction.Input.Data,
+                        to = transaction.Input.To,
+                    }
+                )
+                .ConfigureAwait(false);
+        }
+        else if (await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false) && transaction.Input.ZkSync.HasValue)
         {
             var zkTx = await ConvertToZkSyncTransaction(transaction).ConfigureAwait(false);
             var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet).ConfigureAwait(false);

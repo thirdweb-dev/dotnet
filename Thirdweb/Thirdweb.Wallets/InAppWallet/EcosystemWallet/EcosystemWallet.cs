@@ -931,5 +931,10 @@ public partial class EcosystemWallet : IThirdwebWallet
         return Task.FromResult(address);
     }
 
+    public Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress)
+    {
+        throw new NotImplementedException();
+    }
+
     #endregion
 }

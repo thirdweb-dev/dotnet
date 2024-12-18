@@ -26,7 +26,8 @@ public class ThirdwebTransactionInput
         string data = null,
         BigInteger? maxFeePerGas = null,
         BigInteger? maxPriorityFeePerGas = null,
-        ZkSyncOptions? zkSync = null
+        ZkSyncOptions? zkSync = null,
+        EIP7702Authorization? authorization = null
     )
     {
         this.ChainId = chainId > 0 ? new HexBigInteger(chainId) : throw new ArgumentException("Invalid Chain ID");
@@ -40,6 +41,7 @@ public class ThirdwebTransactionInput
         this.MaxFeePerGas = maxFeePerGas == null ? null : new HexBigInteger(maxFeePerGas.Value);
         this.MaxPriorityFeePerGas = maxPriorityFeePerGas == null ? null : new HexBigInteger(maxPriorityFeePerGas.Value);
         this.ZkSync = zkSync;
+        this.AuthorizationList = authorization == null ? null : new List<EIP7702Authorization> { authorization.Value };
     }
 
     /// <summary>
@@ -123,6 +125,11 @@ public class ThirdwebTransactionInput
     /// </summary>
     [JsonProperty(PropertyName = "zkSyncOptions", NullValueHandling = NullValueHandling.Ignore)]
     public ZkSyncOptions? ZkSync { get; set; }
+
+#nullable enable
+    [JsonProperty(PropertyName = "authorizationList", NullValueHandling = NullValueHandling.Ignore)]
+    public List<EIP7702Authorization>? AuthorizationList { get; set; }
+#nullable disable
 }
 
 /// <summary>
@@ -177,5 +184,36 @@ public struct ZkSyncOptions
             this.GasPerPubdataByteLimit = gasPerPubdataByteLimit;
             this.FactoryDeps = factoryDeps ?? new List<byte[]>();
         }
+    }
+}
+
+public struct EIP7702Authorization
+{
+    [JsonProperty(PropertyName = "chainId")]
+    public string ChainId { get; set; }
+
+    [JsonProperty(PropertyName = "address")]
+    public string Address { get; set; }
+
+    [JsonProperty(PropertyName = "nonce")]
+    public string Nonce { get; set; }
+
+    [JsonProperty(PropertyName = "yParity")]
+    public string YParity { get; set; }
+
+    [JsonProperty(PropertyName = "r")]
+    public string R { get; set; }
+
+    [JsonProperty(PropertyName = "s")]
+    public string S { get; set; }
+
+    public EIP7702Authorization(BigInteger chainId, string address, BigInteger nonce, byte[] yParity, byte[] r, byte[] s)
+    {
+        this.ChainId = new HexBigInteger(chainId).HexValue;
+        this.Address = address.EnsureHexPrefix();
+        this.Nonce = new HexBigInteger(nonce).HexValue;
+        this.YParity = yParity.BytesToHex();
+        this.R = r.BytesToHex();
+        this.S = s.BytesToHex();
     }
 }

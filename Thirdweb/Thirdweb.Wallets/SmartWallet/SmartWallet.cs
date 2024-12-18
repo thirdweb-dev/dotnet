@@ -1225,5 +1225,10 @@ public class SmartWallet : IThirdwebWallet
         }
     }
 
+    public Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress)
+    {
+        return this._personalAccount.SignAuthorization(chainId, contractAddress);
+    }
+
     #endregion
 }

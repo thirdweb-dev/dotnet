@@ -1,4 +1,5 @@
-﻿using Nethereum.ABI.EIP712;
+﻿using System.Numerics;
+using Nethereum.ABI.EIP712;
 using Newtonsoft.Json;
 
 namespace Thirdweb;
@@ -150,7 +151,7 @@ public interface IThirdwebWallet
         Action<string> browserOpenAction = null,
         string mobileRedirectScheme = "thirdweb://",
         IThirdwebBrowser browser = null,
-        System.Numerics.BigInteger? chainId = null,
+        BigInteger? chainId = null,
         string jwt = null,
         string payload = null
     );
@@ -166,6 +167,14 @@ public interface IThirdwebWallet
     /// </summary>
     /// <returns>A list of <see cref="LinkedAccount"/> objects.</returns>
     Task<List<LinkedAccount>> GetLinkedAccounts();
+
+    /// <summary>
+    /// Signs an EIP-7702 authorization to invoke contract functions to an externally owned account.
+    /// </summary>
+    /// <param name="chainId">The chain ID of the contract.</param>
+    /// <param name="contractAddress">The address of the contract.</param>
+    /// <returns>The signed authorization as an <see cref="EIP7702Authorization"/> that can be used with <see cref="ThirdwebTransactionInput.AuthorizationList"/>.</returns>
+    Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress);
 }
 
 /// <summary>

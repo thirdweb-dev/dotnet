@@ -4,6 +4,7 @@ using Nethereum.ABI.EIP712;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Model;
+using Nethereum.RLP;
 using Nethereum.Signer;
 using Nethereum.Signer.EIP712;
 
@@ -383,6 +384,17 @@ public class PrivateKeyWallet : IThirdwebWallet
     public Task<List<LinkedAccount>> UnlinkAccount(LinkedAccount accountToUnlink)
     {
         throw new InvalidOperationException("UnlinkAccount is not supported for private key wallets.");
+    }
+
+    public async Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress)
+    {
+        var nonce = await this.GetTransactionCount(chainId);
+        var authorizationHash = Utils.HashMessage(
+            Utils.HexConcat("0x05", RLP.EncodeList(new HexBigInteger(chainId).HexValue.HexToBytes(), contractAddress.HexToBytes(), new HexBigInteger(nonce).HexValue.HexToBytes()).BytesToHex()[2..])
+        );
+        var authorizationSignature = await this.PersonalSign(authorizationHash);
+        var ecdsa = EthECDSASignatureFactory.ExtractECDSASignature(authorizationSignature);
+        return new EIP7702Authorization(chainId, contractAddress, nonce, ecdsa.V, ecdsa.R, ecdsa.S);
     }
 
     #endregion
