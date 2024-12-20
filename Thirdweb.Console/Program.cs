@@ -18,20 +18,94 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 // Do not use private keys client side, use InAppWallet/SmartWallet instead
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
-// Fetch timeout options are optional, default is 120000ms
-var client = ThirdwebClient.Create(secretKey: secretKey, fetchTimeoutOptions: new TimeoutOptions(storage: 120000, rpc: 120000, other: 120000));
+// Initialize client
+var client = ThirdwebClient.Create(secretKey: secretKey);
 
-// Create a private key wallet
-var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
+// Chain and contract addresses
+var chainWith7702 = 7078815900;
+var erc20ContractAddress = "0x852e8247A55C49dc3b7e6f8788347813e562F597"; // Mekong Token
+var delegationContractAddress = "0x7B9E7AFd452666302352D82161B083dF792f7Cf4"; // BatchCallDelegation
 
-// var walletAddress = await privateKeyWallet.GetAddress();
-// Console.WriteLine($"PK Wallet address: {walletAddress}");
+// Initialize contracts normally
+var erc20Contract = await ThirdwebContract.Create(client: client, address: erc20ContractAddress, chain: chainWith7702);
+var delegationContract = await ThirdwebContract.Create(
+    client: client,
+    address: delegationContractAddress,
+    chain: chainWith7702,
+    abi: /*lang=json,strict*/
+    "[{\"anonymous\": false,\"inputs\": [{\"indexed\": true,\"internalType\": \"address\",\"name\": \"to\",\"type\": \"address\"},{\"indexed\": false,\"internalType\": \"uint256\",\"name\": \"value\",\"type\": \"uint256\"},{\"indexed\": false,\"internalType\": \"bytes\",\"name\": \"data\",\"type\": \"bytes\"}],\"name\": \"Executed\",\"type\": \"event\"},{\"inputs\": [{\"components\": [{\"internalType\": \"bytes\",\"name\": \"data\",\"type\": \"bytes\"},{\"internalType\": \"address\",\"name\": \"to\",\"type\": \"address\"},{\"internalType\": \"uint256\",\"name\": \"value\",\"type\": \"uint256\"}],\"internalType\": \"struct BatchCallDelegation.Call[]\",\"name\": \"calls\",\"type\": \"tuple[]\"}],\"name\": \"execute\",\"outputs\": [],\"stateMutability\": \"payable\",\"type\": \"function\"}]"
+);
+
+// Initialize a 7702 EOA
+var eoaWallet = await PrivateKeyWallet.Generate(client);
+var eoaWalletAddress = await eoaWallet.GetAddress();
+Console.WriteLine($"EOA address: {eoaWalletAddress}");
+
+// Temporary - fund eoa wallet
+var fundingWallet = await PrivateKeyWallet.Create(client, privateKey);
+await ThirdwebTransaction.SendAndWaitForTransactionReceipt(
+    await ThirdwebTransaction.Create(fundingWallet, new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, value: BigInteger.Parse("0.1".ToWei())))
+);
+
+// Sign the authorization to make it point to the delegation contract
+var authorization = await eoaWallet.SignAuthorization(chainId: chainWith7702, contractAddress: delegationContractAddress, willSelfExecute: true);
+Console.WriteLine($"Authorization: {JsonConvert.SerializeObject(authorization, Formatting.Indented)}");
+
+// Execute the delegation
+var tx = await ThirdwebTransaction.Create(eoaWallet, new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, authorization: authorization));
+var hash = (await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx)).TransactionHash;
+Console.WriteLine($"Transaction hash: {hash}");
+
+// Initialize another wallet, the "executor" that will hit the eoa's execute function
+var executorWallet = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+if (!await executorWallet.IsConnected())
+{
+    _ = await executorWallet.LoginWithOauth(
+        isMobile: false,
+        browserOpenAction: (url) =>
+        {
+            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+            _ = Process.Start(psi);
+        }
+    );
+}
+var executorWalletAddress = await executorWallet.GetAddress();
+Console.WriteLine($"Executor address: {executorWalletAddress}");
+
+// Log erc20 balance of executor before the claim
+var executorBalanceBefore = await erc20Contract.ERC20_BalanceOf(executorWalletAddress);
+Console.WriteLine($"Executor balance before: {executorBalanceBefore}");
+
+// Prepare the claim call
+var claimCallData = erc20Contract.CreateCallData(
+    "claim",
+    new object[]
+    {
+        executorWalletAddress, // receiver
+        100, // quantity
+        Constants.NATIVE_TOKEN_ADDRESS, // currency
+        0, // pricePerToken
+        new object[] { Array.Empty<byte>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO }, // allowlistProof
+        Array.Empty<byte>() // data
+    }
+);
+
+// Embed the claim call in the execute call
+var executeCallData = delegationContract.CreateCallData("execute", new object[] { new object[] { claimCallData, eoaWalletAddress, BigInteger.Zero } });
+
+// Execute from the executor wallet targeting the eoa which is pointing to the delegation contract
+var tx2 = await ThirdwebTransaction.Create(executorWallet, new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, data: executeCallData));
+var hash2 = (await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx2)).TransactionHash;
+Console.WriteLine($"Transaction hash: {hash2}");
+
+// Log erc20 balance of executor after the claim
+var executorBalanceAfter = await erc20Contract.ERC20_BalanceOf(executorWalletAddress);
+Console.WriteLine($"Executor balance after: {executorBalanceAfter}");
 
 #region Contract Interaction
 
 // var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
-// var nfts = await contract.ERC721_GetAllNFTs();
-// Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
+// var result = await contract.
 
 #endregion
 
@@ -44,13 +118,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region AA 0.6
 
-// var smartWallet06 = await SmartWallet.Create(
-//     personalWallet: privateKeyWallet,
-//     chainId: 421614,
-//     gasless: true,
-//     factoryAddress: "0xa8deE7854fb1eA8c13b713585C81d91ea86dAD84",
-//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V06
-// );
+// var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614);
 
 // var receipt06 = await smartWallet06.ExecuteTransaction(new ThirdwebTransactionInput(chainId: 421614, to: await smartWallet06.GetAddress(), value: 0, data: "0x"));
 

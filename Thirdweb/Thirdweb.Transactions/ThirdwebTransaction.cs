@@ -262,16 +262,32 @@ public class ThirdwebTransaction
     {
         var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
 
-        if (await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false))
+        // Remove when https://github.com/ethereum/execution-apis/issues/561 is in
+        var txInput = new ThirdwebTransactionInput(
+            chainId: transaction.Input.ChainId,
+            from: transaction.Input.From,
+            to: transaction.Input.To,
+            nonce: transaction.Input.Nonce,
+            value: transaction.Input.Value,
+            data: transaction.Input.Data,
+            zkSync: transaction.Input.ZkSync
+        );
+
+        var extraGas = transaction.Input.AuthorizationList == null ? 0 : 100000;
+        BigInteger finalGas;
+
+        if (await Utils.IsZkSync(transaction._wallet.Client, txInput.ChainId.Value).ConfigureAwait(false))
         {
-            var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_limit"].ToString();
-            return new HexBigInteger(hex).Value * 10 / 5;
+            var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", txInput).ConfigureAwait(false))["gas_limit"].ToString();
+            finalGas = hex.HexToBigInt() * 2;
         }
         else
         {
-            var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input).ConfigureAwait(false);
-            return new HexBigInteger(hex).Value * 10 / 7;
+            var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", txInput).ConfigureAwait(false);
+            finalGas = hex.HexToBigInt() * 2;
         }
+
+        return finalGas + extraGas;
     }
 
     /// <summary>
@@ -358,32 +374,7 @@ public class ThirdwebTransaction
         var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
         string hash;
 
-        if (transaction.Input.AuthorizationList != null)
-        {
-            var authorization = transaction.Input.AuthorizationList[0];
-            hash = await rpc.SendRequestAsync<string>(
-                    "wallet_sendTransaction",
-                    new
-                    {
-                        authorizationList = new[]
-                        {
-                            new
-                            {
-                                address = authorization.Address,
-                                chainId = authorization.ChainId.HexToBigInt(),
-                                nonce = authorization.Nonce.HexToBigInt(),
-                                r = authorization.R,
-                                s = authorization.S,
-                                yParity = authorization.YParity == "0x00" ? 0 : 1
-                            }
-                        },
-                        data = transaction.Input.Data,
-                        to = transaction.Input.To,
-                    }
-                )
-                .ConfigureAwait(false);
-        }
-        else if (await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false) && transaction.Input.ZkSync.HasValue)
+        if (await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false) && transaction.Input.ZkSync.HasValue)
         {
             var zkTx = await ConvertToZkSyncTransaction(transaction).ConfigureAwait(false);
             var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet).ConfigureAwait(false);

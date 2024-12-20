@@ -1034,4 +1034,26 @@ public static partial class Utils
         var encodedParams = encoder.GetABIEncoded(new ABIValue("address", address), new ABIValue("bytes", data), new ABIValue("bytes", signature));
         return HexConcat(encodedParams.BytesToHex(), Constants.ERC_6492_MAGIC_VALUE);
     }
+
+    /// <summary>
+    /// Removes leading zeroes from the given byte array.
+    /// </summary>
+    public static byte[] TrimZeroes(this byte[] bytes)
+    {
+        var trimmed = new List<byte>();
+        var previousByteWasZero = true;
+
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            if (previousByteWasZero && bytes[i] == 0)
+            {
+                continue;
+            }
+
+            previousByteWasZero = false;
+            trimmed.Add(bytes[i]);
+        }
+
+        return trimmed.ToArray();
+    }
 }

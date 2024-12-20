@@ -207,12 +207,12 @@ public struct EIP7702Authorization
     [JsonProperty(PropertyName = "s")]
     public string S { get; set; }
 
-    public EIP7702Authorization(BigInteger chainId, string address, BigInteger nonce, byte[] yParity, byte[] r, byte[] s)
+    public EIP7702Authorization(BigInteger chainId, string address, BigInteger nonce, byte[] v, byte[] r, byte[] s)
     {
         this.ChainId = new HexBigInteger(chainId).HexValue;
-        this.Address = address.EnsureHexPrefix();
+        this.Address = address;
         this.Nonce = new HexBigInteger(nonce).HexValue;
-        this.YParity = yParity.BytesToHex();
+        this.YParity = v.BytesToHex();
         this.R = r.BytesToHex();
         this.S = s.BytesToHex();
     }
