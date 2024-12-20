@@ -348,12 +348,12 @@ public class PrivateKeyWallet : IThirdwebWallet
                 {
                     var encodedItem = new List<byte[]>()
                     {
-                        RLP.EncodeElement(authorizationList.ChainId.HexToBytes()),
+                        RLP.EncodeElement(authorizationList.ChainId.HexToBigInt().ToBytesForRLPEncoding()),
                         RLP.EncodeElement(authorizationList.Address.HexToBytes()),
-                        RLP.EncodeElement(authorizationList.Nonce.HexToBytes()),
+                        RLP.EncodeElement(authorizationList.Nonce.HexToBigInt().ToBytesForRLPEncoding()),
                         RLP.EncodeElement(authorizationList.YParity.HexToBytes()),
-                        RLP.EncodeElement(authorizationList.R.HexToBytes().TrimZeroes()),
-                        RLP.EncodeElement(authorizationList.S.HexToBytes().TrimZeroes())
+                        RLP.EncodeElement(authorizationList.R.HexToBytes()),
+                        RLP.EncodeElement(authorizationList.S.HexToBytes())
                     };
                     encodedAuthorizationList.Add(RLP.EncodeList(encodedItem.ToArray()));
                 }

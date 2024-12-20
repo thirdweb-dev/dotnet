@@ -43,9 +43,12 @@ Console.WriteLine($"EOA address: {eoaWalletAddress}");
 
 // Temporary - fund eoa wallet
 var fundingWallet = await PrivateKeyWallet.Create(client, privateKey);
-await ThirdwebTransaction.SendAndWaitForTransactionReceipt(
-    await ThirdwebTransaction.Create(fundingWallet, new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, value: BigInteger.Parse("0.1".ToWei())))
-);
+var fundingHash = (
+    await ThirdwebTransaction.SendAndWaitForTransactionReceipt(
+        await ThirdwebTransaction.Create(fundingWallet, new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, value: BigInteger.Parse("0.1".ToWei())))
+    )
+).TransactionHash;
+Console.WriteLine($"Funding hash: {fundingHash}");
 
 // Sign the authorization to make it point to the delegation contract
 var authorization = await eoaWallet.SignAuthorization(chainId: chainWith7702, contractAddress: delegationContractAddress, willSelfExecute: true);
