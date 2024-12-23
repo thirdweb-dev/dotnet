@@ -1076,8 +1076,8 @@ public static partial class Utils
     /// <returns>The decoded transaction input and signature.</returns>
     public static (ThirdwebTransactionInput transactionInput, string signature) DecodeTransaction(byte[] signedRlpData)
     {
-        var maybeType = signedRlpData[0];
-        if (maybeType is 0x04 or 0x02)
+        var txType = signedRlpData[0];
+        if (txType is 0x04 or 0x02)
         {
             signedRlpData = signedRlpData.Skip(1).ToArray();
         }
@@ -1093,9 +1093,9 @@ public static partial class Utils
         var amount = decodedElements[6].RLPData.ToBigIntegerFromRLPDecoded();
         var data = decodedElements[7].RLPData?.BytesToHex();
         // 8th decoded element is access list
-        var authorizations = DecodeAutorizationList(decodedElements[9]?.RLPData);
+        var authorizations = txType == 0x04 ? DecodeAutorizationList(decodedElements[9]?.RLPData) : null;
 
-        var signature = RLPSignedDataDecoder.DecodeSignature(decodedElements, 10);
+        var signature = RLPSignedDataDecoder.DecodeSignature(decodedElements, txType == 0x04 ? 10 : 9);
         return (
             new ThirdwebTransactionInput(
                 chainId: chainId,
@@ -1145,5 +1145,15 @@ public static partial class Utils
         }
 
         return authorizationLists;
+    }
+
+    internal static byte[] ToByteArrayForRLPEncoding(this BigInteger value)
+    {
+        if (value == 0)
+        {
+            return Array.Empty<byte>();
+        }
+
+        return value.ToBytesForRLPEncoding();
     }
 }

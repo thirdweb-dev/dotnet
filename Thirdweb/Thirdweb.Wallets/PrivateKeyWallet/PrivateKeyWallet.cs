@@ -329,14 +329,14 @@ public class PrivateKeyWallet : IThirdwebWallet
 
             var encodedData = new List<byte[]>
             {
-                RLP.EncodeElement(transaction.ChainId.Value.ToBytesForRLPEncoding()),
-                RLP.EncodeElement(transaction.Nonce.Value.ToBytesForRLPEncoding()),
-                RLP.EncodeElement(transaction.MaxPriorityFeePerGas.Value.ToBytesForRLPEncoding()),
-                RLP.EncodeElement(transaction.MaxFeePerGas.Value.ToBytesForRLPEncoding()),
-                RLP.EncodeElement(transaction.Gas.Value.ToBytesForRLPEncoding()),
+                RLP.EncodeElement(transaction.ChainId.Value.ToByteArrayForRLPEncoding()),
+                RLP.EncodeElement(transaction.Nonce.Value.ToByteArrayForRLPEncoding()),
+                RLP.EncodeElement(transaction.MaxPriorityFeePerGas.Value.ToByteArrayForRLPEncoding()),
+                RLP.EncodeElement(transaction.MaxFeePerGas.Value.ToByteArrayForRLPEncoding()),
+                RLP.EncodeElement(transaction.Gas.Value.ToByteArrayForRLPEncoding()),
                 RLP.EncodeElement(transaction.To.HexToBytes()),
-                RLP.EncodeElement(transaction.Value.Value.ToBytesForRLPEncoding()),
-                RLP.EncodeElement(transaction.Data.HexToBytes()),
+                RLP.EncodeElement(transaction.Value.Value.ToByteArrayForRLPEncoding()),
+                RLP.EncodeElement(transaction.Data == null ? Array.Empty<byte>() : transaction.Data.HexToBytes()),
                 new byte[] { 0xc0 }, // AccessList, empty so short list bytes
             };
 
@@ -347,10 +347,10 @@ public class PrivateKeyWallet : IThirdwebWallet
                 {
                     var encodedItem = new List<byte[]>()
                     {
-                        RLP.EncodeElement(authorizationList.ChainId.HexToBigInt().ToBytesForRLPEncoding()),
+                        RLP.EncodeElement(authorizationList.ChainId.HexToBigInt().ToByteArrayForRLPEncoding()),
                         RLP.EncodeElement(authorizationList.Address.HexToBytes()),
-                        RLP.EncodeElement(authorizationList.Nonce.HexToBigInt().ToBytesForRLPEncoding()),
-                        RLP.EncodeElement(authorizationList.YParity.HexToBytes()[0] == 0 ? Array.Empty<byte>() : authorizationList.YParity.HexToBytes()),
+                        RLP.EncodeElement(authorizationList.Nonce.HexToBigInt().ToByteArrayForRLPEncoding()),
+                        RLP.EncodeElement(authorizationList.YParity == "0x00" ? Array.Empty<byte>() : authorizationList.YParity.HexToBytes()),
                         RLP.EncodeElement(authorizationList.R.HexToBytes().TrimZeroes()),
                         RLP.EncodeElement(authorizationList.S.HexToBytes().TrimZeroes())
                     };
@@ -370,27 +370,17 @@ public class PrivateKeyWallet : IThirdwebWallet
             byte[] v;
             byte[] r;
             byte[] s;
-
-            if (rawSignature != null && rawSignature.V != null)
+            if (rawSignature.V.Length == 0 || rawSignature.V[0] == 0)
             {
-                if (rawSignature.V.Length == 0 || rawSignature.V[0] == 0)
-                {
-                    v = Array.Empty<byte>();
-                }
-                else
-                {
-                    v = rawSignature.V;
-                }
-                v = RLP.EncodeElement(v);
-                r = RLP.EncodeElement(rawSignature.R.TrimZeroes());
-                s = RLP.EncodeElement(rawSignature.S.TrimZeroes());
+                v = Array.Empty<byte>();
             }
             else
             {
-                v = RLP.EncodeElement(Array.Empty<byte>());
-                r = RLP.EncodeElement(Array.Empty<byte>());
-                s = RLP.EncodeElement(Array.Empty<byte>());
+                v = rawSignature.V;
             }
+            v = RLP.EncodeElement(v);
+            r = RLP.EncodeElement(rawSignature.R.TrimZeroes());
+            s = RLP.EncodeElement(rawSignature.S.TrimZeroes());
 
             encodedData.Add(v);
             encodedData.Add(r);
@@ -464,7 +454,12 @@ public class PrivateKeyWallet : IThirdwebWallet
         {
             nonce++;
         }
-        var encodedData = new List<byte[]> { RLP.EncodeElement(chainId.ToBytesForRLPEncoding()), RLP.EncodeElement(contractAddress.HexToBytes()), RLP.EncodeElement(nonce.ToBytesForRLPEncoding()) };
+        var encodedData = new List<byte[]>
+        {
+            RLP.EncodeElement(chainId.ToByteArrayForRLPEncoding()),
+            RLP.EncodeElement(contractAddress.HexToBytes()),
+            RLP.EncodeElement(nonce.ToByteArrayForRLPEncoding())
+        };
         var encodedBytes = RLP.EncodeList(encodedData.ToArray());
         var returnElements = new byte[encodedBytes.Length + 1];
         Array.Copy(encodedBytes.ToArray(), 0, returnElements, 1, encodedBytes.Length);
