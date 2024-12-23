@@ -41,39 +41,28 @@ var eoaWallet = await PrivateKeyWallet.Generate(client);
 var eoaWalletAddress = await eoaWallet.GetAddress();
 Console.WriteLine($"EOA address: {eoaWalletAddress}");
 
-// Temporary - fund eoa wallet
-var fundingWallet = await PrivateKeyWallet.Create(client, privateKey);
-var fundingHash = (
-    await ThirdwebTransaction.SendAndWaitForTransactionReceipt(
-        await ThirdwebTransaction.Create(fundingWallet, new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, value: BigInteger.Parse("0.1".ToWei())))
-    )
-).TransactionHash;
-Console.WriteLine($"Funding hash: {fundingHash}");
+// // Temporary - fund eoa wallet
+// var fundingWallet = await PrivateKeyWallet.Create(client, privateKey);
+// var fundingHash = (
+//     await ThirdwebTransaction.SendAndWaitForTransactionReceipt(
+//         await ThirdwebTransaction.Create(fundingWallet, new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, value: BigInteger.Parse("0.01".ToWei())))
+//     )
+// ).TransactionHash;
+// Console.WriteLine($"Funding hash: {fundingHash}");
 
 // Sign the authorization to make it point to the delegation contract
-var authorization = await eoaWallet.SignAuthorization(chainId: chainWith7702, contractAddress: delegationContractAddress, willSelfExecute: true);
+var authorization = await eoaWallet.SignAuthorization(chainId: chainWith7702, contractAddress: delegationContractAddress, willSelfExecute: false);
 Console.WriteLine($"Authorization: {JsonConvert.SerializeObject(authorization, Formatting.Indented)}");
 
-// Execute the delegation
-var tx = await ThirdwebTransaction.Create(eoaWallet, new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, authorization: authorization));
-var hash = (await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx)).TransactionHash;
-Console.WriteLine($"Transaction hash: {hash}");
-
 // Initialize another wallet, the "executor" that will hit the eoa's execute function
-var executorWallet = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
-if (!await executorWallet.IsConnected())
-{
-    _ = await executorWallet.LoginWithOauth(
-        isMobile: false,
-        browserOpenAction: (url) =>
-        {
-            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-            _ = Process.Start(psi);
-        }
-    );
-}
+var executorWallet = await PrivateKeyWallet.Create(client, privateKey);
 var executorWalletAddress = await executorWallet.GetAddress();
 Console.WriteLine($"Executor address: {executorWalletAddress}");
+
+// Execute the delegation
+var tx = await ThirdwebTransaction.Create(executorWallet, new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, authorization: authorization));
+var hash = (await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx)).TransactionHash;
+Console.WriteLine($"Transaction hash: {hash}");
 
 // Log erc20 balance of executor before the claim
 var executorBalanceBefore = await erc20Contract.ERC20_BalanceOf(executorWalletAddress);

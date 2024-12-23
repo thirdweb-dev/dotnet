@@ -12,6 +12,8 @@ using Nethereum.ABI.Model;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
+using Nethereum.Model;
+using Nethereum.RLP;
 using Nethereum.Signer;
 using Nethereum.Util;
 using Newtonsoft.Json;
@@ -1055,5 +1057,93 @@ public static partial class Utils
         }
 
         return trimmed.ToArray();
+    }
+
+    /// <summary>
+    /// Decodes the given RLP-encoded transaction data.
+    /// </summary>
+    /// <param name="signedRlpData">The RLP-encoded signed transaction data.</param>
+    /// <returns>The decoded transaction input and signature.</returns>
+    public static (ThirdwebTransactionInput transactionInput, string signature) DecodeTransaction(string signedRlpData)
+    {
+        return DecodeTransaction(signedRlpData.HexToBytes());
+    }
+
+    /// <summary>
+    /// Decodes the given RLP-encoded transaction data.
+    /// </summary>
+    /// <param name="signedRlpData">The RLP-encoded signed transaction data.</param>
+    /// <returns>The decoded transaction input and signature.</returns>
+    public static (ThirdwebTransactionInput transactionInput, string signature) DecodeTransaction(byte[] signedRlpData)
+    {
+        var maybeType = signedRlpData[0];
+        if (maybeType is 0x04 or 0x02)
+        {
+            signedRlpData = signedRlpData.Skip(1).ToArray();
+        }
+
+        var decodedList = RLP.Decode(signedRlpData);
+        var decodedElements = (RLPCollection)decodedList;
+        var chainId = decodedElements[0].RLPData.ToBigIntegerFromRLPDecoded();
+        var nonce = decodedElements[1].RLPData.ToBigIntegerFromRLPDecoded();
+        var maxPriorityFeePerGas = decodedElements[2].RLPData.ToBigIntegerFromRLPDecoded();
+        var maxFeePerGas = decodedElements[3].RLPData.ToBigIntegerFromRLPDecoded();
+        var gasLimit = decodedElements[4].RLPData.ToBigIntegerFromRLPDecoded();
+        var receiverAddress = decodedElements[5].RLPData?.BytesToHex();
+        var amount = decodedElements[6].RLPData.ToBigIntegerFromRLPDecoded();
+        var data = decodedElements[7].RLPData?.BytesToHex();
+        // 8th decoded element is access list
+        var authorizations = DecodeAutorizationList(decodedElements[9]?.RLPData);
+
+        var signature = RLPSignedDataDecoder.DecodeSignature(decodedElements, 10);
+        return (
+            new ThirdwebTransactionInput(
+                chainId: chainId,
+                to: receiverAddress,
+                nonce: nonce,
+                gas: gasLimit,
+                value: amount,
+                data: data,
+                maxFeePerGas: maxFeePerGas,
+                maxPriorityFeePerGas: maxPriorityFeePerGas
+            )
+            {
+                AuthorizationList = authorizations
+            },
+            signature.CreateStringSignature()
+        );
+    }
+
+    /// <summary>
+    /// Decodes the given RLP-encoded authorization list.
+    /// </summary>
+    public static List<EIP7702Authorization> DecodeAutorizationList(byte[] authorizationListEncoded)
+    {
+        if (authorizationListEncoded == null || authorizationListEncoded.Length == 0 || authorizationListEncoded[0] == RLP.OFFSET_SHORT_LIST)
+        {
+            return null;
+        }
+
+        var decodedList = (RLPCollection)RLP.Decode(authorizationListEncoded);
+
+        var authorizationLists = new List<EIP7702Authorization>();
+        foreach (var rlpElement in decodedList)
+        {
+            var decodedItem = (RLPCollection)rlpElement;
+            var authorizationListItem = new EIP7702Authorization
+            {
+                ChainId = new HexBigInteger(decodedItem[0].RLPData.ToBigIntegerFromRLPDecoded()).HexValue,
+                Address = decodedItem[1].RLPData.BytesToHex(),
+                Nonce = new HexBigInteger(decodedItem[2].RLPData.ToBigIntegerFromRLPDecoded()).HexValue
+            };
+            var signature = RLPSignedDataDecoder.DecodeSignature(decodedItem, 3);
+            authorizationListItem.YParity = signature.V.BytesToHex();
+            authorizationListItem.R = signature.R.BytesToHex();
+            authorizationListItem.S = signature.S.BytesToHex();
+
+            authorizationLists.Add(authorizationListItem);
+        }
+
+        return authorizationLists;
     }
 }

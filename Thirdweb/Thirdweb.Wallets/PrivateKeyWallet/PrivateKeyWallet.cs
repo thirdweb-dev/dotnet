@@ -2,7 +2,6 @@ using System.Numerics;
 using System.Text;
 using Nethereum.ABI.EIP712;
 using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Hex.HexTypes;
 using Nethereum.RLP;
 using Nethereum.Signer;
 using Nethereum.Signer.EIP712;
@@ -351,9 +350,9 @@ public class PrivateKeyWallet : IThirdwebWallet
                         RLP.EncodeElement(authorizationList.ChainId.HexToBigInt().ToBytesForRLPEncoding()),
                         RLP.EncodeElement(authorizationList.Address.HexToBytes()),
                         RLP.EncodeElement(authorizationList.Nonce.HexToBigInt().ToBytesForRLPEncoding()),
-                        RLP.EncodeElement(authorizationList.YParity.HexToBytes()),
-                        RLP.EncodeElement(authorizationList.R.HexToBytes()),
-                        RLP.EncodeElement(authorizationList.S.HexToBytes())
+                        RLP.EncodeElement(authorizationList.YParity.HexToBytes()[0] == 0 ? Array.Empty<byte>() : authorizationList.YParity.HexToBytes()),
+                        RLP.EncodeElement(authorizationList.R.HexToBytes().TrimZeroes()),
+                        RLP.EncodeElement(authorizationList.S.HexToBytes().TrimZeroes())
                     };
                     encodedAuthorizationList.Add(RLP.EncodeList(encodedItem.ToArray()));
                 }
@@ -402,7 +401,11 @@ public class PrivateKeyWallet : IThirdwebWallet
             Array.Copy(encodedBytes, 0, returnBytes, 1, encodedBytes.Length);
             returnBytes[0] = transaction.AuthorizationList != null ? (byte)0x04 : (byte)0x02;
 
+            // (var tx, var sig) = Utils.DecodeTransaction(returnBytes);
+
             signedTransaction = returnBytes.ToHex();
+
+            // (var tx, var sig) = Utils.DecodeTransaction("0x" + signedTransaction);
         }
 
         return Task.FromResult("0x" + signedTransaction);
@@ -461,12 +464,7 @@ public class PrivateKeyWallet : IThirdwebWallet
         {
             nonce++;
         }
-        var encodedData = new List<byte[]>
-        {
-            RLP.EncodeElement(new HexBigInteger(chainId).Value.ToBytesForRLPEncoding()),
-            RLP.EncodeElement(contractAddress.HexToBytes()),
-            RLP.EncodeElement(new HexBigInteger(nonce).Value.ToBytesForRLPEncoding())
-        };
+        var encodedData = new List<byte[]> { RLP.EncodeElement(chainId.ToBytesForRLPEncoding()), RLP.EncodeElement(contractAddress.HexToBytes()), RLP.EncodeElement(nonce.ToBytesForRLPEncoding()) };
         var encodedBytes = RLP.EncodeList(encodedData.ToArray());
         var returnElements = new byte[encodedBytes.Length + 1];
         Array.Copy(encodedBytes.ToArray(), 0, returnElements, 1, encodedBytes.Length);

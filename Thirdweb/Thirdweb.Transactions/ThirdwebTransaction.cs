@@ -261,33 +261,24 @@ public class ThirdwebTransaction
     public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction)
     {
         var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
-
-        // Remove when https://github.com/ethereum/execution-apis/issues/561 is in
-        var txInput = new ThirdwebTransactionInput(
-            chainId: transaction.Input.ChainId,
-            from: transaction.Input.From,
-            to: transaction.Input.To,
-            nonce: transaction.Input.Nonce,
-            value: transaction.Input.Value,
-            data: transaction.Input.Data,
-            zkSync: transaction.Input.ZkSync
-        );
-
-        var extraGas = transaction.Input.AuthorizationList == null ? 0 : 100000;
-        BigInteger finalGas;
-
-        if (await Utils.IsZkSync(transaction._wallet.Client, txInput.ChainId.Value).ConfigureAwait(false))
+        var isZkSync = await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false);
+        BigInteger divider = isZkSync
+            ? 7
+            : transaction.Input.AuthorizationList == null
+                ? 5
+                : 3;
+        BigInteger baseGas;
+        if (isZkSync)
         {
-            var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", txInput).ConfigureAwait(false))["gas_limit"].ToString();
-            finalGas = hex.HexToBigInt() * 2;
+            var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_limit"].ToString();
+            baseGas = hex.HexToBigInt();
         }
         else
         {
-            var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", txInput).ConfigureAwait(false);
-            finalGas = hex.HexToBigInt() * 2;
+            var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input).ConfigureAwait(false);
+            baseGas = hex.HexToBigInt();
         }
-
-        return finalGas + extraGas;
+        return baseGas * 10 / divider;
     }
 
     /// <summary>
