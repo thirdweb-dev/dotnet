@@ -209,16 +209,16 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_Success()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput(421614)
-        {
-            From = await account.GetAddress(),
-            To = Constants.ADDRESS_ZERO,
-            // Value = new HexBigInteger(0),
-            Gas = new HexBigInteger(21000),
-            // Data = "0x",
-            Nonce = new HexBigInteger(99999999999),
-            GasPrice = new HexBigInteger(10000000000),
-        };
+        var transaction = new ThirdwebTransactionInput(
+            chainId: 421614,
+            from: await account.GetAddress(),
+            to: Constants.ADDRESS_ZERO,
+            value: 0,
+            gas: 21000,
+            data: "0x",
+            nonce: 99999999999,
+            gasPrice: 10000000000
+        );
         var signature = await account.SignTransaction(transaction);
         Assert.NotNull(signature);
     }
@@ -227,15 +227,7 @@ public class PrivateKeyWalletTests : BaseTests
     public async Task SignTransaction_NoFrom_Success()
     {
         var account = await this.GetAccount();
-        var transaction = new ThirdwebTransactionInput(421614)
-        {
-            To = Constants.ADDRESS_ZERO,
-            // Value = new HexBigInteger(0),
-            Gas = new HexBigInteger(21000),
-            Data = "0x",
-            Nonce = new HexBigInteger(99999999999),
-            GasPrice = new HexBigInteger(10000000000),
-        };
+        var transaction = new ThirdwebTransactionInput(chainId: 421614, to: Constants.ADDRESS_ZERO, value: 0, gas: 21000, data: "0x", nonce: 99999999999, gasPrice: 10000000000);
         var signature = await account.SignTransaction(transaction);
         Assert.NotNull(signature);
     }

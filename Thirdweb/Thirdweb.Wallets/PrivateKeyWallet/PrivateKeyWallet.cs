@@ -307,7 +307,6 @@ public class PrivateKeyWallet : IThirdwebWallet
 
         if (transaction.GasPrice != null)
         {
-            var gasPrice = transaction.GasPrice;
             var legacySigner = new LegacyTransactionSigner();
             signedTransaction = legacySigner.SignTransaction(
                 this.EcKey.GetPrivateKey(),
@@ -315,7 +314,7 @@ public class PrivateKeyWallet : IThirdwebWallet
                 transaction.To,
                 transaction.Value.Value,
                 transaction.Nonce.Value,
-                gasPrice.Value,
+                transaction.GasPrice.Value,
                 transaction.Gas.Value,
                 transaction.Data
             );
