@@ -167,7 +167,7 @@ public static partial class Utils
     /// </summary>
     public static string NumberToHex(this int number)
     {
-        return NumberToHex(number);
+        return NumberToHex(new BigInteger(number));
     }
 
     /// <summary>
@@ -175,7 +175,7 @@ public static partial class Utils
     /// </summary>
     public static string NumberToHex(this long number)
     {
-        return NumberToHex(number);
+        return NumberToHex(new BigInteger(number));
     }
 
     /// <summary>
