@@ -261,17 +261,24 @@ public class ThirdwebTransaction
     public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction)
     {
         var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
-
-        if (await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false))
+        var isZkSync = await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false);
+        BigInteger divider = isZkSync
+            ? 7
+            : transaction.Input.AuthorizationList == null
+                ? 5
+                : 3;
+        BigInteger baseGas;
+        if (isZkSync)
         {
             var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_limit"].ToString();
-            return new HexBigInteger(hex).Value * 10 / 5;
+            baseGas = hex.HexToNumber();
         }
         else
         {
             var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input).ConfigureAwait(false);
-            return new HexBigInteger(hex).Value * 10 / 7;
+            baseGas = hex.HexToNumber();
         }
+        return baseGas * 10 / divider;
     }
 
     /// <summary>
@@ -357,6 +364,7 @@ public class ThirdwebTransaction
 
         var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
         string hash;
+
         if (await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false) && transaction.Input.ZkSync.HasValue)
         {
             var zkTx = await ConvertToZkSyncTransaction(transaction).ConfigureAwait(false);

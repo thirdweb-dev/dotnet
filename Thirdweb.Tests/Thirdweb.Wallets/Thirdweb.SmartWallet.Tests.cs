@@ -364,6 +364,18 @@ public class SmartWalletTests : BaseTests
         Assert.NotEqual(addy1, addy2);
     }
 
+    [Fact(Timeout = 120000)]
+    public async Task SignAuthorization_WithPrivateKeyWallet_Success()
+    {
+        var smartWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(this.Client), chainId: 421614);
+        var smartWalletSigner = await smartWallet.GetPersonalWallet();
+        var signature1 = await smartWallet.SignAuthorization(chainId: 421614, contractAddress: Constants.ADDRESS_ZERO, willSelfExecute: true);
+        var signature2 = await smartWalletSigner.SignAuthorization(chainId: 421614, contractAddress: Constants.ADDRESS_ZERO, willSelfExecute: true);
+        Assert.Equal(signature1.ChainId, signature2.ChainId);
+        Assert.Equal(signature1.Address, signature2.Address);
+        Assert.Equal(signature1.Nonce, signature2.Nonce);
+    }
+
     // [Fact(Timeout = 120000)]
     // public async Task MultiChainTransaction_Success()
     // {

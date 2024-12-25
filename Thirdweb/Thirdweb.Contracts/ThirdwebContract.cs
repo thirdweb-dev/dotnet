@@ -182,19 +182,6 @@ public class ThirdwebContract
     {
         var contractRaw = new Contract(null, contract.Abi, contract.Address);
         var function = GetFunctionMatchSignature(contractRaw, method, parameters);
-        if (function == null)
-        {
-            if (method.Contains('('))
-            {
-                var canonicalSignature = ExtractCanonicalSignature(method);
-                var selector = Nethereum.Util.Sha3Keccack.Current.CalculateHash(canonicalSignature)[..8];
-                function = contractRaw.GetFunctionBySignature(selector);
-            }
-            else
-            {
-                throw new ArgumentException("Method signature not found in contract ABI.");
-            }
-        }
         return (function.GetData(parameters), function);
     }
 
@@ -207,6 +194,11 @@ public class ThirdwebContract
     /// <returns>The matching function, or null if no match is found.</returns>
     private static Function GetFunctionMatchSignature(Contract contract, string functionName, params object[] args)
     {
+        if (functionName.StartsWith("0x"))
+        {
+            return contract.GetFunctionBySignature(functionName);
+        }
+
         var abi = contract.ContractBuilder.ContractABI;
         var functions = abi.Functions;
         var paramsCount = args?.Length ?? 0;
@@ -218,7 +210,17 @@ public class ThirdwebContract
                 return contract.GetFunctionBySignature(sha);
             }
         }
-        return null;
+
+        if (functionName.Contains('('))
+        {
+            var canonicalSignature = ExtractCanonicalSignature(functionName);
+            var selector = Utils.HashMessage(canonicalSignature)[..8];
+            return contract.GetFunctionBySignature(selector);
+        }
+        else
+        {
+            throw new ArgumentException("Method signature not found in contract ABI.");
+        }
     }
 
     /// <summary>

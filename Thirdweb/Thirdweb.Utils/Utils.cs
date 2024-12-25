@@ -12,6 +12,8 @@ using Nethereum.ABI.Model;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
+using Nethereum.Model;
+using Nethereum.RLP;
 using Nethereum.Signer;
 using Nethereum.Util;
 using Newtonsoft.Json;
@@ -136,9 +138,44 @@ public static partial class Utils
     /// </summary>
     /// <param name="hex">The hex string to convert.</param>
     /// <returns>The big integer.</returns>
+    [Obsolete("Use HexToNumber instead.")]
     public static BigInteger HexToBigInt(this string hex)
     {
         return new HexBigInteger(hex).Value;
+    }
+
+    /// <summary>
+    /// Converts the given hex string to a big integer.
+    /// </summary>
+    /// <param name="hex">The hex string to convert.</param>
+    /// <returns>The big integer.</returns>
+    public static BigInteger HexToNumber(this string hex)
+    {
+        return new HexBigInteger(hex).Value;
+    }
+
+    /// <summary>
+    /// Converts the given big integer to a hex string.
+    /// </summary>
+    public static string NumberToHex(this BigInteger number)
+    {
+        return new HexBigInteger(number).HexValue;
+    }
+
+    /// <summary>
+    /// Converts the given integer to a hex string.
+    /// </summary>
+    public static string NumberToHex(this int number)
+    {
+        return NumberToHex(new BigInteger(number));
+    }
+
+    /// <summary>
+    /// Converts the given long to a hex string.
+    /// </summary>
+    public static string NumberToHex(this long number)
+    {
+        return NumberToHex(new BigInteger(number));
     }
 
     /// <summary>
@@ -883,7 +920,7 @@ public static partial class Utils
     {
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var hex = await rpc.SendRequestAsync<string>("eth_gasPrice").ConfigureAwait(false);
-        var gasPrice = hex.HexToBigInt();
+        var gasPrice = hex.HexToNumber();
         return withBump ? gasPrice * 10 / 9 : gasPrice;
     }
 
@@ -1033,5 +1070,125 @@ public static partial class Utils
         var encoder = new ABIEncode();
         var encodedParams = encoder.GetABIEncoded(new ABIValue("address", address), new ABIValue("bytes", data), new ABIValue("bytes", signature));
         return HexConcat(encodedParams.BytesToHex(), Constants.ERC_6492_MAGIC_VALUE);
+    }
+
+    /// <summary>
+    /// Removes leading zeroes from the given byte array.
+    /// </summary>
+    public static byte[] TrimZeroes(this byte[] bytes)
+    {
+        var trimmed = new List<byte>();
+        var previousByteWasZero = true;
+
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            if (previousByteWasZero && bytes[i] == 0)
+            {
+                continue;
+            }
+
+            previousByteWasZero = false;
+            trimmed.Add(bytes[i]);
+        }
+
+        return trimmed.ToArray();
+    }
+
+    /// <summary>
+    /// Decodes the given RLP-encoded transaction data.
+    /// </summary>
+    /// <param name="signedRlpData">The RLP-encoded signed transaction data.</param>
+    /// <returns>The decoded transaction input and signature.</returns>
+    public static (ThirdwebTransactionInput transactionInput, string signature) DecodeTransaction(string signedRlpData)
+    {
+        return DecodeTransaction(signedRlpData.HexToBytes());
+    }
+
+    /// <summary>
+    /// Decodes the given RLP-encoded transaction data.
+    /// </summary>
+    /// <param name="signedRlpData">The RLP-encoded signed transaction data.</param>
+    /// <returns>The decoded transaction input and signature.</returns>
+    public static (ThirdwebTransactionInput transactionInput, string signature) DecodeTransaction(byte[] signedRlpData)
+    {
+        var txType = signedRlpData[0];
+        if (txType is 0x04 or 0x02)
+        {
+            signedRlpData = signedRlpData.Skip(1).ToArray();
+        }
+
+        var decodedList = RLP.Decode(signedRlpData);
+        var decodedElements = (RLPCollection)decodedList;
+        var chainId = decodedElements[0].RLPData.ToBigIntegerFromRLPDecoded();
+        var nonce = decodedElements[1].RLPData.ToBigIntegerFromRLPDecoded();
+        var maxPriorityFeePerGas = decodedElements[2].RLPData.ToBigIntegerFromRLPDecoded();
+        var maxFeePerGas = decodedElements[3].RLPData.ToBigIntegerFromRLPDecoded();
+        var gasLimit = decodedElements[4].RLPData.ToBigIntegerFromRLPDecoded();
+        var receiverAddress = decodedElements[5].RLPData?.BytesToHex();
+        var amount = decodedElements[6].RLPData.ToBigIntegerFromRLPDecoded();
+        var data = decodedElements[7].RLPData?.BytesToHex();
+        // 8th decoded element is access list
+        var authorizations = txType == 0x04 ? DecodeAutorizationList(decodedElements[9]?.RLPData) : null;
+
+        var signature = RLPSignedDataDecoder.DecodeSignature(decodedElements, txType == 0x04 ? 10 : 9);
+        return (
+            new ThirdwebTransactionInput(
+                chainId: chainId,
+                to: receiverAddress.ToChecksumAddress(),
+                nonce: nonce,
+                gas: gasLimit,
+                value: amount,
+                data: data,
+                maxFeePerGas: maxFeePerGas,
+                maxPriorityFeePerGas: maxPriorityFeePerGas
+            )
+            {
+                AuthorizationList = authorizations
+            },
+            signature.CreateStringSignature()
+        );
+    }
+
+    /// <summary>
+    /// Decodes the given RLP-encoded authorization list.
+    /// </summary>
+    public static List<EIP7702Authorization> DecodeAutorizationList(byte[] authorizationListEncoded)
+    {
+        if (authorizationListEncoded == null || authorizationListEncoded.Length == 0 || authorizationListEncoded[0] == RLP.OFFSET_SHORT_LIST)
+        {
+            return null;
+        }
+
+        var decodedList = (RLPCollection)RLP.Decode(authorizationListEncoded);
+
+        var authorizationLists = new List<EIP7702Authorization>();
+        foreach (var rlpElement in decodedList)
+        {
+            var decodedItem = (RLPCollection)rlpElement;
+            var authorizationListItem = new EIP7702Authorization
+            {
+                ChainId = new HexBigInteger(decodedItem[0].RLPData.ToBigIntegerFromRLPDecoded()).HexValue,
+                Address = decodedItem[1].RLPData.BytesToHex().ToChecksumAddress(),
+                Nonce = new HexBigInteger(decodedItem[2].RLPData.ToBigIntegerFromRLPDecoded()).HexValue
+            };
+            var signature = RLPSignedDataDecoder.DecodeSignature(decodedItem, 3);
+            authorizationListItem.YParity = signature.V.BytesToHex();
+            authorizationListItem.R = signature.R.BytesToHex();
+            authorizationListItem.S = signature.S.BytesToHex();
+
+            authorizationLists.Add(authorizationListItem);
+        }
+
+        return authorizationLists;
+    }
+
+    internal static byte[] ToByteArrayForRLPEncoding(this BigInteger value)
+    {
+        if (value == 0)
+        {
+            return Array.Empty<byte>();
+        }
+
+        return value.ToBytesForRLPEncoding();
     }
 }
