@@ -5,6 +5,7 @@ using Nethereum.ABI.EIP712;
 using Nethereum.Signer;
 using Nethereum.Signer.EIP712;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Thirdweb.EWS;
 
 namespace Thirdweb;
@@ -290,6 +291,55 @@ public partial class EcosystemWallet : IThirdwebWallet
     public async Task<UserStatusResponse> GetUserDetails()
     {
         return await GetUserStatus(this.HttpClient).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets the user auth details from the corresponding auth provider.
+    /// </summary>
+    /// <returns>The user auth details as a JObject</returns>
+    public JObject GetUserAuthDetails()
+    {
+        var authToken = this.EmbeddedWallet.GetSessionData()?.AuthToken;
+        if (string.IsNullOrEmpty(authToken))
+        {
+            throw new InvalidOperationException("Cannot get user auth details without an active session.");
+        }
+
+        var parts = authToken.Split('.');
+        if (parts.Length != 3)
+        {
+            Console.WriteLine("Invalid JWT");
+        }
+
+        static string Base64UrlDecode(string input)
+        {
+            var paddedInput = input.Replace('-', '+').Replace('_', '/');
+            switch (paddedInput.Length % 4)
+            {
+                case 2:
+                    paddedInput += "==";
+                    break;
+                case 3:
+                    paddedInput += "=";
+                    break;
+                default:
+                    break;
+            }
+            var decodedBytes = Convert.FromBase64String(paddedInput);
+            return Encoding.UTF8.GetString(decodedBytes);
+        }
+
+        var payload = JObject.Parse(Base64UrlDecode(parts[1]));
+        var jwtToken = payload["storedToken"]?["jwtToken"]?.ToString();
+
+        parts = jwtToken.Split('.');
+        if (parts.Length != 3)
+        {
+            Console.WriteLine("Invalid JWT");
+        }
+
+        payload = JObject.Parse(Base64UrlDecode(parts[1]));
+        return payload;
     }
 
     [Obsolete("Use GetUserDetails instead.")]

@@ -455,7 +455,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region InAppWallet - OAuth
 
-// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Steam);
+// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Github);
 // if (!await inAppWalletOAuth.IsConnected())
 // {
 //     _ = await inAppWalletOAuth.LoginWithOauth(
@@ -471,6 +471,9 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // }
 // var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
 // Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
+
+// var inAppWalletAuthDetails = inAppWalletOAuth.GetUserAuthDetails();
+// Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
 
 #endregion
 
