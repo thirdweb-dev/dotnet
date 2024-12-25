@@ -79,6 +79,14 @@ public class ContractsTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task ReadTest_4Bytes()
+    {
+        var contract = await this.GetContract();
+        var result = await ThirdwebContract.Read<string>(contract, "0x06fdde03");
+        Assert.Equal("Kitty DropERC20", result);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task ReadTest_FullSig()
     {
         var contract = await this.GetContract();

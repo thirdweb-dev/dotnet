@@ -224,6 +224,26 @@ public class PrivateKeyWalletTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
+    public async Task SignTransaction_WithAuthorizationList_Success()
+    {
+        var account = await this.GetAccount();
+        var authorization = await account.SignAuthorization(421614, Constants.ADDRESS_ZERO, false);
+        var transaction = new ThirdwebTransactionInput(
+            chainId: 421614,
+            from: await account.GetAddress(),
+            to: Constants.ADDRESS_ZERO,
+            value: 0,
+            gas: 21000,
+            data: "0x",
+            nonce: 99999999999,
+            gasPrice: 10000000000,
+            authorization: authorization
+        );
+        var signature = await account.SignTransaction(transaction);
+        Assert.NotNull(signature);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task SignTransaction_NoFrom_Success()
     {
         var account = await this.GetAccount();
@@ -460,5 +480,27 @@ public class PrivateKeyWalletTests : BaseTests
 
         Assert.NotNull(privateKey);
         Assert.Equal(privateKey, await wallet.Export());
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SignAuthorization_SelfExecution()
+    {
+        var wallet = await PrivateKeyWallet.Generate(this.Client);
+        var chainId = 911867;
+        var targetAddress = "0x654F42b74885EE6803F403f077bc0409f1066c58";
+
+        var currentNonce = await wallet.GetTransactionCount(chainId);
+
+        var authorization = await wallet.SignAuthorization(chainId: chainId, contractAddress: targetAddress, willSelfExecute: false);
+
+        Assert.Equal(chainId.NumberToHex(), authorization.ChainId);
+        Assert.Equal(targetAddress, authorization.Address);
+        Assert.True(authorization.Nonce.HexToNumber() == currentNonce);
+
+        authorization = await wallet.SignAuthorization(chainId: chainId, contractAddress: targetAddress, willSelfExecute: true);
+
+        Assert.Equal(chainId.NumberToHex(), authorization.ChainId);
+        Assert.Equal(targetAddress, authorization.Address);
+        Assert.True(authorization.Nonce.HexToNumber() == currentNonce + 1);
     }
 }

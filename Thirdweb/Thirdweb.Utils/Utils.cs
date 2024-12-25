@@ -138,9 +138,44 @@ public static partial class Utils
     /// </summary>
     /// <param name="hex">The hex string to convert.</param>
     /// <returns>The big integer.</returns>
+    [Obsolete("Use HexToNumber instead.")]
     public static BigInteger HexToBigInt(this string hex)
     {
         return new HexBigInteger(hex).Value;
+    }
+
+    /// <summary>
+    /// Converts the given hex string to a big integer.
+    /// </summary>
+    /// <param name="hex">The hex string to convert.</param>
+    /// <returns>The big integer.</returns>
+    public static BigInteger HexToNumber(this string hex)
+    {
+        return new HexBigInteger(hex).Value;
+    }
+
+    /// <summary>
+    /// Converts the given big integer to a hex string.
+    /// </summary>
+    public static string NumberToHex(this BigInteger number)
+    {
+        return new HexBigInteger(number).HexValue;
+    }
+
+    /// <summary>
+    /// Converts the given integer to a hex string.
+    /// </summary>
+    public static string NumberToHex(this int number)
+    {
+        return NumberToHex(number);
+    }
+
+    /// <summary>
+    /// Converts the given long to a hex string.
+    /// </summary>
+    public static string NumberToHex(this long number)
+    {
+        return NumberToHex(number);
     }
 
     /// <summary>
@@ -885,7 +920,7 @@ public static partial class Utils
     {
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var hex = await rpc.SendRequestAsync<string>("eth_gasPrice").ConfigureAwait(false);
-        var gasPrice = hex.HexToBigInt();
+        var gasPrice = hex.HexToNumber();
         return withBump ? gasPrice * 10 / 9 : gasPrice;
     }
 
@@ -1099,7 +1134,7 @@ public static partial class Utils
         return (
             new ThirdwebTransactionInput(
                 chainId: chainId,
-                to: receiverAddress,
+                to: receiverAddress.ToChecksumAddress(),
                 nonce: nonce,
                 gas: gasLimit,
                 value: amount,
@@ -1133,7 +1168,7 @@ public static partial class Utils
             var authorizationListItem = new EIP7702Authorization
             {
                 ChainId = new HexBigInteger(decodedItem[0].RLPData.ToBigIntegerFromRLPDecoded()).HexValue,
-                Address = decodedItem[1].RLPData.BytesToHex(),
+                Address = decodedItem[1].RLPData.BytesToHex().ToChecksumAddress(),
                 Nonce = new HexBigInteger(decodedItem[2].RLPData.ToBigIntegerFromRLPDecoded()).HexValue
             };
             var signature = RLPSignedDataDecoder.DecodeSignature(decodedItem, 3);

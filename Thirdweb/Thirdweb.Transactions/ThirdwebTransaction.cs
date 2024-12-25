@@ -271,12 +271,12 @@ public class ThirdwebTransaction
         if (isZkSync)
         {
             var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_limit"].ToString();
-            baseGas = hex.HexToBigInt();
+            baseGas = hex.HexToNumber();
         }
         else
         {
             var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input).ConfigureAwait(false);
-            baseGas = hex.HexToBigInt();
+            baseGas = hex.HexToNumber();
         }
         return baseGas * 10 / divider;
     }
