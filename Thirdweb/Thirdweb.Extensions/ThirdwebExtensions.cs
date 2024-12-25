@@ -651,7 +651,19 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     public static async Task<BigInteger> ERC721_TotalSupply(this ThirdwebContract contract)
     {
-        return contract == null ? throw new ArgumentNullException(nameof(contract)) : await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        try
+        {
+            return await ThirdwebContract.Read<BigInteger>(contract, "nextTokenIdToMint");
+        }
+        catch
+        {
+            return await ThirdwebContract.Read<BigInteger>(contract, "totalSupply");
+        }
     }
 
     /// <summary>
