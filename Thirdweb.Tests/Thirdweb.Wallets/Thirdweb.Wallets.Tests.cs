@@ -10,7 +10,7 @@ public class WalletTests : BaseTests
     private async Task<SmartWallet> GetSmartAccount()
     {
         var privateKeyAccount = await PrivateKeyWallet.Generate(this.Client);
-        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, chainId: 421614);
         return smartAccount;
     }
 
@@ -229,5 +229,22 @@ public class WalletTests : BaseTests
             async () => await wallet.RecoverAddressFromTypedDataV4(new AccountAbstraction.SignerPermissionRequest(), new Nethereum.ABI.EIP712.TypedData<Nethereum.ABI.EIP712.Domain>(), nullSig)
         );
 #nullable restore
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task SwitchNetwork_Success()
+    {
+        var smartWallet = await this.GetSmartAccount();
+        var wrappedSmartWallet = await SmartWallet.Create(personalWallet: smartWallet, chainId: 421614);
+
+        Assert.Equal(421614, smartWallet.ActiveChainId);
+        Assert.Equal(421614, wrappedSmartWallet.ActiveChainId);
+
+        await wrappedSmartWallet.SwitchNetwork(11155111);
+
+        Assert.Equal(11155111, wrappedSmartWallet.ActiveChainId);
+        Assert.Equal(11155111, smartWallet.ActiveChainId);
+
+        await (await PrivateKeyWallet.Generate(this.Client)).SwitchNetwork(11155111);
     }
 }

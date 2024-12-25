@@ -176,6 +176,12 @@ public interface IThirdwebWallet
     /// <param name="willSelfExecute">Set to true if the wallet will also be the executor of the transaction, otherwise false.</param>
     /// <returns>The signed authorization as an <see cref="EIP7702Authorization"/> that can be used with <see cref="ThirdwebTransactionInput.AuthorizationList"/>.</returns>
     Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress, bool willSelfExecute);
+
+    /// <summary>
+    /// Attempts to set the active network to the specified chain ID.
+    /// </summary>
+    /// <param name="chainId">The chain ID to switch to.</param>
+    Task SwitchNetwork(BigInteger chainId);
 }
 
 /// <summary>
