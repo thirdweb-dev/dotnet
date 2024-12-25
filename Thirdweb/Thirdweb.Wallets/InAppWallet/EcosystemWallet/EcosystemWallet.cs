@@ -986,5 +986,10 @@ public partial class EcosystemWallet : IThirdwebWallet
         throw new NotImplementedException();
     }
 
+    public Task SwitchNetwork(BigInteger chainId)
+    {
+        return Task.CompletedTask;
+    }
+
     #endregion
 }

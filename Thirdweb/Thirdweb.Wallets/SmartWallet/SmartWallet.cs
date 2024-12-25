@@ -27,11 +27,12 @@ public class SmartWallet : IThirdwebWallet
 
     public bool IsDeploying { get; private set; }
 
+    public BigInteger ActiveChainId { get; private set; }
+
     private readonly IThirdwebWallet _personalAccount;
     private ThirdwebContract _factoryContract;
     private ThirdwebContract _accountContract;
     private ThirdwebContract _entryPointContract;
-    private BigInteger _chainId;
     private string _bundlerUrl;
     private string _paymasterUrl;
     private bool _isApproving;
@@ -115,7 +116,7 @@ public class SmartWallet : IThirdwebWallet
 
         this._personalAccount = personalAccount;
         this._gasless = gasless;
-        this._chainId = chainId;
+        this.ActiveChainId = chainId;
         this._bundlerUrl = bundlerUrl;
         this._paymasterUrl = paymasterUrl;
         this._entryPointContract = entryPointContract;
@@ -243,50 +244,17 @@ public class SmartWallet : IThirdwebWallet
     }
 
     /// <summary>
-    /// Attempts to set the active network to the specified chain ID. Requires related contracts to be deterministically deployed on the chain.
-    /// </summary>
-    /// <param name="chainId">The chain ID to switch to.</param>
-    /// <returns></returns>
-    public async Task SwitchNetwork(BigInteger chainId)
-    {
-        if (this._chainId == chainId)
-        {
-            return;
-        }
-
-        if (this.UseERC20Paymaster)
-        {
-            throw new InvalidOperationException("You cannot switch networks when using an ERC20 paymaster yet.");
-        }
-
-        this._bundlerUrl = this._bundlerUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._bundlerUrl;
-        this._paymasterUrl = this._paymasterUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._paymasterUrl;
-
-        if (!await Utils.IsZkSync(this.Client, chainId).ConfigureAwait(false))
-        {
-            this._entryPointContract = await ThirdwebContract.Create(this.Client, this._entryPointContract.Address, chainId, this._entryPointContract.Abi).ConfigureAwait(false);
-            this._factoryContract = await ThirdwebContract.Create(this.Client, this._factoryContract.Address, chainId, this._factoryContract.Abi).ConfigureAwait(false);
-
-            var personalAddress = await this._personalAccount.GetAddress().ConfigureAwait(false);
-            var accountAddress = await ThirdwebContract.Read<string>(this._factoryContract, "getAddress", personalAddress, Array.Empty<byte>()).ConfigureAwait(false);
-            this._accountContract = await ThirdwebContract.Create(this._personalAccount.Client, accountAddress, chainId, Constants.ACCOUNT_V06_ABI).ConfigureAwait(false);
-        }
-
-        this._chainId = chainId;
-    }
-
-    /// <summary>
     /// Checks if the smart account is deployed on the current chain. A smart account is typically deployed when a personal message is signed or a transaction is sent.
     /// </summary>
     /// <returns>True if deployed, otherwise false.</returns>
     public async Task<bool> IsDeployed()
     {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             return true;
         }
 
-        var code = await ThirdwebRPC.GetRpcInstance(this.Client, this._chainId).SendRequestAsync<string>("eth_getCode", this._accountContract.Address, "latest").ConfigureAwait(false);
+        var code = await ThirdwebRPC.GetRpcInstance(this.Client, this.ActiveChainId).SendRequestAsync<string>("eth_getCode", this._accountContract.Address, "latest").ConfigureAwait(false);
         return code != "0x";
     }
 
@@ -295,7 +263,7 @@ public class SmartWallet : IThirdwebWallet
     /// </summary>
     public async Task ForceDeploy()
     {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             return;
         }
@@ -310,14 +278,14 @@ public class SmartWallet : IThirdwebWallet
             throw new InvalidOperationException("SmartAccount.ForceDeploy: Account is already deploying.");
         }
 
-        var input = new ThirdwebTransactionInput(this._chainId)
+        var input = new ThirdwebTransactionInput(this.ActiveChainId)
         {
             Data = "0x",
             To = this._accountContract.Address,
             Value = new HexBigInteger(0)
         };
         var txHash = await this.SendTransaction(input).ConfigureAwait(false);
-        _ = await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+        _ = await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this.ActiveChainId, txHash).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -334,7 +302,7 @@ public class SmartWallet : IThirdwebWallet
         if (isCounterFactual)
         {
             var erc6492Sig = new ABIEncode().DecodeEncodedComplexType<Erc6492Signature>(signature.HexToBytes().Take(signature.Length - 32).ToArray());
-            var multicall3 = await ThirdwebContract.Create(this.Client, Constants.MULTICALL3_ADDRESS, this._chainId).ConfigureAwait(false);
+            var multicall3 = await ThirdwebContract.Create(this.Client, Constants.MULTICALL3_ADDRESS, this.ActiveChainId).ConfigureAwait(false);
             List<Multicall3_Result> result;
             try
             {
@@ -402,7 +370,7 @@ public class SmartWallet : IThirdwebWallet
     /// <returns>A list of admin addresses.</returns>
     public async Task<List<string>> GetAllAdmins()
     {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -417,7 +385,7 @@ public class SmartWallet : IThirdwebWallet
     /// <returns>A list of <see cref="SignerPermissions"/>.</returns>
     public async Task<List<SignerPermissions>> GetAllActiveSigners()
     {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -446,7 +414,7 @@ public class SmartWallet : IThirdwebWallet
         string reqValidityEndTimestamp
     )
     {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -464,17 +432,19 @@ public class SmartWallet : IThirdwebWallet
             Uid = Guid.NewGuid().ToByteArray()
         };
 
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
+        var signature = await EIP712
+            .GenerateSignature_SmartAccount("Account", "1", this.ActiveChainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount)
+            .ConfigureAwait(false);
         // Do it this way to avoid triggering an extra sig from estimation
         var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-        var txInput = new ThirdwebTransactionInput(this._chainId)
+        var txInput = new ThirdwebTransactionInput(this.ActiveChainId)
         {
             To = this._accountContract.Address,
             Value = new HexBigInteger(0),
             Data = data
         };
         var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this.ActiveChainId, txHash).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -484,7 +454,7 @@ public class SmartWallet : IThirdwebWallet
     /// <returns>The transaction receipt.</returns>
     public async Task<ThirdwebTransactionReceipt> RevokeSessionKey(string signerAddress)
     {
-        return await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false)
+        return await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false)
             ? throw new InvalidOperationException("Account Permissions are not supported in ZkSync")
             : await this.CreateSessionKey(signerAddress, new List<string>(), "0", "0", "0", "0", Utils.GetUnixTimeStampIn10Years().ToString()).ConfigureAwait(false);
     }
@@ -496,7 +466,7 @@ public class SmartWallet : IThirdwebWallet
     /// <returns>The transaction receipt.</returns>
     public async Task<ThirdwebTransactionReceipt> AddAdmin(string admin)
     {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -514,16 +484,16 @@ public class SmartWallet : IThirdwebWallet
             Uid = Guid.NewGuid().ToByteArray()
         };
 
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress(), request, this._personalAccount).ConfigureAwait(false);
+        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this.ActiveChainId, await this.GetAddress(), request, this._personalAccount).ConfigureAwait(false);
         var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-        var txInput = new ThirdwebTransactionInput(this._chainId)
+        var txInput = new ThirdwebTransactionInput(this.ActiveChainId)
         {
             To = this._accountContract.Address,
             Value = new HexBigInteger(0),
             Data = data
         };
         var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this.ActiveChainId, txHash).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -533,7 +503,7 @@ public class SmartWallet : IThirdwebWallet
     /// <returns>The transaction receipt.</returns>
     public async Task<ThirdwebTransactionReceipt> RemoveAdmin(string admin)
     {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             throw new InvalidOperationException("Account Permissions are not supported in ZkSync");
         }
@@ -551,16 +521,18 @@ public class SmartWallet : IThirdwebWallet
             Uid = Guid.NewGuid().ToByteArray()
         };
 
-        var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount).ConfigureAwait(false);
+        var signature = await EIP712
+            .GenerateSignature_SmartAccount("Account", "1", this.ActiveChainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount)
+            .ConfigureAwait(false);
         var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
-        var txInput = new ThirdwebTransactionInput(this._chainId)
+        var txInput = new ThirdwebTransactionInput(this.ActiveChainId)
         {
             To = this._accountContract.Address,
             Value = new HexBigInteger(0),
             Data = data
         };
         var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this.ActiveChainId, txHash).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -572,7 +544,7 @@ public class SmartWallet : IThirdwebWallet
     {
         await this.SwitchNetwork(transaction.ChainId.Value).ConfigureAwait(false);
 
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             throw new Exception("User Operations are not supported in ZkSync");
         }
@@ -623,7 +595,7 @@ public class SmartWallet : IThirdwebWallet
             try
             {
                 this._isApproving = true;
-                var tokenContract = await ThirdwebContract.Create(this.Client, this._erc20PaymasterToken, this._chainId).ConfigureAwait(false);
+                var tokenContract = await ThirdwebContract.Create(this.Client, this._erc20PaymasterToken, this.ActiveChainId).ConfigureAwait(false);
                 var approvedAmount = await tokenContract.ERC20_Allowance(this._accountContract.Address, this._erc20PaymasterAddress).ConfigureAwait(false);
                 if (approvedAmount == 0)
                 {
@@ -997,12 +969,12 @@ public class SmartWallet : IThirdwebWallet
         await this.SwitchNetwork(transactionInput.ChainId.Value).ConfigureAwait(false);
 
         var transaction = await ThirdwebTransaction
-            .Create(await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false) ? this._personalAccount : this, transactionInput)
+            .Create(await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false) ? this._personalAccount : this, transactionInput)
             .ConfigureAwait(false);
         transaction = await ThirdwebTransaction.Prepare(transaction).ConfigureAwait(false);
         transactionInput = transaction.Input;
 
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             if (this._gasless)
             {
@@ -1023,7 +995,7 @@ public class SmartWallet : IThirdwebWallet
                             data = Utils.BytesToHex(zkTx.Data),
                             maxFeePerGas = zkTx.MaxFeePerGas.ToString(),
                             maxPriorityFeePerGas = zkTx.MaxPriorityFeePerGas.ToString(),
-                            chainId = this._chainId.ToString(),
+                            chainId = this.ActiveChainId.ToString(),
                             signedTransaction = zkTxSigned,
                             paymaster
                         }
@@ -1046,12 +1018,12 @@ public class SmartWallet : IThirdwebWallet
     public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
     {
         var txHash = await this.SendTransaction(transactionInput).ConfigureAwait(false);
-        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this._chainId, txHash).ConfigureAwait(false);
+        return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this.ActiveChainId, txHash).ConfigureAwait(false);
     }
 
     public async Task<string> GetAddress()
     {
-        return await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false)
+        return await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false)
             ? await this._personalAccount.GetAddress().ConfigureAwait(false)
             : this._accountContract.Address.ToChecksumAddress();
     }
@@ -1083,7 +1055,7 @@ public class SmartWallet : IThirdwebWallet
     /// <returns>The signature.</returns>
     public async Task<string> PersonalSign(string message)
     {
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             return await this._personalAccount.PersonalSign(message).ConfigureAwait(false);
         }
@@ -1091,7 +1063,7 @@ public class SmartWallet : IThirdwebWallet
         var originalMsgHash = Encoding.UTF8.GetBytes(message).HashPrefixedMessage();
 
         var sig = await EIP712
-            .GenerateSignature_SmartAccount_AccountMessage("Account", "1", this._chainId, await this.GetAddress().ConfigureAwait(false), originalMsgHash, this._personalAccount)
+            .GenerateSignature_SmartAccount_AccountMessage("Account", "1", this.ActiveChainId, await this.GetAddress().ConfigureAwait(false), originalMsgHash, this._personalAccount)
             .ConfigureAwait(false);
 
         if (!await this.IsDeployed().ConfigureAwait(false))
@@ -1134,7 +1106,7 @@ public class SmartWallet : IThirdwebWallet
     {
         await this.SwitchNetwork(transaction.ChainId.Value).ConfigureAwait(false);
 
-        if (await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false))
+        if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {
             throw new Exception("Offline Signing is not supported in ZkSync");
         }
@@ -1158,7 +1130,7 @@ public class SmartWallet : IThirdwebWallet
 
     public async Task<bool> IsConnected()
     {
-        return await Utils.IsZkSync(this.Client, this._chainId).ConfigureAwait(false) ? await this._personalAccount.IsConnected().ConfigureAwait(false) : this._accountContract != null;
+        return await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false) ? await this._personalAccount.IsConnected().ConfigureAwait(false) : this._accountContract != null;
     }
 
     public Task Disconnect()
@@ -1228,6 +1200,43 @@ public class SmartWallet : IThirdwebWallet
     public Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress, bool willSelfExecute)
     {
         return this._personalAccount.SignAuthorization(chainId, contractAddress, willSelfExecute);
+    }
+
+    public async Task SwitchNetwork(BigInteger chainId)
+    {
+        if (this.ActiveChainId == chainId)
+        {
+            return;
+        }
+
+        if (this.UseERC20Paymaster)
+        {
+            throw new InvalidOperationException("You cannot switch networks when using an ERC20 paymaster yet.");
+        }
+
+        this._bundlerUrl = this._bundlerUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._bundlerUrl;
+        this._paymasterUrl = this._paymasterUrl.Contains(".thirdweb.com") ? $"https://{chainId}.bundler.thirdweb.com/v2" : this._paymasterUrl;
+
+        if (!await Utils.IsZkSync(this.Client, chainId).ConfigureAwait(false))
+        {
+            this._entryPointContract = await ThirdwebContract.Create(this.Client, this._entryPointContract.Address, chainId, this._entryPointContract.Abi).ConfigureAwait(false);
+            this._factoryContract = await ThirdwebContract.Create(this.Client, this._factoryContract.Address, chainId, this._factoryContract.Abi).ConfigureAwait(false);
+
+            var personalAddress = await this._personalAccount.GetAddress().ConfigureAwait(false);
+            var accountAddress = await ThirdwebContract.Read<string>(this._factoryContract, "getAddress", personalAddress, Array.Empty<byte>()).ConfigureAwait(false);
+            this._accountContract = await ThirdwebContract.Create(this._personalAccount.Client, accountAddress, chainId, Constants.ACCOUNT_V06_ABI).ConfigureAwait(false);
+        }
+
+        this.ActiveChainId = chainId;
+
+        try
+        {
+            await this._personalAccount.SwitchNetwork(chainId).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Wallet likely still viable in Account Abstraction context
+        }
     }
 
     #endregion

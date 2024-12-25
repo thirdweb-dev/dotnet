@@ -469,5 +469,10 @@ public class PrivateKeyWallet : IThirdwebWallet
         return new EIP7702Authorization(chainId, contractAddress, nonce, authorizationSignature.V, authorizationSignature.R, authorizationSignature.S);
     }
 
+    public Task SwitchNetwork(BigInteger chainId)
+    {
+        return Task.CompletedTask;
+    }
+
     #endregion
 }
