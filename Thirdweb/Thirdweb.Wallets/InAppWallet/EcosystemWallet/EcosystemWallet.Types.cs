@@ -5,22 +5,40 @@ namespace Thirdweb;
 
 public partial class EcosystemWallet
 {
+    /// <summary>
+    /// User linked account details.
+    /// </summary>
     public class UserStatusResponse
     {
+        /// <summary>
+        /// The user's linked accounts.
+        /// </summary>
         [JsonProperty("linkedAccounts")]
-        internal List<LinkedAccount> LinkedAccounts { get; set; }
+        public List<LinkedAccount> LinkedAccounts { get; set; }
 
+        /// <summary>
+        /// The user's wallets, generally only one wallet is returned.
+        /// </summary>
         [JsonProperty("wallets")]
-        internal List<ShardedOrEnclaveWallet> Wallets { get; set; }
+        public List<ShardedOrEnclaveWallet> Wallets { get; set; }
     }
 
-    internal class ShardedOrEnclaveWallet
+    /// <summary>
+    /// Represents a user's embedded wallet.
+    /// </summary>
+    public class ShardedOrEnclaveWallet
     {
+        /// <summary>
+        /// The public address of the wallet.
+        /// </summary>
         [JsonProperty("address")]
-        internal string Address { get; set; }
+        public string Address { get; set; }
 
+        /// <summary>
+        /// The wallet's creation date.
+        /// </summary>
         [JsonProperty("createdAt")]
-        internal DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         [JsonProperty("type")]
         internal string Type { get; set; }

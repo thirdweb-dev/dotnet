@@ -285,7 +285,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     #region Wallet Specific
 
     /// <summary>
-    /// Gets the user details from the enclave wallet.
+    /// Gets the user details from the enclave wallet. For auth provider specific details use GetUserAuthDetails.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation. The task result contains the user details.</returns>
     public async Task<UserStatusResponse> GetUserDetails()
@@ -294,7 +294,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     }
 
     /// <summary>
-    /// Gets the user auth details from the corresponding auth provider.
+    /// Gets the user auth details from the corresponding auth provider. For linked account details use GetUserDetails or GetLinkedAccounts.
     /// </summary>
     /// <returns>The user auth details as a JObject</returns>
     public JObject GetUserAuthDetails()
