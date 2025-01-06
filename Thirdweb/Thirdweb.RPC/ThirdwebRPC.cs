@@ -52,10 +52,15 @@ public class ThirdwebRPC : IDisposable
             throw new ArgumentException("Invalid Chain ID");
         }
 
-        var key =
-            client.RpcOverrides != null && client.RpcOverrides.ContainsKey(chainId)
-                ? $"{client.ClientId}_{chainId}_{client.RpcOverrides[chainId]}_{client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc)}"
-                : $"{client.ClientId}_{chainId}_{client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc)}";
+        string key;
+        if (client.RpcOverrides != null && client.RpcOverrides.TryGetValue(chainId, out var rpcOverride))
+        {
+            key = $"{client.ClientId}_{chainId}_{rpcOverride}_{client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc)}";
+        }
+        else
+        {
+            key = $"{client.ClientId}_{chainId}_{client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc)}";
+        }
 
         if (!_rpcs.ContainsKey(key))
         {
