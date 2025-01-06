@@ -2,6 +2,8 @@
 
 public static class Constants
 {
+    public const string VERSION = "2.13.0";
+
     public const string IERC20_INTERFACE_ID = "0x36372b07";
     public const string IERC721_INTERFACE_ID = "0x80ac58cd";
     public const string IERC1155_INTERFACE_ID = "0xd9b67a26";
@@ -25,7 +27,6 @@ public static class Constants
     public const string REDIRECT_HTML =
         "<html lang=\"en\" style=\"background-color:#050505;color:#fff\"><body style=\"position:relative;display:flex;flex-direction:column;height:100%;width:100%;margin:0;justify-content:center;align-items:center;text-align:center;overflow:hidden\"><div style=\"position:fixed;top:0;left:50%;background-image:radial-gradient(ellipse at center,hsl(260deg 78% 35% / 40%),transparent 60%);width:2400px;height:1400px;transform:translate(-50%,-50%);z-index:-1\"></div><h1>Authentication Complete!</h1><h2>You may close this tab now and return to the game</h2></body></html>";
 
-    internal const string VERSION = "2.12.1";
     internal const int DEFAULT_FETCH_TIMEOUT = 120000;
     internal const string DUMMY_SIG = "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
     internal const string DUMMY_PAYMASTER_AND_DATA_HEX =
