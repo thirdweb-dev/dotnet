@@ -3,6 +3,8 @@ using System.Numerics;
 using System.Text;
 using Newtonsoft.Json;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Tests")]
+
 namespace Thirdweb;
 
 /// <summary>
@@ -10,10 +12,11 @@ namespace Thirdweb;
 /// </summary>
 public class ThirdwebRPC : IDisposable
 {
+    internal Uri RpcUrl { get; }
+
     private const int BatchSizeLimit = 100;
     private readonly TimeSpan _batchInterval = TimeSpan.FromMilliseconds(50);
 
-    private readonly Uri _rpcUrl;
     private readonly TimeSpan _rpcTimeout;
     private readonly Dictionary<string, (object Response, DateTime Timestamp)> _cache = new();
     private readonly TimeSpan _cacheDuration = TimeSpan.FromMilliseconds(25);
@@ -49,7 +52,10 @@ public class ThirdwebRPC : IDisposable
             throw new ArgumentException("Invalid Chain ID");
         }
 
-        var key = $"{client.ClientId}_{chainId}_{client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc)}";
+        var key =
+            client.RpcOverrides != null && client.RpcOverrides.ContainsKey(chainId)
+                ? $"{client.ClientId}_{chainId}_{client.RpcOverrides[chainId]}_{client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc)}"
+                : $"{client.ClientId}_{chainId}_{client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc)}";
 
         if (!_rpcs.ContainsKey(key))
         {
@@ -77,7 +83,7 @@ public class ThirdwebRPC : IDisposable
     {
         lock (this._cacheLock)
         {
-            var cacheKey = GetCacheKey(this._rpcUrl.ToString(), method, parameters);
+            var cacheKey = GetCacheKey(this.RpcUrl.ToString(), method, parameters);
             if (this._cache.TryGetValue(cacheKey, out var cachedItem) && (DateTime.Now - cachedItem.Timestamp) < this._cacheDuration)
             {
                 if (cachedItem.Response is TResponse cachedResponse)
@@ -121,7 +127,7 @@ public class ThirdwebRPC : IDisposable
         {
             lock (this._cacheLock)
             {
-                var cacheKey = GetCacheKey(this._rpcUrl.ToString(), method, parameters);
+                var cacheKey = GetCacheKey(this.RpcUrl.ToString(), method, parameters);
                 this._cache[cacheKey] = (response, DateTime.Now);
             }
             return response;
@@ -133,7 +139,7 @@ public class ThirdwebRPC : IDisposable
                 var deserializedResponse = JsonConvert.DeserializeObject<TResponse>(JsonConvert.SerializeObject(result));
                 lock (this._cacheLock)
                 {
-                    var cacheKey = GetCacheKey(this._rpcUrl.ToString(), method, parameters);
+                    var cacheKey = GetCacheKey(this.RpcUrl.ToString(), method, parameters);
                     this._cache[cacheKey] = (deserializedResponse, DateTime.Now);
                 }
                 return deserializedResponse;
@@ -148,7 +154,8 @@ public class ThirdwebRPC : IDisposable
     private ThirdwebRPC(ThirdwebClient client, BigInteger chainId)
     {
         this._httpClient = client.HttpClient;
-        this._rpcUrl = new Uri($"https://{chainId}.rpc.thirdweb.com/{client.ClientId}");
+        var rpcOverride = client.RpcOverrides?.FirstOrDefault(r => r.Key == chainId);
+        this.RpcUrl = new Uri(rpcOverride?.Value ?? $"https://{chainId}.rpc.thirdweb.com/{client.ClientId}");
         this._rpcTimeout = TimeSpan.FromMilliseconds(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Rpc));
         _ = this.StartBackgroundFlushAsync();
     }
@@ -161,7 +168,7 @@ public class ThirdwebRPC : IDisposable
         try
         {
             using var cts = new CancellationTokenSource(this._rpcTimeout);
-            var response = await this._httpClient.PostAsync(this._rpcUrl.ToString(), content, cts.Token).ConfigureAwait(false);
+            var response = await this._httpClient.PostAsync(this.RpcUrl.ToString(), content, cts.Token).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
