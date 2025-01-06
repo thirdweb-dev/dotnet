@@ -239,6 +239,8 @@ public class SmartWalletTests : BaseTests
             reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
         );
 
+        await ThirdwebTask.Delay(1000);
+
         signers = await account.GetAllActiveSigners();
 
         Assert.Equal(count + 1, signers.Count);
