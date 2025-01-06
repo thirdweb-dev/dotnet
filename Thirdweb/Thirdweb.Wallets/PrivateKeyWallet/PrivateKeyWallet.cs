@@ -393,7 +393,7 @@ public class PrivateKeyWallet : IThirdwebWallet
             // (var tx, var sig) = Utils.DecodeTransaction(returnBytes);
 
             signedTransaction = returnBytes.ToHex();
-            Console.WriteLine(signedTransaction);
+            // Console.WriteLine(signedTransaction);
 
             // (var tx, var sig) = Utils.DecodeTransaction("0x" + signedTransaction);
         }

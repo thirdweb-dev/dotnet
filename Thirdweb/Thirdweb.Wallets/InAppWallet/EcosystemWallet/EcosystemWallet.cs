@@ -308,7 +308,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         var parts = authToken.Split('.');
         if (parts.Length != 3)
         {
-            Console.WriteLine("Invalid JWT");
+            throw new InvalidOperationException("Invalid JWT");
         }
 
         static string Base64UrlDecode(string input)
@@ -335,7 +335,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         parts = jwtToken.Split('.');
         if (parts.Length != 3)
         {
-            Console.WriteLine("Invalid JWT");
+            throw new InvalidOperationException("Invalid JWT");
         }
 
         payload = JObject.Parse(Base64UrlDecode(parts[1]));

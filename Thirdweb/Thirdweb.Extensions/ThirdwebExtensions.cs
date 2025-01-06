@@ -1621,6 +1621,35 @@ public static class ThirdwebExtensions
     #region DropERC721
 
     /// <summary>
+    /// Burn a specific ERC721 token with a given token ID.
+    /// </summary>
+    /// <param name="contract">The contract to interact with.</param>
+    /// <param name="wallet">The wallet to use for the transaction.</param>
+    /// <param name="tokenId">The ID of the token to burn.</param>
+    /// <returns>A task representing the asynchronous operation, with a ThirdwebTransactionReceipt result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the contract or wallet is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the token ID is less than 0.</exception>
+    public static async Task<ThirdwebTransactionReceipt> DropER721_Burn(this ThirdwebContract contract, IThirdwebWallet wallet, BigInteger tokenId)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        if (wallet == null)
+        {
+            throw new ArgumentNullException(nameof(wallet));
+        }
+
+        if (tokenId < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+        }
+
+        return await ThirdwebContract.Write(wallet, contract, "burn", 0, tokenId);
+    }
+
+    /// <summary>
     /// Claim a specific quantity of ERC721 tokens for a receiver.
     /// </summary>
     /// <param name="contract">The contract to interact with.</param>
@@ -1728,6 +1757,54 @@ public static class ThirdwebExtensions
     #endregion
 
     #region DropERC1155
+
+    /// <summary>
+    /// Burn a specific quantity of ERC1155 tokens for a specific account with given token IDs and amounts to burn.
+    /// </summary>
+    /// <param name="contract">The contract to interact with.</param>
+    /// <param name="wallet">The wallet to use for the transaction.</param>
+    /// <param name="account">The address of the account to burn the tokens from.</param>
+    /// <param name="tokenIds">The IDs of the tokens to burn.</param>
+    /// <param name="amounts">The amounts of tokens to burn.</param>
+    /// <returns>A task representing the asynchronous operation, with a ThirdwebTransactionReceipt result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the contract, wallet, or account is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when the account is null or empty, or the token IDs or amounts are null or empty, or the token IDs and amounts have different lengths.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the token IDs or amounts have a length less than or equal to 0.</exception>
+    /// <exception cref="ArgumentException">Thrown when the token IDs and amounts have different lengths.</exception>
+    public static async Task<ThirdwebTransactionReceipt> DropERC1155_BurnBatch(this ThirdwebContract contract, IThirdwebWallet wallet, string account, BigInteger[] tokenIds, BigInteger[] amounts)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        if (wallet == null)
+        {
+            throw new ArgumentNullException(nameof(wallet));
+        }
+
+        if (string.IsNullOrEmpty(account))
+        {
+            throw new ArgumentException("Account must be provided");
+        }
+
+        if (tokenIds == null || tokenIds.Length == 0)
+        {
+            throw new ArgumentException("Token IDs must be provided");
+        }
+
+        if (amounts == null || amounts.Length == 0)
+        {
+            throw new ArgumentException("Amounts must be provided");
+        }
+
+        if (tokenIds.Length != amounts.Length)
+        {
+            throw new ArgumentException("Token IDs and amounts must have the same length");
+        }
+
+        return await ThirdwebContract.Write(wallet, contract, "burnBatch", 0, account, tokenIds, amounts);
+    }
 
     /// <summary>
     /// Claim a specific quantity of ERC1155 tokens for a receiver.
@@ -2027,6 +2104,35 @@ public static class ThirdwebExtensions
     #region TokenERC721
 
     /// <summary>
+    /// Burn a specific ERC721 token with a given token ID.
+    /// </summary>
+    /// <param name="contract">The contract to interact with.</param>
+    /// <param name="wallet">The wallet to use for the transaction.</param>
+    /// <param name="tokenId">The ID of the token to burn.</param>
+    /// <returns>A task representing the asynchronous operation, with a ThirdwebTransactionReceipt result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the contract or wallet is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the token ID is less than 0.</exception>
+    public static async Task<ThirdwebTransactionReceipt> TokenERC721_Burn(this ThirdwebContract contract, IThirdwebWallet wallet, BigInteger tokenId)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        if (wallet == null)
+        {
+            throw new ArgumentNullException(nameof(wallet));
+        }
+
+        if (tokenId < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+        }
+
+        return await ThirdwebContract.Write(wallet, contract, "burn", 0, tokenId);
+    }
+
+    /// <summary>
     /// Mint a specific ERC721 token to a receiver address with a given URI.
     /// </summary>
     /// <param name="contract">The contract to interact with.</param>
@@ -2241,6 +2347,96 @@ public static class ThirdwebExtensions
     #endregion
 
     #region TokenERC1155
+
+    /// <summary>
+    /// Burn a specific quantity of ERC1155 tokens for a specific account with a given token ID and amount to burn.
+    /// </summary>
+    /// <param name="contract">The contract to interact with.</param>
+    /// <param name="wallet">The wallet to use for the transaction.</param>
+    /// <param name="account">The address of the account to burn the tokens from.</param>
+    /// <param name="tokenId">The ID of the token to burn.</param>
+    /// <param name="amount">The amount of tokens to burn.</param>
+    /// <returns>A task representing the asynchronous operation, with a ThirdwebTransactionReceipt result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the contract, wallet, or account is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when the account is null or empty.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the token ID is less than 0 or the amount is less than or equal to 0.</exception>
+    public static async Task<ThirdwebTransactionReceipt> TokenERC1155_Burn(this ThirdwebContract contract, IThirdwebWallet wallet, string account, BigInteger tokenId, BigInteger amount)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        if (wallet == null)
+        {
+            throw new ArgumentNullException(nameof(wallet));
+        }
+
+        if (string.IsNullOrEmpty(account))
+        {
+            throw new ArgumentException("Account must be provided");
+        }
+
+        if (tokenId < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
+        }
+
+        if (amount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be greater than 0");
+        }
+
+        return await ThirdwebContract.Write(wallet, contract, "burn", 0, account, tokenId, amount);
+    }
+
+    /// <summary>
+    /// Burn a specific quantity of ERC1155 tokens for a specific account with given token IDs and amounts to burn.
+    /// </summary>
+    /// <param name="contract">The contract to interact with.</param>
+    /// <param name="wallet">The wallet to use for the transaction.</param>
+    /// <param name="account">The address of the account to burn the tokens from.</param>
+    /// <param name="tokenIds">The IDs of the tokens to burn.</param>
+    /// <param name="amounts">The amounts of tokens to burn.</param>
+    /// <returns>A task representing the asynchronous operation, with a ThirdwebTransactionReceipt result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the contract, wallet, or account is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when the account is null or empty, or the token IDs or amounts are null or empty, or the token IDs and amounts have different lengths.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the token IDs or amounts have a length less than or equal to 0.</exception>
+    /// <exception cref="ArgumentException">Thrown when the token IDs and amounts have different lengths.</exception>
+    public static async Task<ThirdwebTransactionReceipt> TokenERC1155_BurnBatch(this ThirdwebContract contract, IThirdwebWallet wallet, string account, BigInteger[] tokenIds, BigInteger[] amounts)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        if (wallet == null)
+        {
+            throw new ArgumentNullException(nameof(wallet));
+        }
+
+        if (string.IsNullOrEmpty(account))
+        {
+            throw new ArgumentException("Account must be provided");
+        }
+
+        if (tokenIds == null || tokenIds.Length == 0)
+        {
+            throw new ArgumentException("Token IDs must be provided");
+        }
+
+        if (amounts == null || amounts.Length == 0)
+        {
+            throw new ArgumentException("Amounts must be provided");
+        }
+
+        if (tokenIds.Length != amounts.Length)
+        {
+            throw new ArgumentException("Token IDs and amounts must have the same length");
+        }
+
+        return await ThirdwebContract.Write(wallet, contract, "burnBatch", 0, account, tokenIds, amounts);
+    }
 
     /// <summary>
     /// Mint a specific quantity of ERC1155 tokens to a receiver address with a given URI.
