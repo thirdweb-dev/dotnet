@@ -1,4 +1,6 @@
-﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Tests")]
+﻿using System.Numerics;
+
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Tests")]
 
 namespace Thirdweb;
 
@@ -20,6 +22,7 @@ public class ThirdwebClient
     internal string SecretKey { get; }
     internal string BundleId { get; }
     internal ITimeoutOptions FetchTimeoutOptions { get; }
+    internal Dictionary<BigInteger, string> RpcOverrides { get; }
 
     private ThirdwebClient(
         string clientId = null,
@@ -30,7 +33,8 @@ public class ThirdwebClient
         string sdkName = null,
         string sdkOs = null,
         string sdkPlatform = null,
-        string sdkVersion = null
+        string sdkVersion = null,
+        Dictionary<BigInteger, string> rpcOverrides = null
     )
     {
         if (string.IsNullOrEmpty(clientId) && string.IsNullOrEmpty(secretKey))
@@ -71,6 +75,8 @@ public class ThirdwebClient
 
         this.HttpClient = httpClient ?? new ThirdwebHttpClient();
         this.HttpClient.SetHeaders(defaultHeaders);
+
+        this.RpcOverrides = rpcOverrides;
     }
 
     /// <summary>
@@ -85,6 +91,7 @@ public class ThirdwebClient
     /// <param name="sdkOs">The SDK OS (optional).</param>
     /// <param name="sdkPlatform">The SDK platform (optional).</param>
     /// <param name="sdkVersion">The SDK version (optional).</param>
+    /// <param name="rpcOverrides">Mapping of chain id to your custom rpc for that chain id (optional, defaults to thirdweb RPC).</param>
     /// <returns>A new instance of <see cref="ThirdwebClient"/>.</returns>
     public static ThirdwebClient Create(
         string clientId = null,
@@ -95,9 +102,10 @@ public class ThirdwebClient
         string sdkName = null,
         string sdkOs = null,
         string sdkPlatform = null,
-        string sdkVersion = null
+        string sdkVersion = null,
+        Dictionary<BigInteger, string> rpcOverrides = null
     )
     {
-        return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient, sdkName, sdkOs, sdkPlatform, sdkVersion);
+        return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient, sdkName, sdkOs, sdkPlatform, sdkVersion, rpcOverrides);
     }
 }
