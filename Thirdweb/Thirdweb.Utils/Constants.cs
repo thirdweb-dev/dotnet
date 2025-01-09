@@ -2,7 +2,7 @@
 
 public static class Constants
 {
-    public const string VERSION = "2.13.0";
+    public const string VERSION = "2.14.0";
 
     public const string IERC20_INTERFACE_ID = "0x36372b07";
     public const string IERC721_INTERFACE_ID = "0x80ac58cd";
