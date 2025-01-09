@@ -325,6 +325,18 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region Backend Wallet Auth
+
+// var inAppWalletBackend = await InAppWallet.Create(client: client, authProvider: AuthProvider.Backend, walletSecret: "very-secret");
+// if (!await inAppWalletBackend.IsConnected())
+// {
+//     _ = await inAppWalletBackend.LoginWithBackend();
+// }
+// var inAppWalletBackendAddress = await inAppWalletBackend.GetAddress();
+// Console.WriteLine($"InAppWallet Backend address: {inAppWalletBackendAddress}");
+
+#endregion
+
 #region Account Linking
 
 // var inAppWalletMain = await InAppWallet.Create(client: client, authProvider: AuthProvider.Telegram);

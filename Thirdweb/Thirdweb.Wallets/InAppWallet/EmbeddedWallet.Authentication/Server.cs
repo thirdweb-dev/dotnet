@@ -16,6 +16,8 @@ internal abstract class ServerBase
     internal abstract Task<LoginPayloadData> FetchSiwePayloadAsync(string address, string chainId);
     internal abstract Task<Server.VerifyResult> VerifySiweAsync(LoginPayloadData payload, string signature);
 
+    internal abstract Task<Server.VerifyResult> VerifyBackendAsync(string walletSecret);
+
     internal abstract Task<Server.VerifyResult> VerifyGuestAsync(string sessionId);
 
     internal abstract Task<string> SendEmailOtpAsync(string emailAddress);
@@ -155,8 +157,19 @@ internal partial class Server : ServerBase
         return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
     }
 
-    // login/guest
+    // login/backend
+    internal override async Task<VerifyResult> VerifyBackendAsync(string walletSecret)
+    {
+        var uri = MakeUri2024("/login/backend");
+        var content = MakeHttpContent(new { walletSecret });
+        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
+        var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
+        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+    }
+
+    // login/guest
     internal override async Task<VerifyResult> VerifyGuestAsync(string sessionId)
     {
         var uri = MakeUri2024("/login/guest/callback");
