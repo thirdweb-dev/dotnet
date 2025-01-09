@@ -25,6 +25,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     internal readonly string PhoneNumber;
     internal readonly string AuthProvider;
     internal readonly string LegacyEncryptionKey;
+    internal readonly string WalletSecret;
 
     internal string Address;
 
@@ -46,7 +47,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         string phoneNumber,
         string authProvider,
         IThirdwebWallet siweSigner,
-        string legacyEncryptionKey
+        string legacyEncryptionKey,
+        string walletSecret
     )
     {
         this.Client = client;
@@ -59,6 +61,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         this.PhoneNumber = phoneNumber;
         this.AuthProvider = authProvider;
         this.SiweSigner = siweSigner;
+        this.WalletSecret = walletSecret;
     }
 
     #region Creation
@@ -75,6 +78,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// <param name="storageDirectoryPath">The path to the storage directory.</param>
     /// <param name="siweSigner">The SIWE signer wallet for SIWE authentication.</param>
     /// <param name="legacyEncryptionKey">The encryption key that is no longer required but was used in the past. Only pass this if you had used custom auth before this was deprecated.</param>
+    /// <param name="walletSecret">The wallet secret for Backend authentication.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the created in-app wallet.</returns>
     /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
     public static async Task<EcosystemWallet> Create(
@@ -86,7 +90,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         AuthProvider authProvider = Thirdweb.AuthProvider.Default,
         string storageDirectoryPath = null,
         IThirdwebWallet siweSigner = null,
-        string legacyEncryptionKey = null
+        string legacyEncryptionKey = null,
+        string walletSecret = null
     )
     {
         if (client == null)
@@ -117,6 +122,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             Thirdweb.AuthProvider.Github => "Github",
             Thirdweb.AuthProvider.Twitch => "Twitch",
             Thirdweb.AuthProvider.Steam => "Steam",
+            Thirdweb.AuthProvider.Backend => "Backend",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -150,7 +156,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         try
         {
             var userAddress = await ResumeEnclaveSession(enclaveHttpClient, embeddedWallet, email, phoneNumber, authproviderStr).ConfigureAwait(false);
-            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, legacyEncryptionKey)
+            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, legacyEncryptionKey, walletSecret)
             {
                 Address = userAddress
             };
@@ -158,7 +164,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         catch
         {
             enclaveHttpClient.RemoveHeader("Authorization");
-            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, legacyEncryptionKey)
+            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, legacyEncryptionKey, walletSecret)
             {
                 Address = null
             };
@@ -468,6 +474,13 @@ public partial class EcosystemWallet : IThirdwebWallet
                 }
                 serverRes = await ecosystemWallet.PreAuth_Siwe(ecosystemWallet.SiweSigner, chainId.Value).ConfigureAwait(false);
                 break;
+            case "Backend":
+                if (string.IsNullOrEmpty(ecosystemWallet.WalletSecret))
+                {
+                    throw new ArgumentException("Cannot link account with a Backend wallet without a wallet secret.");
+                }
+                serverRes = await ecosystemWallet.PreAuth_Backend(ecosystemWallet.WalletSecret).ConfigureAwait(false);
+                break;
             case "JWT":
                 if (string.IsNullOrEmpty(jwt))
                 {
@@ -692,12 +705,12 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     private async Task<Server.VerifyResult> PreAuth_Siwe(IThirdwebWallet siweSigner, BigInteger chainId)
     {
-        if (this.SiweSigner == null)
+        if (siweSigner == null)
         {
             throw new ArgumentNullException(nameof(siweSigner), "SIWE Signer wallet cannot be null.");
         }
 
-        if (!await this.SiweSigner.IsConnected().ConfigureAwait(false))
+        if (!await siweSigner.IsConnected().ConfigureAwait(false))
         {
             throw new InvalidOperationException("SIWE Signer wallet must be connected as this operation requires it to sign a message.");
         }
@@ -711,6 +724,23 @@ public partial class EcosystemWallet : IThirdwebWallet
     public async Task<string> LoginWithSiwe(BigInteger chainId)
     {
         var serverRes = await this.PreAuth_Siwe(this.SiweSigner, chainId).ConfigureAwait(false);
+        return await this.PostAuth(serverRes).ConfigureAwait(false);
+    }
+
+    #endregion
+
+    #region Backend
+
+    private async Task<Server.VerifyResult> PreAuth_Backend(string walletSecret)
+    {
+        return string.IsNullOrEmpty(walletSecret)
+            ? throw new ArgumentException("Wallet secret cannot be null or empty.", nameof(walletSecret))
+            : await this.EmbeddedWallet.SignInWithBackendAsync(walletSecret).ConfigureAwait(false);
+    }
+
+    public async Task<string> LoginWithBackend()
+    {
+        var serverRes = await this.PreAuth_Backend(this.WalletSecret).ConfigureAwait(false);
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
@@ -746,13 +776,12 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     private async Task<Server.VerifyResult> PreAuth_JWT(string jwt)
     {
-        return string.IsNullOrEmpty(jwt) ? throw new ArgumentException(nameof(jwt), "JWT cannot be null or empty.") : await this.EmbeddedWallet.SignInWithJwtAsync(jwt).ConfigureAwait(false);
+        return string.IsNullOrEmpty(jwt) ? throw new ArgumentException("JWT cannot be null or empty.", nameof(jwt)) : await this.EmbeddedWallet.SignInWithJwtAsync(jwt).ConfigureAwait(false);
     }
 
     public async Task<string> LoginWithJWT(string jwt)
     {
-        var serverRes = string.IsNullOrEmpty(jwt) ? throw new ArgumentException("JWT cannot be null or empty.", nameof(jwt)) : await this.EmbeddedWallet.SignInWithJwtAsync(jwt).ConfigureAwait(false);
-
+        var serverRes = await this.PreAuth_JWT(jwt).ConfigureAwait(false);
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 

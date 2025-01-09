@@ -23,7 +23,8 @@ public enum AuthProvider
     Coinbase,
     Github,
     Twitch,
-    Steam
+    Steam,
+    Backend
 }
 
 /// <summary>
