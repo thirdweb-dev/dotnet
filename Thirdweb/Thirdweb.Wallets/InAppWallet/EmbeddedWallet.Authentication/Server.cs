@@ -166,7 +166,6 @@ internal partial class Server : ServerBase
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
-        authResult.StoredToken.AuthDetails.AuthIdentifier = walletSecret;
         return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
     }
 
