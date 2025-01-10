@@ -183,8 +183,6 @@ internal class AWS
                     var parsedTimeString = responseContent.Substring(idx + 1, amzDate.Length);
                     var serverTime = DateTime.ParseExact(parsedTimeString, amzDateFormat, System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime();
 
-                    Console.WriteLine($"Server time: {serverTime}");
-
                     return await PostAwsRequestWithDateOverride(
                             credentials,
                             httpClient,
