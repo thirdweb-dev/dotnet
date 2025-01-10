@@ -53,66 +53,18 @@ internal class AWS
         };
     }
 
-    private static async Task<JToken> GenerateDataKey(AwsCredentials credentials, IThirdwebHttpClient httpClient, DateTime? dateOverride = null)
+    private static async Task<JToken> GenerateDataKey(AwsCredentials credentials, IThirdwebHttpClient httpClient)
     {
-        var client = Utils.ReconstructHttpClient(httpClient);
         var endpoint = $"https://kms.{AWS_REGION}.amazonaws.com/";
 
         var payloadForGenerateDataKey = new { KeyId = _migrationKeyId, KeySpec = "AES_256" };
+        var requestBodyString = JsonConvert.SerializeObject(payloadForGenerateDataKey);
 
-        var content = new StringContent(JsonConvert.SerializeObject(payloadForGenerateDataKey), Encoding.UTF8, "application/x-amz-json-1.1");
+        var contentType = "application/x-amz-json-1.1";
 
-        client.AddHeader("X-Amz-Target", "TrentService.GenerateDataKey");
+        var extraHeaders = new Dictionary<string, string> { { "X-Amz-Target", "TrentService.GenerateDataKey" } };
 
-        var dateTimeNow = dateOverride ?? DateTime.UtcNow;
-        var dateStamp = dateTimeNow.ToString("yyyyMMdd");
-        var amzDateFormat = "yyyyMMddTHHmmssZ";
-        var amzDate = dateTimeNow.ToString(amzDateFormat);
-        var canonicalUri = "/";
-
-        var canonicalHeaders = $"host:kms.{AWS_REGION}.amazonaws.com\nx-amz-date:{amzDate}\n";
-        var signedHeaders = "host;x-amz-date";
-
-#if NETSTANDARD
-        using var sha256 = SHA256.Create();
-        var payloadHash = ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(await content.ReadAsStringAsync())));
-#else
-        var payloadHash = ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(await content.ReadAsStringAsync())));
-#endif
-
-        var canonicalRequest = $"POST\n{canonicalUri}\n\n{canonicalHeaders}\n{signedHeaders}\n{payloadHash}";
-
-        var algorithm = "AWS4-HMAC-SHA256";
-        var credentialScope = $"{dateStamp}/{AWS_REGION}/kms/aws4_request";
-
-#if NETSTANDARD
-        var stringToSign = $"{algorithm}\n{amzDate}\n{credentialScope}\n{ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(canonicalRequest)))}";
-#else
-        var stringToSign = $"{algorithm}\n{amzDate}\n{credentialScope}\n{ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalRequest)))}";
-#endif
-
-        var signingKey = GetSignatureKey(credentials.SecretAccessKey, dateStamp, AWS_REGION, "kms");
-        var signature = ToHexString(HMACSHA256(signingKey, stringToSign));
-
-        var authorizationHeader = $"{algorithm} Credential={credentials.AccessKeyId}/{credentialScope}, SignedHeaders={signedHeaders}, Signature={signature}";
-
-        client.AddHeader("x-amz-date", amzDate);
-        client.AddHeader("Authorization", authorizationHeader);
-        client.AddHeader("x-amz-security-token", credentials.SessionToken);
-
-        var response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
-        var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            if (dateOverride == null && responseContent.Contains("InvalidSignatureException"))
-            {
-                var parsedTime = responseContent.Substring(responseContent.LastIndexOf('(') + 1, amzDate.Length);
-                return await GenerateDataKey(credentials, httpClient, DateTime.ParseExact(parsedTime, amzDateFormat, System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime())
-                    .ConfigureAwait(false);
-            }
-            throw new Exception($"Failed to generate data key: {responseContent}");
-        }
+        var responseContent = await PostAwsRequestWithDateOverride(credentials, httpClient, AWS_REGION, "kms", endpoint, "/", "", requestBodyString, contentType, extraHeaders).ConfigureAwait(false);
 
         var responseObject = JToken.Parse(responseContent);
         var plaintextKeyBlob = responseObject["Plaintext"];
@@ -129,54 +81,131 @@ internal class AWS
     private static async Task<MemoryStream> InvokeLambdaWithTemporaryCredentialsAsync(AwsCredentials credentials, string invokePayload, IThirdwebHttpClient httpClient, string lambdaFunction)
     {
         var endpoint = $"https://lambda.{AWS_REGION}.amazonaws.com/2015-03-31/functions/{lambdaFunction}/invocations";
-        var requestBody = new StringContent(invokePayload, Encoding.UTF8, "application/json");
+        var contentType = "application/json";
 
+        var canonicalUri = $"/2015-03-31/functions/{Uri.EscapeDataString(lambdaFunction)}/invocations";
+        var canonicalQueryString = "";
+
+        var extraHeaders = new Dictionary<string, string>();
+
+        var responseContent = await PostAwsRequestWithDateOverride(
+                credentials,
+                httpClient,
+                AWS_REGION,
+                "lambda",
+                endpoint,
+                canonicalUri,
+                canonicalQueryString,
+                invokePayload,
+                contentType,
+                extraHeaders
+            )
+            .ConfigureAwait(false);
+
+        var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(responseContent));
+        return memoryStream;
+    }
+
+    private static async Task<string> PostAwsRequestWithDateOverride(
+        AwsCredentials credentials,
+        IThirdwebHttpClient httpClient,
+        string region,
+        string service,
+        string endpoint,
+        string canonicalUri,
+        string canonicalQueryString,
+        string requestBodyString,
+        string contentType,
+        Dictionary<string, string> extraHeaders,
+        DateTime? dateOverride = null
+    )
+    {
         var client = Utils.ReconstructHttpClient(httpClient);
 
-        var dateTimeNow = DateTime.UtcNow;
-        var dateStamp = dateTimeNow.ToString("yyyyMMdd");
-        var amzDate = dateTimeNow.ToString("yyyyMMddTHHmmssZ");
+        if (extraHeaders != null)
+        {
+            foreach (var kvp in extraHeaders)
+            {
+                client.AddHeader(kvp.Key, kvp.Value);
+            }
+        }
 
-        var canonicalUri = "/2015-03-31/functions/" + Uri.EscapeDataString(lambdaFunction) + "/invocations";
-        var canonicalQueryString = "";
-        var canonicalHeaders = $"host:lambda.{AWS_REGION}.amazonaws.com\nx-amz-date:{amzDate}\n";
+        var dateTimeNow = dateOverride ?? DateTime.UtcNow;
+        var amzDateFormat = "yyyyMMddTHHmmssZ";
+        var amzDate = dateTimeNow.ToString(amzDateFormat);
+        var dateStamp = dateTimeNow.ToString("yyyyMMdd");
+
+        var canonicalHeaders = $"host:{new Uri(endpoint).Host}\n" + $"x-amz-date:{amzDate}\n";
         var signedHeaders = "host;x-amz-date";
+
 #if NETSTANDARD
         using var sha256 = SHA256.Create();
-        var payloadHash = ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(invokePayload)));
+        var payloadHash = ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(requestBodyString)));
 #else
-        var payloadHash = ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(invokePayload)));
+        var payloadHash = ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(requestBodyString)));
 #endif
+
         var canonicalRequest = $"POST\n{canonicalUri}\n{canonicalQueryString}\n{canonicalHeaders}\n{signedHeaders}\n{payloadHash}";
 
         var algorithm = "AWS4-HMAC-SHA256";
-        var credentialScope = $"{dateStamp}/{AWS_REGION}/lambda/aws4_request";
+        var credentialScope = $"{dateStamp}/{region}/{service}/aws4_request";
 #if NETSTANDARD
         var stringToSign = $"{algorithm}\n{amzDate}\n{credentialScope}\n{ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(canonicalRequest)))}";
 #else
         var stringToSign = $"{algorithm}\n{amzDate}\n{credentialScope}\n{ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalRequest)))}";
 #endif
 
-        var signingKey = GetSignatureKey(credentials.SecretAccessKey, dateStamp, AWS_REGION, "lambda");
+        var signingKey = GetSignatureKey(credentials.SecretAccessKey, dateStamp, region, service);
         var signature = ToHexString(HMACSHA256(signingKey, stringToSign));
 
         var authorizationHeader = $"{algorithm} Credential={credentials.AccessKeyId}/{credentialScope}, SignedHeaders={signedHeaders}, Signature={signature}";
 
         client.AddHeader("x-amz-date", amzDate);
         client.AddHeader("Authorization", authorizationHeader);
-        client.AddHeader("x-amz-security-token", credentials.SessionToken);
 
-        var response = await client.PostAsync(endpoint, requestBody).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(credentials.SessionToken))
+        {
+            client.AddHeader("x-amz-security-token", credentials.SessionToken);
+        }
 
+        var content = new StringContent(requestBodyString, Encoding.UTF8, contentType);
+
+        var response = await client.PostAsync(endpoint, content).ConfigureAwait(false);
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception($"Lambda invocation failed: {responseContent}");
+            if (dateOverride == null && responseContent.Contains("Signature expired"))
+            {
+                var idx = responseContent.LastIndexOf('(');
+                if (idx > -1)
+                {
+                    var parsedTimeString = responseContent.Substring(idx + 1, amzDate.Length);
+                    var serverTime = DateTime.ParseExact(parsedTimeString, amzDateFormat, System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime();
+
+                    Console.WriteLine($"Server time: {serverTime}");
+
+                    return await PostAwsRequestWithDateOverride(
+                            credentials,
+                            httpClient,
+                            region,
+                            service,
+                            endpoint,
+                            canonicalUri,
+                            canonicalQueryString,
+                            requestBodyString,
+                            contentType,
+                            extraHeaders,
+                            serverTime
+                        )
+                        .ConfigureAwait(false);
+                }
+            }
+
+            throw new Exception($"AWS request failed: {responseContent}");
         }
 
-        var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(responseContent));
-        return memoryStream;
+        return responseContent;
     }
 
     private static byte[] HMACSHA256(byte[] key, string data)

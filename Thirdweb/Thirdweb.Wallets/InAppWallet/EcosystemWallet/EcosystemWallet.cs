@@ -264,7 +264,6 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     private async Task<string> MigrateShardToEnclave(Server.VerifyResult authResult)
     {
-        // TODO: For recovery code, allow old encryption keys as overrides to migrate sharded custom auth?
         var (address, encryptedPrivateKeyB64, ivB64, kmsCiphertextB64) = await this.EmbeddedWallet
             .GenerateEncryptionDataAsync(authResult.AuthToken, this.LegacyEncryptionKey ?? authResult.RecoveryCode)
             .ConfigureAwait(false);
