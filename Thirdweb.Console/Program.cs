@@ -8,6 +8,7 @@ using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Thirdweb;
+using Thirdweb.AI;
 using Thirdweb.Pay;
 
 DotEnv.Load();
@@ -32,6 +33,15 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
 // var nfts = await contract.ERC721_GetAllNFTs();
 // Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
+
+#endregion
+
+#region AI
+
+var nebula = await ThirdwebNebula.Create(client);
+var myWallet = await PrivateKeyWallet.Generate(client);
+var response = await nebula.Chat(prompt: "How much ETH is in my wallet?", wallet: myWallet, context: new NebulaContext(chainIds: new List<BigInteger> { 421614 }));
+Console.WriteLine($"Response: {response.Message}");
 
 #endregion
 
