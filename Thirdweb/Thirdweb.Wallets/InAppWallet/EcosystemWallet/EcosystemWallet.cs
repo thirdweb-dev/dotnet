@@ -498,6 +498,10 @@ public partial class EcosystemWallet : IThirdwebWallet
             case "Guest":
                 serverRes = await ecosystemWallet.PreAuth_Guest().ConfigureAwait(false);
                 break;
+            case "SiweExternal":
+                // TODO: Allow enforcing wallet ids in linking flow?
+                serverRes = await ecosystemWallet.PreAuth_SiweExternal(isMobile ?? false, browserOpenAction, null, mobileRedirectScheme, browser).ConfigureAwait(false);
+                break;
             case "Google":
             case "Apple":
             case "Facebook":
