@@ -1158,7 +1158,9 @@ public class SmartWallet : IThirdwebWallet
         IThirdwebBrowser browser = null,
         BigInteger? chainId = null,
         string jwt = null,
-        string payload = null
+        string payload = null,
+        string defaultSessionIdOverride = null,
+        List<string> forceWalletIds = null
     )
     {
         var personalWallet = await this.GetPersonalWallet().ConfigureAwait(false);
@@ -1180,7 +1182,9 @@ public class SmartWallet : IThirdwebWallet
         }
         else
         {
-            return await personalWallet.LinkAccount(walletToLink, otp, isMobile, browserOpenAction, mobileRedirectScheme, browser, chainId, jwt, payload).ConfigureAwait(false);
+            return await personalWallet
+                .LinkAccount(walletToLink, otp, isMobile, browserOpenAction, mobileRedirectScheme, browser, chainId, jwt, payload, defaultSessionIdOverride, forceWalletIds)
+                .ConfigureAwait(false);
         }
     }
 

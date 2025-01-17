@@ -427,7 +427,9 @@ public partial class EcosystemWallet : IThirdwebWallet
         IThirdwebBrowser browser = null,
         BigInteger? chainId = null,
         string jwt = null,
-        string payload = null
+        string payload = null,
+        string defaultSessionIdOverride = null,
+        List<string> forceWalletIds = null
     )
     {
         if (!await this.IsConnected().ConfigureAwait(false))
@@ -496,11 +498,10 @@ public partial class EcosystemWallet : IThirdwebWallet
                 serverRes = await ecosystemWallet.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
                 break;
             case "Guest":
-                serverRes = await ecosystemWallet.PreAuth_Guest().ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_Guest(defaultSessionIdOverride).ConfigureAwait(false);
                 break;
             case "SiweExternal":
-                // TODO: Allow enforcing wallet ids in linking flow?
-                serverRes = await ecosystemWallet.PreAuth_SiweExternal(isMobile ?? false, browserOpenAction, null, mobileRedirectScheme, browser).ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_SiweExternal(isMobile ?? false, browserOpenAction, forceWalletIds, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             case "Google":
             case "Apple":
@@ -827,7 +828,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     #region Guest
 
-    private async Task<Server.VerifyResult> PreAuth_Guest()
+    private async Task<Server.VerifyResult> PreAuth_Guest(string defaultSessionIdOverride = null)
     {
         var sessionData = this.EmbeddedWallet.GetSessionData();
         string sessionId;
@@ -837,15 +838,15 @@ public partial class EcosystemWallet : IThirdwebWallet
         }
         else
         {
-            sessionId = Guid.NewGuid().ToString();
+            sessionId = defaultSessionIdOverride ?? Guid.NewGuid().ToString();
         }
         var serverRes = await this.EmbeddedWallet.SignInWithGuestAsync(sessionId).ConfigureAwait(false);
         return serverRes;
     }
 
-    public async Task<string> LoginWithGuest()
+    public async Task<string> LoginWithGuest(string defaultSessionIdOverride = null)
     {
-        var serverRes = await this.PreAuth_Guest().ConfigureAwait(false);
+        var serverRes = await this.PreAuth_Guest(defaultSessionIdOverride).ConfigureAwait(false);
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
