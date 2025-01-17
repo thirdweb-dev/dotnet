@@ -11,7 +11,8 @@ public class NebulaChatResult
 
 public class NebulaExecuteResult
 {
-    public ThirdwebTransactionReceipt TransactionReceipt { get; set; }
+    public string Message { get; set; }
+    public List<ThirdwebTransactionReceipt> TransactionReceipts { get; set; }
 }
 
 public class NebulaContext
@@ -67,11 +68,11 @@ public class ThirdwebNebula
         return nebula;
     }
 
-    public async Task<NebulaChatResult> Chat(string prompt, IThirdwebWallet wallet = null, NebulaContext context = null)
+    public async Task<NebulaChatResult> Chat(string message, IThirdwebWallet wallet = null, NebulaContext context = null)
     {
-        if (string.IsNullOrWhiteSpace(prompt))
+        if (string.IsNullOrWhiteSpace(message))
         {
-            throw new ArgumentException("Prompt cannot be null or empty.", nameof(prompt));
+            throw new ArgumentException("Message cannot be null or empty.", nameof(message));
         }
 
         var contextFiler = await PrepareContextFilter(wallet, context);
@@ -80,7 +81,7 @@ public class ThirdwebNebula
             new ChatParamsSingleMessage()
             {
                 SessionId = this.SessionId,
-                Message = prompt,
+                Message = message,
                 ContextFilter = contextFiler,
                 Config = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
             }
@@ -91,28 +92,63 @@ public class ThirdwebNebula
         return new NebulaChatResult() { Message = result.Message, Transactions = transactions == null || transactions.Count == 0 ? null : transactions };
     }
 
-    public async Task<NebulaExecuteResult> Execute(string prompt, IThirdwebWallet wallet = null, NebulaContext context = null)
+    public async Task<NebulaChatResult> Chat(List<string> messages, IThirdwebWallet wallet = null, NebulaContext context = null)
     {
-        if (string.IsNullOrWhiteSpace(prompt))
+        if (messages == null || messages.Count == 0 || messages.Any(string.IsNullOrWhiteSpace))
         {
-            throw new ArgumentException("Prompt cannot be null or empty.", nameof(prompt));
+            throw new ArgumentException("Messages cannot be null or empty.", nameof(messages));
         }
 
         var contextFiler = await PrepareContextFilter(wallet, context);
 
+        var result = await this.ChatClient.SendMessagesAsync(
+            new ChatParamsMultiMessages()
+            {
+                SessionId = this.SessionId,
+                Messages = messages.Select(prompt => new ChatMessage() { Role = "user", Content = prompt }).ToList(),
+                ContextFilter = contextFiler,
+                Config = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
+            }
+        );
+
+        var transactions = await PrepareTransactions(wallet, result.Actions);
+
+        return new NebulaChatResult() { Message = result.Message, Transactions = transactions == null || transactions.Count == 0 ? null : transactions };
+    }
+
+    public async Task<NebulaExecuteResult> Execute(string message, IThirdwebWallet wallet, NebulaContext context = null)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            throw new ArgumentException("Message cannot be null or empty.", nameof(message));
+        }
+
+        if (wallet == null)
+        {
+            throw new ArgumentException("Wallet cannot be null.", nameof(wallet));
+        }
+
+        var contextFiler = await PrepareContextFilter(wallet, context);
         var result = await this.ExecuteClient.ExecuteAsync(
             new ChatParamsSingleMessage()
             {
                 SessionId = this.SessionId,
-                Message = prompt,
+                Message = message,
                 ContextFilter = contextFiler,
-                ExecuteConfig = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
+                ExecuteConfig = new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
             }
         );
 
-        Console.WriteLine(JsonConvert.SerializeObject(result));
-        // TODO
-        throw new NotImplementedException();
+        var transactions = await PrepareTransactions(wallet, result.Actions);
+        if (transactions == null || transactions.Count == 0)
+        {
+            return new NebulaExecuteResult() { Message = result.Message };
+        }
+        else
+        {
+            var receipts = await Task.WhenAll(transactions.Select(ThirdwebTransaction.SendAndWaitForTransactionReceipt));
+            return new NebulaExecuteResult() { Message = result.Message, TransactionReceipts = receipts.ToList() };
+        }
     }
 
     private static async Task<ContextFilter> PrepareContextFilter(IThirdwebWallet wallet, NebulaContext context)

@@ -42,7 +42,7 @@ internal class AgentAction
 internal class ChatMessage
 {
     [JsonProperty("role")]
-    internal string Role { get; set; }
+    internal string Role { get; set; } = "user";
 
     [JsonProperty("content")]
     internal string Content { get; set; }
@@ -141,7 +141,7 @@ internal class ContextFilter
 internal class CreateSessionParams
 {
     [JsonProperty("model_name")]
-    internal string ModelName { get; set; } = "t0-001";
+    internal string ModelName { get; set; } = Constants.NEBULA_DEFAULT_MODEL;
 
     [JsonProperty("title")]
     internal string Title { get; set; }

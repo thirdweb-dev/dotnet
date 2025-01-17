@@ -38,10 +38,26 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region AI
 
+var myChain = 11155111;
+var myWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(client), chainId: myChain, gasless: true);
+
 var nebula = await ThirdwebNebula.Create(client);
-var myWallet = await PrivateKeyWallet.Generate(client);
-var response = await nebula.Chat(prompt: "How much ETH is in my wallet?", wallet: myWallet, context: new NebulaContext(chainIds: new List<BigInteger> { 421614 }));
-Console.WriteLine($"Response: {response.Message}");
+
+// var response = await nebula.Chat(message: "What is my wallet address?", wallet: myWallet);
+// Console.WriteLine($"Single Response: {response.Message}");
+
+// var responses = await nebula.Chat(
+//     messages: new List<string> { "What's the symbol of this contract?", "How much ETH does it have?" },
+//     context: new NebulaContext(contractAddresses: new List<string> { "0xe2cb0eb5147b42095c2FfA6F7ec953bb0bE347D8" }, chainIds: new List<BigInteger> { myChain })
+// );
+// Console.WriteLine($"Multiple Responses: {responses.Message}");
+
+// var receipt = await nebula.Execute(
+//     "Send a transaction with 0x data on sepolia to vitalik.eth using my wallet.",
+//     wallet: myWallet,
+//     context: new NebulaContext(chainIds: new List<BigInteger> { myChain })
+// );
+// Console.WriteLine($"Receipt: {JsonConvert.SerializeObject(receipt, Formatting.Indented)}");
 
 #endregion
 
