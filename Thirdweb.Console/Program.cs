@@ -489,6 +489,31 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #endregion
 
+#region InAppWallet - SiweExternal
+
+// var inAppWalletSiweExternal = await InAppWallet.Create(client: client, authProvider: AuthProvider.SiweExternal);
+// if (!await inAppWalletSiweExternal.IsConnected())
+// {
+//     _ = await inAppWalletSiweExternal.LoginWithSiweExternal(
+//         isMobile: false,
+//         browserOpenAction: (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         forceWalletIds: new List<string> { "io.metamask", "com.coinbase.wallet", "xyz.abs" }
+//     );
+// }
+// var inAppWalletOAuthAddress = await inAppWalletSiweExternal.GetAddress();
+// Console.WriteLine($"InAppWallet SiweExternal address: {inAppWalletOAuthAddress}");
+
+// var inAppWalletAuthDetails = inAppWalletSiweExternal.GetUserAuthDetails();
+// Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
+
+// await inAppWalletSiweExternal.Disconnect();
+
+#endregion
+
 #region Smart Wallet - Gasless Transaction
 
 // var smartWallet = await SmartWallet.Create(privateKeyWallet, 78600);

@@ -123,6 +123,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             Thirdweb.AuthProvider.Twitch => "Twitch",
             Thirdweb.AuthProvider.Steam => "Steam",
             Thirdweb.AuthProvider.Backend => "Backend",
+            Thirdweb.AuthProvider.SiweExternal => "SiweExternal",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -695,6 +696,81 @@ public partial class EcosystemWallet : IThirdwebWallet
     )
     {
         var serverRes = await this.PreAuth_OAuth(isMobile, browserOpenAction, mobileRedirectScheme, browser, cancellationToken).ConfigureAwait(false);
+        return await this.PostAuth(serverRes).ConfigureAwait(false);
+    }
+
+    #endregion
+
+    #region SiweExternal
+
+    private async Task<Server.VerifyResult> PreAuth_SiweExternal(
+        bool isMobile,
+        Action<string> browserOpenAction,
+        List<string> forceWalletIds = null,
+        string mobileRedirectScheme = "thirdweb://",
+        IThirdwebBrowser browser = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
+        var loginUrl = $"https://static.thirdweb.com/auth/siwe?redirectUrl={redirectUrl}";
+        if (forceWalletIds != null && forceWalletIds.Count > 0)
+        {
+            loginUrl += $"&wallets={string.Join(",", forceWalletIds)}";
+        }
+
+        browser ??= new InAppWalletBrowser();
+        var browserResult = await browser.Login(this.Client, loginUrl, redirectUrl, browserOpenAction, cancellationToken).ConfigureAwait(false);
+        switch (browserResult.Status)
+        {
+            case BrowserStatus.Success:
+                break;
+            case BrowserStatus.UserCanceled:
+                throw new TaskCanceledException(browserResult.Error ?? "LoginWithSiwe was cancelled.");
+            case BrowserStatus.Timeout:
+                throw new TimeoutException(browserResult.Error ?? "LoginWithSiwe timed out.");
+            case BrowserStatus.UnknownError:
+            default:
+                throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}");
+        }
+        var callbackUrl =
+            browserResult.Status != BrowserStatus.Success
+                ? throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}")
+                : browserResult.CallbackUrl;
+
+        while (string.IsNullOrEmpty(callbackUrl))
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                throw new TaskCanceledException("LoginWithSiwe was cancelled.");
+            }
+            await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
+        }
+
+        string signature;
+        string payload;
+        var decodedUrl = HttpUtility.UrlDecode(callbackUrl);
+        Uri uri = new(decodedUrl);
+        var queryString = uri.Query;
+        var queryDict = HttpUtility.ParseQueryString(queryString);
+        signature = queryDict["signature"];
+        payload = HttpUtility.UrlDecode(queryDict["payload"]);
+        var payloadData = JsonConvert.DeserializeObject<LoginPayloadData>(payload);
+
+        var serverRes = await this.EmbeddedWallet.SignInWithSiweRawAsync(payloadData, signature).ConfigureAwait(false);
+        return serverRes;
+    }
+
+    public async Task<string> LoginWithSiweExternal(
+        bool isMobile,
+        Action<string> browserOpenAction,
+        List<string> forceWalletIds = null,
+        string mobileRedirectScheme = "thirdweb://",
+        IThirdwebBrowser browser = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var serverRes = await this.PreAuth_SiweExternal(isMobile, browserOpenAction, forceWalletIds, mobileRedirectScheme, browser, cancellationToken).ConfigureAwait(false);
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 

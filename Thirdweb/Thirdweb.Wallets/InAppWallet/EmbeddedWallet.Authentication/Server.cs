@@ -57,10 +57,7 @@ internal partial class Server : ServerBase
     internal override async Task<List<LinkedAccount>> UnlinkAccountAsync(string currentAccountToken, LinkedAccount linkedAccount)
     {
         var uri = MakeUri2024("/account/disconnect");
-        var request = new HttpRequestMessage(HttpMethod.Post, uri)
-        {
-            Content = MakeHttpContent(linkedAccount)
-        };
+        var request = new HttpRequestMessage(HttpMethod.Post, uri) { Content = MakeHttpContent(linkedAccount) };
         var response = await this.SendHttpWithAuthAsync(request, currentAccountToken).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
@@ -72,10 +69,7 @@ internal partial class Server : ServerBase
     internal override async Task<List<LinkedAccount>> LinkAccountAsync(string currentAccountToken, string authTokenToConnect)
     {
         var uri = MakeUri2024("/account/connect");
-        var request = new HttpRequestMessage(HttpMethod.Post, uri)
-        {
-            Content = MakeHttpContent(new { accountAuthTokenToConnect = authTokenToConnect })
-        };
+        var request = new HttpRequestMessage(HttpMethod.Post, uri) { Content = MakeHttpContent(new { accountAuthTokenToConnect = authTokenToConnect }) };
         var response = await this.SendHttpWithAuthAsync(request, currentAccountToken).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
@@ -91,7 +85,7 @@ internal partial class Server : ServerBase
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var res = await DeserializeAsync<AccountConnectResponse>(response).ConfigureAwait(false);
-        return res == null || res.LinkedAccounts == null || res.LinkedAccounts.Count == 0 ? [] : res.LinkedAccounts;
+        return res == null || res.LinkedAccounts == null || res.LinkedAccounts.Count == 0 ? new List<LinkedAccount>() : res.LinkedAccounts;
     }
 
     // embedded-wallet/embedded-wallet-shares GET
@@ -150,7 +144,16 @@ internal partial class Server : ServerBase
     {
         var uri = MakeUri2024("/login/siwe/callback");
         var content = MakeHttpContent(new { signature, payload });
-        var response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        this._httpClient.AddHeader("origin", payload.Domain);
+        ThirdwebHttpResponseMessage response = null;
+        try
+        {
+            response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        }
+        finally
+        {
+            this._httpClient.RemoveHeader("origin");
+        }
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
