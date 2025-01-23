@@ -1241,17 +1241,6 @@ public static partial class Utils
                 Encoding.UTF8,
                 "application/json"
             );
-            Console.WriteLine(
-                JsonConvert.SerializeObject(
-                    new
-                    {
-                        source = "connectWallet",
-                        action = "connect",
-                        walletAddress = await wallet.GetAddress().ConfigureAwait(false),
-                        walletType = wallet.GetWalletId(),
-                    }
-                )
-            );
             _ = await wallet.Client.HttpClient.PostAsync("https://c.thirdweb.com/event", content);
         }
         catch
@@ -1269,6 +1258,6 @@ public static partial class Utils
         var walletTypeSpan = wallet.GetType().Name.AsSpan();
         var firstCharLower = char.ToLower(walletTypeSpan[0]);
         var formatted = walletTypeSpan.Length > 6 && walletTypeSpan.EndsWith("Wallet") ? walletTypeSpan[1..^6] : walletTypeSpan[1..];
-        return $"{firstCharLower}{formatted}";
+        return $"{firstCharLower}{formatted.ToString()}";
     }
 }
