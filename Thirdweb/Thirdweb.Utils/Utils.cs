@@ -1202,7 +1202,6 @@ public static partial class Utils
                     new
                     {
                         source = "sdk",
-                        actions = "transaction:sent",
                         action = "transaction:sent",
                         clientId = wallet.Client.ClientId,
                         chainId = transaction.Input.ChainId.Value,
