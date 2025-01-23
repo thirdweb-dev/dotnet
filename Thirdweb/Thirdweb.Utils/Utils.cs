@@ -1191,4 +1191,84 @@ public static partial class Utils
 
         return value.ToBytesForRLPEncoding();
     }
+
+    internal static async void TrackTransaction(ThirdwebTransaction transaction, string transactionHash)
+    {
+        try
+        {
+            var wallet = transaction.Wallet;
+            var content = new StringContent(
+                JsonConvert.SerializeObject(
+                    new
+                    {
+                        source = "sdk",
+                        actions = "transaction:sent",
+                        action = "transaction:sent",
+                        clientId = wallet.Client.ClientId,
+                        chainId = transaction.Input.ChainId.Value,
+                        transactionHash,
+                        walletAddress = await wallet.GetAddress().ConfigureAwait(false),
+                        walletType = wallet.GetWalletId(),
+                        contractAddress = transaction.Input.To,
+                        gasPrice = transaction.Input.GasPrice?.Value ?? transaction.Input.MaxFeePerGas?.Value
+                    }
+                ),
+                Encoding.UTF8,
+                "application/json"
+            );
+            _ = await wallet.Client.HttpClient.PostAsync("https://c.thirdweb.com/event", content);
+        }
+        catch
+        {
+            // Ignore
+        }
+    }
+
+    internal static async void TrackConnection(IThirdwebWallet wallet)
+    {
+        try
+        {
+            var content = new StringContent(
+                JsonConvert.SerializeObject(
+                    new
+                    {
+                        source = "connectWallet",
+                        action = "connect",
+                        walletAddress = await wallet.GetAddress().ConfigureAwait(false),
+                        walletType = wallet.GetWalletId(),
+                    }
+                ),
+                Encoding.UTF8,
+                "application/json"
+            );
+            Console.WriteLine(
+                JsonConvert.SerializeObject(
+                    new
+                    {
+                        source = "connectWallet",
+                        action = "connect",
+                        walletAddress = await wallet.GetAddress().ConfigureAwait(false),
+                        walletType = wallet.GetWalletId(),
+                    }
+                )
+            );
+            _ = await wallet.Client.HttpClient.PostAsync("https://c.thirdweb.com/event", content);
+        }
+        catch
+        {
+            // Ignore
+        }
+    }
+
+    internal static string GetWalletId(this IThirdwebWallet wallet)
+    {
+        if (wallet.AccountType == ThirdwebAccountType.SmartAccount)
+        {
+            return "smart";
+        }
+        var walletTypeSpan = wallet.GetType().Name.AsSpan();
+        var firstCharLower = char.ToLower(walletTypeSpan[0]);
+        var formatted = walletTypeSpan.Length > 6 && walletTypeSpan.EndsWith("Wallet") ? walletTypeSpan[1..^6] : walletTypeSpan[1..];
+        return $"{firstCharLower}{formatted}";
+    }
 }

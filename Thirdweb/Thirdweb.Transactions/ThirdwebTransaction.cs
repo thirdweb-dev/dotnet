@@ -30,12 +30,12 @@ public class ThirdwebTransaction
 {
     public ThirdwebTransactionInput Input { get; }
 
-    private readonly IThirdwebWallet _wallet;
+    internal readonly IThirdwebWallet Wallet;
 
     private ThirdwebTransaction(IThirdwebWallet wallet, ThirdwebTransactionInput txInput)
     {
         this.Input = txInput;
-        this._wallet = wallet;
+        this.Wallet = wallet;
     }
 
     /// <summary>
@@ -215,7 +215,7 @@ public class ThirdwebTransaction
     /// <returns>The estimated gas price.</returns>
     public static async Task<BigInteger> EstimateGasPrice(ThirdwebTransaction transaction, bool withBump = true)
     {
-        return await Utils.FetchGasPrice(transaction._wallet.Client, transaction.Input.ChainId.Value, withBump).ConfigureAwait(false);
+        return await Utils.FetchGasPrice(transaction.Wallet.Client, transaction.Input.ChainId.Value, withBump).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -226,10 +226,10 @@ public class ThirdwebTransaction
     /// <returns>The estimated maximum fee per gas and maximum priority fee per gas.</returns>
     public static async Task<(BigInteger maxFeePerGas, BigInteger maxPriorityFeePerGas)> EstimateGasFees(ThirdwebTransaction transaction, bool withBump = true)
     {
-        var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
+        var rpc = ThirdwebRPC.GetRpcInstance(transaction.Wallet.Client, transaction.Input.ChainId.Value);
         var chainId = transaction.Input.ChainId.Value;
 
-        if (await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false))
+        if (await Utils.IsZkSync(transaction.Wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false))
         {
             var fees = await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false);
             var maxFee = fees["max_fee_per_gas"].ToObject<HexBigInteger>().Value;
@@ -238,7 +238,7 @@ public class ThirdwebTransaction
         }
         else
         {
-            return await Utils.FetchGasFees(transaction._wallet.Client, chainId, withBump).ConfigureAwait(false);
+            return await Utils.FetchGasFees(transaction.Wallet.Client, chainId, withBump).ConfigureAwait(false);
         }
     }
 
@@ -249,7 +249,7 @@ public class ThirdwebTransaction
     /// <returns>The result of the simulation.</returns>
     public static async Task<string> Simulate(ThirdwebTransaction transaction)
     {
-        var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
+        var rpc = ThirdwebRPC.GetRpcInstance(transaction.Wallet.Client, transaction.Input.ChainId.Value);
         return await rpc.SendRequestAsync<string>("eth_call", transaction.Input, "latest");
     }
 
@@ -260,8 +260,8 @@ public class ThirdwebTransaction
     /// <returns>The estimated gas limit.</returns>
     public static async Task<BigInteger> EstimateGasLimit(ThirdwebTransaction transaction)
     {
-        var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
-        var isZkSync = await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false);
+        var rpc = ThirdwebRPC.GetRpcInstance(transaction.Wallet.Client, transaction.Input.ChainId.Value);
+        var isZkSync = await Utils.IsZkSync(transaction.Wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false);
         BigInteger divider = isZkSync
             ? 7
             : transaction.Input.AuthorizationList == null
@@ -288,12 +288,12 @@ public class ThirdwebTransaction
     /// <returns>The nonce.</returns>
     public static async Task<BigInteger> GetNonce(ThirdwebTransaction transaction)
     {
-        return await transaction._wallet.GetTransactionCount(chainId: transaction.Input.ChainId, blocktag: "pending").ConfigureAwait(false);
+        return await transaction.Wallet.GetTransactionCount(chainId: transaction.Input.ChainId, blocktag: "pending").ConfigureAwait(false);
     }
 
     private static async Task<BigInteger> GetGasPerPubData(ThirdwebTransaction transaction)
     {
-        var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
+        var rpc = ThirdwebRPC.GetRpcInstance(transaction.Wallet.Client, transaction.Input.ChainId.Value);
         var hex = (await rpc.SendRequestAsync<JToken>("zks_estimateFee", transaction.Input).ConfigureAwait(false))["gas_per_pubdata_limit"].ToString();
         var finalGasPerPubData = new HexBigInteger(hex).Value * 10 / 5;
         return finalGasPerPubData < 10000 ? 10000 : finalGasPerPubData;
@@ -306,7 +306,7 @@ public class ThirdwebTransaction
     /// <returns>The signed transaction.</returns>
     public static async Task<string> Sign(ThirdwebTransaction transaction)
     {
-        return await transaction._wallet.SignTransaction(transaction.Input).ConfigureAwait(false);
+        return await transaction.Wallet.SignTransaction(transaction.Input).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -362,18 +362,18 @@ public class ThirdwebTransaction
     {
         transaction = await Prepare(transaction).ConfigureAwait(false);
 
-        var rpc = ThirdwebRPC.GetRpcInstance(transaction._wallet.Client, transaction.Input.ChainId.Value);
+        var rpc = ThirdwebRPC.GetRpcInstance(transaction.Wallet.Client, transaction.Input.ChainId.Value);
         string hash;
 
-        if (await Utils.IsZkSync(transaction._wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false) && transaction.Input.ZkSync.HasValue)
+        if (await Utils.IsZkSync(transaction.Wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false) && transaction.Input.ZkSync.HasValue)
         {
             var zkTx = await ConvertToZkSyncTransaction(transaction).ConfigureAwait(false);
-            var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction._wallet).ConfigureAwait(false);
+            var zkTxSigned = await EIP712.GenerateSignature_ZkSyncTransaction("zkSync", "2", transaction.Input.ChainId.Value, zkTx, transaction.Wallet).ConfigureAwait(false);
             hash = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", zkTxSigned).ConfigureAwait(false);
         }
         else
         {
-            switch (transaction._wallet.AccountType)
+            switch (transaction.Wallet.AccountType)
             {
                 case ThirdwebAccountType.PrivateKeyAccount:
                     var signedTx = await Sign(transaction);
@@ -381,12 +381,13 @@ public class ThirdwebTransaction
                     break;
                 case ThirdwebAccountType.SmartAccount:
                 case ThirdwebAccountType.ExternalAccount:
-                    hash = await transaction._wallet.SendTransaction(transaction.Input).ConfigureAwait(false);
+                    hash = await transaction.Wallet.SendTransaction(transaction.Input).ConfigureAwait(false);
                     break;
                 default:
                     throw new NotImplementedException("Account type not supported");
             }
         }
+        Utils.TrackTransaction(transaction, hash);
         return hash;
     }
 
@@ -398,7 +399,7 @@ public class ThirdwebTransaction
     public static async Task<ThirdwebTransactionReceipt> SendAndWaitForTransactionReceipt(ThirdwebTransaction transaction)
     {
         var txHash = await Send(transaction).ConfigureAwait(false);
-        return await WaitForTransactionReceipt(transaction._wallet.Client, transaction.Input.ChainId.Value, txHash).ConfigureAwait(false);
+        return await WaitForTransactionReceipt(transaction.Wallet.Client, transaction.Input.ChainId.Value, txHash).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -215,7 +215,7 @@ public class SmartWallet : IThirdwebWallet
             }
         }
 
-        return new SmartWallet(
+        var smartWallet = new SmartWallet(
             personalWallet,
             gasless.Value,
             chainId,
@@ -228,6 +228,8 @@ public class SmartWallet : IThirdwebWallet
             erc20PmInfo.TokenAddress,
             erc20PmInfo.BalanceStorageSlot
         );
+        Utils.TrackConnection(smartWallet);
+        return smartWallet;
     }
 
     #endregion
