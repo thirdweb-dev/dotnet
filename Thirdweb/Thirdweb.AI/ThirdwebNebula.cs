@@ -83,7 +83,7 @@ public class ThirdwebNebula
                 SessionId = this.SessionId,
                 Message = message,
                 ContextFilter = contextFiler,
-                Config = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
+                ExecuteConfig = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
             }
         );
 
@@ -107,7 +107,7 @@ public class ThirdwebNebula
                 SessionId = this.SessionId,
                 Messages = messages.Select(prompt => new ChatMessage() { Role = "user", Content = prompt }).ToList(),
                 ContextFilter = contextFiler,
-                Config = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
+                ExecuteConfig = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
             }
         );
 
