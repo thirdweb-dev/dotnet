@@ -1207,7 +1207,7 @@ public static partial class Utils
                         chainId = transaction.Input.ChainId.Value,
                         transactionHash,
                         walletAddress = await wallet.GetAddress().ConfigureAwait(false),
-                        walletType = wallet.GetWalletId(),
+                        walletType = wallet.WalletId,
                         contractAddress = transaction.Input.To,
                         gasPrice = transaction.Input.GasPrice?.Value ?? transaction.Input.MaxFeePerGas?.Value
                     }
@@ -1234,7 +1234,7 @@ public static partial class Utils
                         source = "connectWallet",
                         action = "connect",
                         walletAddress = await wallet.GetAddress().ConfigureAwait(false),
-                        walletType = wallet.GetWalletId(),
+                        walletType = wallet.WalletId,
                     }
                 ),
                 Encoding.UTF8,
@@ -1246,17 +1246,5 @@ public static partial class Utils
         {
             // Ignore
         }
-    }
-
-    internal static string GetWalletId(this IThirdwebWallet wallet)
-    {
-        if (wallet.AccountType == ThirdwebAccountType.SmartAccount)
-        {
-            return "smart";
-        }
-        var walletTypeSpan = wallet.GetType().Name.AsSpan();
-        var firstCharLower = char.ToLower(walletTypeSpan[0]);
-        var formatted = walletTypeSpan.Length > 6 && walletTypeSpan.EndsWith("Wallet") ? walletTypeSpan[1..^6] : walletTypeSpan[1..];
-        return $"{firstCharLower}{formatted.ToString()}";
     }
 }

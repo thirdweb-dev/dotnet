@@ -20,6 +20,11 @@ public interface IThirdwebWallet
     public ThirdwebAccountType AccountType { get; }
 
     /// <summary>
+    /// String identifier for the wallet to be used in analytics.
+    /// </summary>
+    public string WalletId { get; }
+
+    /// <summary>
     /// Gets the address of the wallet.
     /// </summary>
     /// <returns>The wallet address.</returns>

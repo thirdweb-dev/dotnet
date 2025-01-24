@@ -25,6 +25,8 @@ public class SmartWallet : IThirdwebWallet
 
     public ThirdwebAccountType AccountType => ThirdwebAccountType.SmartAccount;
 
+    public string WalletId => "smart";
+
     public bool IsDeploying { get; private set; }
 
     public BigInteger ActiveChainId { get; private set; }

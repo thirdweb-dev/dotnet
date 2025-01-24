@@ -17,6 +17,8 @@ public class PrivateKeyWallet : IThirdwebWallet
 
     public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
 
+    public string WalletId => "privateKey";
+
     protected EthECKey EcKey { get; set; }
 
     protected PrivateKeyWallet(ThirdwebClient client, EthECKey key)

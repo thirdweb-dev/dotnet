@@ -17,6 +17,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 {
     public ThirdwebClient Client { get; }
     public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
+    public virtual string WalletId => "ecosystem";
 
     internal readonly EmbeddedWallet EmbeddedWallet;
     internal readonly IThirdwebHttpClient HttpClient;
