@@ -12,32 +12,37 @@ public interface IThirdwebWallet
     /// <summary>
     /// Gets the Thirdweb client associated with the wallet.
     /// </summary>
-    ThirdwebClient Client { get; }
+    public ThirdwebClient Client { get; }
 
     /// <summary>
     /// Gets the account type of the wallet.
     /// </summary>
-    ThirdwebAccountType AccountType { get; }
+    public ThirdwebAccountType AccountType { get; }
+
+    /// <summary>
+    /// String identifier for the wallet to be used in analytics.
+    /// </summary>
+    public string WalletId { get; }
 
     /// <summary>
     /// Gets the address of the wallet.
     /// </summary>
     /// <returns>The wallet address.</returns>
-    Task<string> GetAddress();
+    public Task<string> GetAddress();
 
     /// <summary>
     /// Signs a raw message using Ethereum's signing method.
     /// </summary>
     /// <param name="rawMessage">The raw message to sign.</param>
     /// <returns>The signed message.</returns>
-    Task<string> EthSign(byte[] rawMessage);
+    public Task<string> EthSign(byte[] rawMessage);
 
     /// <summary>
     /// Signs a message using Ethereum's signing method.
     /// </summary>
     /// <param name="message">The message to sign.</param>
     /// <returns>The signed message.</returns>
-    Task<string> EthSign(string message);
+    public Task<string> EthSign(string message);
 
     /// <summary>
     /// Recovers the address from a signed message using Ethereum's signing method.
@@ -45,21 +50,21 @@ public interface IThirdwebWallet
     /// <param name="message">The UTF-8 encoded message.</param>
     /// <param name="signature">The signature.</param>
     /// <returns>The recovered address.</returns>
-    Task<string> RecoverAddressFromEthSign(string message, string signature);
+    public Task<string> RecoverAddressFromEthSign(string message, string signature);
 
     /// <summary>
     /// Signs a raw message using personal signing.
     /// </summary>
     /// <param name="rawMessage">The raw message to sign.</param>
     /// <returns>The signed message.</returns>
-    Task<string> PersonalSign(byte[] rawMessage);
+    public Task<string> PersonalSign(byte[] rawMessage);
 
     /// <summary>
     /// Signs a message using personal signing.
     /// </summary>
     /// <param name="message">The message to sign.</param>
     /// <returns>The signed message.</returns>
-    Task<string> PersonalSign(string message);
+    public Task<string> PersonalSign(string message);
 
     /// <summary>
     /// Recovers the address from a signed message using personal signing.
@@ -67,14 +72,14 @@ public interface IThirdwebWallet
     /// <param name="message">The UTF-8 encoded and prefixed message.</param>
     /// <param name="signature">The signature.</param>
     /// <returns>The recovered address.</returns>
-    Task<string> RecoverAddressFromPersonalSign(string message, string signature);
+    public Task<string> RecoverAddressFromPersonalSign(string message, string signature);
 
     /// <summary>
     /// Signs typed data (version 4).
     /// </summary>
     /// <param name="json">The JSON representation of the typed data.</param>
     /// <returns>The signed data.</returns>
-    Task<string> SignTypedDataV4(string json);
+    public Task<string> SignTypedDataV4(string json);
 
     /// <summary>
     /// Signs typed data (version 4).
@@ -84,7 +89,7 @@ public interface IThirdwebWallet
     /// <param name="data">The data to sign.</param>
     /// <param name="typedData">The typed data.</param>
     /// <returns>The signed data.</returns>
-    Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
+    public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
         where TDomain : IDomain;
 
     /// <summary>
@@ -96,40 +101,40 @@ public interface IThirdwebWallet
     /// <param name="typedData">The typed data.</param>
     /// <param name="signature">The signature.</param>
     /// <returns>The recovered address.</returns>
-    Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
+    public Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
         where TDomain : IDomain;
 
     /// <summary>
     /// Checks if the wallet is connected.
     /// </summary>
     /// <returns>True if connected, otherwise false.</returns>
-    Task<bool> IsConnected();
+    public Task<bool> IsConnected();
 
     /// <summary>
     /// Signs a transaction.
     /// </summary>
     /// <param name="transaction">The transaction to sign.</param>
     /// <returns>The signed transaction.</returns>
-    Task<string> SignTransaction(ThirdwebTransactionInput transaction);
+    public Task<string> SignTransaction(ThirdwebTransactionInput transaction);
 
     /// <summary>
     /// Sends a transaction.
     /// </summary>
     /// <param name="transaction">The transaction to send.</param>
     /// <returns>The transaction hash.</returns>
-    Task<string> SendTransaction(ThirdwebTransactionInput transaction);
+    public Task<string> SendTransaction(ThirdwebTransactionInput transaction);
 
     /// <summary>
     /// Sends a transaction and waits for its receipt.
     /// </summary>
     /// <param name="transaction">The transaction to execute.</param>
     /// <returns>The transaction receipt.</returns>
-    Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transaction);
+    public Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transaction);
 
     /// <summary>
     /// Disconnects the wallet (if using InAppWallet, clears session)
     /// </summary>
-    Task Disconnect();
+    public Task Disconnect();
 
     /// <summary>
     /// Links a new account (auth method) to the current wallet. The current wallet must be connected and the wallet being linked must not be fully connected ie created.
@@ -143,8 +148,10 @@ public interface IThirdwebWallet
     /// <param name="chainId">The chain ID if linking an external wallet (SIWE).</param>
     /// <param name="jwt">The JWT token if linking custom JWT auth.</param>
     /// <param name="payload">The login payload if linking custom AuthEndpoint auth.</param>
+    /// <param name="defaultSessionIdOverride">The default session ID override if linking Guest auth.</param>
+    /// <param name="forceWalletIds">The wallet IDs to force display if linking using SiweExternal auth.</param>
     /// <returns>A list of <see cref="LinkedAccount"/> objects.</returns>
-    Task<List<LinkedAccount>> LinkAccount(
+    public Task<List<LinkedAccount>> LinkAccount(
         IThirdwebWallet walletToLink,
         string otp = null,
         bool? isMobile = null,
@@ -153,20 +160,22 @@ public interface IThirdwebWallet
         IThirdwebBrowser browser = null,
         BigInteger? chainId = null,
         string jwt = null,
-        string payload = null
+        string payload = null,
+        string defaultSessionIdOverride = null,
+        List<string> forceWalletIds = null
     );
 
     /// <summary>
     /// Unlinks an account (auth method) from the current wallet.
     /// </summary>
     /// <param name="accountToUnlink">The linked account to unlink. Same type returned by <see cref="GetLinkedAccounts"/>.</param>
-    Task<List<LinkedAccount>> UnlinkAccount(LinkedAccount accountToUnlink);
+    public Task<List<LinkedAccount>> UnlinkAccount(LinkedAccount accountToUnlink);
 
     /// <summary>
     /// Returns a list of linked accounts to the current wallet.
     /// </summary>
     /// <returns>A list of <see cref="LinkedAccount"/> objects.</returns>
-    Task<List<LinkedAccount>> GetLinkedAccounts();
+    public Task<List<LinkedAccount>> GetLinkedAccounts();
 
     /// <summary>
     /// Signs an EIP-7702 authorization to invoke contract functions to an externally owned account.
@@ -175,13 +184,13 @@ public interface IThirdwebWallet
     /// <param name="contractAddress">The address of the contract.</param>
     /// <param name="willSelfExecute">Set to true if the wallet will also be the executor of the transaction, otherwise false.</param>
     /// <returns>The signed authorization as an <see cref="EIP7702Authorization"/> that can be used with <see cref="ThirdwebTransactionInput.AuthorizationList"/>.</returns>
-    Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress, bool willSelfExecute);
+    public Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress, bool willSelfExecute);
 
     /// <summary>
     /// Attempts to set the active network to the specified chain ID.
     /// </summary>
     /// <param name="chainId">The chain ID to switch to.</param>
-    Task SwitchNetwork(BigInteger chainId);
+    public Task SwitchNetwork(BigInteger chainId);
 }
 
 /// <summary>
@@ -280,4 +289,9 @@ public class LoginPayloadData
     /// Initializes a new instance of the <see cref="LoginPayloadData"/> class.
     /// </summary>
     public LoginPayloadData() { }
+
+    public override string ToString()
+    {
+        return JsonConvert.SerializeObject(this);
+    }
 }

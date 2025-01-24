@@ -17,6 +17,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 {
     public ThirdwebClient Client { get; }
     public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
+    public virtual string WalletId => "ecosystem";
 
     internal readonly EmbeddedWallet EmbeddedWallet;
     internal readonly IThirdwebHttpClient HttpClient;
@@ -123,6 +124,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             Thirdweb.AuthProvider.Twitch => "Twitch",
             Thirdweb.AuthProvider.Steam => "Steam",
             Thirdweb.AuthProvider.Backend => "Backend",
+            Thirdweb.AuthProvider.SiweExternal => "SiweExternal",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -258,6 +260,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         {
             CreateEnclaveSession(this.EmbeddedWallet, result.AuthToken, this.Email, this.PhoneNumber, this.AuthProvider, result.AuthIdentifier);
             this.Address = address.ToChecksumAddress();
+            Utils.TrackConnection(this);
             return this.Address;
         }
     }
@@ -426,7 +429,9 @@ public partial class EcosystemWallet : IThirdwebWallet
         IThirdwebBrowser browser = null,
         BigInteger? chainId = null,
         string jwt = null,
-        string payload = null
+        string payload = null,
+        string defaultSessionIdOverride = null,
+        List<string> forceWalletIds = null
     )
     {
         if (!await this.IsConnected().ConfigureAwait(false))
@@ -495,7 +500,10 @@ public partial class EcosystemWallet : IThirdwebWallet
                 serverRes = await ecosystemWallet.PreAuth_AuthEndpoint(payload).ConfigureAwait(false);
                 break;
             case "Guest":
-                serverRes = await ecosystemWallet.PreAuth_Guest().ConfigureAwait(false);
+                serverRes = await ecosystemWallet.PreAuth_Guest(defaultSessionIdOverride).ConfigureAwait(false);
+                break;
+            case "SiweExternal":
+                serverRes = await ecosystemWallet.PreAuth_SiweExternal(isMobile ?? false, browserOpenAction, forceWalletIds, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             case "Google":
             case "Apple":
@@ -700,6 +708,81 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     #endregion
 
+    #region SiweExternal
+
+    private async Task<Server.VerifyResult> PreAuth_SiweExternal(
+        bool isMobile,
+        Action<string> browserOpenAction,
+        List<string> forceWalletIds = null,
+        string mobileRedirectScheme = "thirdweb://",
+        IThirdwebBrowser browser = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
+        var loginUrl = $"https://static.thirdweb.com/auth/siwe?redirectUrl={redirectUrl}";
+        if (forceWalletIds != null && forceWalletIds.Count > 0)
+        {
+            loginUrl += $"&wallets={string.Join(",", forceWalletIds)}";
+        }
+
+        browser ??= new InAppWalletBrowser();
+        var browserResult = await browser.Login(this.Client, loginUrl, redirectUrl, browserOpenAction, cancellationToken).ConfigureAwait(false);
+        switch (browserResult.Status)
+        {
+            case BrowserStatus.Success:
+                break;
+            case BrowserStatus.UserCanceled:
+                throw new TaskCanceledException(browserResult.Error ?? "LoginWithSiwe was cancelled.");
+            case BrowserStatus.Timeout:
+                throw new TimeoutException(browserResult.Error ?? "LoginWithSiwe timed out.");
+            case BrowserStatus.UnknownError:
+            default:
+                throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}");
+        }
+        var callbackUrl =
+            browserResult.Status != BrowserStatus.Success
+                ? throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}")
+                : browserResult.CallbackUrl;
+
+        while (string.IsNullOrEmpty(callbackUrl))
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                throw new TaskCanceledException("LoginWithSiwe was cancelled.");
+            }
+            await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
+        }
+
+        string signature;
+        string payload;
+        var decodedUrl = HttpUtility.UrlDecode(callbackUrl);
+        Uri uri = new(decodedUrl);
+        var queryString = uri.Query;
+        var queryDict = HttpUtility.ParseQueryString(queryString);
+        signature = queryDict["signature"];
+        payload = HttpUtility.UrlDecode(queryDict["payload"]);
+        var payloadData = JsonConvert.DeserializeObject<LoginPayloadData>(payload);
+
+        var serverRes = await this.EmbeddedWallet.SignInWithSiweRawAsync(payloadData, signature).ConfigureAwait(false);
+        return serverRes;
+    }
+
+    public async Task<string> LoginWithSiweExternal(
+        bool isMobile,
+        Action<string> browserOpenAction,
+        List<string> forceWalletIds = null,
+        string mobileRedirectScheme = "thirdweb://",
+        IThirdwebBrowser browser = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var serverRes = await this.PreAuth_SiweExternal(isMobile, browserOpenAction, forceWalletIds, mobileRedirectScheme, browser, cancellationToken).ConfigureAwait(false);
+        return await this.PostAuth(serverRes).ConfigureAwait(false);
+    }
+
+    #endregion
+
     #region Siwe
 
     private async Task<Server.VerifyResult> PreAuth_Siwe(IThirdwebWallet siweSigner, BigInteger chainId)
@@ -747,7 +830,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     #region Guest
 
-    private async Task<Server.VerifyResult> PreAuth_Guest()
+    private async Task<Server.VerifyResult> PreAuth_Guest(string defaultSessionIdOverride = null)
     {
         var sessionData = this.EmbeddedWallet.GetSessionData();
         string sessionId;
@@ -757,15 +840,15 @@ public partial class EcosystemWallet : IThirdwebWallet
         }
         else
         {
-            sessionId = Guid.NewGuid().ToString();
+            sessionId = defaultSessionIdOverride ?? Guid.NewGuid().ToString();
         }
         var serverRes = await this.EmbeddedWallet.SignInWithGuestAsync(sessionId).ConfigureAwait(false);
         return serverRes;
     }
 
-    public async Task<string> LoginWithGuest()
+    public async Task<string> LoginWithGuest(string defaultSessionIdOverride = null)
     {
-        var serverRes = await this.PreAuth_Guest().ConfigureAwait(false);
+        var serverRes = await this.PreAuth_Guest(defaultSessionIdOverride).ConfigureAwait(false);
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 

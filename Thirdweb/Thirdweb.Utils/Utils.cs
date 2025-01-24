@@ -1191,4 +1191,60 @@ public static partial class Utils
 
         return value.ToBytesForRLPEncoding();
     }
+
+    internal static async void TrackTransaction(ThirdwebTransaction transaction, string transactionHash)
+    {
+        try
+        {
+            var wallet = transaction.Wallet;
+            var content = new StringContent(
+                JsonConvert.SerializeObject(
+                    new
+                    {
+                        source = "sdk",
+                        action = "transaction:sent",
+                        clientId = wallet.Client.ClientId,
+                        chainId = transaction.Input.ChainId.Value,
+                        transactionHash,
+                        walletAddress = await wallet.GetAddress().ConfigureAwait(false),
+                        walletType = wallet.WalletId,
+                        contractAddress = transaction.Input.To,
+                        gasPrice = transaction.Input.GasPrice?.Value ?? transaction.Input.MaxFeePerGas?.Value
+                    }
+                ),
+                Encoding.UTF8,
+                "application/json"
+            );
+            _ = await wallet.Client.HttpClient.PostAsync("https://c.thirdweb.com/event", content);
+        }
+        catch
+        {
+            // Ignore
+        }
+    }
+
+    internal static async void TrackConnection(IThirdwebWallet wallet)
+    {
+        try
+        {
+            var content = new StringContent(
+                JsonConvert.SerializeObject(
+                    new
+                    {
+                        source = "connectWallet",
+                        action = "connect",
+                        walletAddress = await wallet.GetAddress().ConfigureAwait(false),
+                        walletType = wallet.WalletId,
+                    }
+                ),
+                Encoding.UTF8,
+                "application/json"
+            );
+            _ = await wallet.Client.HttpClient.PostAsync("https://c.thirdweb.com/event", content);
+        }
+        catch
+        {
+            // Ignore
+        }
+    }
 }
