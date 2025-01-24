@@ -22,6 +22,7 @@ The Thirdweb .NET SDK is a comprehensive and easy to use library that allows dev
 - **Transaction Builder:** Create, manipulate and send low level transactions.
 - **Session Keys:** Advanced control for smart wallets to manage permissions and session durations.
 - **Thirdweb Pay:** Easily integrate fiat onramps and cross-chain crypto purchases.
+- **Thirdweb Nebula:** Create blockchain-powered AI Agents.
 - **Unity Compatibility**: This SDK has been tested successfully in [Unity 2021.3+](https://portal.thirdweb.com/unity/v5) (Standalone, Mobile and WebGL).
 - **Godot Compatibility**: This SDK has been tested successfully in [Godot .NET](https://portal.thirdweb.com/dotnet/godot)
 - **MAUI Compatibility**: This SDK has been tested successfully in [MAUI](https://portal.thirdweb.com/dotnet/maui)
