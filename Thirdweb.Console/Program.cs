@@ -8,6 +8,7 @@ using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Thirdweb;
+using Thirdweb.AI;
 using Thirdweb.Pay;
 
 DotEnv.Load();
@@ -32,6 +33,73 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
 // var nfts = await contract.ERC721_GetAllNFTs();
 // Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
+
+#endregion
+
+#region AI
+
+// Prepare some context
+var myChain = 11155111;
+var myWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(client), chainId: myChain, gasless: true);
+var myContractAddress = "0xe2cb0eb5147b42095c2FfA6F7ec953bb0bE347D8"; // DropERC1155
+var usdcAddress = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
+
+// Create a Nebula session
+var nebula = await ThirdwebNebula.Create(client);
+
+// Chat, passing wallet context
+var response1 = await nebula.Chat(message: "What is my wallet address?", wallet: myWallet);
+Console.WriteLine($"Response 1: {response1.Message}");
+
+// Chat, passing contract context
+var response2 = await nebula.Chat(
+    message: "What's the total supply of token id 0 for this contract?",
+    context: new NebulaContext(contractAddresses: new List<string> { myContractAddress }, chainIds: new List<BigInteger> { myChain })
+);
+Console.WriteLine($"Response 2: {response2.Message}");
+
+// Chat, passing multiple messages and context
+var response3 = await nebula.Chat(
+    messages: new List<NebulaChatMessage>
+    {
+        new($"Tell me the name of this contract: {myContractAddress}", NebulaChatRole.User),
+        new("The name of the contract is CatDrop", NebulaChatRole.Assistant),
+        new("What's the symbol of this contract?", NebulaChatRole.User),
+    },
+    context: new NebulaContext(contractAddresses: new List<string> { myContractAddress }, chainIds: new List<BigInteger> { myChain })
+);
+Console.WriteLine($"Response 3: {response3.Message}");
+
+// Execute, this directly sends transactions
+var executionResult = await nebula.Execute("Approve 1 USDC to vitalik.eth", wallet: myWallet, context: new NebulaContext(contractAddresses: new List<string>() { usdcAddress }));
+if (executionResult.TransactionReceipts != null && executionResult.TransactionReceipts.Count > 0)
+{
+    Console.WriteLine($"Receipt: {executionResult.TransactionReceipts[0]}");
+}
+else
+{
+    Console.WriteLine($"Message: {executionResult.Message}");
+}
+
+// Batch execute
+var batchExecutionResult = await nebula.Execute(
+    new List<NebulaChatMessage>
+    {
+        new("What's the address of vitalik.eth", NebulaChatRole.User),
+        new("The address of vitalik.eth is 0xd8dA6BF26964aF8E437eEa5e3616511D7G3a3298", NebulaChatRole.Assistant),
+        new("Approve 1 USDC to them", NebulaChatRole.User),
+    },
+    wallet: myWallet,
+    context: new NebulaContext(contractAddresses: new List<string>() { usdcAddress })
+);
+if (batchExecutionResult.TransactionReceipts != null && batchExecutionResult.TransactionReceipts.Count > 0)
+{
+    Console.WriteLine($"Receipts: {JsonConvert.SerializeObject(batchExecutionResult.TransactionReceipts, Formatting.Indented)}");
+}
+else
+{
+    Console.WriteLine($"Message: {batchExecutionResult.Message}");
+}
 
 #endregion
 
