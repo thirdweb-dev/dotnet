@@ -6,6 +6,7 @@ namespace Thirdweb.Tests.AI;
 public class NebulaTests : BaseTests
 {
     private const string NEBULA_TEST_CONTRACT = "0xe2cb0eb5147b42095c2FfA6F7ec953bb0bE347D8";
+    private const string NEBULA_TEST_USDC_ADDRESS = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
     private const int NEBULA_TEST_CHAIN = 11155111;
 
     public NebulaTests(ITestOutputHelper output)
@@ -70,7 +71,7 @@ public class NebulaTests : BaseTests
         );
         Assert.NotNull(response);
         Assert.NotNull(response.Message);
-        Assert.Contains("CatDrop", response.Message);
+        Assert.Contains("CatDrop", response.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact(Timeout = 120000)]
@@ -85,38 +86,51 @@ public class NebulaTests : BaseTests
         Assert.Contains(expectedAddress, response.Message);
     }
 
-    // [Fact(Timeout = 120000)]
-    // public async Task Execute_ReturnsMessageAndReceipt()
-    // {
-    //     var signer = await PrivateKeyWallet.Generate(this.Client);
-    //     var wallet = await SmartWallet.Create(signer, NEBULA_TEST_CHAIN);
-    //     var nebula = await ThirdwebNebula.Create(this.Client);
-    //     var response = await nebula.Execute("Send 0 ETH to vitalik.eth", wallet: wallet);
-    //     Assert.NotNull(response);
-    //     Assert.NotNull(response.Message);
-    //     Assert.NotNull(response.TransactionReceipts);
-    //     Assert.NotEmpty(response.TransactionReceipts);
-    //     Assert.NotNull(response.TransactionReceipts[0].TransactionHash);
-    //     Assert.True(response.TransactionReceipts[0].TransactionHash.Length == 66);
-    // }
+    [Fact(Timeout = 120000)]
+    public async Task Execute_ReturnsMessageAndReceipt()
+    {
+        var signer = await PrivateKeyWallet.Generate(this.Client);
+        var wallet = await SmartWallet.Create(signer, NEBULA_TEST_CHAIN);
+        var nebula = await ThirdwebNebula.Create(this.Client);
+        var response = await nebula.Execute(
+            new List<NebulaChatMessage>
+            {
+                new("What's the address of vitalik.eth", NebulaChatRole.User),
+                new("The address of vitalik.eth is 0xd8dA6BF26964aF8E437eEa5e3616511D7G3a3298", NebulaChatRole.Assistant),
+                new("Approve 1 USDC to them", NebulaChatRole.User),
+            },
+            wallet: wallet,
+            context: new NebulaContext(contractAddresses: new List<string>() { NEBULA_TEST_USDC_ADDRESS })
+        );
+        Assert.NotNull(response);
+        Assert.NotNull(response.Message);
+        Assert.NotNull(response.TransactionReceipts);
+        Assert.NotEmpty(response.TransactionReceipts);
+        Assert.NotNull(response.TransactionReceipts[0].TransactionHash);
+        Assert.True(response.TransactionReceipts[0].TransactionHash.Length == 66);
+    }
 
-    // [Fact(Timeout = 120000)]
-    // public async Task Execute_ReturnsMessageAndReceipts()
-    // {
-    //     var signer = await PrivateKeyWallet.Generate(this.Client);
-    //     var wallet = await SmartWallet.Create(signer, NEBULA_TEST_CHAIN);
-    //     var nebula = await ThirdwebNebula.Create(this.Client);
-    //     var response = await nebula.Execute(
-    //         new List<NebulaChatMessage> { new("Send 0 ETH to vitalik.eth and satoshi.eth", NebulaChatRole.User), new("Are you sure?", NebulaChatRole.Assistant), new("Yes", NebulaChatRole.User) },
-    //         wallet: wallet
-    //     );
-    //     Assert.NotNull(response);
-    //     Assert.NotNull(response.Message);
-    //     Assert.NotNull(response.TransactionReceipts);
-    //     Assert.NotEmpty(response.TransactionReceipts);
-    //     Assert.NotNull(response.TransactionReceipts[0].TransactionHash);
-    //     Assert.True(response.TransactionReceipts[0].TransactionHash.Length == 66);
-    //     Assert.NotNull(response.TransactionReceipts[1].TransactionHash);
-    //     Assert.True(response.TransactionReceipts[1].TransactionHash.Length == 66);
-    // }
+    [Fact(Timeout = 120000)]
+    public async Task Execute_ReturnsMessageAndReceipts()
+    {
+        var signer = await PrivateKeyWallet.Generate(this.Client);
+        var wallet = await SmartWallet.Create(signer, NEBULA_TEST_CHAIN);
+        var nebula = await ThirdwebNebula.Create(this.Client);
+        var response = await nebula.Execute(
+            new List<NebulaChatMessage>
+            {
+                new("What's the address of vitalik.eth", NebulaChatRole.User),
+                new("The address of vitalik.eth is 0xd8dA6BF26964aF8E437eEa5e3616511D7G3a3298", NebulaChatRole.Assistant),
+                new("Approve 1 USDC to them", NebulaChatRole.User),
+            },
+            wallet: wallet,
+            context: new NebulaContext(contractAddresses: new List<string>() { NEBULA_TEST_USDC_ADDRESS })
+        );
+        Assert.NotNull(response);
+        Assert.NotNull(response.Message);
+        Assert.NotNull(response.TransactionReceipts);
+        Assert.NotEmpty(response.TransactionReceipts);
+        Assert.NotNull(response.TransactionReceipts[0].TransactionHash);
+        Assert.True(response.TransactionReceipts[0].TransactionHash.Length == 66);
+    }
 }

@@ -234,14 +234,14 @@ public class ThirdwebNebula
             // If it's a smart wallet, add the contract address and chain ID to the context
             if (wallet is SmartWallet smartWallet)
             {
-                if (context.ContractAddresses == null || context.ContractAddresses.Count == 0)
-                {
-                    context.ContractAddresses = new List<string>() { walletAddress };
-                }
-                else if (!context.ContractAddresses.Contains(walletAddress))
-                {
-                    context.ContractAddresses.Add(walletAddress);
-                }
+                // if (context.ContractAddresses == null || context.ContractAddresses.Count == 0)
+                // {
+                //     context.ContractAddresses = new List<string>() { walletAddress };
+                // }
+                // else if (!context.ContractAddresses.Contains(walletAddress))
+                // {
+                //     context.ContractAddresses.Add(walletAddress);
+                // }
 
                 if (context.ChainIds == null || context.ChainIds.Count == 0)
                 {
@@ -269,9 +269,9 @@ public class ThirdwebNebula
             var transactionTasks = actions
                 .Select(action =>
                 {
-                    if (action.Type == "transaction")
+                    if (action.Type == "sign_transaction")
                     {
-                        var txInput = JsonConvert.DeserializeObject<ThirdwebTransactionInput>(action.Data.ToString());
+                        var txInput = JsonConvert.DeserializeObject<ThirdwebTransactionInput>(action.Data);
                         return ThirdwebTransaction.Create(wallet, txInput);
                     }
                     else
@@ -280,6 +280,13 @@ public class ThirdwebNebula
                     }
                 })
                 .ToList();
+
+            if (transactionTasks == null || transactionTasks.Count == 0)
+            {
+                return null;
+            }
+
+            _ = transactionTasks.RemoveAll(task => task == null);
 
             return (await Task.WhenAll(transactionTasks)).Where(tx => tx != null).ToList();
         }

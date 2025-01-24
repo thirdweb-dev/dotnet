@@ -10,6 +10,8 @@ namespace Thirdweb;
 /// </summary>
 public class ThirdwebTransactionInput
 {
+    internal ThirdwebTransactionInput() { }
+
     public ThirdwebTransactionInput(BigInteger chainId)
     {
         this.ChainId = chainId > 0 ? new HexBigInteger(chainId) : throw new ArgumentException("Invalid Chain ID");
