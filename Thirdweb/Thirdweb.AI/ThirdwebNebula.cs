@@ -3,6 +3,24 @@ using Newtonsoft.Json;
 
 namespace Thirdweb.AI;
 
+public enum NebulaChatRole
+{
+    User,
+    Assistant
+}
+
+public class NebulaChatMessage
+{
+    public NebulaChatRole Role { get; set; } = NebulaChatRole.User;
+    public string Message { get; set; }
+
+    public NebulaChatMessage(string message, NebulaChatRole role = NebulaChatRole.User)
+    {
+        this.Message = message;
+        this.Role = role;
+    }
+}
+
 public class NebulaChatResult
 {
     public string Message { get; set; }
@@ -92,9 +110,9 @@ public class ThirdwebNebula
         return new NebulaChatResult() { Message = result.Message, Transactions = transactions == null || transactions.Count == 0 ? null : transactions };
     }
 
-    public async Task<NebulaChatResult> Chat(List<string> messages, IThirdwebWallet wallet = null, NebulaContext context = null)
+    public async Task<NebulaChatResult> Chat(List<NebulaChatMessage> messages, IThirdwebWallet wallet = null, NebulaContext context = null)
     {
-        if (messages == null || messages.Count == 0 || messages.Any(string.IsNullOrWhiteSpace))
+        if (messages == null || messages.Count == 0 || messages.Any(m => string.IsNullOrWhiteSpace(m.Message)))
         {
             throw new ArgumentException("Messages cannot be null or empty.", nameof(messages));
         }
@@ -105,7 +123,7 @@ public class ThirdwebNebula
             new ChatParamsMultiMessages()
             {
                 SessionId = this.SessionId,
-                Messages = messages.Select(prompt => new ChatMessage() { Role = "user", Content = prompt }).ToList(),
+                Messages = messages.Select(prompt => new ChatMessage() { Content = prompt.Message, Role = prompt.Role.ToString().ToLower() }).ToList(),
                 ContextFilter = contextFiler,
                 ExecuteConfig = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
             }
