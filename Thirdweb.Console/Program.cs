@@ -69,9 +69,31 @@ var response3 = await nebula.Chat(
 );
 Console.WriteLine($"Response 3: {response3.Message}");
 
-// // Execute, this directly sends transactions
-// var receipt = await nebula.Execute("Send a valueless transaction to my wallet!", wallet: myWallet, context: new NebulaContext(chainIds: new List<BigInteger> { myChain }));
-// Console.WriteLine($"Receipt: {JsonConvert.SerializeObject(receipt, Formatting.Indented)}");
+// Execute, this directly sends transactions
+var executionResult = await nebula.Execute("Send 0 ETH to vitalik.eth", wallet: myWallet, context: new NebulaContext(chainIds: new List<BigInteger> { myChain }));
+if (executionResult.TransactionReceipts != null && executionResult.TransactionReceipts.Count > 0)
+{
+    Console.WriteLine($"Receipt: {executionResult.TransactionReceipts[0]}");
+}
+else
+{
+    Console.WriteLine($"Message: {executionResult.Message}");
+}
+
+// Batch execute
+var batchExecutionResult = await nebula.Execute(
+    new List<NebulaChatMessage> { new("Send 0 ETH to vitalik.eth", NebulaChatRole.User), new("Are you sure?", NebulaChatRole.Assistant), new("Yes", NebulaChatRole.User) },
+    wallet: myWallet,
+    context: new NebulaContext(chainIds: new List<BigInteger> { myChain })
+);
+if (batchExecutionResult.TransactionReceipts != null && batchExecutionResult.TransactionReceipts.Count > 0)
+{
+    Console.WriteLine($"Receipts: {JsonConvert.SerializeObject(batchExecutionResult.TransactionReceipts, Formatting.Indented)}");
+}
+else
+{
+    Console.WriteLine($"Message: {batchExecutionResult.Message}");
+}
 
 #endregion
 
