@@ -71,7 +71,7 @@ public class ThirdwebNebula
         this.FeedbackClient = new FeedbackClient(httpClient);
     }
 
-    public static async Task<ThirdwebNebula> Create(ThirdwebClient client, string model = Constants.NEBULA_DEFAULT_MODEL, string sessionId = null)
+    public static async Task<ThirdwebNebula> Create(ThirdwebClient client, string sessionId = null, string model = Constants.NEBULA_DEFAULT_MODEL)
     {
         var nebula = new ThirdwebNebula(client);
 
