@@ -7,6 +7,8 @@ namespace Thirdweb;
 /// </summary>
 public class InAppWallet : EcosystemWallet
 {
+    public override string WalletId => "inApp";
+
     internal InAppWallet(
         ThirdwebClient client,
         EmbeddedWallet embeddedWallet,

@@ -17,6 +17,8 @@ public class PrivateKeyWallet : IThirdwebWallet
 
     public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
 
+    public string WalletId => "privateKey";
+
     protected EthECKey EcKey { get; set; }
 
     protected PrivateKeyWallet(ThirdwebClient client, EthECKey key)
@@ -44,7 +46,9 @@ public class PrivateKeyWallet : IThirdwebWallet
             throw new ArgumentNullException(nameof(privateKeyHex), "Private key cannot be null or empty.");
         }
 
-        return Task.FromResult(new PrivateKeyWallet(client, new EthECKey(privateKeyHex)));
+        var wallet = new PrivateKeyWallet(client, new EthECKey(privateKeyHex));
+        Utils.TrackConnection(wallet);
+        return Task.FromResult(wallet);
     }
 
     #region PrivateKeyWallet Specific
@@ -61,8 +65,9 @@ public class PrivateKeyWallet : IThirdwebWallet
         {
             throw new ArgumentNullException(nameof(client));
         }
-
-        return Task.FromResult(new PrivateKeyWallet(client, EthECKey.GenerateKey()));
+        var wallet = new PrivateKeyWallet(client, EthECKey.GenerateKey());
+        Utils.TrackConnection(wallet);
+        return Task.FromResult(wallet);
     }
 
     /// <summary>
@@ -83,7 +88,9 @@ public class PrivateKeyWallet : IThirdwebWallet
         if (File.Exists(path))
         {
             var privateKey = await File.ReadAllTextAsync(path);
-            return new PrivateKeyWallet(client, new EthECKey(privateKey));
+            var wallet = new PrivateKeyWallet(client, new EthECKey(privateKey));
+            Utils.TrackConnection(wallet);
+            return wallet;
         }
         else
         {

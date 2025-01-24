@@ -25,6 +25,8 @@ public class SmartWallet : IThirdwebWallet
 
     public ThirdwebAccountType AccountType => ThirdwebAccountType.SmartAccount;
 
+    public string WalletId => "smart";
+
     public bool IsDeploying { get; private set; }
 
     public BigInteger ActiveChainId { get; private set; }
@@ -215,7 +217,7 @@ public class SmartWallet : IThirdwebWallet
             }
         }
 
-        return new SmartWallet(
+        var smartWallet = new SmartWallet(
             personalWallet,
             gasless.Value,
             chainId,
@@ -228,6 +230,8 @@ public class SmartWallet : IThirdwebWallet
             erc20PmInfo.TokenAddress,
             erc20PmInfo.BalanceStorageSlot
         );
+        Utils.TrackConnection(smartWallet);
+        return smartWallet;
     }
 
     #endregion

@@ -17,6 +17,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 {
     public ThirdwebClient Client { get; }
     public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
+    public virtual string WalletId => "ecosystem";
 
     internal readonly EmbeddedWallet EmbeddedWallet;
     internal readonly IThirdwebHttpClient HttpClient;
@@ -259,6 +260,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         {
             CreateEnclaveSession(this.EmbeddedWallet, result.AuthToken, this.Email, this.PhoneNumber, this.AuthProvider, result.AuthIdentifier);
             this.Address = address.ToChecksumAddress();
+            Utils.TrackConnection(this);
             return this.Address;
         }
     }

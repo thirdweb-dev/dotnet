@@ -44,32 +44,16 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region AA 0.6
 
-// var smartWallet06 = await SmartWallet.Create(
-//     personalWallet: privateKeyWallet,
-//     chainId: 421614,
-//     gasless: true,
-//     factoryAddress: "0xa8deE7854fb1eA8c13b713585C81d91ea86dAD84",
-//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V06
-// );
-
-// var receipt06 = await smartWallet06.ExecuteTransaction(new ThirdwebTransactionInput(chainId: 421614, to: await smartWallet06.GetAddress(), value: 0, data: "0x"));
-
+// var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true);
+// var receipt06 = await smartWallet06.Transfer(chainId: 421614, toAddress: await smartWallet06.GetAddress(), weiAmount: 0);
 // Console.WriteLine($"Receipt: {receipt06}");
 
 #endregion
 
 #region AA 0.7
 
-// var smartWallet07 = await SmartWallet.Create(
-//     personalWallet: privateKeyWallet,
-//     chainId: 421614,
-//     gasless: true,
-//     factoryAddress: "0x4f4e40E8F66e3Cc0FD7423E2fbd62A769ff551FB",
-//     entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
-// );
-
-// var receipt07 = await smartWallet07.ExecuteTransaction(new ThirdwebTransactionInput(chainId: 421614, to: await smartWallet07.GetAddress(), value: 0, data: "0x"));
-
+// var smartWallet07 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V07);
+// var receipt07 = await smartWallet07.Transfer(chainId: 421614, toAddress: await smartWallet07.GetAddress(), weiAmount: 0);
 // Console.WriteLine($"Receipt: {receipt07}");
 
 #endregion
@@ -179,7 +163,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Smart Ecosystem Wallet
 
-// var eco = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Twitch);
+// var eco = await EcosystemWallet.Create(client: client, ecosystemId: "ecosystem.the-bonfire", authProvider: AuthProvider.Github);
 // if (!await eco.IsConnected())
 // {
 //     _ = await eco.LoginWithOauth(
