@@ -15,6 +15,29 @@ public static class EIP712
     #region Generation
 
     /// <summary>
+    /// Generates a signature for a 7702 smart account session key.
+    /// </summary>
+    /// <param name="domainName">The domain name.</param>
+    /// <param name="version">The version.</param>
+    /// <param name="chainId">The chain ID.</param>
+    /// <param name="verifyingContract">The verifying contract.</param>
+    /// <param name="sessionKeyParams">The session key request.</param>
+    /// <param name="signer">The wallet signer.</param>
+    /// <returns>The generated signature.</returns>
+    public static async Task<string> GenerateSignature_SmartAccount_7702(
+        string domainName,
+        string version,
+        BigInteger chainId,
+        string verifyingContract,
+        AccountAbstraction.SessionKeyParams_7702 sessionKeyParams,
+        IThirdwebWallet signer
+    )
+    {
+        var typedData = GetTypedDefinition_SmartAccount_7702(domainName, version, chainId, verifyingContract);
+        return await signer.SignTypedDataV4(sessionKeyParams, typedData);
+    }
+
+    /// <summary>
     /// Generates a signature for a smart account permission request.
     /// </summary>
     /// <param name="domainName">The domain name.</param>
@@ -179,6 +202,30 @@ public static class EIP712
     #endregion
 
     #region Typed Definitions
+
+    /// <summary>
+    /// Gets the typed data definition for a 7702 smart account session key.
+    /// </summary>
+    /// <param name="domainName">The domain name.</param>
+    /// <param name="version">The version.</param>
+    /// <param name="chainId">The chain ID.</param>
+    /// <param name="verifyingContract">The verifying contract.</param>
+    /// <returns>The typed data definition.</returns>
+    public static TypedData<Domain> GetTypedDefinition_SmartAccount_7702(string domainName, string version, BigInteger chainId, string verifyingContract)
+    {
+        return new TypedData<Domain>
+        {
+            Domain = new Domain
+            {
+                Name = domainName,
+                Version = version,
+                ChainId = chainId,
+                VerifyingContract = verifyingContract,
+            },
+            Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(AccountAbstraction.SessionKeyParams_7702)),
+            PrimaryType = "SessionKeyParams",
+        };
+    }
 
     /// <summary>
     /// Gets the typed data definition for a smart account permission request.

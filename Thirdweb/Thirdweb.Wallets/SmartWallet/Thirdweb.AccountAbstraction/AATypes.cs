@@ -485,3 +485,31 @@ public class Erc6492Signature
     [Parameter("bytes", "callData", 3)]
     public byte[] SigToValidate { get; set; }
 }
+
+[Struct("SessionKeyParams")]
+public class SessionKeyParams_7702
+{
+    [Parameter("address", "signer", 1)]
+    [JsonProperty("signer")]
+    public string Signer { get; set; }
+
+    [Parameter("uint256", "nativeTokenLimitPerTransaction", 2)]
+    [JsonProperty("nativeTokenLimitPerTransaction")]
+    public BigInteger NativeTokenLimitPerTransaction { get; set; }
+
+    [Parameter("uint256", "startTimestamp", 3)]
+    [JsonProperty("startTimestamp")]
+    public BigInteger StartTimestamp { get; set; }
+
+    [Parameter("uint256", "endTimestamp", 4)]
+    [JsonProperty("endTimestamp")]
+    public BigInteger EndTimestamp { get; set; }
+
+    [Parameter("address[]", "approvedTargets", 5)]
+    [JsonProperty("approvedTargets")]
+    public List<string> ApprovedTargets { get; set; }
+
+    [Parameter("bytes32", "uid", 6)]
+    [JsonProperty("uid")]
+    public byte[] Uid { get; set; }
+}

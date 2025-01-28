@@ -755,6 +755,8 @@ public static partial class Utils
             case "841":
             // Taraxa Testnet
             case "842":
+            // Odyssey Testnet
+            case "911867":
                 return false;
             default:
                 return true;
