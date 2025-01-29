@@ -154,10 +154,10 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // --------------------------------------------------------------------------
 
 var chainWith7702 = 911867;
-var delegationContractAddress = "0x08e47c0d38feb3d849abc01e2b7fb5d3d0d626e9"; // MinimalAccount
+var delegationContractAddress = "0xb012446cba783d0f7723daf96cf4c49005022307"; // MinimalAccount
 
 // Required environment variables
-var executorWalletAddress = Environment.GetEnvironmentVariable("ENGINE_EXECUTOR_WALLET_ADDRESS") ?? throw new Exception("ENGINE_EXECUTOR_WALLET_ADDRESS is required");
+var backendWalletAddress = Environment.GetEnvironmentVariable("ENGINE_BACKEND_WALLET_ADDRESS") ?? throw new Exception("ENGINE_BACKEND_WALLET_ADDRESS is required");
 var engineUrl = Environment.GetEnvironmentVariable("ENGINE_URL") ?? throw new Exception("ENGINE_URL is required");
 var engineAccessToken = Environment.GetEnvironmentVariable("ENGINE_ACCESS_TOKEN") ?? throw new Exception("ENGINE_ACCESS_TOKEN is required");
 
@@ -165,7 +165,7 @@ var engineAccessToken = Environment.GetEnvironmentVariable("ENGINE_ACCESS_TOKEN"
 // Initialize Engine Wallet
 // --------------------------------------------------------------------------
 
-var engineWallet = await EngineWallet.Create(client, engineUrl, engineAccessToken, executorWalletAddress, 15);
+var engineWallet = await EngineWallet.Create(client, engineUrl, engineAccessToken, backendWalletAddress, 15);
 
 // --------------------------------------------------------------------------
 // Delegation Contract Implementation
@@ -185,7 +185,7 @@ Console.WriteLine($"Authorization: {JsonConvert.SerializeObject(authorization, F
 // Sign message for session key
 var sessionKeyParams = new SessionKeyParams_7702()
 {
-    Signer = executorWalletAddress,
+    Signer = backendWalletAddress,
     NativeTokenLimitPerTransaction = 0,
     StartTimestamp = 0,
     EndTimestamp = Utils.GetUnixTimeStampNow() + (3600 * 24),
@@ -210,7 +210,7 @@ Console.WriteLine($"EOA code: {code}");
 var eoaContract = await ThirdwebContract.Create(client, eoaWalletAddress, chainWith7702, delegationContract.Abi);
 
 // --------------------------------------------------------------------------
-// Mint Tokens (DropERC20) to the EOA Using the Executor
+// Mint Tokens (DropERC20) to the EOA Using the backend session key
 // --------------------------------------------------------------------------
 
 var erc20ContractAddress = "0xAA462a5BE0fc5214507FDB4fB2474a7d5c69065b"; // DropERC20
@@ -225,7 +225,7 @@ var executeCallData = eoaContract.CreateCallData(
     "execute",
     new object[]
     {
-        new List<Thirdweb.Console.Call>
+        new List<Call>
         {
             new()
             {
@@ -255,6 +255,57 @@ Console.WriteLine($"Execute receipt: {JsonConvert.SerializeObject(executeReceipt
 
 // Log ERC20 balance after mint
 var eoaBalanceAfter = await erc20Contract.ERC20_BalanceOf(eoaWalletAddress);
+Console.WriteLine($"EOA balance after: {eoaBalanceAfter}");
+
+// --------------------------------------------------------------------------
+// Mint Tokens (DropERC20) to the EOA Using an alternative executor
+// --------------------------------------------------------------------------
+
+// Executor wallet (managed)
+var executorWallet = await PrivateKeyWallet.Create(client, privateKey);
+
+// Log ERC20 balance before mint
+eoaBalanceBefore = await erc20Contract.ERC20_BalanceOf(eoaWalletAddress);
+Console.WriteLine($"EOA balance before: {eoaBalanceBefore}");
+
+// Sign wrapped calls 712 using an authorized session key (backend wallet in this case)
+var wrappedCalls = new WrappedCalls()
+{
+    Calls = new List<Call>
+    {
+        new()
+        {
+            Data = erc20Contract
+                .CreateCallData(
+                    "claim",
+                    new object[]
+                    {
+                        eoaWalletAddress, // receiver
+                        100, // quantity
+                        Constants.NATIVE_TOKEN_ADDRESS, // currency
+                        0, // pricePerToken
+                        new object[] { Array.Empty<byte>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO }, // allowlistProof
+                        Array.Empty<byte>() // data
+                    }
+                )
+                .HexToBytes(),
+            To = erc20ContractAddress,
+            Value = BigInteger.Zero
+        }
+    },
+    Uid = Guid.NewGuid().ToByteArray().BytesToHex().HexToBytes32()
+};
+var wrappedCallsSig = await EIP712.GenerateSignature_SmartAccount_7702_WrappedCalls("MinimalAccount", "1", chainWith7702, eoaWalletAddress, wrappedCalls, engineWallet);
+
+// Create execution call data, this time in a way that can be broadcast by anyone
+executeCallData = eoaContract.CreateCallData("executeWithSig", wrappedCalls, wrappedCallsSig.HexToBytes());
+
+var executeTx = await ThirdwebTransaction.Create(wallet: executorWallet, txInput: new ThirdwebTransactionInput(chainId: chainWith7702, to: eoaWalletAddress, data: executeCallData));
+executeReceipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(executeTx);
+Console.WriteLine($"Execute receipt: {JsonConvert.SerializeObject(executeReceipt, Formatting.Indented)}");
+
+// Log ERC20 balance after mint
+eoaBalanceAfter = await erc20Contract.ERC20_BalanceOf(eoaWalletAddress);
 Console.WriteLine($"EOA balance after: {eoaBalanceAfter}");
 
 #endregion

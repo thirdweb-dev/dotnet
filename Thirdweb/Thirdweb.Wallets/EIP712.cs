@@ -15,6 +15,28 @@ public static class EIP712
     #region Generation
 
     /// <summary>
+    /// Generates a signature for a 7702 smart account wrapped calls request.
+    /// </summary>
+    /// <param name="domainName">The domain name.</param>
+    /// <param name="version">The version.</param>
+    /// <param name="chainId">The chain ID.</param>
+    /// <param name="verifyingContract">The verifying contract.</param>
+    /// <param name="wrappedCalls">The wrapped calls request.</param>
+    /// <param name="signer">The wallet signer.</param>
+    public static async Task<string> GenerateSignature_SmartAccount_7702_WrappedCalls(
+        string domainName,
+        string version,
+        BigInteger chainId,
+        string verifyingContract,
+        AccountAbstraction.WrappedCalls wrappedCalls,
+        IThirdwebWallet signer
+    )
+    {
+        var typedData = GetTypedDefinition_SmartAccount_7702_WrappedCalls(domainName, version, chainId, verifyingContract);
+        return await signer.SignTypedDataV4(wrappedCalls, typedData);
+    }
+
+    /// <summary>
     /// Generates a signature for a 7702 smart account session key.
     /// </summary>
     /// <param name="domainName">The domain name.</param>
@@ -202,6 +224,30 @@ public static class EIP712
     #endregion
 
     #region Typed Definitions
+
+    /// <summary>
+    /// Gets the typed data definition for a 7702 smart account wrapped calls request.
+    /// </summary>
+    /// <param name="domainName">The domain name.</param>
+    /// <param name="version">The version.</param>
+    /// <param name="chainId">The chain ID.</param>
+    /// <param name="verifyingContract">The verifying contract.</param>
+    /// <returns>The typed data definition.</returns>
+    public static TypedData<Domain> GetTypedDefinition_SmartAccount_7702_WrappedCalls(string domainName, string version, BigInteger chainId, string verifyingContract)
+    {
+        return new TypedData<Domain>
+        {
+            Domain = new Domain
+            {
+                Name = domainName,
+                Version = version,
+                ChainId = chainId,
+                VerifyingContract = verifyingContract,
+            },
+            Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(AccountAbstraction.WrappedCalls), typeof(AccountAbstraction.Call)),
+            PrimaryType = "WrappedCalls",
+        };
+    }
 
     /// <summary>
     /// Gets the typed data definition for a 7702 smart account session key.

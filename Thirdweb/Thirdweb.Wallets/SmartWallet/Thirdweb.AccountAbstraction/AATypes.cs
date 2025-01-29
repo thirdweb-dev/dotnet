@@ -513,3 +513,31 @@ public class SessionKeyParams_7702
     [JsonProperty("uid")]
     public byte[] Uid { get; set; }
 }
+
+[Struct("Call")]
+public class Call
+{
+    [Parameter("bytes", "data", 1)]
+    [JsonProperty("data")]
+    public byte[] Data { get; set; }
+
+    [Parameter("address", "to", 2)]
+    [JsonProperty("to")]
+    public string To { get; set; }
+
+    [Parameter("uint256", "value", 3)]
+    [JsonProperty("value")]
+    public BigInteger Value { get; set; }
+}
+
+[Struct("WrappedCalls")]
+public class WrappedCalls
+{
+    [Parameter("tuple[]", "calls", 1, "Call[]")]
+    [JsonProperty("calls")]
+    public List<Call> Calls { get; set; }
+
+    [Parameter("bytes32", "uid", 2)]
+    [JsonProperty("uid")]
+    public byte[] Uid { get; set; }
+}

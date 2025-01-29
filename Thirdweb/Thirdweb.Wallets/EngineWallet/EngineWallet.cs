@@ -246,6 +246,11 @@ public partial class EngineWallet : IThirdwebWallet
         }
 
         var processedJson = Utils.PreprocessTypedDataJson(json);
+        // TODO: remove this sanitization when engine is upgraded to match spec
+        processedJson = processedJson.Replace("message", "value");
+        var tempObj = JObject.Parse(processedJson);
+        _ = tempObj["types"].Value<JObject>().Remove("EIP712Domain");
+        processedJson = tempObj.ToString();
 
         var url = $"{this._engineUrl}/backend-wallet/sign-typed-data";
 
@@ -307,7 +312,6 @@ public partial class EngineWallet : IThirdwebWallet
         var url = $"{this._engineUrl}/backend-wallet/{transaction.ChainId.Value}/send-transaction";
 
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }), Encoding.UTF8, "application/json");
-        Console.WriteLine(JsonConvert.SerializeObject(payload, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
 
         var response = await this._engineClient.PostAsync(url, requestContent).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
