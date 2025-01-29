@@ -100,25 +100,24 @@ public partial class EngineWallet : IThirdwebWallet
 
     #region Wallet Specific
 
-    private async Task<string> WaitForQueueId(string queueId)
+    public static async Task<string> WaitForQueueId(IThirdwebHttpClient httpClient, string engineUrl, string queueId)
     {
         var transactionHash = string.Empty;
         while (string.IsNullOrEmpty(transactionHash))
         {
             await ThirdwebTask.Delay(100);
 
-            var statusResponse = await this._engineClient.GetAsync($"{this._engineUrl}/transaction/status/{queueId}");
-            _ = statusResponse.EnsureSuccessStatusCode();
+            var statusResponse = await httpClient.GetAsync($"{engineUrl}/transaction/status/{queueId}");
             var content = await statusResponse.Content.ReadAsStringAsync();
-            var status = JObject.Parse(content);
+            var response = JObject.Parse(content);
 
-            var isErrored = status["result"]?["status"]?.ToString() is "errored" or "cancelled";
+            var isErrored = response["result"]?["status"]?.ToString() is "errored" or "cancelled";
             if (isErrored)
             {
-                throw new Exception("Transaction errored or cancelled");
+                throw new Exception($"Failed to send transaction: {response["result"]?["errorMessage"]?.ToString()}");
             }
 
-            transactionHash = status["result"]?["transactionHash"]?.ToString();
+            transactionHash = response["result"]?["transactionHash"]?.ToString();
         }
         return transactionHash;
     }
@@ -318,7 +317,7 @@ public partial class EngineWallet : IThirdwebWallet
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var queueId = JObject.Parse(content)["result"]?["queueId"]?.ToString() ?? throw new Exception("Failed to queue the transaction");
-        return await this.WaitForQueueId(queueId).ConfigureAwait(false);
+        return await WaitForQueueId(this._engineClient, this._engineUrl, queueId).ConfigureAwait(false);
     }
 
     public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
