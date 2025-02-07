@@ -984,9 +984,17 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(contract));
         }
 
-        return ownerAddresses == null || tokenIds == null
-            ? throw new ArgumentException("Owner addresses and token IDs must be provided")
-            : await ThirdwebContract.Read<List<BigInteger>>(contract, "balanceOfBatch", ownerAddresses, tokenIds);
+        if (ownerAddresses == null || tokenIds == null)
+        {
+            throw new ArgumentException("Owner addresses and token IDs must be provided");
+        }
+
+        if (ownerAddresses.Length != tokenIds.Length)
+        {
+            throw new ArgumentException("Owner addresses and token IDs must have the same length");
+        }
+
+        return await ThirdwebContract.Read<List<BigInteger>>(contract, "balanceOfBatch", ownerAddresses, tokenIds);
     }
 
     /// <summary>
@@ -1487,19 +1495,21 @@ public static class ThirdwebExtensions
 
         var balanceOfBatch = await contract.ERC1155_BalanceOfBatch(ownerArray.ToArray(), tokenIds.ToArray()).ConfigureAwait(false);
 
-        var ownerNftTasks = new List<Task<NFT>>();
+        var ownedNftTasks = new List<Task<NFT>>();
+        var ownedBalances = new List<BigInteger>();
         for (var i = 0; i < balanceOfBatch.Count; i++)
         {
             if (balanceOfBatch[i] > 0)
             {
-                ownerNftTasks.Add(contract.ERC1155_GetNFT(tokenIds[i]));
+                ownedNftTasks.Add(contract.ERC1155_GetNFT(tokenIds[i]));
+                ownedBalances.Add(balanceOfBatch[i]);
             }
         }
 
-        var ownerNfts = await Task.WhenAll(ownerNftTasks).ConfigureAwait(false);
+        var ownerNfts = await Task.WhenAll(ownedNftTasks).ConfigureAwait(false);
         for (var i = 0; i < ownerNfts.Length; i++)
         {
-            ownerNfts[i].QuantityOwned = balanceOfBatch[i];
+            ownerNfts[i].QuantityOwned = ownedBalances[i];
         }
         return ownerNfts.ToList();
     }
