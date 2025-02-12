@@ -9,12 +9,6 @@ public class UtilsTests : BaseTests
         : base(output) { }
 
     [Fact(Timeout = 120000)]
-    public void ComputeClientIdFromSecretKey()
-    {
-        Assert.True(Utils.ComputeClientIdFromSecretKey(this.SecretKey).Length == 32);
-    }
-
-    [Fact(Timeout = 120000)]
     public void HexConcat()
     {
         var hexStrings = new string[] { "0x1234", "0x5678", "0x90AB" };

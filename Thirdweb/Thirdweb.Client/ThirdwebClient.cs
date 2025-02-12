@@ -44,10 +44,10 @@ public class ThirdwebClient
 
         if (!string.IsNullOrEmpty(secretKey))
         {
-            this.ClientId = Utils.ComputeClientIdFromSecretKey(secretKey);
             this.SecretKey = secretKey;
         }
-        else
+
+        if (!string.IsNullOrEmpty(clientId))
         {
             this.ClientId = clientId;
         }
@@ -61,9 +61,12 @@ public class ThirdwebClient
             { "x-sdk-name", sdkName ?? "Thirdweb.NET" },
             { "x-sdk-os", sdkOs ?? System.Runtime.InteropServices.RuntimeInformation.OSDescription },
             { "x-sdk-platform", sdkPlatform ?? "dotnet" },
-            { "x-sdk-version", sdkVersion ?? Constants.VERSION },
-            { "x-client-id", this.ClientId },
+            { "x-sdk-version", sdkVersion ?? Constants.VERSION }
         };
+        if (!string.IsNullOrEmpty(this.ClientId))
+        {
+            defaultHeaders.Add("x-client-id", this.ClientId);
+        }
         if (!string.IsNullOrEmpty(this.BundleId))
         {
             defaultHeaders.Add("x-bundle-id", this.BundleId);

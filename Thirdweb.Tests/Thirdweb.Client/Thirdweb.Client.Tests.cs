@@ -15,10 +15,9 @@ public class ClientTests : BaseTests
     public void SecretKeyInitialization()
     {
         var client = ThirdwebClient.Create(secretKey: this.SecretKey);
-        Assert.NotNull(client.ClientId);
         Assert.NotNull(client.SecretKey);
         Assert.Null(client.BundleId);
-        Assert.Equal(client.ClientId, Utils.ComputeClientIdFromSecretKey(client.SecretKey));
+        Assert.Null(client.ClientId);
         Assert.Equal(client.SecretKey, this.SecretKey);
     }
 
@@ -49,8 +48,7 @@ public class ClientTests : BaseTests
         Assert.NotNull(client.ClientId);
         Assert.NotNull(client.SecretKey);
         Assert.Null(client.BundleId);
-        Assert.NotEqual(client.ClientId, clientId);
-        Assert.Equal(client.ClientId, Utils.ComputeClientIdFromSecretKey(client.SecretKey));
+        Assert.Equal(client.ClientId, clientId);
         Assert.Equal(client.SecretKey, this.SecretKey);
     }
 
@@ -74,10 +72,10 @@ public class ClientTests : BaseTests
         var client = ThirdwebClient.Create(secretKey: this.SecretKey, bundleId: bundleId);
         Assert.NotNull(client.SecretKey);
         Assert.NotNull(client.BundleId);
-        Assert.NotNull(client.ClientId);
+        Assert.Null(client.ClientId);
         Assert.Equal(client.SecretKey, this.SecretKey);
         Assert.Equal(client.BundleId, bundleId);
-        Assert.Equal(client.ClientId, Utils.ComputeClientIdFromSecretKey(client.SecretKey));
+        Assert.Null(client.ClientId);
     }
 
     [Fact(Timeout = 120000)]

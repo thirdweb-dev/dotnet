@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using System.Numerics;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using ADRaffy.ENSNormalize;
@@ -30,23 +29,6 @@ public static partial class Utils
     private static readonly Dictionary<BigInteger, ThirdwebChainData> _chainDataCache = new();
     private static readonly Dictionary<string, string> _ensCache = new();
     private static readonly List<string[]> _errorSubstringsComposite = new() { new string[] { "account", "not found!" }, new[] { "wrong", "chainid" } };
-
-    /// <summary>
-    /// Computes the client ID from the given secret key.
-    /// </summary>
-    /// <param name="secretKey">The secret key.</param>
-    /// <returns>The computed client ID.</returns>
-    public static string ComputeClientIdFromSecretKey(string secretKey)
-    {
-#if NETSTANDARD
-        using var sha256 = SHA256.Create();
-        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(secretKey));
-        return BitConverter.ToString(hash).Replace("-", "").ToLower()[..32];
-#else
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(secretKey));
-        return BitConverter.ToString(hash).Replace("-", "").ToLower()[..32];
-#endif
-    }
 
     // public static byte[] StringToSha256(string bytes)
     // {
