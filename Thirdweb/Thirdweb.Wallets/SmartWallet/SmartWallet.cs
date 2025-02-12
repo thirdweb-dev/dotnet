@@ -798,11 +798,22 @@ public class SmartWallet : IThirdwebWallet
         // Wait for the transaction to be mined
 
         string txHash = null;
-        while (txHash == null)
+        using var ct = new CancellationTokenSource(this.Client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+        try
         {
-            var userOpReceipt = await BundlerClient.EthGetUserOperationReceipt(this.Client, this._bundlerUrl, requestId, userOpHash).ConfigureAwait(false);
-            txHash = userOpReceipt?.Receipt?.TransactionHash;
-            await ThirdwebTask.Delay(100).ConfigureAwait(false);
+            while (txHash == null)
+            {
+                ct.Token.ThrowIfCancellationRequested();
+
+                var userOpReceipt = await BundlerClient.EthGetUserOperationReceipt(this.Client, this._bundlerUrl, requestId, userOpHash).ConfigureAwait(false);
+
+                txHash = userOpReceipt?.Receipt?.TransactionHash;
+                await ThirdwebTask.Delay(100, ct.Token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw new Exception($"User operation timed out with user op hash: {userOpHash}");
         }
 
         this.IsDeploying = false;
