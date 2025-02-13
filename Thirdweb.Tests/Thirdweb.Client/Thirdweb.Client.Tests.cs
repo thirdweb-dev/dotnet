@@ -49,8 +49,8 @@ public class ClientTests : BaseTests
         Assert.NotNull(client.ClientId);
         Assert.NotNull(client.SecretKey);
         Assert.Null(client.BundleId);
-        Assert.NotEqual(client.ClientId, clientId);
-        Assert.Equal(client.ClientId, Utils.ComputeClientIdFromSecretKey(client.SecretKey));
+        Assert.Equal(client.ClientId, clientId);
+        Assert.NotEqual(client.ClientId, Utils.ComputeClientIdFromSecretKey(client.SecretKey));
         Assert.Equal(client.SecretKey, this.SecretKey);
     }
 
