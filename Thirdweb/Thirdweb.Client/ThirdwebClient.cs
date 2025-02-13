@@ -42,16 +42,9 @@ public class ThirdwebClient
             throw new InvalidOperationException("ClientId or SecretKey must be provided");
         }
 
-        if (!string.IsNullOrEmpty(secretKey))
-        {
-            this.ClientId = Utils.ComputeClientIdFromSecretKey(secretKey);
-            this.SecretKey = secretKey;
-        }
-        else
-        {
-            this.ClientId = clientId;
-        }
-
+        // Respects provided clientId if any, otherwise computes it from secretKey
+        this.ClientId = !string.IsNullOrEmpty(clientId) ? clientId : (string.IsNullOrEmpty(secretKey) ? null : Utils.ComputeClientIdFromSecretKey(secretKey));
+        this.SecretKey = secretKey;
         this.BundleId = bundleId;
 
         this.FetchTimeoutOptions = fetchTimeoutOptions ?? new TimeoutOptions();
