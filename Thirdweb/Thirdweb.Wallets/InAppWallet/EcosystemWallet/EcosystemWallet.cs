@@ -80,6 +80,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// <param name="siweSigner">The SIWE signer wallet for SIWE authentication.</param>
     /// <param name="legacyEncryptionKey">The encryption key that is no longer required but was used in the past. Only pass this if you had used custom auth before this was deprecated.</param>
     /// <param name="walletSecret">The wallet secret for Backend authentication.</param>
+    /// <param name="twAuthTokenOverride">The auth token to use for the session. This will automatically connect using a raw thirdweb auth token.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the created in-app wallet.</returns>
     /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
     public static async Task<EcosystemWallet> Create(
@@ -92,7 +93,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         string storageDirectoryPath = null,
         IThirdwebWallet siweSigner = null,
         string legacyEncryptionKey = null,
-        string walletSecret = null
+        string walletSecret = null,
+        string twAuthTokenOverride = null
     )
     {
         if (client == null)
@@ -154,6 +156,10 @@ public partial class EcosystemWallet : IThirdwebWallet
 
         storageDirectoryPath ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Thirdweb", "EcosystemWallet");
         var embeddedWallet = new EmbeddedWallet(client, storageDirectoryPath, ecosystemId, ecosystemPartnerId);
+        if (!string.IsNullOrWhiteSpace(twAuthTokenOverride))
+        {
+            CreateEnclaveSession(embeddedWallet, twAuthTokenOverride, email, phoneNumber, authproviderStr, null);
+        }
 
         try
         {
