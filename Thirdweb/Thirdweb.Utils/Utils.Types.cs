@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Numerics;
 
 namespace Thirdweb;
 
@@ -31,10 +32,10 @@ public class ThirdwebChainData
     public string ShortName { get; set; }
 
     [JsonProperty("chainId")]
-    public int ChainId { get; set; }
+    public BigInteger ChainId { get; set; }
 
     [JsonProperty("networkId")]
-    public int NetworkId { get; set; }
+    public BigInteger NetworkId { get; set; }
 
     [JsonProperty("slug")]
     public string Slug { get; set; }
