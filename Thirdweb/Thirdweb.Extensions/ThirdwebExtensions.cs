@@ -1235,7 +1235,9 @@ public static class ThirdwebExtensions
         }
         catch (Exception e)
         {
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
             metadata = new NFTMetadata { Description = e.Message };
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
         }
         metadata.Id = tokenId.ToString();
 
@@ -1386,7 +1388,9 @@ public static class ThirdwebExtensions
         }
         catch (Exception e)
         {
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
             metadata = new NFTMetadata { Description = e.Message };
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
         }
         metadata.Id = tokenId.ToString();
 
