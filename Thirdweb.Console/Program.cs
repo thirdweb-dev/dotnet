@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 using Thirdweb;
 using Thirdweb.AccountAbstraction;
 using Thirdweb.AI;
+using Thirdweb.Indexer;
 using Thirdweb.Pay;
 
 DotEnv.Load();
@@ -37,6 +38,45 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
 // var nfts = await contract.ERC721_GetAllNFTs();
 // Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
+
+#endregion
+
+#region Indexer
+
+// // Create a ThirdwebInsight instance
+// var insight = await ThirdwebInsight.Create(client);
+
+// // Setup some filters
+// var address = await Utils.GetAddressFromENS(client, "vitalik.eth");
+// var chains = new BigInteger[] { 1, 137, 42161 };
+
+// // Fetch all token types
+// var tokens = await insight.GetTokens(address, chains);
+// Console.WriteLine($"ERC20 Count: {tokens.erc20Tokens.Length} | ERC721 Count: {tokens.erc721Tokens.Length} | ERC1155 Count: {tokens.erc1155Tokens.Length}");
+
+// // Fetch specific token types
+// var erc20Tokens = await insight.GetTokens_ERC20(address, chains);
+// Console.WriteLine($"ERC20 Tokens: {JsonConvert.SerializeObject(erc20Tokens, Formatting.Indented)}");
+
+// // Fetch specific token types
+// var erc721Tokens = await insight.GetTokens_ERC721(address, chains);
+// Console.WriteLine($"ERC721 Tokens: {JsonConvert.SerializeObject(erc721Tokens, Formatting.Indented)}");
+
+// // Fetch specific token types
+// var erc1155Tokens = await insight.GetTokens_ERC1155(address, chains);
+// Console.WriteLine($"ERC1155 Tokens: {JsonConvert.SerializeObject(erc1155Tokens, Formatting.Indented)}");
+
+// // Fetch events (great amount of optional filters available)
+// var events = await insight.GetEvents(
+//     chainIds: new BigInteger[] { 1 }, // ethereum
+//     contractAddress: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", // bored apes
+//     eventSignature: "Transfer(address,address,uint256)", // transfer event
+//     fromTimestamp: Utils.GetUnixTimeStampNow() - 3600, // last hour
+//     sortBy: SortBy.TransactionIndex, // block number, block timestamp or transaction index
+//     sortOrder: SortOrder.Desc, // latest first
+//     limit: 5 // last 5 transfers
+// );
+// Console.WriteLine($"Events: {JsonConvert.SerializeObject(events, Formatting.Indented)}");
 
 #endregion
 
