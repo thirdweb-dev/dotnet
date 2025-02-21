@@ -12,10 +12,10 @@ namespace Thirdweb;
 /// </summary>
 public class ThirdwebContract
 {
-    internal ThirdwebClient Client { get; private set; }
-    internal string Address { get; private set; }
-    internal BigInteger Chain { get; private set; }
-    internal string Abi { get; private set; }
+    public ThirdwebClient Client { get; private set; }
+    public string Address { get; private set; }
+    public BigInteger Chain { get; private set; }
+    public string Abi { get; private set; }
 
     private static readonly Dictionary<string, string> _contractAbiCache = new();
     private static readonly object _cacheLock = new();

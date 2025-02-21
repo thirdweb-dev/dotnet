@@ -755,6 +755,8 @@ public static partial class Utils
             case "841":
             // Taraxa Testnet
             case "842":
+            // Odyssey Testnet
+            case "911867":
                 return false;
             default:
                 return true;
@@ -937,6 +939,13 @@ public static partial class Utils
 
         // Celo Mainnet, Alfajores & Baklava
         if (chainId == (BigInteger)42220 || chainId == (BigInteger)44787 || chainId == (BigInteger)62320)
+        {
+            var gasPrice = await FetchGasPrice(client, chainId, withBump).ConfigureAwait(false);
+            return (gasPrice, gasPrice);
+        }
+
+        // Arbitrum, Arbitrum Nova & Arbitrum Sepolia
+        if (chainId == (BigInteger)42161 || chainId == (BigInteger)42170 || chainId == (BigInteger)421614)
         {
             var gasPrice = await FetchGasPrice(client, chainId, withBump).ConfigureAwait(false);
             return (gasPrice, gasPrice);
@@ -1165,17 +1174,16 @@ public static partial class Utils
         foreach (var rlpElement in decodedList)
         {
             var decodedItem = (RLPCollection)rlpElement;
+            var signature = RLPSignedDataDecoder.DecodeSignature(decodedItem, 3);
             var authorizationListItem = new EIP7702Authorization
             {
                 ChainId = new HexBigInteger(decodedItem[0].RLPData.ToBigIntegerFromRLPDecoded()).HexValue,
                 Address = decodedItem[1].RLPData.BytesToHex().ToChecksumAddress(),
-                Nonce = new HexBigInteger(decodedItem[2].RLPData.ToBigIntegerFromRLPDecoded()).HexValue
+                Nonce = new HexBigInteger(decodedItem[2].RLPData.ToBigIntegerFromRLPDecoded()).HexValue,
+                YParity = signature.V.BytesToHex(),
+                R = signature.R.BytesToHex(),
+                S = signature.S.BytesToHex()
             };
-            var signature = RLPSignedDataDecoder.DecodeSignature(decodedItem, 3);
-            authorizationListItem.YParity = signature.V.BytesToHex();
-            authorizationListItem.R = signature.R.BytesToHex();
-            authorizationListItem.S = signature.S.BytesToHex();
-
             authorizationLists.Add(authorizationListItem);
         }
 
