@@ -1194,7 +1194,7 @@ public static partial class Utils
         return value.ToBytesForRLPEncoding();
     }
 
-    internal static async void TrackTransaction(ThirdwebTransaction transaction, string transactionHash)
+    public static async void TrackTransaction(ThirdwebTransaction transaction, string transactionHash)
     {
         try
         {
@@ -1225,7 +1225,7 @@ public static partial class Utils
         }
     }
 
-    internal static async void TrackConnection(IThirdwebWallet wallet)
+    public static async void TrackConnection(IThirdwebWallet wallet)
     {
         try
         {
