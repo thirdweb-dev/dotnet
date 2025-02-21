@@ -37,7 +37,11 @@ public class Token
 
 public class Token_ERC20 : Token { }
 
-public class Token_ERC721 : Token { }
+public class Token_ERC721 : Token
+{
+    [JsonProperty("tokenId", Required = Required.Always)]
+    public BigInteger TokenId { get; set; }
+}
 
 public class Token_ERC1155 : Token
 {
@@ -79,6 +83,96 @@ public class Event
 
     [JsonProperty("decoded")]
     public Decoded Decoded { get; set; } = null!;
+}
+
+public class Transaction
+{
+    [JsonProperty("chain_id", Required = Required.Always)]
+    public BigInteger ChainId { get; set; }
+
+    [JsonProperty("block_number", Required = Required.Always)]
+    public string BlockNumber { get; set; } = null!;
+
+    [JsonProperty("block_hash", Required = Required.Always)]
+    public string BlockHash { get; set; } = null!;
+
+    [JsonProperty("block_timestamp", Required = Required.Always)]
+    public string BlockTimestamp { get; set; } = null!;
+
+    [JsonProperty("hash", Required = Required.Always)]
+    public string Hash { get; set; } = null!;
+
+    [JsonProperty("nonce", Required = Required.Always)]
+    public BigInteger Nonce { get; set; }
+
+    [JsonProperty("transaction_index", Required = Required.Always)]
+    public BigInteger TransactionIndex { get; set; }
+
+    [JsonProperty("from_address", Required = Required.Always)]
+    public string FromAddress { get; set; } = null!;
+
+    [JsonProperty("to_address", Required = Required.Always)]
+    public string ToAddress { get; set; } = null!;
+
+    [JsonProperty("value", Required = Required.Always)]
+    public BigInteger Value { get; set; }
+
+    [JsonProperty("gas_price", Required = Required.Always)]
+    public BigInteger GasPrice { get; set; }
+
+    [JsonProperty("gas", Required = Required.Always)]
+    public BigInteger Gas { get; set; }
+
+    [JsonProperty("function_selector", Required = Required.Always)]
+    public string FunctionSelector { get; set; } = null!;
+
+    [JsonProperty("data", Required = Required.Always)]
+    public string Data { get; set; } = null!;
+
+    [JsonProperty("max_fee_per_gas", Required = Required.Always)]
+    public BigInteger MaxFeePerGas { get; set; }
+
+    [JsonProperty("max_priority_fee_per_gas", Required = Required.Always)]
+    public BigInteger MaxPriorityFeePerGas { get; set; }
+
+    [JsonProperty("transaction_type", Required = Required.Always)]
+    public BigInteger TransactionType { get; set; }
+
+    [JsonProperty("r", Required = Required.Always)]
+    public BigInteger R { get; set; }
+
+    [JsonProperty("s", Required = Required.Always)]
+    public BigInteger S { get; set; }
+
+    [JsonProperty("v", Required = Required.Always)]
+    public BigInteger V { get; set; }
+
+    [JsonProperty("access_list_json")]
+    public string AccessListJson { get; set; }
+
+    [JsonProperty("contract_address")]
+    public string ContractAddress { get; set; }
+
+    [JsonProperty("gas_used")]
+    public BigInteger? GasUsed { get; set; }
+
+    [JsonProperty("cumulative_gas_used")]
+    public BigInteger? CumulativeGasUsed { get; set; }
+
+    [JsonProperty("effective_gas_price")]
+    public BigInteger? EffectiveGasPrice { get; set; }
+
+    [JsonProperty("blob_gas_used")]
+    public BigInteger? BlobGasUsed { get; set; }
+
+    [JsonProperty("blob_gas_price")]
+    public BigInteger? BlobGasPrice { get; set; }
+
+    [JsonProperty("logs_bloom")]
+    public string LogsBloom { get; set; }
+
+    [JsonProperty("status")]
+    public BigInteger? Status { get; set; }
 }
 
 public class Decoded

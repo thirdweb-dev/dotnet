@@ -43,8 +43,8 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Indexer
 
-// // Create a ThirdwebInsight instance
-// var insight = await ThirdwebInsight.Create(client);
+// Create a ThirdwebInsight instance
+var insight = await ThirdwebInsight.Create(client);
 
 // // Setup some filters
 // var address = await Utils.GetAddressFromENS(client, "vitalik.eth");
@@ -77,6 +77,17 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 //     limit: 5 // last 5 transfers
 // );
 // Console.WriteLine($"Events: {JsonConvert.SerializeObject(events, Formatting.Indented)}");
+
+// // Fetch transactions (great amount of optional filters available)
+// var transactions = await insight.GetTransactions(
+//     chainIds: new BigInteger[] { 1 }, // ethereum
+//     contractAddress: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", // bored apes
+//     fromTimestamp: Utils.GetUnixTimeStampNow() - 3600, // last hour
+//     sortBy: SortBy.TransactionIndex, // block number, block timestamp or transaction index
+//     sortOrder: SortOrder.Desc, // latest first
+//     limit: 5 // last 5 transactions
+// );
+// Console.WriteLine($"Transactions: {JsonConvert.SerializeObject(transactions, Formatting.Indented)}");
 
 #endregion
 

@@ -22,6 +22,12 @@ public class InsightEvents
     public Meta Meta { get; set; }
 }
 
+public class InsightTransactions
+{
+    public Transaction[] Transactions { get; set; }
+    public Meta Meta { get; set; }
+}
+
 public class ThirdwebInsight
 {
     private readonly IThirdwebHttpClient _httpClient;
@@ -232,6 +238,92 @@ public class ThirdwebInsight
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var result = JsonConvert.DeserializeObject<ResponseModel<Event>>(responseContent);
         return new InsightEvents { Events = result.Data, Meta = result.Meta, };
+    }
+
+    /// <summary>
+    /// Get transactions, optionally filtered by contract address, signature, and more.
+    /// </summary>
+    /// <param name="chainIds">The chain IDs to get the transactions from.</param>
+    /// <param name="contractAddress">The contract address to get the transactions from. (Optional)</param>
+    /// <param name="signature">The signature to filter transactions by. (Optional)</param>
+    /// <param name="fromBlock">The starting block number to get the transactions from. (Optional, if provided, said block is included in query)</param>
+    /// <param name="toBlock">The ending block number to get the transactions from. (Optional, if provided, said block is included in query)</param>
+    /// <param name="fromTimestamp">The starting block timestamp to get the transactions from. (Optional, if provided, said block is included in query)</param>
+    /// <param name="toTimestamp">The ending block timestamp to get the transactions from. (Optional, if provided, said block is included in query)</param>
+    /// <param name="sortBy">The field to sort the transactions by. (Default: BlockNumber)</param>
+    /// <param name="sortOrder">The order to sort the transactions by. (Default: Desc)</param>
+    /// <param name="limit">The number of transactions to return. (Default: 20)</param>
+    /// <param name="page">The page number to return. (Default: 0)</param>
+    /// <param name="decode">Whether to decode the transactions. (Default: true)</param>
+    /// <returns>The transactions and metadata as an instance of <see cref="InsightTransactions"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown when a signature is provided without a contract address.</exception>
+    /// /// <exception cref="ArgumentException">Thrown when no chain IDs are provided.</exception>
+    public async Task<InsightTransactions> GetTransactions(
+        BigInteger[] chainIds,
+        string contractAddress = null,
+        string signature = null,
+        BigInteger? fromBlock = null,
+        BigInteger? toBlock = null,
+        BigInteger? fromTimestamp = null,
+        BigInteger? toTimestamp = null,
+        SortBy sortBy = SortBy.BlockNumber,
+        SortOrder sortOrder = SortOrder.Desc,
+        int limit = 20,
+        int page = 0,
+        bool decode = true
+    )
+    {
+        if (!string.IsNullOrEmpty(signature) && string.IsNullOrEmpty(contractAddress))
+        {
+            throw new ArgumentException("Contract address must be provided when signature is provided.");
+        }
+
+        if (chainIds.Length == 0)
+        {
+            throw new ArgumentException("At least one chain ID must be provided.", nameof(chainIds));
+        }
+
+        var baseUrl = $"{Constants.INSIGHT_API_URL}/v1/transactions";
+        var url = AppendChains(
+            !string.IsNullOrEmpty(contractAddress)
+                ? !string.IsNullOrEmpty(signature)
+                    ? $"{baseUrl}/{contractAddress}/{signature}"
+                    : $"{baseUrl}/{contractAddress}"
+                : baseUrl,
+            chainIds
+        );
+
+        url += $"&sort_by={SortByToString(sortBy)}";
+        url += $"&sort_order={SortOrderToString(sortOrder)}";
+        url += $"&limit={limit}";
+        url += $"&page={page}";
+        url += $"&decode={decode}";
+
+        if (fromBlock.HasValue)
+        {
+            url += $"&filter_block_number_gte={fromBlock}";
+        }
+
+        if (toBlock.HasValue)
+        {
+            url += $"&filter_block_number_lte={toBlock}";
+        }
+
+        if (fromTimestamp.HasValue)
+        {
+            url += $"&filter_block_timestamp_gte={fromTimestamp}";
+        }
+
+        if (toTimestamp.HasValue)
+        {
+            url += $"&filter_block_timestamp_lte={toTimestamp}";
+        }
+
+        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+        var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var result = JsonConvert.DeserializeObject<ResponseModel<Transaction>>(responseContent);
+        return new InsightTransactions { Transactions = result.Data, Meta = result.Meta, };
     }
 
     private static string AppendChains(string url, BigInteger[] chainIds)
