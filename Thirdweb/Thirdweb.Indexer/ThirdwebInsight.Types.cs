@@ -23,31 +23,150 @@ internal class ResponseModel<T>
     public Meta Meta { get; set; } = null!;
 }
 
-public class Token
+public class Meta
 {
-    [JsonProperty("chainId", Required = Required.Always)]
-    public BigInteger ChainId { get; set; }
+    [JsonProperty("chain_ids")]
+    public List<BigInteger> ChainIds { get; set; } = new();
 
-    [JsonProperty("balance", Required = Required.Always)]
-    public BigInteger Balance { get; set; }
+    [JsonProperty("address")]
+    public string Address { get; set; }
 
-    [JsonProperty("tokenAddress", Required = Required.Always)]
-    public string TokenAddress { get; set; }
+    [JsonProperty("signature")]
+    public string Signature { get; set; }
+
+    [JsonProperty("page")]
+    public BigInteger Page { get; set; }
+
+    [JsonProperty("limit_per_chain")]
+    public BigInteger LimitPerChain { get; set; }
+
+    [JsonProperty("total_items")]
+    public BigInteger TotalItems { get; set; }
+
+    [JsonProperty("total_pages")]
+    public BigInteger TotalPages { get; set; }
 }
+
+#region Tokens API
 
 public class Token_ERC20 : Token { }
 
-public class Token_ERC721 : Token
+public class Token_ERC721 : Token_NFT { }
+
+public class Token_ERC1155 : Token_NFT { }
+
+public class Token
 {
-    [JsonProperty("tokenId", Required = Required.Always)]
-    public BigInteger TokenId { get; set; }
+    [JsonProperty("chain_id")]
+    public BigInteger ChainId { get; set; }
+
+    [JsonProperty("balance")]
+    public BigInteger Balance { get; set; }
+
+    [JsonProperty("token_address")]
+    public string TokenAddress { get; set; }
 }
 
-public class Token_ERC1155 : Token
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+public class Token_NFT : Token
 {
-    [JsonProperty("tokenId", Required = Required.Always)]
-    public BigInteger TokenId { get; set; }
+    [JsonProperty("token_id")]
+    public string TokenId { get; set; }
+
+    [JsonProperty("name")]
+    public string Name { get; set; }
+
+    [JsonProperty("description")]
+    public string Description { get; set; }
+
+    [JsonProperty("image_url")]
+    public string ImageUrl { get; set; }
+
+    [JsonProperty("video_url")]
+    public string VideoUrl { get; set; }
+
+    [JsonProperty("animation_url")]
+    public string AnimationUrl { get; set; }
+
+    [JsonProperty("background_color")]
+    public string BackgroundColor { get; set; }
+
+    [JsonProperty("external_url")]
+    public string ExternalUrl { get; set; }
+
+    [JsonProperty("status")]
+    public string Status { get; set; }
+
+    [JsonProperty("extra_metadata")]
+    public NFT_ExtraMetadata ExtraMetadata { get; set; }
+
+    [JsonProperty("collection")]
+    public NFT_Collection Collection { get; set; }
+
+    [JsonProperty("contract")]
+    public NFT_Contract Contract { get; set; }
 }
+
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+public class NFT_ExtraMetadata
+{
+    [JsonProperty("attributes")]
+    public object Attributes { get; set; }
+
+    [JsonProperty("properties")]
+    public object Properties { get; set; }
+}
+
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+public class AttributeData
+{
+    [JsonProperty("trait_type")]
+    public string TraitType { get; set; }
+
+    [JsonProperty("value")]
+    public object Value { get; set; }
+
+    [JsonProperty("display_type")]
+    public string DisplayType { get; set; }
+}
+
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+public class NFT_Collection
+{
+    [JsonProperty("name")]
+    public string Name { get; set; }
+
+    [JsonProperty("description")]
+    public string Description { get; set; }
+
+    [JsonProperty("image_url")]
+    public string ImageUrl { get; set; }
+
+    [JsonProperty("banner_image_url")]
+    public string BannerImageUrl { get; set; }
+
+    [JsonProperty("featured_image_url")]
+    public string FeaturedImageUrl { get; set; }
+
+    [JsonProperty("external_link")]
+    public string ExternalLink { get; set; }
+}
+
+public class NFT_Contract
+{
+    [JsonProperty("name")]
+    public string Name { get; set; }
+
+    [JsonProperty("symbol")]
+    public string Symbol { get; set; }
+
+    [JsonProperty("type")]
+    internal string Type { get; set; } // ERC721, ERC1155
+}
+
+#endregion
+
+#region Events API
 
 public class Event
 {
@@ -82,69 +201,88 @@ public class Event
     public List<string> Topics { get; set; } = new();
 
     [JsonProperty("decoded")]
-    public Decoded Decoded { get; set; } = null!;
+    public Event_Decoded Decoded { get; set; } = null!;
 }
+
+public class Event_Decoded
+{
+    [JsonProperty("name")]
+    public string Name { get; set; } = null!;
+
+    [JsonProperty("signature")]
+    public string Signature { get; set; } = null!;
+
+    [JsonProperty("indexed_params")]
+    public JObject IndexedParams { get; set; } = new();
+
+    [JsonProperty("non_indexed_params")]
+    public JObject NonIndexedParams { get; set; } = new();
+}
+
+#endregion
+
+#region Transactions API
 
 public class Transaction
 {
-    [JsonProperty("chain_id", Required = Required.Always)]
+    [JsonProperty("chain_id")]
     public BigInteger ChainId { get; set; }
 
-    [JsonProperty("block_number", Required = Required.Always)]
+    [JsonProperty("block_number")]
     public string BlockNumber { get; set; } = null!;
 
-    [JsonProperty("block_hash", Required = Required.Always)]
+    [JsonProperty("block_hash")]
     public string BlockHash { get; set; } = null!;
 
-    [JsonProperty("block_timestamp", Required = Required.Always)]
+    [JsonProperty("block_timestamp")]
     public string BlockTimestamp { get; set; } = null!;
 
-    [JsonProperty("hash", Required = Required.Always)]
+    [JsonProperty("hash")]
     public string Hash { get; set; } = null!;
 
-    [JsonProperty("nonce", Required = Required.Always)]
+    [JsonProperty("nonce")]
     public BigInteger Nonce { get; set; }
 
-    [JsonProperty("transaction_index", Required = Required.Always)]
+    [JsonProperty("transaction_index")]
     public BigInteger TransactionIndex { get; set; }
 
-    [JsonProperty("from_address", Required = Required.Always)]
+    [JsonProperty("from_address")]
     public string FromAddress { get; set; } = null!;
 
-    [JsonProperty("to_address", Required = Required.Always)]
+    [JsonProperty("to_address")]
     public string ToAddress { get; set; } = null!;
 
-    [JsonProperty("value", Required = Required.Always)]
+    [JsonProperty("value")]
     public BigInteger Value { get; set; }
 
-    [JsonProperty("gas_price", Required = Required.Always)]
+    [JsonProperty("gas_price")]
     public BigInteger GasPrice { get; set; }
 
-    [JsonProperty("gas", Required = Required.Always)]
+    [JsonProperty("gas")]
     public BigInteger Gas { get; set; }
 
-    [JsonProperty("function_selector", Required = Required.Always)]
+    [JsonProperty("function_selector")]
     public string FunctionSelector { get; set; } = null!;
 
-    [JsonProperty("data", Required = Required.Always)]
+    [JsonProperty("data")]
     public string Data { get; set; } = null!;
 
-    [JsonProperty("max_fee_per_gas", Required = Required.Always)]
+    [JsonProperty("max_fee_per_gas")]
     public BigInteger MaxFeePerGas { get; set; }
 
-    [JsonProperty("max_priority_fee_per_gas", Required = Required.Always)]
+    [JsonProperty("max_priority_fee_per_gas")]
     public BigInteger MaxPriorityFeePerGas { get; set; }
 
-    [JsonProperty("transaction_type", Required = Required.Always)]
+    [JsonProperty("transaction_type")]
     public BigInteger TransactionType { get; set; }
 
-    [JsonProperty("r", Required = Required.Always)]
+    [JsonProperty("r")]
     public BigInteger R { get; set; }
 
-    [JsonProperty("s", Required = Required.Always)]
+    [JsonProperty("s")]
     public BigInteger S { get; set; }
 
-    [JsonProperty("v", Required = Required.Always)]
+    [JsonProperty("v")]
     public BigInteger V { get; set; }
 
     [JsonProperty("access_list_json")]
@@ -175,41 +313,4 @@ public class Transaction
     public BigInteger? Status { get; set; }
 }
 
-public class Decoded
-{
-    [JsonProperty("name")]
-    public string Name { get; set; } = null!;
-
-    [JsonProperty("signature")]
-    public string Signature { get; set; } = null!;
-
-    [JsonProperty("indexedParams")]
-    public JObject IndexedParams { get; set; } = new();
-
-    [JsonProperty("nonIndexedParams")]
-    public JObject NonIndexedParams { get; set; } = new();
-}
-
-public class Meta
-{
-    [JsonProperty("chain_ids", Required = Required.Always)]
-    public List<BigInteger> ChainIds { get; set; } = new();
-
-    [JsonProperty("address")]
-    public string Address { get; set; }
-
-    [JsonProperty("signature")]
-    public string Signature { get; set; }
-
-    [JsonProperty("page", Required = Required.Always)]
-    public BigInteger Page { get; set; }
-
-    [JsonProperty("limit_per_chain", Required = Required.Always)]
-    public BigInteger LimitPerChain { get; set; }
-
-    [JsonProperty("total_items", Required = Required.Always)]
-    public BigInteger TotalItems { get; set; }
-
-    [JsonProperty("total_pages", Required = Required.Always)]
-    public BigInteger TotalPages { get; set; }
-}
+#endregion
