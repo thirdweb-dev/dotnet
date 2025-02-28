@@ -203,7 +203,7 @@ public class ThirdwebRPC : IDisposable
                                 }
                                 catch
                                 {
-                                    revertMsg = JsonConvert.SerializeObject(rpcResponse.Error.Data);
+                                    revertMsg = rpcResponse.Error.Data is string ? rpcResponse.Error.Data.ToString() : JsonConvert.SerializeObject(rpcResponse.Error.Data);
                                 }
                             }
                             tcs.SetException(new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message} {revertMsg}"));
