@@ -23,5 +23,5 @@ public class RpcError
     /// Gets or sets additional data about the error.
     /// </summary>
     [JsonProperty("data")]
-    public string Data { get; set; }
+    public object Data { get; set; }
 }

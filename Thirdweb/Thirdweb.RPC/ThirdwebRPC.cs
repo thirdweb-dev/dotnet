@@ -182,6 +182,7 @@ public class ThirdwebRPC : IDisposable
             }
 
             var responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Console.WriteLine(responseJson);
             var responses = JsonConvert.DeserializeObject<List<RpcResponse<object>>>(responseJson);
 
             foreach (var rpcResponse in responses)
@@ -197,12 +198,12 @@ public class ThirdwebRPC : IDisposable
                             {
                                 try
                                 {
-                                    revertMsg = new Nethereum.ABI.FunctionEncoding.FunctionCallDecoder().DecodeFunctionErrorMessage(rpcResponse.Error.Data);
-                                    revertMsg = string.IsNullOrWhiteSpace(revertMsg) ? rpcResponse.Error.Data : revertMsg;
+                                    revertMsg = new Nethereum.ABI.FunctionEncoding.FunctionCallDecoder().DecodeFunctionErrorMessage(rpcResponse.Error.Data.ToString());
+                                    revertMsg = string.IsNullOrWhiteSpace(revertMsg) ? rpcResponse.Error.Data.ToString() : revertMsg;
                                 }
                                 catch
                                 {
-                                    revertMsg = rpcResponse.Error.Data;
+                                    revertMsg = JsonConvert.SerializeObject(rpcResponse.Error.Data);
                                 }
                             }
                             tcs.SetException(new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message} {revertMsg}"));
