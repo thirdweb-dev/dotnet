@@ -149,6 +149,7 @@ public enum NFTType
 /// Represents an NFT with metadata, owner, type, and supply information.
 /// </summary>
 [Serializable]
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public struct NFT
 {
     /// <summary>
@@ -181,6 +182,7 @@ public struct NFT
 /// Represents the metadata of an NFT.
 /// </summary>
 [Serializable]
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public struct NFTMetadata
 {
     /// <summary>
@@ -212,6 +214,12 @@ public struct NFTMetadata
     /// </summary>
     [JsonProperty("name")]
     public string Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the video URL of the NFT.
+    /// </summary>
+    [JsonProperty("video_url")]
+    public string VideoUrl { get; set; }
 
     /// <summary>
     /// Gets or sets the animation URL of the NFT.

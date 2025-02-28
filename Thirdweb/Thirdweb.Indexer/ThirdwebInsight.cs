@@ -52,10 +52,11 @@ public class ThirdwebInsight
     /// </summary>
     /// <param name="ownerAddress">The address to get the token balances of.</param>
     /// <param name="chainIds">The chain IDs to get the token balances from.</param>
+    /// <param name="withMetadata">Whether to include NFT metadata in the response. (Default: true)</param>
     /// <returns>A tuple containing the ERC20, ERC721, and ERC1155 tokens.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the owner address is null or empty.</exception>
     /// <exception cref="ArgumentException">Thrown when no chain IDs are provided.</exception>
-    public async Task<(Token_ERC20[] erc20Tokens, Token_ERC721[] erc721Tokens, Token_ERC1155[] erc1155Tokens)> GetTokens(string ownerAddress, BigInteger[] chainIds)
+    public async Task<(Token_ERC20[] erc20Tokens, Token_ERC721[] erc721Tokens, Token_ERC1155[] erc1155Tokens)> GetTokens(string ownerAddress, BigInteger[] chainIds, bool withMetadata = true)
     {
         if (string.IsNullOrEmpty(ownerAddress))
         {
@@ -68,8 +69,8 @@ public class ThirdwebInsight
         }
 
         var erc20Tokens = await this.GetTokens_ERC20(ownerAddress, chainIds).ConfigureAwait(false);
-        var erc721Tokens = await this.GetTokens_ERC721(ownerAddress, chainIds).ConfigureAwait(false);
-        var erc1155Tokens = await this.GetTokens_ERC1155(ownerAddress, chainIds).ConfigureAwait(false);
+        var erc721Tokens = await this.GetTokens_ERC721(ownerAddress, chainIds, withMetadata: withMetadata).ConfigureAwait(false);
+        var erc1155Tokens = await this.GetTokens_ERC1155(ownerAddress, chainIds, withMetadata: withMetadata).ConfigureAwait(false);
         return (erc20Tokens, erc721Tokens, erc1155Tokens);
     }
 
@@ -78,10 +79,12 @@ public class ThirdwebInsight
     /// </summary>
     /// <param name="ownerAddress">The address to get the ERC20 tokens of.</param>
     /// <param name="chainIds">The chain IDs to get the ERC20 tokens from.</param>
+    /// <param name="limit">The number of tokens to return. (Default: 50)</param>
+    /// <param name="page">The page number to return. (Default: 0)</param>
     /// <returns>An array of ERC20 tokens.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the owner address is null or empty.</exception>
     /// /// <exception cref="ArgumentException">Thrown when no chain IDs are provided.</exception>
-    public async Task<Token_ERC20[]> GetTokens_ERC20(string ownerAddress, BigInteger[] chainIds)
+    public async Task<Token_ERC20[]> GetTokens_ERC20(string ownerAddress, BigInteger[] chainIds, int limit = 50, int page = 0)
     {
         if (string.IsNullOrEmpty(ownerAddress))
         {
@@ -94,6 +97,8 @@ public class ThirdwebInsight
         }
 
         var url = AppendChains($"{Constants.INSIGHT_API_URL}/v1/tokens/erc20/{ownerAddress}", chainIds);
+        url += $"&limit={limit}";
+        url += $"&page={page}";
         var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -105,10 +110,13 @@ public class ThirdwebInsight
     /// </summary>
     /// <param name="ownerAddress">The address to get the ERC721 tokens of.</param>
     /// <param name="chainIds">The chain IDs to get the ERC721 tokens from.</param>
+    /// <param name="limit">The number of tokens to return. (Default: 50)</param>
+    /// <param name="page">The page number to return. (Default: 0)</param>
+    /// <param name="withMetadata">Whether to include NFT metadata in the response. (Default: true)</param>
     /// <returns>An array of ERC721 tokens.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the owner address is null or empty.</exception>
     /// /// <exception cref="ArgumentException">Thrown when no chain IDs are provided.</exception>
-    public async Task<Token_ERC721[]> GetTokens_ERC721(string ownerAddress, BigInteger[] chainIds)
+    public async Task<Token_ERC721[]> GetTokens_ERC721(string ownerAddress, BigInteger[] chainIds, int limit = 50, int page = 0, bool withMetadata = true)
     {
         if (string.IsNullOrEmpty(ownerAddress))
         {
@@ -121,6 +129,9 @@ public class ThirdwebInsight
         }
 
         var url = AppendChains($"{Constants.INSIGHT_API_URL}/v1/tokens/erc721/{ownerAddress}", chainIds);
+        url += $"&limit={limit}";
+        url += $"&page={page}";
+        url += $"&metadata={withMetadata.ToString().ToLower()}";
         var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -132,10 +143,13 @@ public class ThirdwebInsight
     /// </summary>
     /// <param name="ownerAddress">The address to get the ERC1155 tokens of.</param>
     /// <param name="chainIds">The chain IDs to get the ERC1155 tokens from.</param>
+    /// <param name="limit">The number of tokens to return. (Default: 50)</param>
+    /// <param name="page">The page number to return. (Default: 0)</param>
+    /// <param name="withMetadata">Whether to include NFT metadata in the response. (Default: true)</param>
     /// <returns>An array of ERC1155 tokens.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the owner address is null or empty.</exception>
     /// /// <exception cref="ArgumentException">Thrown when no chain IDs are provided.</exception>
-    public async Task<Token_ERC1155[]> GetTokens_ERC1155(string ownerAddress, BigInteger[] chainIds)
+    public async Task<Token_ERC1155[]> GetTokens_ERC1155(string ownerAddress, BigInteger[] chainIds, int limit = 50, int page = 0, bool withMetadata = true)
     {
         if (string.IsNullOrEmpty(ownerAddress))
         {
@@ -148,6 +162,9 @@ public class ThirdwebInsight
         }
 
         var url = AppendChains($"{Constants.INSIGHT_API_URL}/v1/tokens/erc1155/{ownerAddress}", chainIds);
+        url += $"&limit={limit}";
+        url += $"&page={page}";
+        url += $"&metadata={withMetadata.ToString().ToLower()}";
         var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);

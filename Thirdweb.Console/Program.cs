@@ -43,8 +43,8 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 
 #region Indexer
 
-// Create a ThirdwebInsight instance
-var insight = await ThirdwebInsight.Create(client);
+// // Create a ThirdwebInsight instance
+// var insight = await ThirdwebInsight.Create(client);
 
 // // Setup some filters
 // var address = await Utils.GetAddressFromENS(client, "vitalik.eth");
@@ -88,6 +88,17 @@ var insight = await ThirdwebInsight.Create(client);
 //     limit: 5 // last 5 transactions
 // );
 // Console.WriteLine($"Transactions: {JsonConvert.SerializeObject(transactions, Formatting.Indented)}");
+
+// // Use ToNFT to ToNFTList extensions
+// var convertedNft = erc721Tokens[0].ToNFT();
+
+// var convertedNfts = erc721Tokens.ToNFTList();
+
+// // Use NFT Extensions (GetNFTImageBytes, or GetNFTSprite in Unity)
+// var imageBytes = await convertedNft.GetNFTImageBytes(client);
+// var pathToSave = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "nft.png");
+// await File.WriteAllBytesAsync(pathToSave, imageBytes);
+// Console.WriteLine($"NFT image saved to: {pathToSave}");
 
 #endregion
 
