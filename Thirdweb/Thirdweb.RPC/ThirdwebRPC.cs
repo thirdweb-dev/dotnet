@@ -182,7 +182,6 @@ public class ThirdwebRPC : IDisposable
             }
 
             var responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            Console.WriteLine(responseJson);
             var responses = JsonConvert.DeserializeObject<List<RpcResponse<object>>>(responseJson);
 
             foreach (var rpcResponse in responses)
