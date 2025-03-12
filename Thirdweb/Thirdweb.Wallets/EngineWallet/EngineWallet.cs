@@ -42,14 +42,7 @@ public partial class EngineWallet : IThirdwebWallet
     /// <param name="walletAddress">The backend wallet address to use.</param>
     /// <param name="timeoutSeconds">The timeout in seconds for the transaction. Defaults to no timeout.</param>
     /// <param name="additionalHeaders">Additional headers to include in requests. Authorization and X-Backend-Wallet-Address automatically included.</param>
-    public static async Task<EngineWallet> Create(
-        ThirdwebClient client,
-        string engineUrl,
-        string authToken,
-        string walletAddress,
-        int? timeoutSeconds = null,
-        Dictionary<string, string> additionalHeaders = null
-    )
+    public static EngineWallet Create(ThirdwebClient client, string engineUrl, string authToken, string walletAddress, int? timeoutSeconds = null, Dictionary<string, string> additionalHeaders = null)
     {
         if (client == null)
         {
@@ -76,15 +69,9 @@ public partial class EngineWallet : IThirdwebWallet
             engineUrl = engineUrl[..^1];
         }
 
+        walletAddress = walletAddress.ToChecksumAddress();
+
         var engineClient = Utils.ReconstructHttpClient(client.HttpClient, new Dictionary<string, string> { { "Authorization", $"Bearer {authToken}" }, });
-        var allWalletsResponse = await engineClient.GetAsync($"{engineUrl}/backend-wallet/get-all").ConfigureAwait(false);
-        _ = allWalletsResponse.EnsureSuccessStatusCode();
-        var allWallets = JObject.Parse(await allWalletsResponse.Content.ReadAsStringAsync().ConfigureAwait(false));
-        var walletExists = allWallets["result"].Any(w => string.Equals(w["address"].Value<string>(), walletAddress, StringComparison.OrdinalIgnoreCase));
-        if (!walletExists)
-        {
-            throw new Exception("Wallet does not exist in the engine.");
-        }
         engineClient.AddHeader("X-Backend-Wallet-Address", walletAddress);
         if (additionalHeaders != null)
         {
