@@ -71,12 +71,12 @@ public class StorageTests : BaseTests
     }
 
     [Fact(Timeout = 120000)]
-    public async Task DownloadTest_400()
+    public async Task DownloadTest_404()
     {
         var client = ThirdwebClient.Create(secretKey: this.SecretKey);
-        var exception = await Assert.ThrowsAsync<Exception>(() => ThirdwebStorage.Download<string>(client, "https://0.rpc.thirdweb.com/"));
+        var exception = await Assert.ThrowsAsync<Exception>(() => ThirdwebStorage.Download<string>(client, "https://example.com/invalid-file"));
         Assert.Contains("Failed to download", exception.Message);
-        Assert.Contains("400", exception.Message);
+        Assert.Contains("404", exception.Message);
     }
 
     [Fact(Timeout = 120000)]

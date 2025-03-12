@@ -181,8 +181,12 @@ public class ThirdwebRPC : IDisposable
                 throw new HttpRequestException(errorDetail);
             }
 
-            var responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var responses = JsonConvert.DeserializeObject<List<RpcResponse<object>>>(responseJson);
+            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            if (responseContent.Equals("Unauthorized", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new HttpRequestException("Unauthorized");
+            }
+            var responses = JsonConvert.DeserializeObject<List<RpcResponse<object>>>(responseContent);
 
             foreach (var rpcResponse in responses)
             {

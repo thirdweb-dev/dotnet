@@ -106,7 +106,8 @@ public class RpcTests : BaseTests
     {
         var client = ThirdwebClient.Create(clientId: "hi", fetchTimeoutOptions: new TimeoutOptions(rpc: 60000));
         var rpc = ThirdwebRPC.GetRpcInstance(client, 1);
-        _ = await Assert.ThrowsAsync<HttpRequestException>(async () => await rpc.SendRequestAsync<string>("eth_blockNumber"));
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(async () => await rpc.SendRequestAsync<string>("eth_blockNumber"));
+        Assert.Contains("Unauthorized", ex.Message);
     }
 
     [Fact(Timeout = 120000)]
