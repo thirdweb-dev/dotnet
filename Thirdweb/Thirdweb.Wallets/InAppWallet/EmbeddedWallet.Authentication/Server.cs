@@ -15,6 +15,7 @@ internal abstract class ServerBase
 
     internal abstract Task<LoginPayloadData> FetchSiwePayloadAsync(string address, string chainId);
     internal abstract Task<Server.VerifyResult> VerifySiweAsync(LoginPayloadData payload, string signature);
+    internal abstract Task<Server.VerifyResult> VerifySiweExternalAsync(LoginPayloadData payload, string signature);
 
     internal abstract Task<Server.VerifyResult> VerifyBackendAsync(string walletSecret);
 
@@ -141,6 +142,18 @@ internal partial class Server : ServerBase
     }
 
     internal override async Task<VerifyResult> VerifySiweAsync(LoginPayloadData payload, string signature)
+    {
+        var uri = MakeUri2024("/login/siwe/callback");
+        var content = MakeHttpContent(new { signature, payload });
+        ThirdwebHttpResponseMessage response;
+        response = await this._httpClient.PostAsync(uri.ToString(), content).ConfigureAwait(false);
+        await CheckStatusCodeAsync(response).ConfigureAwait(false);
+
+        var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
+        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+    }
+
+    internal override async Task<VerifyResult> VerifySiweExternalAsync(LoginPayloadData payload, string signature)
     {
         var uri = MakeUri2024("/login/siwe/callback");
         var content = MakeHttpContent(new { signature, payload });

@@ -238,6 +238,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     private async Task<string> PostAuth(Server.VerifyResult result)
     {
+        this.HttpClient.RemoveHeader("Authorization");
         this.HttpClient.AddHeader("Authorization", $"Bearer embedded-wallet-token:{result.AuthToken}");
 
         string address;
@@ -770,7 +771,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         payload = HttpUtility.UrlDecode(queryDict["payload"]);
         var payloadData = JsonConvert.DeserializeObject<LoginPayloadData>(payload);
 
-        var serverRes = await this.EmbeddedWallet.SignInWithSiweRawAsync(payloadData, signature).ConfigureAwait(false);
+        var serverRes = await this.EmbeddedWallet.SignInWithSiweExternalRawAsync(payloadData, signature).ConfigureAwait(false);
         return serverRes;
     }
 
