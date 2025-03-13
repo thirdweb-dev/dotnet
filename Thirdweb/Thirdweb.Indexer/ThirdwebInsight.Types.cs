@@ -47,6 +47,33 @@ public class Meta
     public BigInteger TotalPages { get; set; }
 }
 
+#region Price API
+
+public class Token_Price
+{
+    [JsonProperty("chain_id")]
+    public BigInteger ChainId { get; set; }
+
+    [JsonProperty("address")]
+    public string Address { get; set; }
+
+    [JsonProperty("symbol")]
+    public string Symbol { get; set; }
+
+    [JsonProperty("price_usd")]
+    public double PriceUsd { get; set; }
+
+    [JsonProperty("price_usd_cents")]
+    public double PriceUsdCents { get; set; }
+
+    public override string ToString()
+    {
+        return JsonConvert.SerializeObject(this);
+    }
+}
+
+#endregion
+
 #region Tokens API
 
 public class Token_ERC20 : Token { }
