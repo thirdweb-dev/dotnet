@@ -540,7 +540,7 @@ public static partial class Utils
     [GeneratedRegex("int\\d+")]
     private static partial Regex IntRegex();
 
-    private static bool IsReferenceType(string typeName)
+    internal static bool IsReferenceType(string typeName)
     {
         if (!BytesRegex().IsMatch(typeName))
         {
@@ -568,7 +568,7 @@ public static partial class Utils
         return false;
     }
 #else
-    private static bool IsReferenceType(string typeName)
+    internal static bool IsReferenceType(string typeName)
     {
         if (!new Regex("bytes\\d+").IsMatch(typeName))
         {
@@ -1254,5 +1254,73 @@ public static partial class Utils
         {
             // Ignore
         }
+    }
+
+    /// <summary>
+    /// Waits for the transaction receipt.
+    /// </summary>
+    /// <param name="client">The Thirdweb client.</param>
+    /// <param name="chainId">The chain ID.</param>
+    /// <param name="txHash">The transaction hash.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The transaction receipt.</returns>
+    public static async Task<ThirdwebTransactionReceipt> WaitForTransactionReceipt(ThirdwebClient client, BigInteger chainId, string txHash, CancellationToken cancellationToken = default)
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+
+        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+        ThirdwebTransactionReceipt receipt = null;
+
+        try
+        {
+            do
+            {
+                receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
+                if (receipt == null)
+                {
+                    await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
+                }
+            } while (receipt == null && !cts.Token.IsCancellationRequested);
+
+            if (receipt == null)
+            {
+                throw new Exception($"Transaction {txHash} not found within the timeout period.");
+            }
+
+            if (receipt.Status != null && receipt.Status.Value == 0)
+            {
+                throw new Exception($"Transaction {txHash} execution reverted.");
+            }
+
+            var userOpEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationEventEventDTO>();
+            if (userOpEvent != null && userOpEvent.Count > 0 && !userOpEvent[0].Event.Success)
+            {
+                var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
+                var postOpRevertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.PostOpRevertReasonEventDTO>();
+                if (revertReasonEvent != null && revertReasonEvent.Count > 0)
+                {
+                    var revertReason = revertReasonEvent[0].Event.RevertReason;
+                    var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
+                    throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
+                }
+                else if (postOpRevertReasonEvent != null && postOpRevertReasonEvent.Count > 0)
+                {
+                    var revertReason = postOpRevertReasonEvent[0].Event.RevertReason;
+                    var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
+                    throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
+                }
+                else
+                {
+                    throw new Exception($"Transaction {txHash} execution silently reverted with no reason string");
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw new Exception($"Transaction receipt polling for hash {txHash} was cancelled.");
+        }
+
+        return receipt;
     }
 }

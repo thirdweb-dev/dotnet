@@ -12,6 +12,8 @@ public static class Constants
     public const string NATIVE_TOKEN_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     public const double DECIMALS_18 = 1000000000000000000;
 
+    public const string MINIMAL_ACCOUNT_7702 = "0xFabf2ca2377Bbc199EaE439b71fcD6a5925127e2";
+
     public const string ENTRYPOINT_ADDRESS_V06 = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
     public const string ENTRYPOINT_ADDRESS_V07 = "0x0000000071727De22E5E9d8BAf0edAc6f37da032";
 

@@ -80,7 +80,9 @@ public partial class EngineWallet : IThirdwebWallet
                 engineClient.AddHeader(header.Key, header.Value);
             }
         }
-        return new EngineWallet(client, engineClient, engineUrl, walletAddress, timeoutSeconds);
+        var wallet = new EngineWallet(client, engineClient, engineUrl, walletAddress, timeoutSeconds);
+        Utils.TrackConnection(wallet);
+        return wallet;
     }
 
     #endregion

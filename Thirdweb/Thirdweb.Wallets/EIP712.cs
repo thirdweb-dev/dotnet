@@ -51,7 +51,7 @@ public static class EIP712
         string version,
         BigInteger chainId,
         string verifyingContract,
-        AccountAbstraction.SessionKeyParams_7702 sessionKeyParams,
+        AccountAbstraction.SessionSpec sessionKeyParams,
         IThirdwebWallet signer
     )
     {
@@ -268,8 +268,15 @@ public static class EIP712
                 ChainId = chainId,
                 VerifyingContract = verifyingContract,
             },
-            Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(AccountAbstraction.SessionKeyParams_7702)),
-            PrimaryType = "SessionKeyParams",
+            Types = MemberDescriptionFactory.GetTypesMemberDescription(
+                typeof(Domain),
+                typeof(AccountAbstraction.SessionSpec),
+                typeof(AccountAbstraction.CallSpec),
+                typeof(AccountAbstraction.Constraint),
+                typeof(AccountAbstraction.TransferSpec),
+                typeof(AccountAbstraction.UsageLimit)
+            ),
+            PrimaryType = "SessionSpec",
         };
     }
 
