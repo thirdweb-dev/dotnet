@@ -1323,4 +1323,9 @@ public static partial class Utils
 
         return receipt;
     }
+
+    public static bool IsDelegatedAccount(string accountCode)
+    {
+        return !accountCode.Equals($"0xef0100{Constants.MINIMAL_ACCOUNT_7702[2..]}", StringComparison.OrdinalIgnoreCase);
+    }
 }

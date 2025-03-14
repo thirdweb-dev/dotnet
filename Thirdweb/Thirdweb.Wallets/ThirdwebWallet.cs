@@ -38,7 +38,7 @@ public class ThirdwebWallet : IThirdwebWallet
 
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var code = await rpc.SendRequestAsync<string>("eth_getCode", userWalletAddress, "latest");
-        var needsDelegation = code.ToLower() != $"0xef0100{Constants.MINIMAL_ACCOUNT_7702[2..]}".ToLower();
+        var needsDelegation = !Utils.IsDelegatedAccount(code);
 
         // Sign authorization if needed
         EIP7702Authorization? authorization = needsDelegation ? await userWallet.SignAuthorization(chainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: false) : null;
@@ -56,13 +56,12 @@ public class ThirdwebWallet : IThirdwebWallet
             executorWallet,
             new ThirdwebTransactionInput(chainId: chainId, to: userWalletAddress, data: sessionKeyCallData, authorization: authorization)
         );
-        var delegationReceipt = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(delegationTx);
-        Console.WriteLine($"Delegation receipt: {delegationReceipt}");
+        _ = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(delegationTx);
 
         var newCode = await rpc.SendRequestAsync<string>("eth_getCode", userWalletAddress, "latest");
-        if (newCode.ToLower() != $"0xef0100{Constants.MINIMAL_ACCOUNT_7702[2..]}".ToLower())
+        if (!Utils.IsDelegatedAccount(newCode))
         {
-            throw new Exception("Delegation failed");
+            throw new Exception("Delegation failed, code was not set.");
         }
 
         var userContract = await ThirdwebContract.Create(client, userWalletAddress, chainId, delegationContract.Abi);
