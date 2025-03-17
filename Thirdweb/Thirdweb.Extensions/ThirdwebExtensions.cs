@@ -1227,40 +1227,46 @@ public static class ThirdwebExtensions
             throw new ArgumentNullException(nameof(contract));
         }
 
-        var uri = await contract.ERC721_TokenURI(tokenId).ConfigureAwait(false);
-        NFTMetadata metadata;
-        try
+        var nft = new NFT
         {
-            metadata = await ThirdwebStorage.Download<NFTMetadata>(contract.Client, uri).ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-#pragma warning disable IDE0059 // Unnecessary assignment of a value
-            metadata = new NFTMetadata { Description = e.Message };
-#pragma warning restore IDE0059 // Unnecessary assignment of a value
-        }
-        metadata.Id = tokenId.ToString();
+            Owner = Constants.ADDRESS_ZERO,
+            Type = NFTType.ERC721,
+            Supply = 1,
+            QuantityOwned = 1
+        };
 
-        var owner = Constants.ADDRESS_ZERO;
         if (fillOwner)
         {
             try
             {
-                owner = await contract.ERC721_OwnerOf(tokenId).ConfigureAwait(false);
+                nft.Owner = await contract.ERC721_OwnerOf(tokenId).ConfigureAwait(false);
             }
-            catch (Exception)
+            catch
             {
-                owner = Constants.ADDRESS_ZERO;
+                nft.Owner = Constants.ADDRESS_ZERO;
             }
         }
 
-        return new NFT
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
+        var nftMetadata = new NFTMetadata();
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
+        try
         {
-            Metadata = metadata,
-            Owner = owner,
-            Type = NFTType.ERC721,
-            Supply = 1,
-            QuantityOwned = 1
+            var uri = await contract.ERC721_TokenURI(tokenId).ConfigureAwait(false);
+            nftMetadata = await ThirdwebStorage.Download<NFTMetadata>(contract.Client, uri).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            nftMetadata.Description = $"Metadata not found: {e.Message}";
+        }
+        finally
+        {
+            nftMetadata.Id = tokenId.ToString();
+        }
+
+        return nft with
+        {
+            Metadata = nftMetadata
         };
     }
 

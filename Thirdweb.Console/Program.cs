@@ -46,6 +46,15 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 // // Create a ThirdwebInsight instance
 // var insight = await ThirdwebInsight.Create(client);
 
+// var ethPriceToday = await insight.GetTokenPrice(addressOrSymbol: "ETH", chainId: 1);
+// Console.WriteLine($"ETH price today: {ethPriceToday.PriceUsd}");
+
+// var ethPriceYesterday = await insight.GetTokenPrice(addressOrSymbol: "ETH", chainId: 1, timestamp: Utils.GetUnixTimeStampNow() - 86400);
+// Console.WriteLine($"ETH price yesterday: {ethPriceYesterday.PriceUsd}");
+
+// var multiTokenPrices = await insight.GetTokenPrices(addressOrSymbols: new[] { "POL", "APE" }, chainIds: new BigInteger[] { 137, 33139 });
+// Console.WriteLine($"Multi token prices: {JsonConvert.SerializeObject(multiTokenPrices, Formatting.Indented)}");
+
 // // Setup some filters
 // var address = await Utils.GetAddressFromENS(client, "vitalik.eth");
 // var chains = new BigInteger[] { 1, 137, 42161 };

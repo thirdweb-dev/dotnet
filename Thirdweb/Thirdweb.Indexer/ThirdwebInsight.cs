@@ -47,6 +47,44 @@ public class ThirdwebInsight
         return Task.FromResult(new ThirdwebInsight(client));
     }
 
+    public async Task<Token_Price> GetTokenPrice(string addressOrSymbol, BigInteger chainId, long? timestamp = null)
+    {
+        var prices = await this.GetTokenPrices(new[] { addressOrSymbol }, new[] { chainId }, timestamp).ConfigureAwait(false);
+        if (prices.Length == 0)
+        {
+            throw new Exception("Token price not found.");
+        }
+        return prices[0];
+    }
+
+    public async Task<Token_Price[]> GetTokenPrices(string[] addressOrSymbols, BigInteger[] chainIds, long? timestamp = null)
+    {
+        var addresses = addressOrSymbols.Where(Utils.IsValidAddress).ToArray();
+        var symbols = addressOrSymbols.Except(addresses).ToArray();
+
+        var url = AppendChains($"{Constants.INSIGHT_API_URL}/v1/tokens/price", chainIds);
+
+        if (addresses.Length > 0)
+        {
+            url += $"&address={string.Join("&address=", addresses)}";
+        }
+
+        if (symbols.Length > 0)
+        {
+            url += $"&symbol={string.Join("&symbol=", symbols)}";
+        }
+
+        if (timestamp.HasValue)
+        {
+            url += $"&timestamp={timestamp}";
+        }
+
+        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+        var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        return JsonConvert.DeserializeObject<ResponseModel<Token_Price>>(responseContent).Data;
+    }
+
     /// <summary>
     /// Get the token balances of an address.
     /// </summary>
