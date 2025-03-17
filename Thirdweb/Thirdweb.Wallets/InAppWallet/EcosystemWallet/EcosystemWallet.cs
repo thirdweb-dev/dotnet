@@ -373,6 +373,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// Returns Ecosystem metadata (set in thirdweb Dashboard)
     /// </summary>
     /// <returns>Instance of <see cref="EcosystemDetails"/> containing metadata</returns>
+    /// <exception cref="InvalidOperationException">Thrown when called on an InAppWallet</exception>
     public async Task<EcosystemDetails> GetEcosystemDetails()
     {
         if (this.GetType().Name.Contains("InAppWallet"))
@@ -391,6 +392,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// </summary>
     /// <param name="redirectUrl">The URL of your thirdweb-powered website.</param>
     /// <returns>The URL to redirect the user to.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when no connected session is found</exception>
     public string GenerateExternalLoginLink(string redirectUrl)
     {
         var authProvider = HttpUtility.UrlEncode(this.AuthProvider.ToLower());
