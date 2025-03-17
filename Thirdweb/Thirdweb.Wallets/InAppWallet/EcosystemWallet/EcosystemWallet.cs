@@ -369,8 +369,16 @@ public partial class EcosystemWallet : IThirdwebWallet
         return this.PhoneNumber;
     }
 
+    /// <summary>
+    /// Returns Ecosystem metadata (set in thirdweb Dashboard)
+    /// </summary>
+    /// <returns>Instance of <see cref="EcosystemDetails"/> containing metadata</returns>
     public async Task<EcosystemDetails> GetEcosystemDetails()
     {
+        if (this.GetType().Name.Contains("InAppWallet"))
+        {
+            throw new InvalidOperationException("Cannot get ecosystem details from an InAppWallet.");
+        }
         var url = $"{EMBEDDED_WALLET_PATH_2024}/ecosystem-wallet";
         var response = await this.HttpClient.GetAsync(url).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
@@ -378,6 +386,11 @@ public partial class EcosystemWallet : IThirdwebWallet
         return JsonConvert.DeserializeObject<EcosystemDetails>(content);
     }
 
+    /// <summary>
+    /// Returns a link that can be used to transfer the .NET wallet session to a thirdweb powered React website for seamless integration.
+    /// </summary>
+    /// <param name="redirectUrl">The URL of your thirdweb-powered website.</param>
+    /// <returns>The URL to redirect the user to.</returns>
     public string GenerateExternalLoginLink(string redirectUrl)
     {
         var authProvider = HttpUtility.UrlEncode(this.AuthProvider.ToLower());
