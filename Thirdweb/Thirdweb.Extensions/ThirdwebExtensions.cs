@@ -1220,11 +1220,17 @@ public static class ThirdwebExtensions
     /// <param name="fillOwner">A boolean indicating whether to fill the owner details. Defaults to true.</param>
     /// <returns>A task representing the asynchronous operation, with an NFT result containing the token details.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the token ID is less than 0.</exception>
     public static async Task<NFT> ERC721_GetNFT(this ThirdwebContract contract, BigInteger tokenId, bool fillOwner = true)
     {
         if (contract == null)
         {
             throw new ArgumentNullException(nameof(contract));
+        }
+
+        if (tokenId < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
         }
 
         var nft = new NFT
@@ -1379,11 +1385,17 @@ public static class ThirdwebExtensions
     /// <param name="fillSupply">A boolean indicating whether to fill the supply. Defaults to true if not specified.</param>
     /// <returns>A task representing the asynchronous operation, with an NFT result containing the token details.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the token ID is less than 0.</exception>
     public static async Task<NFT> ERC1155_GetNFT(this ThirdwebContract contract, BigInteger tokenId, bool fillSupply = true)
     {
         if (contract == null)
         {
             throw new ArgumentNullException(nameof(contract));
+        }
+
+        if (tokenId < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tokenId), "Token ID must be equal or greater than 0");
         }
 
         var uri = await contract.ERC1155_URI(tokenId).ConfigureAwait(false);
