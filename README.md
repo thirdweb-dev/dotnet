@@ -21,7 +21,7 @@ The Thirdweb .NET SDK is a comprehensive and easy to use library that allows dev
 - **Storage Solutions:** Download and upload files using IPFS.
 - **Transaction Builder:** Create, manipulate and send low level transactions.
 - **Session Keys:** Advanced control for smart wallets to manage permissions and session durations.
-- **Thirdweb Pay:** Easily integrate fiat onramps and cross-chain crypto purchases.
+- **Thirdweb Bridge:** Universal interface to use any asset onchain.
 - **Thirdweb Nebula:** Create blockchain-powered AI Agents.
 - **Thirdweb Insight:** Query blockchain data at the speed of light.
 - **Thirdweb Engine:** Interact in creative ways from your backend.
