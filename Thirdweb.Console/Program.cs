@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 using Thirdweb;
 using Thirdweb.AccountAbstraction;
 using Thirdweb.AI;
+using Thirdweb.Bridge;
 using Thirdweb.Indexer;
 using Thirdweb.Pay;
 
@@ -38,6 +39,93 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client: client);
 // var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
 // var nfts = await contract.ERC721_GetAllNFTs();
 // Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
+
+#endregion
+
+#region Bridge
+
+// // Create a ThirdwebBridge instance
+// var bridge = await ThirdwebBridge.Create(client);
+
+// // Buy - Get a quote for buying a specific amount of tokens
+// var buyQuote = await bridge.Buy_Quote(
+//     originChainId: 1,
+//     originTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+//     destinationChainId: 324,
+//     destinationTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
+//     buyAmountWei: BigInteger.Parse("0.1".ToWei())
+// );
+// Console.WriteLine($"Buy quote: {JsonConvert.SerializeObject(buyQuote, Formatting.Indented)}");
+
+// // Buy - Get an executable set of transactions (alongside a quote) for buying a specific amount of tokens
+// var preparedBuy = await bridge.Buy_Prepare(
+//     originChainId: 1,
+//     originTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+//     destinationChainId: 324,
+//     destinationTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
+//     buyAmountWei: BigInteger.Parse("0.1".ToWei()),
+//     sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
+//     receiver: await myWallet.GetAddress()
+// );
+// Console.WriteLine($"Prepared Buy contains {preparedBuy.Transactions.Count} transaction(s)!");
+
+// // Sell - Get a quote for selling a specific amount of tokens
+// var sellQuote = await bridge.Sell_Quote(
+//     originChainId: 324,
+//     originTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
+//     destinationChainId: 1,
+//     destinationTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+//     sellAmountWei: BigInteger.Parse("0.1".ToWei())
+// );
+// Console.WriteLine($"Sell quote: {JsonConvert.SerializeObject(sellQuote, Formatting.Indented)}");
+
+// // Sell - Get an executable set of transactions (alongside a quote) for selling a specific amount of tokens
+// var preparedSell = await bridge.Sell_Prepare(
+//     originChainId: 324,
+//     originTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
+//     destinationChainId: 1,
+//     destinationTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+//     sellAmountWei: BigInteger.Parse("0.1".ToWei()),
+//     sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
+//     receiver: await myWallet.GetAddress()
+// );
+// Console.WriteLine($"Prepared Sell contains {preparedSell.Transactions.Count} transaction(s)!");
+
+// // Transfer - Get an executable transaction for transferring a specific amount of tokens
+// var preparedTransfer = await bridge.Transfer_Prepare(
+//     chainId: 137,
+//     tokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
+//     transferAmountWei: BigInteger.Parse("0.1".ToWei()),
+//     sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
+//     receiver: await myWallet.GetAddress()
+// );
+// Console.WriteLine($"Prepared Transfer: {JsonConvert.SerializeObject(preparedTransfer, Formatting.Indented)}");
+
+// // You may use our extensions to execute yourself...
+// var myTx = await preparedTransfer.Transactions[0].ToThirdwebTransaction(myWallet);
+// var myHash = await ThirdwebTransaction.Send(myTx);
+
+// // ...and poll for the status...
+// var status = await bridge.Status(transactionHash: myHash, chainId: 1);
+// var isComplete = status.StatusType == StatusType.COMPLETED;
+// Console.WriteLine($"Status: {JsonConvert.SerializeObject(status, Formatting.Indented)}");
+
+// // Or use our Execute extensions directly to handle everything for you!
+
+// // Execute a prepared Buy
+// var buyResult = await bridge.Execute(myWallet, preparedBuy);
+// var buyHashes = buyResult.Select(receipt => receipt.TransactionHash).ToList();
+// Console.WriteLine($"Buy hashes: {JsonConvert.SerializeObject(buyHashes, Formatting.Indented)}");
+
+// // Execute a prepared Sell
+// var sellResult = await bridge.Execute(myWallet, preparedSell);
+// var sellHashes = sellResult.Select(receipt => receipt.TransactionHash).ToList();
+// Console.WriteLine($"Sell hashes: {JsonConvert.SerializeObject(sellHashes, Formatting.Indented)}");
+
+// // Execute a prepared Transfer
+// var transferResult = await bridge.Execute(myWallet, preparedTransfer);
+// var transferHashes = transferResult.Select(receipt => receipt.TransactionHash).ToList();
+// Console.WriteLine($"Transfer hashes: {JsonConvert.SerializeObject(transferHashes, Formatting.Indented)}");
 
 #endregion
 
