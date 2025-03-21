@@ -4,6 +4,13 @@ public static class Constants
 {
     public const string VERSION = "2.18.6";
 
+    internal const string BRIDGE_API_URL = "https://bridge.thirdweb.com";
+    internal const string NEBULA_API_URL = "https://nebula-api.thirdweb.com";
+    internal const string INSIGHT_API_URL = "https://insight.thirdweb.com";
+    internal const string SOCIAL_API_URL = "https://social.thirdweb.com";
+    internal const string PIN_URI = "https://storage.thirdweb.com/ipfs/upload";
+    internal const string FALLBACK_IPFS_GATEWAY = "https://ipfs.io/ipfs/";
+
     public const string IERC20_INTERFACE_ID = "0x36372b07";
     public const string IERC721_INTERFACE_ID = "0x80ac58cd";
     public const string IERC1155_INTERFACE_ID = "0xd9b67a26";
@@ -31,15 +38,9 @@ public static class Constants
     internal const string DUMMY_SIG = "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
     internal const string DUMMY_PAYMASTER_AND_DATA_HEX =
         "0x0101010101010101010101010101010101010101000000000000000000000000000000000000000000000000000001010101010100000000000000000000000000000000000000000000000000000000000000000101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101";
-    internal const string FALLBACK_IPFS_GATEWAY = "https://ipfs.io/ipfs/";
-    internal const string PIN_URI = "https://storage.thirdweb.com/ipfs/upload";
     internal const string ENS_REGISTRY_ADDRESS = "0xce01f8eee7E479C928F8919abD53E553a36CeF67";
-    internal const string SOCIAL_API_URL = "https://social.thirdweb.com";
 
-    internal const string NEBULA_API_URL = "https://nebula-api.thirdweb.com";
     internal const string NEBULA_DEFAULT_MODEL = "t0-001";
-
-    internal const string INSIGHT_API_URL = "https://insight.thirdweb.com";
 
     internal const string ENTRYPOINT_V06_ABI =
         /*lang=json,strict*/
