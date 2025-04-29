@@ -36,20 +36,17 @@ public class NebulaExecuteResult
 public class NebulaContext
 {
     public List<BigInteger> ChainIds { get; set; }
-    public List<string> ContractAddresses { get; set; }
-    public List<string> WalletAddresses { get; set; }
+    public string WalletAddress { get; set; }
 
     /// <summary>
     /// Represents filters for narrowing down context in which operations are performed.
     /// </summary>
     /// <param name="chainIds">The chain IDs to filter by.</param>
-    /// <param name="contractAddresses">The contract addresses to filter by.</param>
-    /// <param name="walletAddresses">The wallet addresses to filter by.</param>
-    public NebulaContext(List<BigInteger> chainIds = null, List<string> contractAddresses = null, List<string> walletAddresses = null)
+    /// <param name="walletAddress">The wallet addresses to filter by.</param>
+    public NebulaContext(List<BigInteger> chainIds = null, string walletAddress = null)
     {
         this.ChainIds = chainIds;
-        this.ContractAddresses = contractAddresses;
-        this.WalletAddresses = walletAddresses;
+        this.WalletAddress = walletAddress;
     }
 }
 
@@ -60,7 +57,6 @@ public class ThirdwebNebula
     internal SessionManager Sessions { get; }
     internal ChatClient ChatClient { get; }
     internal ExecutionClient ExecuteClient { get; }
-    internal FeedbackClient FeedbackClient { get; }
 
     internal ThirdwebNebula(ThirdwebClient client)
     {
@@ -68,7 +64,6 @@ public class ThirdwebNebula
         this.Sessions = new SessionManager(httpClient);
         this.ChatClient = new ChatClient(httpClient);
         this.ExecuteClient = new ExecutionClient(httpClient);
-        this.FeedbackClient = new FeedbackClient(httpClient);
     }
 
     public static async Task<ThirdwebNebula> Create(ThirdwebClient client, string sessionId = null, string model = Constants.NEBULA_DEFAULT_MODEL)
@@ -102,7 +97,7 @@ public class ThirdwebNebula
             throw new ArgumentException("Message cannot be null or empty.", nameof(message));
         }
 
-        var contextFiler = await PrepareContextFilter(wallet, context);
+        var contextFiler = await this.PrepareContextFilter(wallet, context);
 
         var result = await this.ChatClient.SendMessageAsync(
             new ChatParamsSingleMessage()
@@ -110,7 +105,6 @@ public class ThirdwebNebula
                 SessionId = this.SessionId,
                 Message = message,
                 ContextFilter = contextFiler,
-                ExecuteConfig = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
             }
         );
 
@@ -126,7 +120,7 @@ public class ThirdwebNebula
             throw new ArgumentException("Messages cannot be null or empty.", nameof(messages));
         }
 
-        var contextFiler = await PrepareContextFilter(wallet, context);
+        var contextFiler = await this.PrepareContextFilter(wallet, context);
 
         var result = await this.ChatClient.SendMessagesAsync(
             new ChatParamsMultiMessages()
@@ -134,7 +128,6 @@ public class ThirdwebNebula
                 SessionId = this.SessionId,
                 Messages = messages.Select(prompt => new ChatMessage() { Content = prompt.Message, Role = prompt.Role.ToString().ToLower() }).ToList(),
                 ContextFilter = contextFiler,
-                ExecuteConfig = wallet == null ? null : new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
             }
         );
 
@@ -155,14 +148,13 @@ public class ThirdwebNebula
             throw new ArgumentException("Wallet cannot be null.", nameof(wallet));
         }
 
-        var contextFiler = await PrepareContextFilter(wallet, context);
+        var contextFiler = await this.PrepareContextFilter(wallet, context);
         var result = await this.ExecuteClient.ExecuteAsync(
             new ChatParamsSingleMessage()
             {
                 SessionId = this.SessionId,
                 Message = message,
                 ContextFilter = contextFiler,
-                ExecuteConfig = new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
             }
         );
 
@@ -190,14 +182,13 @@ public class ThirdwebNebula
             throw new ArgumentException("Wallet cannot be null.", nameof(wallet));
         }
 
-        var contextFiler = await PrepareContextFilter(wallet, context);
+        var contextFiler = await this.PrepareContextFilter(wallet, context);
         var result = await this.ExecuteClient.ExecuteBatchAsync(
             new ChatParamsMultiMessages()
             {
                 SessionId = this.SessionId,
                 Messages = messages.Select(prompt => new ChatMessage() { Content = prompt.Message, Role = prompt.Role.ToString().ToLower() }).ToList(),
                 ContextFilter = contextFiler,
-                ExecuteConfig = new ExecuteConfig() { Mode = "client", SignerWalletAddress = await wallet.GetAddress() }
             }
         );
 
@@ -213,52 +204,28 @@ public class ThirdwebNebula
         }
     }
 
-    private static async Task<ContextFilter> PrepareContextFilter(IThirdwebWallet wallet, NebulaContext context)
+    private async Task<CompletionContext> PrepareContextFilter(IThirdwebWallet wallet, NebulaContext context)
     {
         context ??= new NebulaContext();
 
         if (wallet != null)
         {
-            var walletAddress = await wallet.GetAddress();
-
-            // Add the wallet address to the context
-            if (context.WalletAddresses == null || context.WalletAddresses.Count == 0)
-            {
-                context.WalletAddresses = new List<string>() { walletAddress };
-            }
-            else if (!context.WalletAddresses.Contains(walletAddress))
-            {
-                context.WalletAddresses.Add(walletAddress);
-            }
-
-            // If it's a smart wallet, add the contract address and chain ID to the context
+            context.WalletAddress ??= await wallet.GetAddress();
             if (wallet is SmartWallet smartWallet)
             {
-                // if (context.ContractAddresses == null || context.ContractAddresses.Count == 0)
-                // {
-                //     context.ContractAddresses = new List<string>() { walletAddress };
-                // }
-                // else if (!context.ContractAddresses.Contains(walletAddress))
-                // {
-                //     context.ContractAddresses.Add(walletAddress);
-                // }
-
-                if (context.ChainIds == null || context.ChainIds.Count == 0)
-                {
-                    context.ChainIds = new List<BigInteger>() { smartWallet.ActiveChainId };
-                }
-                else if (!context.ChainIds.Contains(smartWallet.ActiveChainId))
+                context.ChainIds ??= new List<BigInteger>();
+                if (context.ChainIds.Count == 0 || !context.ChainIds.Contains(smartWallet.ActiveChainId))
                 {
                     context.ChainIds.Add(smartWallet.ActiveChainId);
                 }
             }
         }
 
-        return new ContextFilter()
+        return new CompletionContext()
         {
-            ChainIds = context?.ChainIds?.Select(id => id.ToString()).ToList(),
-            ContractAddresses = context?.ContractAddresses,
-            WalletAddresses = context?.WalletAddresses
+            SessionId = this.SessionId,
+            ChainIds = context?.ChainIds?.Select(id => id).ToList(),
+            WalletAddress = context?.WalletAddress
         };
     }
 
