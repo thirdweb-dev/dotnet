@@ -1582,7 +1582,7 @@ public static class ThirdwebExtensions
 
         var isNativeToken = activeClaimCondition.Currency == Constants.NATIVE_TOKEN_ADDRESS;
 
-        var payableAmount = isNativeToken ? rawAmountToClaim * activeClaimCondition.PricePerToken : BigInteger.Zero;
+        var payableAmount = isNativeToken ? rawAmountToClaim * activeClaimCondition.PricePerToken / BigInteger.Pow(10, 18) : BigInteger.Zero;
 
         // TODO: Merkle
         var allowlistProof = new object[] { Array.Empty<byte>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };

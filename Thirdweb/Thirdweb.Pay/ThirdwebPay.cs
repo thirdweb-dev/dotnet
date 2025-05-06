@@ -1,5 +1,6 @@
 ﻿namespace Thirdweb.Pay;
 
+[Obsolete("This class is deprecated, please use ThirdwebBridge instead.")]
 public partial class ThirdwebPay
 {
     private const string THIRDWEB_PAY_BASE_URL = "https://pay.thirdweb.com";

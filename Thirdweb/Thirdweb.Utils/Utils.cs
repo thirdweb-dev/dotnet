@@ -757,6 +757,10 @@ public static partial class Utils
             case "842":
             // Odyssey Testnet
             case "911867":
+            // Ronin Mainnet
+            case "2020":
+            // Ronin Testnet
+            case "2021":
                 return false;
             default:
                 return true;

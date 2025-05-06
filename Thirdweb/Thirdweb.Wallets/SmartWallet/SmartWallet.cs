@@ -897,28 +897,47 @@ public class SmartWallet : IThirdwebWallet
         Buffer.BlockCopy(maxPriorityFeePerGasBytes, 0, gasFeesBuffer, 0, 16);
         Buffer.BlockCopy(maxFeePerGasBytes, 0, gasFeesBuffer, 16, 16);
 
-        var paymasterBytes = userOp.Paymaster.HexToBytes();
-        var paymasterVerificationGasLimitBytes = userOp.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
-        var paymasterPostOpGasLimitBytes = userOp.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
-        var paymasterDataBytes = userOp.PaymasterData;
-        var paymasterAndDataBuffer = new byte[20 + 16 + 16 + paymasterDataBytes.Length];
-        Buffer.BlockCopy(paymasterBytes, 0, paymasterAndDataBuffer, 0, 20);
-        Buffer.BlockCopy(paymasterVerificationGasLimitBytes, 0, paymasterAndDataBuffer, 20, 16);
-        Buffer.BlockCopy(paymasterPostOpGasLimitBytes, 0, paymasterAndDataBuffer, 20 + 16, 16);
-        Buffer.BlockCopy(paymasterDataBytes, 0, paymasterAndDataBuffer, 20 + 16 + 16, paymasterDataBytes.Length);
-
-        var packedOp = new PackedUserOperation()
+        PackedUserOperation packedOp;
+        if (userOp.Paymaster is null or Constants.ADDRESS_ZERO or "0x")
         {
-            Sender = userOp.Sender,
-            Nonce = userOp.Nonce,
-            InitCode = initCodeBuffer,
-            CallData = userOp.CallData,
-            AccountGasLimits = accountGasLimitsBuffer,
-            PreVerificationGas = userOp.PreVerificationGas,
-            GasFees = gasFeesBuffer,
-            PaymasterAndData = paymasterAndDataBuffer,
-            Signature = userOp.Signature
-        };
+            packedOp = new PackedUserOperation()
+            {
+                Sender = userOp.Sender,
+                Nonce = userOp.Nonce,
+                InitCode = initCodeBuffer,
+                CallData = userOp.CallData,
+                AccountGasLimits = accountGasLimitsBuffer,
+                PreVerificationGas = userOp.PreVerificationGas,
+                GasFees = gasFeesBuffer,
+                PaymasterAndData = Array.Empty<byte>(),
+                Signature = userOp.Signature
+            };
+        }
+        else
+        {
+            var paymasterBytes = userOp.Paymaster.HexToBytes();
+            var paymasterVerificationGasLimitBytes = userOp.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+            var paymasterPostOpGasLimitBytes = userOp.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue.HexToBytes().PadBytes(16);
+            var paymasterDataBytes = userOp.PaymasterData;
+            var paymasterAndDataBuffer = new byte[20 + 16 + 16 + paymasterDataBytes.Length];
+            Buffer.BlockCopy(paymasterBytes, 0, paymasterAndDataBuffer, 0, 20);
+            Buffer.BlockCopy(paymasterVerificationGasLimitBytes, 0, paymasterAndDataBuffer, 20, 16);
+            Buffer.BlockCopy(paymasterPostOpGasLimitBytes, 0, paymasterAndDataBuffer, 20 + 16, 16);
+            Buffer.BlockCopy(paymasterDataBytes, 0, paymasterAndDataBuffer, 20 + 16 + 16, paymasterDataBytes.Length);
+
+            packedOp = new PackedUserOperation()
+            {
+                Sender = userOp.Sender,
+                Nonce = userOp.Nonce,
+                InitCode = initCodeBuffer,
+                CallData = userOp.CallData,
+                AccountGasLimits = accountGasLimitsBuffer,
+                PreVerificationGas = userOp.PreVerificationGas,
+                GasFees = gasFeesBuffer,
+                PaymasterAndData = paymasterAndDataBuffer,
+                Signature = userOp.Signature
+            };
+        }
 
         var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp).ConfigureAwait(false);
 

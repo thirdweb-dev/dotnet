@@ -1,3 +1,4 @@
+using System.Numerics;
 using Newtonsoft.Json;
 
 namespace Thirdweb.AI;
@@ -59,14 +60,8 @@ internal class ChatParamsMultiMessages
     [JsonProperty("session_id")]
     internal string SessionId { get; set; }
 
-    [JsonProperty("config")]
-    internal ExecuteConfig Config { get; set; }
-
-    [JsonProperty("execute_config")]
-    internal ExecuteConfig ExecuteConfig { get; set; }
-
-    [JsonProperty("context_filter")]
-    internal ContextFilter ContextFilter { get; set; }
+    [JsonProperty("context")]
+    internal CompletionContext ContextFilter { get; set; }
 
     [JsonProperty("model_name")]
     internal string ModelName { get; set; }
@@ -86,14 +81,8 @@ internal class ChatParamsSingleMessage
     [JsonProperty("session_id")]
     internal string SessionId { get; set; }
 
-    [JsonProperty("config")]
-    internal ExecuteConfig Config { get; set; }
-
-    [JsonProperty("execute_config")]
-    internal ExecuteConfig ExecuteConfig { get; set; }
-
-    [JsonProperty("context_filter")]
-    internal ContextFilter ContextFilter { get; set; }
+    [JsonProperty("context")]
+    internal CompletionContext ContextFilter { get; set; }
 
     [JsonProperty("model_name")]
     internal string ModelName { get; set; }
@@ -123,16 +112,34 @@ public class ChatResponse
 /// <summary>
 /// Represents filters for narrowing down context in which operations are performed.
 /// </summary>
-internal class ContextFilter
+internal class CompletionContext
 {
+    [JsonProperty("session_id")]
+    public string SessionId { get; set; } = null;
+
+    [JsonProperty("wallet_address")]
+    public string WalletAddress { get; set; } = null;
+
     [JsonProperty("chain_ids")]
-    internal List<string> ChainIds { get; set; }
+    public List<BigInteger> ChainIds { get; set; } = null;
+}
 
-    [JsonProperty("contract_addresses")]
-    internal List<string> ContractAddresses { get; set; }
+/// <summary>
+/// Nebula representation of a smart contract.
+/// </summary>
+public class DeployedContract
+{
+    [JsonProperty("name")]
+    public string Name { get; set; } = string.Empty;
 
-    [JsonProperty("wallet_addresses")]
-    internal List<string> WalletAddresses { get; set; }
+    [JsonProperty("address")]
+    public string Address { get; set; }
+
+    [JsonProperty("chain_id")]
+    public BigInteger ChainId { get; set; }
+
+    [JsonProperty("contract_type")]
+    public string ContractType { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -149,95 +156,8 @@ internal class CreateSessionParams
     [JsonProperty("is_public")]
     internal bool? IsPublic { get; set; }
 
-    [JsonProperty("execute_config")]
-    internal ExecuteConfig ExecuteConfig { get; set; }
-
-    [JsonProperty("context_filter")]
-    internal ContextFilter ContextFilter { get; set; }
-}
-
-/// <summary>
-/// Represents execution configuration options.
-/// </summary>
-internal class ExecuteConfig
-{
-    [JsonProperty("mode")]
-    internal string Mode { get; set; } = "client";
-
-    [JsonProperty("signer_wallet_address")]
-    internal string SignerWalletAddress { get; set; }
-
-    [JsonProperty("engine_url")]
-    internal string EngineUrl { get; set; }
-
-    [JsonProperty("engine_authorization_token")]
-    internal string EngineAuthorizationToken { get; set; }
-
-    [JsonProperty("engine_backend_wallet_address")]
-    internal string EngineBackendWalletAddress { get; set; }
-
-    [JsonProperty("smart_account_address")]
-    internal string SmartAccountAddress { get; set; }
-
-    [JsonProperty("smart_account_factory_address")]
-    internal string SmartAccountFactoryAddress { get; set; }
-
-    [JsonProperty("smart_account_session_key")]
-    internal string SmartAccountSessionKey { get; set; }
-}
-
-/// <summary>
-/// Represents a feedback submission.
-/// </summary>
-internal class Feedback
-{
-    [JsonProperty("id")]
-    internal string Id { get; set; }
-
-    [JsonProperty("account_id")]
-    internal string AccountId { get; set; }
-
-    [JsonProperty("session_id")]
-    internal string SessionId { get; set; }
-
-    [JsonProperty("request_id")]
-    internal string RequestId { get; set; }
-
-    [JsonProperty("feedback_rating")]
-    internal int? FeedbackRating { get; set; }
-
-    [JsonProperty("feedback_response")]
-    internal string FeedbackResponse { get; set; }
-
-    [JsonProperty("comment")]
-    internal string Comment { get; set; }
-
-    [JsonProperty("created_at")]
-    internal DateTime? CreatedAt { get; set; }
-
-    [JsonProperty("updated_at")]
-    internal DateTime? UpdatedAt { get; set; }
-}
-
-/// <summary>
-/// Parameters for submitting feedback.
-/// </summary>
-internal class FeedbackParams
-{
-    [JsonProperty("session_id")]
-    internal string SessionId { get; set; }
-
-    [JsonProperty("request_id")]
-    internal string RequestId { get; set; }
-
-    [JsonProperty("feedback_rating")]
-    internal int? FeedbackRating { get; set; }
-
-    [JsonProperty("feedback_response")]
-    internal string FeedbackResponse { get; set; }
-
-    [JsonProperty("comment")]
-    internal string Comment { get; set; }
+    [JsonProperty("context")]
+    internal CompletionContext ContextFilter { get; set; }
 }
 
 /// <summary>
@@ -257,9 +177,6 @@ internal class Session
     [JsonProperty("is_public")]
     internal bool? IsPublic { get; set; }
 
-    [JsonProperty("execute_config")]
-    internal ExecuteConfig ExecuteConfig { get; set; }
-
     [JsonProperty("title")]
     internal string Title { get; set; }
 
@@ -272,8 +189,8 @@ internal class Session
     [JsonProperty("action")]
     internal List<object> Action { get; set; }
 
-    [JsonProperty("context_filter")]
-    internal ContextFilter ContextFilter { get; set; }
+    [JsonProperty("context")]
+    internal CompletionContext ContextFilter { get; set; }
 
     [JsonProperty("archive_at")]
     internal DateTime? ArchiveAt { get; set; }
@@ -302,11 +219,8 @@ internal class UpdateSessionParams
     [JsonProperty("is_public")]
     internal bool? IsPublic { get; set; }
 
-    [JsonProperty("execute_config")]
-    internal ExecuteConfig ExecuteConfig { get; set; }
-
-    [JsonProperty("context_filter")]
-    internal ContextFilter ContextFilter { get; set; }
+    [JsonProperty("context")]
+    internal CompletionContext ContextFilter { get; set; }
 }
 
 /// <summary>
