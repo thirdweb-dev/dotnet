@@ -1034,7 +1034,38 @@ public partial class EcosystemWallet : IThirdwebWallet
             throw new ArgumentException("GasPrice or MaxFeePerGas and MaxPriorityFeePerGas are required for transaction signing.");
         }
 
-        object payload = new { transactionPayload = transaction };
+        object payload = new
+        {
+            transactionPayload = new
+            {
+                nonce = transaction.Nonce,
+                from = transaction.From,
+                to = transaction.To,
+                gas = transaction.Gas,
+                gasPrice = transaction.GasPrice,
+                value = transaction.Value,
+                data = transaction.Data,
+                maxFeePerGas = transaction.MaxFeePerGas,
+                maxPriorityFeePerGas = transaction.MaxPriorityFeePerGas,
+                chainId = transaction.ChainId,
+                authorizationList = transaction.AuthorizationList != null && transaction.AuthorizationList.Count > 0
+                    ? transaction.AuthorizationList
+                        .Select(
+                            authorization =>
+                                new
+                                {
+                                    chainId = authorization.ChainId.HexToNumber(),
+                                    address = authorization.Address,
+                                    nonce = authorization.Nonce.HexToNumber().ToString(),
+                                    yParity = authorization.YParity.HexToNumber(),
+                                    r = authorization.R.HexToNumber().ToString(),
+                                    s = authorization.S.HexToNumber().ToString()
+                                }
+                        )
+                        .ToArray()
+                    : null
+            }
+        };
 
         var url = $"{ENCLAVE_PATH}/sign-transaction";
 
@@ -1114,9 +1145,40 @@ public partial class EcosystemWallet : IThirdwebWallet
         return Task.FromResult(address);
     }
 
-    public Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress, bool willSelfExecute)
+    public async Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress, bool willSelfExecute)
     {
-        throw new NotImplementedException();
+        var nonce = await this.GetTransactionCount(chainId);
+
+        if (willSelfExecute)
+        {
+            nonce++;
+        }
+
+        var url = $"{ENCLAVE_PATH}/sign-authorization";
+
+        var payload = new
+        {
+            address = contractAddress,
+            chainId,
+            nonce
+        };
+
+        var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+
+        var response = await this.HttpClient.PostAsync(url, requestContent).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var signResponseObj = JObject.Parse(content);
+
+        return new EIP7702Authorization(
+            chainId: BigInteger.Parse(signResponseObj["chainId"].ToString()),
+            address: signResponseObj["address"].ToString(),
+            nonce: BigInteger.Parse(signResponseObj["nonce"].ToString()),
+            yParity: BigInteger.Parse(signResponseObj["yParity"].ToString()).NumberToHex().HexToBytes(),
+            r: BigInteger.Parse(signResponseObj["r"].ToString()).NumberToHex().HexToBytes(),
+            s: BigInteger.Parse(signResponseObj["s"].ToString()).NumberToHex().HexToBytes()
+        );
     }
 
     public Task SwitchNetwork(BigInteger chainId)
