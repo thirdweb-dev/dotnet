@@ -4,6 +4,13 @@ using Thirdweb.AccountAbstraction;
 
 namespace Thirdweb;
 
+public enum ExecutionMode
+{
+    EOA,
+    EIP7702,
+    EIP7702Sponsored
+}
+
 /// <summary>
 /// Represents a 7702 delegated wallet with granular session key permissions and automatic session key execution.
 /// </summary>
@@ -17,27 +24,29 @@ public class ThirdwebWallet : IThirdwebWallet
     internal IThirdwebWallet UserWallet { get; }
     internal ThirdwebContract UserContract { get; }
     internal BigInteger ChainId { get; }
-    internal bool ManagedExecution { get; }
+    internal ExecutionMode ExecutionMode { get; }
 
     private EIP7702Authorization? Authorization { get; set; }
 
-    internal ThirdwebWallet(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, ThirdwebContract userContract, EIP7702Authorization? authorization, bool managedExecution)
+    internal ThirdwebWallet(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, ThirdwebContract userContract, EIP7702Authorization? authorization, ExecutionMode executionMode)
     {
         this.Client = client;
         this.ChainId = chainId;
         this.UserWallet = userWallet;
         this.UserContract = userContract;
         this.Authorization = authorization;
-        this.ManagedExecution = managedExecution;
+        this.ExecutionMode = executionMode;
     }
 
-    public static async Task<ThirdwebWallet> Create(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, bool managedExecution)
+    public static async Task<ThirdwebWallet> Create(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, ExecutionMode executionMode)
     {
         var userWalletAddress = await userWallet.GetAddress();
         var userContract = await ThirdwebContract.Create(client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
         var needsDelegation = !await Utils.IsDelegatedAccount(client, chainId, userWalletAddress);
-        EIP7702Authorization? authorization = needsDelegation ? await userWallet.SignAuthorization(chainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: !managedExecution) : null;
-        var wallet = new ThirdwebWallet(client, chainId, userWallet, userContract, authorization, managedExecution);
+        EIP7702Authorization? authorization = needsDelegation
+            ? await userWallet.SignAuthorization(chainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: executionMode != ExecutionMode.EIP7702Sponsored)
+            : null;
+        var wallet = new ThirdwebWallet(client, chainId, userWallet, userContract, authorization, executionMode);
         Utils.TrackConnection(wallet);
         return wallet;
     }
@@ -122,16 +131,16 @@ public class ThirdwebWallet : IThirdwebWallet
     public async Task<string> SendTransaction(ThirdwebTransactionInput transaction)
     {
         // TODO: managed execution - executeWithSig
-        if (this.ManagedExecution)
+        if (this.ExecutionMode == ExecutionMode.EIP7702Sponsored)
         {
-            throw new NotImplementedException("Managed execution is not yet implemented.");
+            throw new NotImplementedException("EIP7702 Sponsored Execution mode is not yet implemented.");
 
             // 1. Create payload with eoa address, wrapped calls, signature and optional authorizationList
             // 2. Send to https://{chainId}.bundler.thirdweb.com as RpcRequest w/ method tw_execute
             // 3. Retrieve tx hash or queue id from response
             // 4. Return tx hash
         }
-        else
+        else if (this.ExecutionMode == ExecutionMode.EIP7702)
         {
             var calls = new List<Call>
             {
@@ -164,6 +173,10 @@ public class ThirdwebWallet : IThirdwebWallet
             }
 
             return await ThirdwebTransaction.Send(tx);
+        }
+        else
+        {
+            return await this.UserWallet.SendTransaction(transaction);
         }
     }
 

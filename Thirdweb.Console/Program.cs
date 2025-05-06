@@ -344,7 +344,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 // Console.WriteLine($"User Wallet address: {await userWallet.GetAddress()}");
 
 // // Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
-// var thirdwebWallet = await ThirdwebWallet.Create(client, chain, userWallet, managedExecution: false);
+// var thirdwebWallet = await ThirdwebWallet.Create(client, chain, userWallet, ExecutionMode.EIP7702);
 // var thirdwebWalletAddress = await thirdwebWallet.GetAddress();
 // Console.WriteLine($"Thirdweb Wallet address: {thirdwebWalletAddress}"); // same as userWallet address, unlike when using EIP-4337
 
