@@ -15,60 +15,45 @@ public class ThirdwebWallet : IThirdwebWallet
     public ThirdwebAccountType AccountType => ThirdwebAccountType.ExternalAccount;
 
     internal IThirdwebWallet UserWallet { get; }
-    internal IThirdwebWallet ExecutorWallet { get; }
     internal ThirdwebContract UserContract { get; }
+    internal BigInteger ChainId { get; }
+    internal bool ManagedExecution { get; }
 
-    internal ThirdwebWallet(ThirdwebClient client, IThirdwebWallet userWallet, IThirdwebWallet executorWallet, ThirdwebContract userContract)
+    private EIP7702Authorization? Authorization { get; set; }
+
+    internal ThirdwebWallet(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, ThirdwebContract userContract, EIP7702Authorization? authorization, bool managedExecution)
     {
         this.Client = client;
+        this.ChainId = chainId;
         this.UserWallet = userWallet;
-        this.ExecutorWallet = executorWallet;
         this.UserContract = userContract;
+        this.Authorization = authorization;
+        this.ManagedExecution = managedExecution;
     }
 
-    public static async Task<ThirdwebWallet> Create(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, IThirdwebWallet executorWallet, SessionSpec sessionKeyParams)
+    public static async Task<ThirdwebWallet> Create(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, bool managedExecution)
     {
         var userWalletAddress = await userWallet.GetAddress();
-        var executorWalletAddress = await executorWallet.GetAddress();
-        if (sessionKeyParams != null && sessionKeyParams.Signer != executorWalletAddress)
-        {
-            throw new Exception("Session key signer must be the executor wallet");
-        }
-        var delegationContract = await ThirdwebContract.Create(client, Constants.MINIMAL_ACCOUNT_7702, chainId);
-
-        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
-        var code = await rpc.SendRequestAsync<string>("eth_getCode", userWalletAddress, "latest");
-        var needsDelegation = !Utils.IsDelegatedAccount(code);
-
-        // Sign authorization if needed
-        EIP7702Authorization? authorization = needsDelegation ? await userWallet.SignAuthorization(chainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: false) : null;
-
-        // TODO: We don't always need to create a session key when creating this wallet, handle with a flag or null check
-
-        // Sign message for session key
-        var sessionKeySig = await EIP712.GenerateSignature_SmartAccount_7702("MinimalAccount", "1", chainId, userWalletAddress, sessionKeyParams, userWallet);
-
-        // Create call data for the session
-        var sessionKeyCallData = delegationContract.CreateCallData("createSessionWithSig", sessionKeyParams, sessionKeySig.HexToBytes());
-
-        // Execute the delegation & session creation in one go
-        var delegationTx = await ThirdwebTransaction.Create(
-            executorWallet,
-            new ThirdwebTransactionInput(chainId: chainId, to: userWalletAddress, data: sessionKeyCallData, authorization: authorization)
-        );
-        _ = await ThirdwebTransaction.SendAndWaitForTransactionReceipt(delegationTx);
-
-        var newCode = await rpc.SendRequestAsync<string>("eth_getCode", userWalletAddress, "latest");
-        if (!Utils.IsDelegatedAccount(newCode))
-        {
-            throw new Exception("Delegation failed, code was not set.");
-        }
-
-        var userContract = await ThirdwebContract.Create(client, userWalletAddress, chainId, delegationContract.Abi);
-        var wallet = new ThirdwebWallet(client, userWallet, executorWallet, userContract);
+        var userContract = await ThirdwebContract.Create(client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
+        var needsDelegation = !await Utils.IsDelegatedAccount(client, chainId, userWalletAddress);
+        EIP7702Authorization? authorization = needsDelegation ? await userWallet.SignAuthorization(chainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: !managedExecution) : null;
+        var wallet = new ThirdwebWallet(client, chainId, userWallet, userContract, authorization, managedExecution);
         Utils.TrackConnection(wallet);
         return wallet;
     }
+
+    #region Wallet Specific
+
+    public async Task<ThirdwebTransactionReceipt> CreateSessionKey(SessionSpec sessionKeyParams)
+    {
+        var userWalletAddress = await this.UserWallet.GetAddress();
+        var sessionKeySig = await EIP712.GenerateSignature_SmartAccount_7702("MinimalAccount", "1", this.ChainId, userWalletAddress, sessionKeyParams, this.UserWallet);
+        var sessionKeyCallData = this.UserContract.CreateCallData("createSessionWithSig", sessionKeyParams, sessionKeySig.HexToBytes());
+        var sessionKeyTx = await ThirdwebTransaction.Create(this, new ThirdwebTransactionInput(chainId: this.ChainId, to: userWalletAddress, data: sessionKeyCallData));
+        return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(sessionKeyTx);
+    }
+
+    #endregion
 
     #region IThirdwebWallet
 
@@ -136,17 +121,50 @@ public class ThirdwebWallet : IThirdwebWallet
 
     public async Task<string> SendTransaction(ThirdwebTransactionInput transaction)
     {
-        var calls = new List<Call>
+        // TODO: managed execution - executeWithSig
+        if (this.ManagedExecution)
         {
-            new()
+            throw new NotImplementedException("Managed execution is not yet implemented.");
+
+            // 1. Create payload with eoa address, wrapped calls, signature and optional authorizationList
+            // 2. Send to https://{chainId}.bundler.thirdweb.com as RpcRequest w/ method tw_execute
+            // 3. Retrieve tx hash or queue id from response
+            // 4. Return tx hash
+        }
+        else
+        {
+            var calls = new List<Call>
             {
-                Target = transaction.To,
-                Value = transaction.Value?.Value ?? BigInteger.Zero,
-                Data = transaction.Data.HexToBytes()
+                new()
+                {
+                    Target = transaction.To,
+                    Value = transaction.Value?.Value ?? BigInteger.Zero,
+                    Data = transaction.Data.HexToBytes()
+                }
+            };
+
+            BigInteger totalValue = 0;
+            foreach (var call in calls)
+            {
+                totalValue += call.Value;
             }
-        };
-        var tx = await this.UserContract.Prepare(this.ExecutorWallet, "execute", calls[0].Value, calls);
-        return await ThirdwebTransaction.Send(tx);
+
+            var tx = await this.UserContract.Prepare(wallet: this.UserWallet, method: "execute", weiValue: totalValue, parameters: new object[] { calls });
+
+            if (this.Authorization != null)
+            {
+                if (!await Utils.IsDelegatedAccount(this.Client, this.ChainId, await this.UserWallet.GetAddress()))
+                {
+                    tx.Input.AuthorizationList = new List<EIP7702Authorization>() { this.Authorization.Value };
+                }
+                else
+                {
+                    this.Authorization = null;
+                }
+            }
+
+            return await ThirdwebTransaction.Send(tx);
+        }
     }
 
     public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transaction)

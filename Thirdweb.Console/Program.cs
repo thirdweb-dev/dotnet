@@ -26,7 +26,7 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
 // Fetch timeout options are optional, default is 120000ms
-var client = ThirdwebClient.Create(secretKey: secretKey, rpcOverrides: new Dictionary<BigInteger, string> { { 11155111, "https://eth-sepolia.public.blastapi.io" } });
+var client = ThirdwebClient.Create(secretKey: secretKey);
 
 //  Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client);
@@ -326,33 +326,35 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region EIP-7702
 
-// // The session key signer
-// var executorWallet = await PrivateKeyWallet.Create(client, privateKey); // needs to be funded, for now
+// var chain = 11155111; // sepolia
 
-// // Session key permissions
-// var sessionKeyParams = new SessionSpec()
+// // Connect to EOA
+// var userWallet = await InAppWallet.Create(client, authProvider: AuthProvider.Github);
+// if (!await userWallet.IsConnected())
 // {
-//     Signer = await executorWallet.GetAddress(),
-//     ExpiresAt = Utils.GetUnixTimeStampNow() + (3600 * 24),
-//     CallPolicies = new List<CallSpec>() { },
-//     TransferPolicies = new List<TransferSpec>()
-//     {
-//         new()
+//     _ = await userWallet.LoginWithOauth(
+//         isMobile: false,
+//         browserOpenAction: (url) =>
 //         {
-//             Target = await Utils.GetAddressFromENS(client, "vitalik.eth"),
-//             MaxValuePerUse = BigInteger.Zero,
-//             ValueLimit = new()
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
 //         }
-//     },
-//     Uid = Guid.NewGuid().ToByteArray()
-// };
+//     );
+// }
+// Console.WriteLine($"User Wallet address: {await userWallet.GetAddress()}");
 
-// // This wallet explicitly uses 7702 delegation to the thirdweb MinimalAccount and creates a session key from which every tx will be executed
-// var thirdwebWallet = await ThirdwebWallet.Create(client, 11155111, privateKeyWallet, executorWallet, sessionKeyParams);
+// // Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
+// var thirdwebWallet = await ThirdwebWallet.Create(client, chain, userWallet, managedExecution: false);
+// var thirdwebWalletAddress = await thirdwebWallet.GetAddress();
+// Console.WriteLine($"Thirdweb Wallet address: {thirdwebWalletAddress}"); // same as userWallet address, unlike when using EIP-4337
 
-// // Simple transfer, will use the session key automatically
-// var receipt = await thirdwebWallet.Transfer(11155111, await Utils.GetAddressFromENS(client, "vitalik.eth"), 0);
-// Console.WriteLine($"Receipt: {receipt}");
+// // Transact, will upgrade EOA
+// var receipt = await thirdwebWallet.Transfer(chainId: chain, toAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), weiAmount: 0);
+// Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
+
+// // Double check that it was upgraded
+// var isDelegated = await Utils.IsDelegatedAccount(client, chain, thirdwebWalletAddress);
+// Console.WriteLine($"Is delegated: {isDelegated}");
 
 #endregion
 

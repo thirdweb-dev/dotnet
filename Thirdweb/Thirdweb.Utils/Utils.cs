@@ -1328,8 +1328,10 @@ public static partial class Utils
         return receipt;
     }
 
-    public static bool IsDelegatedAccount(string accountCode)
+    public static async Task<bool> IsDelegatedAccount(ThirdwebClient client, BigInteger chainId, string address)
     {
-        return !accountCode.Equals($"0xef0100{Constants.MINIMAL_ACCOUNT_7702[2..]}", StringComparison.OrdinalIgnoreCase);
+        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+        var code = await rpc.SendRequestAsync<string>("eth_getCode", address, "latest");
+        return !code.Equals($"0xef0100{Constants.MINIMAL_ACCOUNT_7702[2..]}", StringComparison.OrdinalIgnoreCase);
     }
 }

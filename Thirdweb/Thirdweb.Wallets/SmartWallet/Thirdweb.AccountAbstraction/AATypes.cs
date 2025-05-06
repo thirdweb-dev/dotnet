@@ -495,19 +495,23 @@ public class SessionSpec
     [JsonProperty("signer")]
     public virtual string Signer { get; set; }
 
-    [Parameter("uint256", "expiresAt", 2)]
+    [Parameter("bool", "isWildcard", 2)]
+    [JsonProperty("isWildcard")]
+    public virtual bool IsWildcard { get; set; }
+
+    [Parameter("uint256", "expiresAt", 3)]
     [JsonProperty("expiresAt")]
     public virtual BigInteger ExpiresAt { get; set; }
 
-    [Parameter("tuple[]", "callPolicies", 3, structTypeName: "CallSpec[]")]
+    [Parameter("tuple[]", "callPolicies", 4, structTypeName: "CallSpec[]")]
     [JsonProperty("callPolicies")]
     public virtual List<CallSpec> CallPolicies { get; set; }
 
-    [Parameter("tuple[]", "transferPolicies", 4, structTypeName: "TransferSpec[]")]
+    [Parameter("tuple[]", "transferPolicies", 5, structTypeName: "TransferSpec[]")]
     [JsonProperty("transferPolicies")]
     public virtual List<TransferSpec> TransferPolicies { get; set; }
 
-    [Parameter("bytes32", "uid", 5)]
+    [Parameter("bytes32", "uid", 6)]
     [JsonProperty("uid")]
     public virtual byte[] Uid { get; set; }
 }
