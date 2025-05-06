@@ -1332,6 +1332,6 @@ public static partial class Utils
     {
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var code = await rpc.SendRequestAsync<string>("eth_getCode", address, "latest");
-        return !code.Equals($"0xef0100{Constants.MINIMAL_ACCOUNT_7702[2..]}", StringComparison.OrdinalIgnoreCase);
+        return code.Equals($"0xef0100{Constants.MINIMAL_ACCOUNT_7702[2..]}", StringComparison.OrdinalIgnoreCase);
     }
 }
