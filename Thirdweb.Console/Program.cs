@@ -8,6 +8,7 @@ using dotenv.net;
 using Nethereum.ABI;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
+using Nethereum.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Thirdweb;
@@ -329,7 +330,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 var chain = 11155111; // sepolia
 
 // Connect to EOA
-var userWallet = await InAppWallet.Create(client, email: "firekeeper+7702testing04@thirdweb.com");
+var userWallet = await InAppWallet.Create(client, email: "firekeeper+7702testing07@thirdweb.com");
 if (!await userWallet.IsConnected())
 {
     await userWallet.SendOTP();
@@ -339,11 +340,11 @@ if (!await userWallet.IsConnected())
 }
 Console.WriteLine($"User Wallet address: {await userWallet.GetAddress()}");
 
-Console.WriteLine("Send it some gas if testing with ExecutionMode.EOA");
-Console.ReadLine();
+// Console.WriteLine("Send it some gas if testing with ExecutionMode.EOA");
+// Console.ReadLine();
 
 // Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
-var smarterWallet = await SmarterWallet.Create(client, chain, userWallet, ExecutionMode.EOA);
+var smarterWallet = await SmarterWallet.Create(client: client, chainId: chain, userWallet: userWallet, sponsorGas: true);
 var smarterWalletAddress = await smarterWallet.GetAddress();
 Console.WriteLine($"Thirdweb Wallet address: {smarterWalletAddress}"); // same as userWallet address, unlike when using EIP-4337
 
@@ -354,6 +355,20 @@ Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
 // Double check that it was upgraded
 var isDelegated = await Utils.IsDelegatedAccount(client, chain, smarterWalletAddress);
 Console.WriteLine($"Is delegated: {isDelegated}");
+
+// Create a session key
+var sessionKeyReceipt = await smarterWallet.CreateSessionKey(
+    new SessionSpec()
+    {
+        Signer = await Utils.GetAddressFromENS(client, "0xfirekeeper.eth"),
+        IsWildcard = true,
+        ExpiresAt = Utils.GetUnixTimeStampNow() + 86400, // 1 day
+        CallPolicies = new List<CallSpec>(),
+        TransferPolicies = new List<TransferSpec>(),
+        Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes()
+    }
+);
+Console.WriteLine($"Session key receipt: {sessionKeyReceipt.TransactionHash}");
 
 #endregion
 

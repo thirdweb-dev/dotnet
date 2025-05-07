@@ -30,10 +30,10 @@ public static class BundlerClient
                     {
                         chainId = authorization?.ChainId.HexToNumber(),
                         address = authorization?.Address,
-                        nonce = authorization?.Nonce.HexToNumber(),
+                        nonce = authorization?.Nonce.HexToNumber().ToString(),
                         yParity = authorization?.YParity.HexToNumber(),
-                        r = authorization?.R,
-                        s = authorization?.S
+                        r = authorization?.R.HexToNumber().ToString(),
+                        s = authorization?.S.HexToNumber().ToString()
                     }
             )
             .ConfigureAwait(false);

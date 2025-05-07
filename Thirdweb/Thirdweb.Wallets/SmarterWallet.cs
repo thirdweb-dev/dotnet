@@ -50,8 +50,7 @@ public class SmarterWallet : IThirdwebWallet
         var userWalletAddress = await this.UserWallet.GetAddress();
         var sessionKeySig = await EIP712.GenerateSignature_SmartAccount_7702("MinimalAccount", "1", this.ChainId, userWalletAddress, sessionKeyParams, this.UserWallet);
         var sessionKeyCallData = this.UserContract.CreateCallData("createSessionWithSig", sessionKeyParams, sessionKeySig.HexToBytes());
-        var sessionKeyTx = await ThirdwebTransaction.Create(this, new ThirdwebTransactionInput(chainId: this.ChainId, to: userWalletAddress, data: sessionKeyCallData));
-        return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(sessionKeyTx);
+        return await this.ExecuteTransaction(new ThirdwebTransactionInput(chainId: this.ChainId, to: userWalletAddress, value: 0, data: sessionKeyCallData));
     }
 
     #endregion
@@ -145,8 +144,7 @@ public class SmarterWallet : IThirdwebWallet
             var signature = await EIP712.GenerateSignature_SmartAccount_7702_WrappedCalls("MinimalAccount", "1", this.ChainId, userWalletAddress, wrappedCalls, this.UserWallet);
             var response = await BundlerClient.TwExecute(
                 client: this.Client,
-                // url: $"{this.ChainId}.bundler.thirdweb.com",
-                url: "http://localhost:8787?chain=11155111",
+                url: $"https://{this.ChainId}.bundler.thirdweb.com",
                 requestId: 7702,
                 eoaAddress: userWalletAddress,
                 wrappedCalls: wrappedCalls,
@@ -163,13 +161,7 @@ public class SmarterWallet : IThirdwebWallet
                     ct.Token.ThrowIfCancellationRequested();
 
                     var hashResponse = await BundlerClient
-                        .TwGetTransactionHash(
-                            client: this.Client,
-                            // url: $"{this.ChainId}.bundler.thirdweb.com",
-                            url: "http://localhost:8787?chain=11155111",
-                            requestId: 7702,
-                            queueId
-                        )
+                        .TwGetTransactionHash(client: this.Client, url: $"https://{this.ChainId}.bundler.thirdweb.com", requestId: 7702, queueId)
                         .ConfigureAwait(false);
 
                     txHash = hashResponse?.TransactionHash;
