@@ -160,26 +160,34 @@ public class SmarterWallet : IThirdwebWallet
                     signature: signature,
                     authorization: this.Authorization != null && !await Utils.IsDelegatedAccount(this.Client, this.ChainId, userWalletAddress) ? this.Authorization : null
                 );
-                throw new NotImplementedException($"EIP-7702 transaction execution is not done, here's the queue id: {response.QueueId}");
-            // string txHash = null;
-            // var ct = new CancellationTokenSource(this.Client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
-            // try
-            // {
-            //     while (txHash == null)
-            //     {
-            //         ct.Token.ThrowIfCancellationRequested();
+                var queueId = response?.QueueId;
+                string txHash = null;
+                var ct = new CancellationTokenSource(this.Client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+                try
+                {
+                    while (txHash == null)
+                    {
+                        ct.Token.ThrowIfCancellationRequested();
 
-            //         var txReceipt = await BundlerClient.TwGetTransactionReceipt(client: this.Client, url: $"{this.ChainId}.bundler.thirdweb.com", requestId: 7702, queueId).ConfigureAwait(false);
+                        var hashResponse = await BundlerClient
+                            .TwGetTransactionHash(
+                                client: this.Client,
+                                // url: $"{this.ChainId}.bundler.thirdweb.com",
+                                url: "http://localhost:8787?chain=11155111",
+                                requestId: 7702,
+                                queueId
+                            )
+                            .ConfigureAwait(false);
 
-            //         txHash = txReceipt?.Receipt?.TransactionHash;
-            //         await ThirdwebTask.Delay(100, ct.Token).ConfigureAwait(false);
-            //     }
-            // }
-            // catch (OperationCanceledException)
-            // {
-            //     throw new Exception($"EIP-7702 sponsored transaction timed out with queue id: {queueId}");
-            // }
-            // break;
+                        txHash = hashResponse?.TransactionHash;
+                        await ThirdwebTask.Delay(100, ct.Token).ConfigureAwait(false);
+                    }
+                    return txHash;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new Exception($"EIP-7702 sponsored transaction timed out with queue id: {queueId}");
+                }
             case ExecutionMode.EOA:
                 // Add up values of all calls
                 BigInteger totalValue = 0;

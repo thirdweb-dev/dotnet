@@ -246,6 +246,12 @@ public class TwExecuteResponse
     public string QueueId { get; set; }
 }
 
+public class TwGetTransactionHashResponse
+{
+    [JsonProperty("transactionHash")]
+    public string TransactionHash { get; set; }
+}
+
 public class EntryPointWrapper
 {
     [JsonProperty("entryPoint")]

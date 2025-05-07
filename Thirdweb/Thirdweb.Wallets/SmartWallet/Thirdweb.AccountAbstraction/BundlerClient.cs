@@ -40,6 +40,12 @@ public static class BundlerClient
         return JsonConvert.DeserializeObject<TwExecuteResponse>(response.Result.ToString());
     }
 
+    public static async Task<TwGetTransactionHashResponse> TwGetTransactionHash(ThirdwebClient client, string url, int requestId, string queueId)
+    {
+        var response = await BundlerRequest(client, url, requestId, "tw_getTransactionHash", queueId).ConfigureAwait(false);
+        return JsonConvert.DeserializeObject<TwGetTransactionHashResponse>(response.Result.ToString());
+    }
+
     // Bundler requests
 
     public static async Task<EthGetUserOperationReceiptResponse> EthGetUserOperationReceipt(ThirdwebClient client, string bundlerUrl, object requestId, string userOpHash)
