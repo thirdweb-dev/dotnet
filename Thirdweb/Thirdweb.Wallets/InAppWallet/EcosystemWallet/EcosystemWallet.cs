@@ -4,11 +4,20 @@ using System.Web;
 using Nethereum.ABI.EIP712;
 using Nethereum.Signer;
 using Nethereum.Signer.EIP712;
+using Nethereum.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Thirdweb.AccountAbstraction;
 using Thirdweb.EWS;
 
 namespace Thirdweb;
+
+public enum ExecutionMode
+{
+    EOA,
+    EIP7702,
+    EIP7702Sponsored
+}
 
 /// <summary>
 /// Enclave based secure cross ecosystem wallet.
@@ -16,7 +25,7 @@ namespace Thirdweb;
 public partial class EcosystemWallet : IThirdwebWallet
 {
     public ThirdwebClient Client { get; }
-    public ThirdwebAccountType AccountType => ThirdwebAccountType.PrivateKeyAccount;
+    public ThirdwebAccountType AccountType { get; }
     public virtual string WalletId => "ecosystem";
 
     internal readonly EmbeddedWallet EmbeddedWallet;
@@ -29,6 +38,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     internal readonly string WalletSecret;
 
     internal string Address;
+    internal ExecutionMode ExecutionMode;
 
     private readonly string _ecosystemId;
     private readonly string _ecosystemPartnerId;
@@ -49,7 +59,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         string authProvider,
         IThirdwebWallet siweSigner,
         string legacyEncryptionKey,
-        string walletSecret
+        string walletSecret,
+        ExecutionMode executionMode
     )
     {
         this.Client = client;
@@ -63,6 +74,9 @@ public partial class EcosystemWallet : IThirdwebWallet
         this.AuthProvider = authProvider;
         this.SiweSigner = siweSigner;
         this.WalletSecret = walletSecret;
+        this.ExecutionMode = executionMode;
+        this.AccountType = executionMode == ExecutionMode.EOA ? ThirdwebAccountType.PrivateKeyAccount : ThirdwebAccountType.ExternalAccount;
+        ;
     }
 
     #region Creation
@@ -81,6 +95,7 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// <param name="legacyEncryptionKey">The encryption key that is no longer required but was used in the past. Only pass this if you had used custom auth before this was deprecated.</param>
     /// <param name="walletSecret">The wallet secret for Backend authentication.</param>
     /// <param name="twAuthTokenOverride">The auth token to use for the session. This will automatically connect using a raw thirdweb auth token.</param>
+    /// <param name="executionMode">The execution mode for the wallet. EOA represents traditional direct calls, EIP7702 represents upgraded account self sponsored calls, and EIP7702Sponsored represents upgraded account calls with managed/sponsored execution.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the created in-app wallet.</returns>
     /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
     public static async Task<EcosystemWallet> Create(
@@ -94,7 +109,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         IThirdwebWallet siweSigner = null,
         string legacyEncryptionKey = null,
         string walletSecret = null,
-        string twAuthTokenOverride = null
+        string twAuthTokenOverride = null,
+        ExecutionMode executionMode = ExecutionMode.EOA
     )
     {
         if (client == null)
@@ -164,7 +180,20 @@ public partial class EcosystemWallet : IThirdwebWallet
         try
         {
             var userAddress = await ResumeEnclaveSession(enclaveHttpClient, embeddedWallet, email, phoneNumber, authproviderStr).ConfigureAwait(false);
-            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, legacyEncryptionKey, walletSecret)
+            return new EcosystemWallet(
+                ecosystemId,
+                ecosystemPartnerId,
+                client,
+                embeddedWallet,
+                enclaveHttpClient,
+                email,
+                phoneNumber,
+                authproviderStr,
+                siweSigner,
+                legacyEncryptionKey,
+                walletSecret,
+                executionMode
+            )
             {
                 Address = userAddress
             };
@@ -172,7 +201,20 @@ public partial class EcosystemWallet : IThirdwebWallet
         catch
         {
             enclaveHttpClient.RemoveHeader("Authorization");
-            return new EcosystemWallet(ecosystemId, ecosystemPartnerId, client, embeddedWallet, enclaveHttpClient, email, phoneNumber, authproviderStr, siweSigner, legacyEncryptionKey, walletSecret)
+            return new EcosystemWallet(
+                ecosystemId,
+                ecosystemPartnerId,
+                client,
+                embeddedWallet,
+                enclaveHttpClient,
+                email,
+                phoneNumber,
+                authproviderStr,
+                siweSigner,
+                legacyEncryptionKey,
+                walletSecret,
+                executionMode
+            )
             {
                 Address = null
             };
@@ -406,6 +448,21 @@ public partial class EcosystemWallet : IThirdwebWallet
 
         var queryString = redirectUrl.Contains('?') ? "&" : "?" + $"walletId={walletId}&authProvider={authProvider}&authCookie={authCookie}";
         return $"{redirectUrl}{queryString}";
+    }
+
+    public Task<ThirdwebTransactionReceipt> CreateSessionKey(BigInteger chainId, SessionSpec sessionKeyParams)
+    {
+        throw new NotImplementedException("CreateSessionKey via EIP7702 execution modes is not implemented yet, check back in later versions.");
+        // if (this.ExecutionMode is not ExecutionMode.EIP7702 and not ExecutionMode.EIP7702Sponsored)
+        // {
+        //     throw new InvalidOperationException("CreateSessionKey is only supported for EIP7702 and EIP7702Sponsored execution modes.");
+        // }
+
+        // var userWalletAddress = await this.GetAddress();
+        // var sessionKeySig = await EIP712.GenerateSignature_SmartAccount_7702("MinimalAccount", "1", chainId, userWalletAddress, sessionKeyParams, this);
+        // var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
+        // var sessionKeyCallData = userContract.CreateCallData("createSessionWithSig", sessionKeyParams, sessionKeySig.HexToBytes());
+        // return await this.ExecuteTransaction(new ThirdwebTransactionInput(chainId: chainId, to: userWalletAddress, value: 0, data: sessionKeyCallData));
     }
 
     #endregion
@@ -1084,14 +1141,86 @@ public partial class EcosystemWallet : IThirdwebWallet
         return Task.FromResult(this.Address != null);
     }
 
-    public Task<string> SendTransaction(ThirdwebTransactionInput transaction)
+    public async Task<string> SendTransaction(ThirdwebTransactionInput transaction)
     {
-        throw new InvalidOperationException("SendTransaction is not supported for Ecosystem Wallets, please use the unified Contract or ThirdwebTransaction APIs.");
+        var userWalletAddress = await this.GetAddress();
+        var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, transaction.ChainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
+        var needsDelegation = !await Utils.IsDelegatedAccount(this.Client, transaction.ChainId, userWalletAddress);
+        EIP7702Authorization? authorization = needsDelegation
+            ? await this.SignAuthorization(transaction.ChainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: this.ExecutionMode != ExecutionMode.EIP7702Sponsored)
+            : null;
+
+        var calls = new List<Call>
+        {
+            new()
+            {
+                Target = transaction.To,
+                Value = transaction.Value?.Value ?? BigInteger.Zero,
+                Data = transaction.Data.HexToBytes()
+            }
+        };
+
+        switch (this.ExecutionMode)
+        {
+            case ExecutionMode.EOA:
+                throw new NotImplementedException(
+                    "SendTransaction is not supported for Ecosystem Wallets in EOA execution mode, please use the unified Contract or ThirdwebTransaction APIs or change to EIP7702 execution mode."
+                );
+            case ExecutionMode.EIP7702:
+                BigInteger totalValue = 0;
+                foreach (var call in calls)
+                {
+                    totalValue += call.Value;
+                }
+                var finalTx = await userContract.Prepare(wallet: this, method: "execute", weiValue: totalValue, parameters: new object[] { calls });
+                finalTx.Input.AuthorizationList = authorization != null ? new List<EIP7702Authorization>() { authorization.Value } : null;
+                finalTx = await ThirdwebTransaction.Prepare(finalTx);
+                var signedTx = await this.SignTransaction(finalTx.Input);
+                var rpc = ThirdwebRPC.GetRpcInstance(this.Client, transaction.ChainId);
+                return await rpc.SendRequestAsync<string>("eth_sendRawTransaction", signedTx).ConfigureAwait(false);
+            case ExecutionMode.EIP7702Sponsored:
+                var wrappedCalls = new WrappedCalls() { Calls = calls, Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes() };
+                var signature = await EIP712.GenerateSignature_SmartAccount_7702_WrappedCalls("MinimalAccount", "1", transaction.ChainId, userWalletAddress, wrappedCalls, this);
+                var response = await BundlerClient.TwExecute(
+                    client: this.Client,
+                    url: $"https://{transaction.ChainId}.bundler.thirdweb.com",
+                    requestId: 7702,
+                    eoaAddress: userWalletAddress,
+                    wrappedCalls: wrappedCalls,
+                    signature: signature,
+                    authorization: authorization != null && !await Utils.IsDelegatedAccount(this.Client, transaction.ChainId, userWalletAddress) ? authorization : null
+                );
+                var queueId = response?.QueueId;
+                string txHash = null;
+                var ct = new CancellationTokenSource(this.Client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+                try
+                {
+                    while (txHash == null)
+                    {
+                        ct.Token.ThrowIfCancellationRequested();
+
+                        var hashResponse = await BundlerClient
+                            .TwGetTransactionHash(client: this.Client, url: $"https://{transaction.ChainId}.bundler.thirdweb.com", requestId: 7702, queueId)
+                            .ConfigureAwait(false);
+
+                        txHash = hashResponse?.TransactionHash;
+                        await ThirdwebTask.Delay(100, ct.Token).ConfigureAwait(false);
+                    }
+                    return txHash;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new Exception($"EIP-7702 sponsored transaction timed out with queue id: {queueId}");
+                }
+            default:
+                throw new ArgumentOutOfRangeException(nameof(this.ExecutionMode), "Invalid execution mode.");
+        }
     }
 
-    public Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
+    public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transactionInput)
     {
-        throw new InvalidOperationException("ExecuteTransaction is not supported for Ecosystem Wallets, please use the unified Contract or ThirdwebTransaction APIs.");
+        var hash = await this.SendTransaction(transactionInput);
+        return await Utils.WaitForTransactionReceipt(this.Client, transactionInput.ChainId, hash);
     }
 
     public async Task Disconnect()

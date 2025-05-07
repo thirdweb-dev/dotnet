@@ -240,6 +240,18 @@ public class EthGetUserOperationReceiptResponse
     public ThirdwebTransactionReceipt Receipt { get; set; }
 }
 
+public class TwExecuteResponse
+{
+    [JsonProperty("queueId")]
+    public string QueueId { get; set; }
+}
+
+public class TwGetTransactionHashResponse
+{
+    [JsonProperty("transactionHash")]
+    public string TransactionHash { get; set; }
+}
+
 public class EntryPointWrapper
 {
     [JsonProperty("entryPoint")]
@@ -486,58 +498,153 @@ public class Erc6492Signature
     public byte[] SigToValidate { get; set; }
 }
 
-[Struct("SessionKeyParams")]
-public class SessionKeyParams_7702
+#region 7702
+
+[Struct("SessionSpec")]
+public class SessionSpec
 {
     [Parameter("address", "signer", 1)]
     [JsonProperty("signer")]
-    public string Signer { get; set; }
+    public virtual string Signer { get; set; }
 
-    [Parameter("uint256", "nativeTokenLimitPerTransaction", 2)]
-    [JsonProperty("nativeTokenLimitPerTransaction")]
-    public BigInteger NativeTokenLimitPerTransaction { get; set; }
+    [Parameter("bool", "isWildcard", 2)]
+    [JsonProperty("isWildcard")]
+    public virtual bool IsWildcard { get; set; }
 
-    [Parameter("uint256", "startTimestamp", 3)]
-    [JsonProperty("startTimestamp")]
-    public BigInteger StartTimestamp { get; set; }
+    [Parameter("uint256", "expiresAt", 3)]
+    [JsonProperty("expiresAt")]
+    public virtual BigInteger ExpiresAt { get; set; }
 
-    [Parameter("uint256", "endTimestamp", 4)]
-    [JsonProperty("endTimestamp")]
-    public BigInteger EndTimestamp { get; set; }
+    [Parameter("tuple[]", "callPolicies", 4, structTypeName: "CallSpec[]")]
+    [JsonProperty("callPolicies")]
+    public virtual List<CallSpec> CallPolicies { get; set; }
 
-    [Parameter("address[]", "approvedTargets", 5)]
-    [JsonProperty("approvedTargets")]
-    public List<string> ApprovedTargets { get; set; }
+    [Parameter("tuple[]", "transferPolicies", 5, structTypeName: "TransferSpec[]")]
+    [JsonProperty("transferPolicies")]
+    public virtual List<TransferSpec> TransferPolicies { get; set; }
 
     [Parameter("bytes32", "uid", 6)]
     [JsonProperty("uid")]
-    public byte[] Uid { get; set; }
+    public virtual byte[] Uid { get; set; }
+}
+
+[Struct("CallSpec")]
+public class CallSpec
+{
+    [Parameter("address", "target", 1)]
+    [JsonProperty("target")]
+    public virtual string Target { get; set; }
+
+    [Parameter("bytes4", "selector", 2)]
+    [JsonProperty("selector")]
+    public virtual byte[] Selector { get; set; }
+
+    [Parameter("uint256", "maxValuePerUse", 3)]
+    [JsonProperty("maxValuePerUse")]
+    public virtual BigInteger MaxValuePerUse { get; set; }
+
+    [Parameter("tuple", "valueLimit", 4, structTypeName: "UsageLimit")]
+    [JsonProperty("valueLimit")]
+    public virtual UsageLimit ValueLimit { get; set; }
+
+    [Parameter("tuple[]", "constraints", 5, structTypeName: "Constraint[]")]
+    [JsonProperty("constraints")]
+    public virtual List<Constraint> Constraints { get; set; }
+}
+
+[Struct("TransferSpec")]
+public class TransferSpec
+{
+    [Parameter("address", "target", 1)]
+    [JsonProperty("target")]
+    public virtual string Target { get; set; }
+
+    [Parameter("uint256", "maxValuePerUse", 2)]
+    [JsonProperty("maxValuePerUse")]
+    public virtual BigInteger MaxValuePerUse { get; set; }
+
+    [Parameter("tuple", "valueLimit", 3, structTypeName: "UsageLimit")]
+    [JsonProperty("valueLimit")]
+    public virtual UsageLimit ValueLimit { get; set; }
+}
+
+[Struct("UsageLimit")]
+public class UsageLimit
+{
+    [Parameter("uint8", "limitType", 1)]
+    [JsonProperty("limitType")]
+    public virtual byte LimitType { get; set; }
+
+    [Parameter("uint256", "limit", 2)]
+    [JsonProperty("limit")]
+    public virtual BigInteger Limit { get; set; }
+
+    [Parameter("uint256", "period", 3)]
+    [JsonProperty("period")]
+    public virtual BigInteger Period { get; set; }
+}
+
+[Struct("Constraint")]
+public class Constraint
+{
+    [Parameter("uint8", "condition", 1)]
+    [JsonProperty("condition")]
+    public virtual byte Condition { get; set; }
+
+    [Parameter("uint64", "index", 2)]
+    [JsonProperty("index")]
+    public virtual ulong Index { get; set; }
+
+    [Parameter("bytes32", "refValue", 3)]
+    [JsonProperty("refValue")]
+    public virtual byte[] RefValue { get; set; }
+
+    [Parameter("tuple", "limit", 4, structTypeName: "UsageLimit")]
+    [JsonProperty("limit")]
+    public virtual UsageLimit Limit { get; set; }
 }
 
 [Struct("Call")]
 public class Call
 {
-    [Parameter("bytes", "data", 1)]
-    [JsonProperty("data")]
-    public byte[] Data { get; set; }
+    [Parameter("address", "target", 1)]
+    [JsonProperty("target")]
+    public virtual string Target { get; set; }
 
-    [Parameter("address", "to", 2)]
-    [JsonProperty("to")]
-    public string To { get; set; }
-
-    [Parameter("uint256", "value", 3)]
+    [Parameter("uint256", "value", 2)]
     [JsonProperty("value")]
-    public BigInteger Value { get; set; }
+    public virtual BigInteger Value { get; set; }
+
+    [Parameter("bytes", "data", 3)]
+    [JsonProperty("data")]
+    public virtual byte[] Data { get; set; }
+
+    public object EncodeForHttp()
+    {
+        return new
+        {
+            target = this.Target,
+            value = this.Value,
+            data = this.Data != null ? this.Data.BytesToHex() : "0x"
+        };
+    }
 }
 
 [Struct("WrappedCalls")]
 public class WrappedCalls
 {
-    [Parameter("tuple[]", "calls", 1, "Call[]")]
+    [Parameter("tuple[]", "calls", 1, structTypeName: "Call[]")]
     [JsonProperty("calls")]
-    public List<Call> Calls { get; set; }
+    public virtual List<Call> Calls { get; set; }
 
     [Parameter("bytes32", "uid", 2)]
     [JsonProperty("uid")]
-    public byte[] Uid { get; set; }
+    public virtual byte[] Uid { get; set; }
+
+    public object EncodeForHttp()
+    {
+        return new { calls = this.Calls != null ? this.Calls.Select(c => c.EncodeForHttp()).ToList() : new List<object>(), uid = this.Uid.BytesToHex() };
+    }
 }
+
+#endregion

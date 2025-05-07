@@ -257,9 +257,9 @@ public class PrivateKeyWallet : IThirdwebWallet
             throw new ArgumentNullException(nameof(json), "Json to sign cannot be null.");
         }
 
-        var signer = new Eip712TypedDataSigner();
-        var signature = signer.SignTypedDataV4(json, this.EcKey);
-        return Task.FromResult(signature);
+        var encodedData = EIP712Encoder.Current.EncodeTypedData(json);
+        var signature = this.EcKey.SignAndCalculateV(Utils.HashMessage(encodedData));
+        return Task.FromResult(EthECDSASignature.CreateStringSignature(signature));
     }
 
     public virtual Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
@@ -270,9 +270,9 @@ public class PrivateKeyWallet : IThirdwebWallet
             throw new ArgumentNullException(nameof(data), "Data to sign cannot be null.");
         }
 
-        var signer = new Eip712TypedDataSigner();
-        var signature = signer.SignTypedDataV4(data, typedData, this.EcKey);
-        return Task.FromResult(signature);
+        var encodedData = EIP712Encoder.Current.EncodeTypedData(data, typedData);
+        var signature = this.EcKey.SignAndCalculateV(Utils.HashMessage(encodedData));
+        return Task.FromResult(EthECDSASignature.CreateStringSignature(signature));
     }
 
     public virtual Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
@@ -356,7 +356,7 @@ public class PrivateKeyWallet : IThirdwebWallet
                         RLP.EncodeElement(authorizationList.ChainId.HexToNumber().ToByteArrayForRLPEncoding()),
                         RLP.EncodeElement(authorizationList.Address.HexToBytes()),
                         RLP.EncodeElement(authorizationList.Nonce.HexToNumber().ToByteArrayForRLPEncoding()),
-                        RLP.EncodeElement(authorizationList.YParity == "0x00" ? Array.Empty<byte>() : authorizationList.YParity.HexToBytes()),
+                        RLP.EncodeElement(authorizationList.YParity is "0x00" or "0x0" or "0x" ? Array.Empty<byte>() : authorizationList.YParity.HexToBytes()),
                         RLP.EncodeElement(authorizationList.R.HexToBytes().TrimZeroes()),
                         RLP.EncodeElement(authorizationList.S.HexToBytes().TrimZeroes())
                     };
