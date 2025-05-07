@@ -648,13 +648,15 @@ public class SmartWallet : IThirdwebWallet
 
         if (entryPointVersion == 6)
         {
+#pragma warning disable IDE0078 // Use pattern matching
             var executeFn = new ExecuteFunction
             {
                 Target = transactionInput.To,
-                Value = transactionInput.Value.Value,
+                Value = transactionInput.ChainId.Value == 295 || transactionInput.ChainId.Value == 296 ? transactionInput.Value.Value / BigInteger.Pow(10, 10) : transactionInput.Value.Value,
                 Calldata = transactionInput.Data.HexToBytes(),
                 FromAddress = await this.GetAddress().ConfigureAwait(false),
             };
+#pragma warning restore IDE0078 // Use pattern matching
             var executeInput = executeFn.CreateTransactionInput(await this.GetAddress().ConfigureAwait(false));
 
             var partialUserOp = new UserOperationV6()
@@ -702,13 +704,15 @@ public class SmartWallet : IThirdwebWallet
         }
         else
         {
+#pragma warning disable IDE0078 // Use pattern matching
             var executeFn = new ExecuteFunction
             {
                 Target = transactionInput.To,
-                Value = transactionInput.Value.Value,
+                Value = transactionInput.ChainId.Value == 295 || transactionInput.ChainId.Value == 296 ? transactionInput.Value.Value / BigInteger.Pow(10, 10) : transactionInput.Value.Value,
                 Calldata = transactionInput.Data.HexToBytes(),
                 FromAddress = await this.GetAddress().ConfigureAwait(false),
             };
+#pragma warning restore IDE0078 // Use pattern matching
             var executeInput = executeFn.CreateTransactionInput(await this.GetAddress().ConfigureAwait(false));
 
             var partialUserOp = new UserOperationV7()
