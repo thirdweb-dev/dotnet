@@ -327,48 +327,48 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region EIP-7702
 
-var chain = 11155111; // sepolia
+// var chain = 11155111; // sepolia
 
-// Connect to EOA
-var userWallet = await InAppWallet.Create(client, email: "firekeeper+7702testing07@thirdweb.com");
-if (!await userWallet.IsConnected())
-{
-    await userWallet.SendOTP();
-    Console.WriteLine("Enter OTP:");
-    var otp = Console.ReadLine();
-    _ = await userWallet.LoginWithOtp(otp: otp);
-}
-Console.WriteLine($"User Wallet address: {await userWallet.GetAddress()}");
+// // Connect to EOA
+// var smartEoa = await InAppWallet.Create(client, authProvider: AuthProvider.Google, executionMode: ExecutionMode.EOA);
+// if (!await smartEoa.IsConnected())
+// {
+//     _ = await smartEoa.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         }
+//     );
+// }
+// var smartEoaAddress = await smartEoa.GetAddress();
+// Console.WriteLine($"User Wallet address: {await smartEoa.GetAddress()}");
 
-// Console.WriteLine("Send it some gas if testing with ExecutionMode.EOA");
-// Console.ReadLine();
+// // Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
 
-// Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
-var smarterWallet = await SmarterWallet.Create(client: client, chainId: chain, userWallet: userWallet, sponsorGas: true);
-var smarterWalletAddress = await smarterWallet.GetAddress();
-Console.WriteLine($"Thirdweb Wallet address: {smarterWalletAddress}"); // same as userWallet address, unlike when using EIP-4337
+// // Transact, will upgrade EOA
+// var receipt = await smartEoa.Transfer(chainId: chain, toAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), weiAmount: 0);
+// Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
 
-// Transact, will upgrade EOA
-var receipt = await smarterWallet.Transfer(chainId: chain, toAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), weiAmount: 0);
-Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
+// // Double check that it was upgraded
+// var isDelegated = await Utils.IsDelegatedAccount(client, chain, smartEoaAddress);
+// Console.WriteLine($"Is delegated: {isDelegated}");
 
-// Double check that it was upgraded
-var isDelegated = await Utils.IsDelegatedAccount(client, chain, smarterWalletAddress);
-Console.WriteLine($"Is delegated: {isDelegated}");
-
-// Create a session key
-var sessionKeyReceipt = await smarterWallet.CreateSessionKey(
-    new SessionSpec()
-    {
-        Signer = await Utils.GetAddressFromENS(client, "0xfirekeeper.eth"),
-        IsWildcard = true,
-        ExpiresAt = Utils.GetUnixTimeStampNow() + 86400, // 1 day
-        CallPolicies = new List<CallSpec>(),
-        TransferPolicies = new List<TransferSpec>(),
-        Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes()
-    }
-);
-Console.WriteLine($"Session key receipt: {sessionKeyReceipt.TransactionHash}");
+// // Create a session key
+// var sessionKeyReceipt = await smartEoa.CreateSessionKey(
+//     chain,
+//     new SessionSpec()
+//     {
+//         Signer = await Utils.GetAddressFromENS(client, "0xfirekeeper.eth"),
+//         IsWildcard = true,
+//         ExpiresAt = Utils.GetUnixTimeStampNow() + 86400, // 1 day
+//         CallPolicies = new List<CallSpec>(),
+//         TransferPolicies = new List<TransferSpec>(),
+//         Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes()
+//     }
+// );
+// Console.WriteLine($"Session key receipt: {sessionKeyReceipt.TransactionHash}");
 
 #endregion
 
