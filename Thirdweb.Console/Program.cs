@@ -330,7 +330,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 // var chain = 11155111; // sepolia
 
 // // Connect to EOA
-// var smartEoa = await InAppWallet.Create(client, authProvider: AuthProvider.Google, executionMode: ExecutionMode.EOA);
+// var smartEoa = await InAppWallet.Create(client, authProvider: AuthProvider.Google, executionMode: ExecutionMode.EIP7702Sponsored);
 // if (!await smartEoa.IsConnected())
 // {
 //     _ = await smartEoa.LoginWithOauth(
