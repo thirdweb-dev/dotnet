@@ -8,15 +8,14 @@ public enum ExecutionMode
 {
     EOA,
     EIP7702,
-    EIP7702Sponsored
 }
 
 /// <summary>
 /// Represents a 7702 delegated wallet with granular session key permissions and automatic session key execution.
 /// </summary>
-public class ThirdwebWallet : IThirdwebWallet
+public class SmarterWallet : IThirdwebWallet
 {
-    public string WalletId => "thirdweb";
+    public string WalletId => "smarter";
 
     public ThirdwebClient Client { get; }
     public ThirdwebAccountType AccountType => ThirdwebAccountType.ExternalAccount;
@@ -28,7 +27,7 @@ public class ThirdwebWallet : IThirdwebWallet
 
     private EIP7702Authorization? Authorization { get; set; }
 
-    internal ThirdwebWallet(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, ThirdwebContract userContract, EIP7702Authorization? authorization, ExecutionMode executionMode)
+    internal SmarterWallet(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, ThirdwebContract userContract, EIP7702Authorization? authorization, ExecutionMode executionMode)
     {
         this.Client = client;
         this.ChainId = chainId;
@@ -38,15 +37,15 @@ public class ThirdwebWallet : IThirdwebWallet
         this.ExecutionMode = executionMode;
     }
 
-    public static async Task<ThirdwebWallet> Create(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, ExecutionMode executionMode)
+    public static async Task<SmarterWallet> Create(ThirdwebClient client, BigInteger chainId, IThirdwebWallet userWallet, ExecutionMode executionMode)
     {
         var userWalletAddress = await userWallet.GetAddress();
         var userContract = await ThirdwebContract.Create(client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
         var needsDelegation = !await Utils.IsDelegatedAccount(client, chainId, userWalletAddress);
         EIP7702Authorization? authorization = needsDelegation
-            ? await userWallet.SignAuthorization(chainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: executionMode != ExecutionMode.EIP7702Sponsored)
+            ? await userWallet.SignAuthorization(chainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: executionMode != ExecutionMode.EIP7702)
             : null;
-        var wallet = new ThirdwebWallet(client, chainId, userWallet, userContract, authorization, executionMode);
+        var wallet = new SmarterWallet(client, chainId, userWallet, userContract, authorization, executionMode);
         Utils.TrackConnection(wallet);
         return wallet;
     }
@@ -130,54 +129,53 @@ public class ThirdwebWallet : IThirdwebWallet
 
     public async Task<string> SendTransaction(ThirdwebTransactionInput transaction)
     {
-        // TODO: managed execution - executeWithSig
-        if (this.ExecutionMode == ExecutionMode.EIP7702Sponsored)
+        ThirdwebTransaction finalTx;
+        switch (this.ExecutionMode)
         {
-            throw new NotImplementedException("EIP7702 Sponsored Execution mode is not yet implemented.");
-
+            case ExecutionMode.EIP7702:
+                throw new NotImplementedException("EIP7702 Sponsored Execution mode is not yet implemented.");
             // 1. Create payload with eoa address, wrapped calls, signature and optional authorizationList
             // 2. Send to https://{chainId}.bundler.thirdweb.com as RpcRequest w/ method tw_execute
             // 3. Retrieve tx hash or queue id from response
             // 4. Return tx hash
+            case ExecutionMode.EOA:
+                // Direct Call struct
+                var calls = new List<Call>
+                {
+                    new()
+                    {
+                        Target = transaction.To,
+                        Value = transaction.Value?.Value ?? BigInteger.Zero,
+                        Data = transaction.Data.HexToBytes()
+                    }
+                };
+                // Add up values of all calls
+                BigInteger totalValue = 0;
+                foreach (var call in calls)
+                {
+                    totalValue += call.Value;
+                }
+                // Prepare a tx using the user wallet as the executor
+                finalTx = await this.UserContract.Prepare(wallet: this.UserWallet, method: "execute", weiValue: totalValue, parameters: new object[] { calls });
+                break;
+            default:
+                throw new NotImplementedException($"Execution mode {this.ExecutionMode} is not supported.");
         }
-        else if (this.ExecutionMode == ExecutionMode.EIP7702)
+
+        // Append authorization if not delegated yet
+        if (this.Authorization != null)
         {
-            var calls = new List<Call>
+            if (!await Utils.IsDelegatedAccount(this.Client, this.ChainId, await this.UserWallet.GetAddress()))
             {
-                new()
-                {
-                    Target = transaction.To,
-                    Value = transaction.Value?.Value ?? BigInteger.Zero,
-                    Data = transaction.Data.HexToBytes()
-                }
-            };
-
-            BigInteger totalValue = 0;
-            foreach (var call in calls)
-            {
-                totalValue += call.Value;
+                finalTx.Input.AuthorizationList = new List<EIP7702Authorization>() { this.Authorization.Value };
             }
-
-            var tx = await this.UserContract.Prepare(wallet: this.UserWallet, method: "execute", weiValue: totalValue, parameters: new object[] { calls });
-
-            if (this.Authorization != null)
+            else
             {
-                if (!await Utils.IsDelegatedAccount(this.Client, this.ChainId, await this.UserWallet.GetAddress()))
-                {
-                    tx.Input.AuthorizationList = new List<EIP7702Authorization>() { this.Authorization.Value };
-                }
-                else
-                {
-                    this.Authorization = null;
-                }
+                this.Authorization = null;
             }
-
-            return await ThirdwebTransaction.Send(tx);
         }
-        else
-        {
-            return await this.UserWallet.SendTransaction(transaction);
-        }
+        // Send the transaction and return the
+        return await ThirdwebTransaction.Send(finalTx);
     }
 
     public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transaction)

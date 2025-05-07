@@ -214,7 +214,7 @@ public struct EIP7702Authorization
         this.ChainId = new HexBigInteger(chainId).HexValue;
         this.Address = address;
         this.Nonce = new HexBigInteger(nonce).HexValue;
-        this.YParity = yParity.BytesToHex();
+        this.YParity = yParity.BytesToHex() == "0x00" ? "0x0" : "0x1";
         this.R = r.BytesToHex();
         this.S = s.BytesToHex();
     }

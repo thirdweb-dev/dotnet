@@ -356,7 +356,7 @@ public class PrivateKeyWallet : IThirdwebWallet
                         RLP.EncodeElement(authorizationList.ChainId.HexToNumber().ToByteArrayForRLPEncoding()),
                         RLP.EncodeElement(authorizationList.Address.HexToBytes()),
                         RLP.EncodeElement(authorizationList.Nonce.HexToNumber().ToByteArrayForRLPEncoding()),
-                        RLP.EncodeElement(authorizationList.YParity == "0x00" ? Array.Empty<byte>() : authorizationList.YParity.HexToBytes()),
+                        RLP.EncodeElement(authorizationList.YParity is "0x00" or "0x0" or "0x" ? Array.Empty<byte>() : authorizationList.YParity.HexToBytes()),
                         RLP.EncodeElement(authorizationList.R.HexToBytes().TrimZeroes()),
                         RLP.EncodeElement(authorizationList.S.HexToBytes().TrimZeroes())
                     };

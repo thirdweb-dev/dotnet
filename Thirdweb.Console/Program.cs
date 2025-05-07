@@ -326,35 +326,34 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region EIP-7702
 
-// var chain = 11155111; // sepolia
+var chain = 11155111; // sepolia
 
-// // Connect to EOA
-// var userWallet = await InAppWallet.Create(client, authProvider: AuthProvider.Github);
-// if (!await userWallet.IsConnected())
-// {
-//     _ = await userWallet.LoginWithOauth(
-//         isMobile: false,
-//         browserOpenAction: (url) =>
-//         {
-//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-//             _ = Process.Start(psi);
-//         }
-//     );
-// }
-// Console.WriteLine($"User Wallet address: {await userWallet.GetAddress()}");
+// Connect to EOA
+var userWallet = await InAppWallet.Create(client, email: "firekeeper+7702testing04@thirdweb.com");
+if (!await userWallet.IsConnected())
+{
+    await userWallet.SendOTP();
+    Console.WriteLine("Enter OTP:");
+    var otp = Console.ReadLine();
+    _ = await userWallet.LoginWithOtp(otp: otp);
+}
+Console.WriteLine($"User Wallet address: {await userWallet.GetAddress()}");
 
-// // Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
-// var thirdwebWallet = await ThirdwebWallet.Create(client, chain, userWallet, ExecutionMode.EIP7702);
-// var thirdwebWalletAddress = await thirdwebWallet.GetAddress();
-// Console.WriteLine($"Thirdweb Wallet address: {thirdwebWalletAddress}"); // same as userWallet address, unlike when using EIP-4337
+Console.WriteLine("Send it some gas if testing with ExecutionMode.EOA");
+Console.ReadLine();
 
-// // Transact, will upgrade EOA
-// var receipt = await thirdwebWallet.Transfer(chainId: chain, toAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), weiAmount: 0);
-// Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
+// Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
+var smarterWallet = await SmarterWallet.Create(client, chain, userWallet, ExecutionMode.EOA);
+var smarterWalletAddress = await smarterWallet.GetAddress();
+Console.WriteLine($"Thirdweb Wallet address: {smarterWalletAddress}"); // same as userWallet address, unlike when using EIP-4337
 
-// // Double check that it was upgraded
-// var isDelegated = await Utils.IsDelegatedAccount(client, chain, thirdwebWalletAddress);
-// Console.WriteLine($"Is delegated: {isDelegated}");
+// Transact, will upgrade EOA
+var receipt = await smarterWallet.Transfer(chainId: chain, toAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), weiAmount: 0);
+Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
+
+// Double check that it was upgraded
+var isDelegated = await Utils.IsDelegatedAccount(client, chain, smarterWalletAddress);
+Console.WriteLine($"Is delegated: {isDelegated}");
 
 #endregion
 

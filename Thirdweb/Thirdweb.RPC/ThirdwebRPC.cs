@@ -168,6 +168,7 @@ public class ThirdwebRPC : IDisposable
     private async Task SendBatchAsync(List<RpcRequest> batch)
     {
         var batchJson = JsonConvert.SerializeObject(batch);
+        Console.WriteLine($"Sending batch request: {batchJson}");
         var content = new StringContent(batchJson, Encoding.UTF8, "application/json");
 
         try
@@ -182,6 +183,7 @@ public class ThirdwebRPC : IDisposable
             }
 
             var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Console.WriteLine(responseContent);
             if (responseContent.Equals("Unauthorized", StringComparison.OrdinalIgnoreCase))
             {
                 throw new HttpRequestException("Unauthorized");
