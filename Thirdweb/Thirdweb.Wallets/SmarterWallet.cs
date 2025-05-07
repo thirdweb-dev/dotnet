@@ -1,5 +1,6 @@
 using System.Numerics;
 using Nethereum.ABI.EIP712;
+using Nethereum.Util;
 using Thirdweb.AccountAbstraction;
 
 namespace Thirdweb;
@@ -42,9 +43,7 @@ public class SmarterWallet : IThirdwebWallet
         var userWalletAddress = await userWallet.GetAddress();
         var userContract = await ThirdwebContract.Create(client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
         var needsDelegation = !await Utils.IsDelegatedAccount(client, chainId, userWalletAddress);
-        EIP7702Authorization? authorization = needsDelegation
-            ? await userWallet.SignAuthorization(chainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: executionMode != ExecutionMode.EIP7702)
-            : null;
+        EIP7702Authorization? authorization = needsDelegation ? await userWallet.SignAuthorization(chainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: executionMode == ExecutionMode.EOA) : null;
         var wallet = new SmarterWallet(client, chainId, userWallet, userContract, authorization, executionMode);
         Utils.TrackConnection(wallet);
         return wallet;
@@ -129,26 +128,59 @@ public class SmarterWallet : IThirdwebWallet
 
     public async Task<string> SendTransaction(ThirdwebTransactionInput transaction)
     {
-        ThirdwebTransaction finalTx;
+        var userWalletAddress = await this.UserWallet.GetAddress();
+
+        if (this.Authorization != null && await Utils.IsDelegatedAccount(this.Client, this.ChainId, userWalletAddress))
+        {
+            this.Authorization = null;
+        }
+
+        var calls = new List<Call>
+        {
+            new()
+            {
+                Target = transaction.To,
+                Value = transaction.Value?.Value ?? BigInteger.Zero,
+                Data = transaction.Data.HexToBytes()
+            }
+        };
+
         switch (this.ExecutionMode)
         {
             case ExecutionMode.EIP7702:
-                throw new NotImplementedException("EIP7702 Sponsored Execution mode is not yet implemented.");
-            // 1. Create payload with eoa address, wrapped calls, signature and optional authorizationList
-            // 2. Send to https://{chainId}.bundler.thirdweb.com as RpcRequest w/ method tw_execute
-            // 3. Retrieve tx hash or queue id from response
-            // 4. Return tx hash
+                var wrappedCalls = new WrappedCalls() { Calls = calls, Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes() };
+                var signature = await EIP712.GenerateSignature_SmartAccount_7702_WrappedCalls("MinimalAccount", "1", this.ChainId, userWalletAddress, wrappedCalls, this.UserWallet);
+                var response = await BundlerClient.TwExecute(
+                    client: this.Client,
+                    // url: $"{this.ChainId}.bundler.thirdweb.com",
+                    url: "http://localhost:8787?chain=11155111",
+                    requestId: 7702,
+                    eoaAddress: userWalletAddress,
+                    wrappedCalls: wrappedCalls,
+                    signature: signature,
+                    authorization: this.Authorization != null && !await Utils.IsDelegatedAccount(this.Client, this.ChainId, userWalletAddress) ? this.Authorization : null
+                );
+                throw new NotImplementedException($"EIP-7702 transaction execution is not done, here's the queue id: {response.QueueId}");
+            // string txHash = null;
+            // var ct = new CancellationTokenSource(this.Client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+            // try
+            // {
+            //     while (txHash == null)
+            //     {
+            //         ct.Token.ThrowIfCancellationRequested();
+
+            //         var txReceipt = await BundlerClient.TwGetTransactionReceipt(client: this.Client, url: $"{this.ChainId}.bundler.thirdweb.com", requestId: 7702, queueId).ConfigureAwait(false);
+
+            //         txHash = txReceipt?.Receipt?.TransactionHash;
+            //         await ThirdwebTask.Delay(100, ct.Token).ConfigureAwait(false);
+            //     }
+            // }
+            // catch (OperationCanceledException)
+            // {
+            //     throw new Exception($"EIP-7702 sponsored transaction timed out with queue id: {queueId}");
+            // }
+            // break;
             case ExecutionMode.EOA:
-                // Direct Call struct
-                var calls = new List<Call>
-                {
-                    new()
-                    {
-                        Target = transaction.To,
-                        Value = transaction.Value?.Value ?? BigInteger.Zero,
-                        Data = transaction.Data.HexToBytes()
-                    }
-                };
                 // Add up values of all calls
                 BigInteger totalValue = 0;
                 foreach (var call in calls)
@@ -156,26 +188,16 @@ public class SmarterWallet : IThirdwebWallet
                     totalValue += call.Value;
                 }
                 // Prepare a tx using the user wallet as the executor
-                finalTx = await this.UserContract.Prepare(wallet: this.UserWallet, method: "execute", weiValue: totalValue, parameters: new object[] { calls });
-                break;
+                var finalTx = await this.UserContract.Prepare(wallet: this.UserWallet, method: "execute", weiValue: totalValue, parameters: new object[] { calls });
+                finalTx.Input.AuthorizationList = this.Authorization != null ? new List<EIP7702Authorization>() { this.Authorization.Value } : null;
+
+                // Append authorization if not delegated yet
+
+                // Send the transaction and return the
+                return await ThirdwebTransaction.Send(finalTx);
             default:
                 throw new NotImplementedException($"Execution mode {this.ExecutionMode} is not supported.");
         }
-
-        // Append authorization if not delegated yet
-        if (this.Authorization != null)
-        {
-            if (!await Utils.IsDelegatedAccount(this.Client, this.ChainId, await this.UserWallet.GetAddress()))
-            {
-                finalTx.Input.AuthorizationList = new List<EIP7702Authorization>() { this.Authorization.Value };
-            }
-            else
-            {
-                this.Authorization = null;
-            }
-        }
-        // Send the transaction and return the
-        return await ThirdwebTransaction.Send(finalTx);
     }
 
     public async Task<ThirdwebTransactionReceipt> ExecuteTransaction(ThirdwebTransactionInput transaction)

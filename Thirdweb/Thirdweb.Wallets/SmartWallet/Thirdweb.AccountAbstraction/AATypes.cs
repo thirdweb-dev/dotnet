@@ -240,6 +240,12 @@ public class EthGetUserOperationReceiptResponse
     public ThirdwebTransactionReceipt Receipt { get; set; }
 }
 
+public class TwExecuteResponse
+{
+    [JsonProperty("queueId")]
+    public string QueueId { get; set; }
+}
+
 public class EntryPointWrapper
 {
     [JsonProperty("entryPoint")]
@@ -606,18 +612,33 @@ public class Call
     [Parameter("bytes", "data", 3)]
     [JsonProperty("data")]
     public virtual byte[] Data { get; set; }
+
+    public object EncodeForHttp()
+    {
+        return new
+        {
+            target = this.Target,
+            value = this.Value,
+            data = this.Data != null ? this.Data.BytesToHex() : "0x"
+        };
+    }
 }
 
 [Struct("WrappedCalls")]
 public class WrappedCalls
 {
-    [Parameter("tuple[]", "calls", 1)]
+    [Parameter("tuple[]", "calls", 1, structTypeName: "Call[]")]
     [JsonProperty("calls")]
     public virtual List<Call> Calls { get; set; }
 
     [Parameter("bytes32", "uid", 2)]
     [JsonProperty("uid")]
     public virtual byte[] Uid { get; set; }
+
+    public object EncodeForHttp()
+    {
+        return new { calls = this.Calls != null ? this.Calls.Select(c => c.EncodeForHttp()).ToList() : new List<object>(), uid = this.Uid.BytesToHex() };
+    }
 }
 
 #endregion

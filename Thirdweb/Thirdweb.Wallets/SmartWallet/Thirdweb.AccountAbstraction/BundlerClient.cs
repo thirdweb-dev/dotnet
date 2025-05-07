@@ -5,6 +5,41 @@ namespace Thirdweb.AccountAbstraction;
 
 public static class BundlerClient
 {
+    // EIP 7702 requests
+    public static async Task<TwExecuteResponse> TwExecute(
+        ThirdwebClient client,
+        string url,
+        object requestId,
+        string eoaAddress,
+        WrappedCalls wrappedCalls,
+        string signature,
+        EIP7702Authorization? authorization
+    )
+    {
+        var response = await BundlerRequest(
+                client,
+                url,
+                requestId,
+                "tw_execute",
+                eoaAddress,
+                wrappedCalls.EncodeForHttp(),
+                signature,
+                authorization == null
+                    ? null
+                    : new
+                    {
+                        chainId = authorization?.ChainId.HexToNumber(),
+                        address = authorization?.Address,
+                        nonce = authorization?.Nonce.HexToNumber(),
+                        yParity = authorization?.YParity.HexToNumber(),
+                        r = authorization?.R,
+                        s = authorization?.S
+                    }
+            )
+            .ConfigureAwait(false);
+        return JsonConvert.DeserializeObject<TwExecuteResponse>(response.Result.ToString());
+    }
+
     // Bundler requests
 
     public static async Task<EthGetUserOperationReceiptResponse> EthGetUserOperationReceipt(ThirdwebClient client, string bundlerUrl, object requestId, string userOpHash)
