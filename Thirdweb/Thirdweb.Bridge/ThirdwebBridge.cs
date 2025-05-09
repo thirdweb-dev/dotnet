@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace Thirdweb.Bridge;
@@ -139,25 +140,30 @@ public class ThirdwebBridge
             throw new ArgumentException("receiver is not a valid address", nameof(receiver));
         }
 
-        var url = $"{Constants.BRIDGE_API_URL}/v1/buy/prepare";
-        var queryParams = new Dictionary<string, string>
+        var requestBody = new
         {
-            { "originChainId", originChainId.ToString() },
-            { "originTokenAddress", originTokenAddress },
-            { "destinationChainId", destinationChainId.ToString() },
-            { "destinationTokenAddress", destinationTokenAddress },
-            { "buyAmountWei", buyAmountWei.ToString() },
-            { "sender", sender },
-            { "receiver", receiver },
-            { "maxSteps", maxSteps.ToString() },
-            { "purchaseData", purchaseData != null ? JsonConvert.SerializeObject(purchaseData) : null }
+            originChainId = originChainId.ToString(),
+            originTokenAddress,
+            destinationChainId = destinationChainId.ToString(),
+            destinationTokenAddress,
+            buyAmountWei = buyAmountWei.ToString(),
+            sender,
+            receiver,
+            maxSteps,
+            purchaseData
         };
-        url = AppendQueryParams(url, queryParams);
 
-        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        var url = $"{Constants.BRIDGE_API_URL}/v1/buy/prepare";
+
+        var jsonBody = JsonConvert.SerializeObject(requestBody, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+        var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        var response = await this._httpClient.PostAsync(url, content).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
+
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var result = JsonConvert.DeserializeObject<ResponseModel<BuyPrepareData>>(responseContent);
+
         return result.Data;
     }
 
@@ -280,25 +286,30 @@ public class ThirdwebBridge
             throw new ArgumentException("receiver is not a valid address", nameof(receiver));
         }
 
-        var url = $"{Constants.BRIDGE_API_URL}/v1/sell/prepare";
-        var queryParams = new Dictionary<string, string>
+        var requestBody = new
         {
-            { "originChainId", originChainId.ToString() },
-            { "originTokenAddress", originTokenAddress },
-            { "destinationChainId", destinationChainId.ToString() },
-            { "destinationTokenAddress", destinationTokenAddress },
-            { "sellAmountWei", sellAmountWei.ToString() },
-            { "sender", sender },
-            { "receiver", receiver },
-            { "maxSteps", maxSteps.ToString() },
-            { "purchaseData", purchaseData != null ? JsonConvert.SerializeObject(purchaseData) : null }
+            originChainId = originChainId.ToString(),
+            originTokenAddress,
+            destinationChainId = destinationChainId.ToString(),
+            destinationTokenAddress,
+            sellAmountWei = sellAmountWei.ToString(),
+            sender,
+            receiver,
+            maxSteps,
+            purchaseData
         };
-        url = AppendQueryParams(url, queryParams);
 
-        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        var url = $"{Constants.BRIDGE_API_URL}/v1/sell/prepare";
+
+        var jsonBody = JsonConvert.SerializeObject(requestBody, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+        var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        var response = await this._httpClient.PostAsync(url, content).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
+
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var result = JsonConvert.DeserializeObject<ResponseModel<SellPrepareData>>(responseContent);
+
         return result.Data;
     }
 
@@ -353,23 +364,28 @@ public class ThirdwebBridge
             throw new ArgumentException("receiver is not a valid address", nameof(receiver));
         }
 
-        var url = $"{Constants.BRIDGE_API_URL}/v1/transfer/prepare";
-        var queryParams = new Dictionary<string, string>
+        var requestBody = new
         {
-            { "chainId", chainId.ToString() },
-            { "tokenAddress", tokenAddress },
-            { "transferAmountWei", transferAmountWei.ToString() },
-            { "sender", sender },
-            { "receiver", receiver },
-            { "feePayer", feePayer },
-            { "purchaseData", purchaseData != null ? JsonConvert.SerializeObject(purchaseData) : null }
+            chainId = chainId.ToString(),
+            tokenAddress,
+            transferAmountWei = transferAmountWei.ToString(),
+            sender,
+            receiver,
+            feePayer,
+            purchaseData
         };
-        url = AppendQueryParams(url, queryParams);
 
-        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        var url = $"{Constants.BRIDGE_API_URL}/v1/transfer/prepare";
+
+        var jsonBody = JsonConvert.SerializeObject(requestBody, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+        var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        var response = await this._httpClient.PostAsync(url, content).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
+
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var result = JsonConvert.DeserializeObject<ResponseModel<TransferPrepareData>>(responseContent);
+
         return result.Data;
     }
 
@@ -411,33 +427,32 @@ public class ThirdwebBridge
             throw new ArgumentException("receiver is not a valid address", nameof(receiver));
         }
 
-        var url = $"{Constants.BRIDGE_API_URL}/v1/onramp/prepare";
-        var queryParams = new Dictionary<string, string>
+        var requestBody = new
         {
-            { "onramp", onramp.ToString().ToLower() },
-            { "chainId", chainId.ToString() },
-            { "tokenAddress", tokenAddress },
-            { "amount", amount },
-            { "receiver", receiver },
-            { "purchaseData", purchaseData != null ? JsonConvert.SerializeObject(purchaseData) : null },
-            { "onrampTokenAddress", onrampTokenAddress },
-            { "onrampChainId", onrampChainId?.ToString() },
-            { "currency", currency },
-            { "maxSteps", maxSteps?.ToString() }
+            onramp = onramp.ToString().ToLower(),
+            chainId = chainId.ToString(),
+            tokenAddress,
+            amount,
+            receiver,
+            onrampTokenAddress,
+            onrampChainId = onrampChainId?.ToString(),
+            currency,
+            maxSteps,
+            excludeChainIds = excludeChainIds != null && excludeChainIds.Count > 0 ? excludeChainIds.Select(id => id.ToString()).ToList() : null,
+            purchaseData
         };
 
-        if (excludeChainIds != null && excludeChainIds.Count > 0)
-        {
-            queryParams.Add("excludeChainIds", string.Join(",", excludeChainIds));
-        }
+        var url = $"{Constants.BRIDGE_API_URL}/v1/onramp/prepare";
 
-        url = AppendQueryParams(url, queryParams);
+        var jsonBody = JsonConvert.SerializeObject(requestBody, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        var response = await this._httpClient.PostAsync(url, content).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
 
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var result = JsonConvert.DeserializeObject<ResponseModel<OnrampPrepareData>>(responseContent);
+
         return result.Data;
     }
 
