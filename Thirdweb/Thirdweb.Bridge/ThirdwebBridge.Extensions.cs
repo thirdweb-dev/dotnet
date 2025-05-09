@@ -16,7 +16,7 @@ public static class ThirdwebBridgeExtensions
     /// <returns>The transaction receipts as a list of <see cref="ThirdwebTransactionReceipt"/>.</returns>
     public static async Task<List<ThirdwebTransactionReceipt>> Execute(this ThirdwebBridge bridge, IThirdwebWallet executor, BuyPrepareData preparedBuy, CancellationToken cancellationToken = default)
     {
-        return await ExecuteInternal(bridge, executor, preparedBuy.Transactions, cancellationToken);
+        return await ExecuteInternal(bridge, executor, preparedBuy.Steps, cancellationToken);
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public static class ThirdwebBridgeExtensions
         CancellationToken cancellationToken = default
     )
     {
-        return await ExecuteInternal(bridge, executor, preparedSell.Transactions, cancellationToken);
+        return await ExecuteInternal(bridge, executor, preparedSell.Steps, cancellationToken);
     }
 
     /// <summary>
@@ -52,23 +52,48 @@ public static class ThirdwebBridgeExtensions
         CancellationToken cancellationToken = default
     )
     {
-        return ExecuteInternal(bridge, executor, preparedTransfer.Transactions, cancellationToken);
+        var steps = new List<Step>() { new() { Transactions = preparedTransfer.Transactions } };
+        return ExecuteInternal(bridge, executor, steps, cancellationToken);
     }
 
-    private static async Task<List<ThirdwebTransactionReceipt>> ExecuteInternal(
-        this ThirdwebBridge bridge,
-        IThirdwebWallet executor,
-        List<Transaction> transactions,
-        CancellationToken cancellationToken = default
-    )
+    /// <summary>
+    /// Executes a set of post-onramp transactions and handles status polling.
+    /// </summary>
+    /// <param name="bridge">The Thirdweb bridge.</param>
+    /// <param name="executor">The executor wallet.</param>
+    /// <param name="preparedOnRamp">The prepared onramp data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The transaction receipts as a list of <see cref="ThirdwebTransactionReceipt"/>.</returns>
+    /// <remarks>Note: This method is used for executing transactions after an onramp process.</remarks>
+    public static Task<List<ThirdwebTransactionReceipt>> Execute(this ThirdwebBridge bridge, IThirdwebWallet executor, OnrampPrepareData preparedOnRamp, CancellationToken cancellationToken = default)
+    {
+        return ExecuteInternal(bridge, executor, preparedOnRamp.Steps, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a set of transactions and handles status polling.
+    /// </summary>
+    /// /// <param name="bridge">The Thirdweb bridge.</param>
+    /// <param name="executor">The executor wallet.</param>
+    /// <param name="steps">The steps containing transactions to execute.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public static Task<List<ThirdwebTransactionReceipt>> Execute(this ThirdwebBridge bridge, IThirdwebWallet executor, List<Step> steps, CancellationToken cancellationToken = default)
+    {
+        return ExecuteInternal(bridge, executor, steps, cancellationToken);
+    }
+
+    private static async Task<List<ThirdwebTransactionReceipt>> ExecuteInternal(this ThirdwebBridge bridge, IThirdwebWallet executor, List<Step> steps, CancellationToken cancellationToken = default)
     {
         var receipts = new List<ThirdwebTransactionReceipt>();
-        foreach (var tx in transactions)
+        foreach (var step in steps)
         {
-            var thirdwebTx = await tx.ToThirdwebTransaction(executor);
-            var hash = await ThirdwebTransaction.Send(thirdwebTx);
-            receipts.Add(await ThirdwebTransaction.WaitForTransactionReceipt(executor.Client, tx.ChainId, hash, cancellationToken));
-            _ = await bridge.WaitForStatusCompletion(hash, tx.ChainId, cancellationToken);
+            foreach (var tx in step.Transactions)
+            {
+                var thirdwebTx = await tx.ToThirdwebTransaction(executor);
+                var hash = await ThirdwebTransaction.Send(thirdwebTx);
+                receipts.Add(await ThirdwebTransaction.WaitForTransactionReceipt(executor.Client, tx.ChainId, hash, cancellationToken));
+                _ = await bridge.WaitForStatusCompletion(hash, tx.ChainId, cancellationToken);
+            }
         }
         return receipts;
     }
@@ -115,6 +140,11 @@ public static class ThirdwebBridgeExtensions
         }
 
         return status;
+    }
+
+    public static bool IsSwapRequiredPostOnramp(this OnrampPrepareData preparedOnramp)
+    {
+        return preparedOnramp.Steps == null || preparedOnramp.Steps.Count == 0 || !preparedOnramp.Steps.Any(step => step.Transactions?.Count > 0);
     }
 
     #endregion

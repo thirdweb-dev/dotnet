@@ -32,9 +32,17 @@ public class ThirdwebBridge
     /// <param name="destinationChainId">The chain ID of the destination chain.</param>
     /// <param name="destinationTokenAddress">The address of the token on the destination chain.</param>
     /// <param name="buyAmountWei">The amount of tokens to buy in wei.</param>
+    /// <param name="maxSteps">The maximum number of steps in the returned route.</param>
     /// <returns>A <see cref="BuyQuoteData"/> object representing the quote.</returns>
     /// <exception cref="ArgumentException">Thrown when one of the parameters is invalid.</exception>
-    public async Task<BuyQuoteData> Buy_Quote(BigInteger originChainId, string originTokenAddress, BigInteger destinationChainId, string destinationTokenAddress, BigInteger buyAmountWei)
+    public async Task<BuyQuoteData> Buy_Quote(
+        BigInteger originChainId,
+        string originTokenAddress,
+        BigInteger destinationChainId,
+        string destinationTokenAddress,
+        BigInteger buyAmountWei,
+        int maxSteps = 3
+    )
     {
         if (originChainId <= 0)
         {
@@ -63,7 +71,8 @@ public class ThirdwebBridge
             { "originTokenAddress", originTokenAddress },
             { "destinationChainId", destinationChainId.ToString() },
             { "destinationTokenAddress", destinationTokenAddress },
-            { "buyAmountWei", buyAmountWei.ToString() }
+            { "buyAmountWei", buyAmountWei.ToString() },
+            { "maxSteps", maxSteps.ToString() }
         };
         url = AppendQueryParams(url, queryParams);
 
@@ -84,6 +93,8 @@ public class ThirdwebBridge
     /// <param name="buyAmountWei">The amount of tokens to buy in wei.</param>
     /// <param name="sender">The address of the sender.</param>
     /// <param name="receiver">The address of the receiver.</param>
+    /// <param name="maxSteps">The maximum number of steps in the returned route.</param>
+    /// <param name="purchaseData">Arbitrary purchase data to be included with the payment and returned with all webhooks and status checks.</param>
     /// <returns>A <see cref="BuyPrepareData"/> object representing the prepare data.</returns>
     /// <exception cref="ArgumentException">Thrown when one of the parameters is invalid.</exception>
     public async Task<BuyPrepareData> Buy_Prepare(
@@ -93,7 +104,9 @@ public class ThirdwebBridge
         string destinationTokenAddress,
         BigInteger buyAmountWei,
         string sender,
-        string receiver
+        string receiver,
+        int maxSteps = 3,
+        object purchaseData = null
     )
     {
         if (originChainId <= 0)
@@ -135,7 +148,9 @@ public class ThirdwebBridge
             { "destinationTokenAddress", destinationTokenAddress },
             { "buyAmountWei", buyAmountWei.ToString() },
             { "sender", sender },
-            { "receiver", receiver }
+            { "receiver", receiver },
+            { "maxSteps", maxSteps.ToString() },
+            { "purchaseData", purchaseData != null ? JsonConvert.SerializeObject(purchaseData) : null }
         };
         url = AppendQueryParams(url, queryParams);
 
@@ -158,9 +173,17 @@ public class ThirdwebBridge
     /// <param name="destinationChainId">The chain ID of the destination chain.</param>
     /// <param name="destinationTokenAddress">The address of the token on the destination chain.</param>
     /// <param name="sellAmountWei">The amount of tokens to sell in wei.</param>
+    /// <param name="maxSteps">The maximum number of steps in the returned route.</param>
     /// <returns>A <see cref="SellQuoteData"/> object representing the quote.</returns>
     /// <exception cref="ArgumentException">Thrown when one of the parameters is invalid.</exception>
-    public async Task<SellQuoteData> Sell_Quote(BigInteger originChainId, string originTokenAddress, BigInteger destinationChainId, string destinationTokenAddress, BigInteger sellAmountWei)
+    public async Task<SellQuoteData> Sell_Quote(
+        BigInteger originChainId,
+        string originTokenAddress,
+        BigInteger destinationChainId,
+        string destinationTokenAddress,
+        BigInteger sellAmountWei,
+        int maxSteps = 3
+    )
     {
         if (originChainId <= 0)
         {
@@ -189,7 +212,8 @@ public class ThirdwebBridge
             { "originTokenAddress", originTokenAddress },
             { "destinationChainId", destinationChainId.ToString() },
             { "destinationTokenAddress", destinationTokenAddress },
-            { "sellAmountWei", sellAmountWei.ToString() }
+            { "sellAmountWei", sellAmountWei.ToString() },
+            { "maxSteps", maxSteps.ToString() }
         };
         url = AppendQueryParams(url, queryParams);
 
@@ -210,6 +234,8 @@ public class ThirdwebBridge
     /// <param name="sellAmountWei">The amount of tokens to sell in wei.</param>
     /// <param name="sender">The address of the sender.</param>
     /// <param name="receiver">The address of the receiver.</param>
+    /// <param name="maxSteps">The maximum number of steps in the returned route.</param>
+    /// <param name="purchaseData">Arbitrary purchase data to be included with the payment and returned with all webhooks and status checks.</param>
     /// <returns>A <see cref="SellPrepareData"/> object representing the prepare data.</returns>
     /// <exception cref="ArgumentException">Thrown when one of the parameters is invalid.</exception>
     public async Task<SellPrepareData> Sell_Prepare(
@@ -219,7 +245,9 @@ public class ThirdwebBridge
         string destinationTokenAddress,
         BigInteger sellAmountWei,
         string sender,
-        string receiver
+        string receiver,
+        int maxSteps = 3,
+        object purchaseData = null
     )
     {
         if (originChainId <= 0)
@@ -261,7 +289,9 @@ public class ThirdwebBridge
             { "destinationTokenAddress", destinationTokenAddress },
             { "sellAmountWei", sellAmountWei.ToString() },
             { "sender", sender },
-            { "receiver", receiver }
+            { "receiver", receiver },
+            { "maxSteps", maxSteps.ToString() },
+            { "purchaseData", purchaseData != null ? JsonConvert.SerializeObject(purchaseData) : null }
         };
         url = AppendQueryParams(url, queryParams);
 
@@ -284,9 +314,19 @@ public class ThirdwebBridge
     /// <param name="transferAmountWei">The amount of tokens to transfer in wei.</param>
     /// <param name="sender">The address of the sender.</param>
     /// <param name="receiver">The address of the receiver.</param>
+    /// <param name="feePayer">The fee payer (default is "sender").</param>
+    /// <param name="purchaseData">Arbitrary purchase data to be included with the payment and returned with all webhooks and status checks.</param>
     /// <returns>A <see cref="TransferPrepareData"/> object representing the prepare data.</returns>
     /// <exception cref="ArgumentException">Thrown when one of the parameters is invalid.</exception>
-    public async Task<TransferPrepareData> Transfer_Prepare(BigInteger chainId, string tokenAddress, BigInteger transferAmountWei, string sender, string receiver)
+    public async Task<TransferPrepareData> Transfer_Prepare(
+        BigInteger chainId,
+        string tokenAddress,
+        BigInteger transferAmountWei,
+        string sender,
+        string receiver,
+        string feePayer = "sender",
+        object purchaseData = null
+    )
     {
         if (chainId <= 0)
         {
@@ -320,7 +360,9 @@ public class ThirdwebBridge
             { "tokenAddress", tokenAddress },
             { "transferAmountWei", transferAmountWei.ToString() },
             { "sender", sender },
-            { "receiver", receiver }
+            { "receiver", receiver },
+            { "feePayer", feePayer },
+            { "purchaseData", purchaseData != null ? JsonConvert.SerializeObject(purchaseData) : null }
         };
         url = AppendQueryParams(url, queryParams);
 
@@ -328,6 +370,92 @@ public class ThirdwebBridge
         _ = response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var result = JsonConvert.DeserializeObject<ResponseModel<TransferPrepareData>>(responseContent);
+        return result.Data;
+    }
+
+    #endregion
+
+    #region Onramp
+
+    public async Task<OnrampPrepareData> Onramp_Prepare(
+        OnrampProvider onramp,
+        BigInteger chainId,
+        string tokenAddress,
+        string amount,
+        string receiver,
+        string onrampTokenAddress = null,
+        BigInteger? onrampChainId = null,
+        string currency = "USD",
+        int? maxSteps = 3,
+        List<BigInteger> excludeChainIds = null,
+        object purchaseData = null
+    )
+    {
+        if (chainId <= 0)
+        {
+            throw new ArgumentException("chainId cannot be less than or equal to 0", nameof(chainId));
+        }
+
+        if (!Utils.IsValidAddress(tokenAddress))
+        {
+            throw new ArgumentException("tokenAddress is not a valid address", nameof(tokenAddress));
+        }
+
+        if (string.IsNullOrWhiteSpace(amount))
+        {
+            throw new ArgumentException("amount cannot be null or empty", nameof(amount));
+        }
+
+        if (!Utils.IsValidAddress(receiver))
+        {
+            throw new ArgumentException("receiver is not a valid address", nameof(receiver));
+        }
+
+        var url = $"{Constants.BRIDGE_API_URL}/v1/onramp/prepare";
+        var queryParams = new Dictionary<string, string>
+        {
+            { "onramp", onramp.ToString().ToLower() },
+            { "chainId", chainId.ToString() },
+            { "tokenAddress", tokenAddress },
+            { "amount", amount },
+            { "receiver", receiver },
+            { "purchaseData", purchaseData != null ? JsonConvert.SerializeObject(purchaseData) : null },
+            { "onrampTokenAddress", onrampTokenAddress },
+            { "onrampChainId", onrampChainId?.ToString() },
+            { "currency", currency },
+            { "maxSteps", maxSteps?.ToString() }
+        };
+
+        if (excludeChainIds != null && excludeChainIds.Count > 0)
+        {
+            queryParams.Add("excludeChainIds", string.Join(",", excludeChainIds));
+        }
+
+        url = AppendQueryParams(url, queryParams);
+
+        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+
+        var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var result = JsonConvert.DeserializeObject<ResponseModel<OnrampPrepareData>>(responseContent);
+        return result.Data;
+    }
+
+    public async Task<OnrampStatusData> Onramp_Status(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            throw new ArgumentException("id cannot be null or empty", nameof(id));
+        }
+
+        var url = $"{Constants.BRIDGE_API_URL}/v1/onramp/status";
+        var queryParams = new Dictionary<string, string> { { "id", id } };
+        url = AppendQueryParams(url, queryParams);
+
+        var response = await this._httpClient.GetAsync(url).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+        var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var result = JsonConvert.DeserializeObject<ResponseModel<OnrampStatusData>>(responseContent);
         return result.Data;
     }
 
@@ -372,6 +500,10 @@ public class ThirdwebBridge
         var query = new List<string>();
         foreach (var param in queryParams)
         {
+            if (string.IsNullOrEmpty(param.Value))
+            {
+                continue;
+            }
             query.Add($"{param.Key}={param.Value}");
         }
 

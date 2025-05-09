@@ -45,88 +45,123 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region Bridge
 
-// // Create a ThirdwebBridge instance
-// var bridge = await ThirdwebBridge.Create(client);
+var myWallet = await PrivateKeyWallet.Generate(client);
 
-// // Buy - Get a quote for buying a specific amount of tokens
-// var buyQuote = await bridge.Buy_Quote(
-//     originChainId: 1,
-//     originTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
-//     destinationChainId: 324,
-//     destinationTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
-//     buyAmountWei: BigInteger.Parse("0.1".ToWei())
-// );
-// Console.WriteLine($"Buy quote: {JsonConvert.SerializeObject(buyQuote, Formatting.Indented)}");
+// Create a ThirdwebBridge instance
+var bridge = await ThirdwebBridge.Create(client);
 
-// // Buy - Get an executable set of transactions (alongside a quote) for buying a specific amount of tokens
-// var preparedBuy = await bridge.Buy_Prepare(
-//     originChainId: 1,
-//     originTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
-//     destinationChainId: 324,
-//     destinationTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
-//     buyAmountWei: BigInteger.Parse("0.1".ToWei()),
-//     sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
-//     receiver: await myWallet.GetAddress()
-// );
-// Console.WriteLine($"Prepared Buy contains {preparedBuy.Transactions.Count} transaction(s)!");
+// Buy - Get a quote for buying a specific amount of tokens
+var buyQuote = await bridge.Buy_Quote(
+    originChainId: 1,
+    originTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+    destinationChainId: 324,
+    destinationTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
+    buyAmountWei: BigInteger.Parse("0.01".ToWei())
+);
+Console.WriteLine($"Buy quote: {JsonConvert.SerializeObject(buyQuote, Formatting.Indented)}");
 
-// // Sell - Get a quote for selling a specific amount of tokens
-// var sellQuote = await bridge.Sell_Quote(
-//     originChainId: 324,
-//     originTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
-//     destinationChainId: 1,
-//     destinationTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
-//     sellAmountWei: BigInteger.Parse("0.1".ToWei())
-// );
-// Console.WriteLine($"Sell quote: {JsonConvert.SerializeObject(sellQuote, Formatting.Indented)}");
+// Buy - Get an executable set of transactions (alongside a quote) for buying a specific amount of tokens
+var preparedBuy = await bridge.Buy_Prepare(
+    originChainId: 1,
+    originTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+    destinationChainId: 324,
+    destinationTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
+    buyAmountWei: BigInteger.Parse("0.01".ToWei()),
+    sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
+    receiver: await myWallet.GetAddress()
+);
+Console.WriteLine($"Prepared Buy contains {preparedBuy.Steps.Count} steps(s) with a total of {preparedBuy.Steps.Sum(step => step.Transactions.Count)} transactions!");
 
-// // Sell - Get an executable set of transactions (alongside a quote) for selling a specific amount of tokens
-// var preparedSell = await bridge.Sell_Prepare(
-//     originChainId: 324,
-//     originTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
-//     destinationChainId: 1,
-//     destinationTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
-//     sellAmountWei: BigInteger.Parse("0.1".ToWei()),
-//     sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
-//     receiver: await myWallet.GetAddress()
-// );
-// Console.WriteLine($"Prepared Sell contains {preparedSell.Transactions.Count} transaction(s)!");
+// Sell - Get a quote for selling a specific amount of tokens
+var sellQuote = await bridge.Sell_Quote(
+    originChainId: 324,
+    originTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
+    destinationChainId: 1,
+    destinationTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+    sellAmountWei: BigInteger.Parse("0.01".ToWei())
+);
+Console.WriteLine($"Sell quote: {JsonConvert.SerializeObject(sellQuote, Formatting.Indented)}");
 
-// // Transfer - Get an executable transaction for transferring a specific amount of tokens
-// var preparedTransfer = await bridge.Transfer_Prepare(
-//     chainId: 137,
-//     tokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
-//     transferAmountWei: BigInteger.Parse("0.1".ToWei()),
-//     sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
-//     receiver: await myWallet.GetAddress()
-// );
-// Console.WriteLine($"Prepared Transfer: {JsonConvert.SerializeObject(preparedTransfer, Formatting.Indented)}");
+// Sell - Get an executable set of transactions (alongside a quote) for selling a specific amount of tokens
+var preparedSell = await bridge.Sell_Prepare(
+    originChainId: 324,
+    originTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
+    destinationChainId: 1,
+    destinationTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+    sellAmountWei: BigInteger.Parse("0.01".ToWei()),
+    sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
+    receiver: await myWallet.GetAddress()
+);
+Console.WriteLine($"Prepared Sell contains {preparedBuy.Steps.Count} steps(s) with a total of {preparedBuy.Steps.Sum(step => step.Transactions.Count)} transactions!");
 
-// // You may use our extensions to execute yourself...
-// var myTx = await preparedTransfer.Transactions[0].ToThirdwebTransaction(myWallet);
-// var myHash = await ThirdwebTransaction.Send(myTx);
+// Transfer - Get an executable transaction for transferring a specific amount of tokens
+var preparedTransfer = await bridge.Transfer_Prepare(
+    chainId: 137,
+    tokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // POL on Polygon
+    transferAmountWei: BigInteger.Parse("0.01".ToWei()),
+    sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
+    receiver: await myWallet.GetAddress()
+);
+Console.WriteLine($"Prepared Transfer: {JsonConvert.SerializeObject(preparedTransfer, Formatting.Indented)}");
 
-// // ...and poll for the status...
-// var status = await bridge.Status(transactionHash: myHash, chainId: 1);
-// var isComplete = status.StatusType == StatusType.COMPLETED;
-// Console.WriteLine($"Status: {JsonConvert.SerializeObject(status, Formatting.Indented)}");
+// You may use our extensions to execute yourself...
+var myTx = await preparedTransfer.Transactions[0].ToThirdwebTransaction(myWallet);
+var myHash = await ThirdwebTransaction.Send(myTx);
 
-// // Or use our Execute extensions directly to handle everything for you!
+// ...and poll for the status...
+var status = await bridge.Status(transactionHash: myHash, chainId: 1);
+var isComplete = status.StatusType == StatusType.COMPLETED;
+Console.WriteLine($"Status: {JsonConvert.SerializeObject(status, Formatting.Indented)}");
 
-// // Execute a prepared Buy
-// var buyResult = await bridge.Execute(myWallet, preparedBuy);
-// var buyHashes = buyResult.Select(receipt => receipt.TransactionHash).ToList();
-// Console.WriteLine($"Buy hashes: {JsonConvert.SerializeObject(buyHashes, Formatting.Indented)}");
+// Or use our Execute extensions directly to handle everything for you!
 
-// // Execute a prepared Sell
-// var sellResult = await bridge.Execute(myWallet, preparedSell);
-// var sellHashes = sellResult.Select(receipt => receipt.TransactionHash).ToList();
-// Console.WriteLine($"Sell hashes: {JsonConvert.SerializeObject(sellHashes, Formatting.Indented)}");
+// Execute a prepared Buy
+var buyResult = await bridge.Execute(myWallet, preparedBuy);
+var buyHashes = buyResult.Select(receipt => receipt.TransactionHash).ToList();
+Console.WriteLine($"Buy hashes: {JsonConvert.SerializeObject(buyHashes, Formatting.Indented)}");
 
-// // Execute a prepared Transfer
-// var transferResult = await bridge.Execute(myWallet, preparedTransfer);
-// var transferHashes = transferResult.Select(receipt => receipt.TransactionHash).ToList();
-// Console.WriteLine($"Transfer hashes: {JsonConvert.SerializeObject(transferHashes, Formatting.Indented)}");
+// Execute a prepared Sell
+var sellResult = await bridge.Execute(myWallet, preparedSell);
+var sellHashes = sellResult.Select(receipt => receipt.TransactionHash).ToList();
+Console.WriteLine($"Sell hashes: {JsonConvert.SerializeObject(sellHashes, Formatting.Indented)}");
+
+// Execute a prepared Transfer
+var transferResult = await bridge.Execute(myWallet, preparedTransfer);
+var transferHashes = transferResult.Select(receipt => receipt.TransactionHash).ToList();
+Console.WriteLine($"Transfer hashes: {JsonConvert.SerializeObject(transferHashes, Formatting.Indented)}");
+
+// Onramp - Get a quote for buying crypto with Fiat
+var preparedOnramp = await bridge.Onramp_Prepare(
+    onramp: OnrampProvider.Coinbase,
+    chainId: 8453,
+    tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base
+    amount: "10000000",
+    receiver: await myWallet.GetAddress()
+);
+Console.WriteLine($"Onramp link: {preparedOnramp.Link}");
+Console.WriteLine($"Full onramp quote and steps data: {JsonConvert.SerializeObject(preparedOnramp, Formatting.Indented)}");
+
+while (true)
+{
+    var onrampStatus = await bridge.Onramp_Status(id: preparedOnramp.Id);
+    Console.WriteLine($"Full Onramp Status: {JsonConvert.SerializeObject(onrampStatus, Formatting.Indented)}");
+    if (onrampStatus.StatusType is StatusType.COMPLETED or StatusType.FAILED)
+    {
+        break;
+    }
+    await ThirdwebTask.Delay(5000);
+}
+
+if (preparedOnramp.IsSwapRequiredPostOnramp())
+{
+    // Execute additional steps that are required post-onramp to get to your token, manually or via the Execute extension
+    var receipts = await bridge.Execute(myWallet, preparedOnramp);
+    Console.WriteLine($"Onramp receipts: {JsonConvert.SerializeObject(receipts, Formatting.Indented)}");
+}
+else
+{
+    Console.WriteLine("No additional steps required post-onramp, you can use the tokens directly!");
+}
 
 #endregion
 

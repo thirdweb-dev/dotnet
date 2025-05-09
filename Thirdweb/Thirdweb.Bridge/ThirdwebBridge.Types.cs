@@ -24,40 +24,46 @@ internal class ResponseModel<T>
 public class Intent
 {
     /// <summary>
-    /// The chain ID where the transaction originates.
+    /// The origin chain ID.
     /// </summary>
     [JsonProperty("originChainId")]
     public BigInteger OriginChainId { get; set; }
 
     /// <summary>
-    /// The token address in the origin chain.
+    /// The origin token address.
     /// </summary>
     [JsonProperty("originTokenAddress")]
     public string OriginTokenAddress { get; set; }
 
     /// <summary>
-    /// The chain ID where the transaction is executed.
+    /// The destination chain ID.
     /// </summary>
     [JsonProperty("destinationChainId")]
     public BigInteger DestinationChainId { get; set; }
 
     /// <summary>
-    /// The token address in the destination chain.
+    /// The destination token address.
     /// </summary>
     [JsonProperty("destinationTokenAddress")]
     public string DestinationTokenAddress { get; set; }
 
     /// <summary>
-    /// The amount involved in the transaction (buy, sell, or transfer) in wei.
+    /// The desired amount in wei.
     /// </summary>
-    public virtual string AmountWei { get; set; }
+    [JsonProperty("amount")]
+    public string Amount { get; set; }
+
+    /// <summary>
+    /// The maximum number of steps in the returned route (optional).
+    /// </summary>
+    [JsonProperty("maxSteps", NullValueHandling = NullValueHandling.Ignore)]
+    public int? MaxSteps { get; set; } = 3;
 }
 
 /// <summary>
 /// Represents the common fields for both Buy and Sell transactions.
 /// </summary>
-public class QuoteData<TIntent>
-    where TIntent : Intent
+public class QuoteData
 {
     /// <summary>
     /// The amount (in wei) of the input token that must be paid to receive the desired amount.
@@ -93,14 +99,80 @@ public class QuoteData<TIntent>
     /// The intent object containing details about the transaction.
     /// </summary>
     [JsonProperty("intent")]
-    public TIntent Intent { get; set; }
+    public Intent Intent { get; set; }
+
+    [JsonProperty("steps")]
+    public List<Step> Steps { get; set; }
+
+    [JsonProperty("purchaseData", NullValueHandling = NullValueHandling.Ignore)]
+    public object PurchaseData { get; set; }
 }
 
 /// <summary>
-/// Represents a transaction to be executed.
+/// Represents a single step in a transaction, including origin and destination tokens.
+/// </summary>
+public class Step
+{
+    [JsonProperty("originToken")]
+    public TokenData OriginToken { get; set; }
+
+    [JsonProperty("destinationToken")]
+    public TokenData DestinationToken { get; set; }
+
+    [JsonProperty("transactions")]
+    public List<Transaction> Transactions { get; set; }
+
+    [JsonProperty("originAmount")]
+    public string OriginAmount { get; set; }
+
+    [JsonProperty("destinationAmount")]
+    public string DestinationAmount { get; set; }
+
+    [JsonProperty("nativeFee")]
+    public string NativeFee { get; set; }
+
+    [JsonProperty("estimatedExecutionTimeMs")]
+    public long EstimatedExecutionTimeMs { get; set; }
+}
+
+/// <summary>
+/// Represents a token in a step, including metadata like chain ID, address, and pricing.
+/// </summary>
+public class TokenData
+{
+    [JsonProperty("chainId")]
+    public BigInteger ChainId { get; set; }
+
+    [JsonProperty("address")]
+    public string Address { get; set; }
+
+    [JsonProperty("symbol")]
+    public string Symbol { get; set; }
+
+    [JsonProperty("name")]
+    public string Name { get; set; }
+
+    [JsonProperty("decimals")]
+    public int Decimals { get; set; }
+
+    [JsonProperty("priceUsd")]
+    public decimal PriceUsd { get; set; }
+
+    [JsonProperty("iconUri")]
+    public string IconUri { get; set; }
+}
+
+/// <summary>
+/// Represents a transaction ready to be executed.
 /// </summary>
 public class Transaction
 {
+    /// <summary>
+    /// The transaction ID, each step in a quoted payment will have a unique transaction ID.
+    /// </summary>
+    [JsonProperty("id")]
+    public string Id { get; set; }
+
     /// <summary>
     /// The chain ID where the transaction will take place.
     /// </summary>
@@ -108,16 +180,40 @@ public class Transaction
     public BigInteger ChainId { get; set; }
 
     /// <summary>
-    /// The address to which the transaction is sent, or null if not applicable.
+    /// The maximum priority fee per gas (EIP-1559).
     /// </summary>
-    [JsonProperty("to", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("maxPriorityFeePerGas", NullValueHandling = NullValueHandling.Ignore)]
+    public string MaxPriorityFeePerGas { get; set; }
+
+    /// <summary>
+    /// The maximum fee per gas (EIP-1559).
+    /// </summary>
+    [JsonProperty("maxFeePerGas", NullValueHandling = NullValueHandling.Ignore)]
+    public string MaxFeePerGas { get; set; }
+
+    /// <summary>
+    /// The address to which the transaction is sent.
+    /// </summary>
+    [JsonProperty("to")]
     public string To { get; set; }
+
+    /// <summary>
+    /// The address from which the transaction is sent, or null if not applicable.
+    /// </summary>
+    [JsonProperty("from", NullValueHandling = NullValueHandling.Ignore)]
+    public string From { get; set; }
 
     /// <summary>
     /// The value (amount) to be sent in the transaction.
     /// </summary>
-    [JsonProperty("value")]
+    [JsonProperty("value", NullValueHandling = NullValueHandling.Ignore)]
     public string Value { get; set; }
+
+    /// <summary>
+    /// The gas limit for the transaction.
+    /// </summary>
+    [JsonProperty("gas", NullValueHandling = NullValueHandling.Ignore)]
+    public string Gas { get; set; }
 
     /// <summary>
     /// The transaction data.
@@ -130,6 +226,12 @@ public class Transaction
     /// </summary>
     [JsonProperty("type")]
     public string Type { get; set; }
+
+    /// <summary>
+    /// The action type for the transaction (e.g., "approval", "transfer", "buy", "sell").
+    /// </summary>
+    [JsonProperty("action")]
+    public string Action { get; set; }
 }
 
 #endregion
@@ -139,16 +241,23 @@ public class Transaction
 /// <summary>
 /// Represents the data returned in the buy quote response.
 /// </summary>
-public class BuyQuoteData : QuoteData<BuyIntent> { }
+public class BuyQuoteData : QuoteData { }
 
 /// <summary>
 /// Represents the data returned in the buy prepare response.
 /// </summary>
-public class BuyPrepareData : QuoteData<BuyIntent>
+public class BuyPrepareData : QuoteData
 {
+    /// <summary>
+    /// A hex ID associated with the quoted payment.
+    /// </summary>
+    [JsonProperty("id")]
+    public string Id { get; set; }
+
     /// <summary>
     /// An array of transactions to be executed to fulfill this quote (in order).
     /// </summary>
+    [Obsolete("Use Steps.Transactions instead.")]
     [JsonProperty("transactions")]
     public List<Transaction> Transactions { get; set; }
 
@@ -157,18 +266,6 @@ public class BuyPrepareData : QuoteData<BuyIntent>
     /// </summary>
     [JsonProperty("expiration")]
     public long? Expiration { get; set; }
-}
-
-/// <summary>
-/// Represents the intent object for a buy quote.
-/// </summary>
-public class BuyIntent : Intent
-{
-    /// <summary>
-    /// The desired output amount in wei for buying.
-    /// </summary>
-    [JsonProperty("buyAmountWei")]
-    public override string AmountWei { get; set; }
 }
 
 #endregion
@@ -178,16 +275,23 @@ public class BuyIntent : Intent
 /// <summary>
 /// Represents the data returned in the sell quote response.
 /// </summary>
-public class SellQuoteData : QuoteData<SellIntent> { }
+public class SellQuoteData : QuoteData { }
 
 /// <summary>
 /// Represents the data returned in the sell prepare response.
 /// </summary>
-public class SellPrepareData : QuoteData<SellIntent>
+public class SellPrepareData : QuoteData
 {
+    /// <summary>
+    /// A hex ID associated with the quoted payment.
+    /// </summary>
+    [JsonProperty("id")]
+    public string Id { get; set; }
+
     /// <summary>
     /// An array of transactions to be executed to fulfill this quote (in order).
     /// </summary>
+    [Obsolete("Use Steps.Transactions instead.")]
     [JsonProperty("transactions")]
     public List<Transaction> Transactions { get; set; }
 
@@ -196,18 +300,6 @@ public class SellPrepareData : QuoteData<SellIntent>
     /// </summary>
     [JsonProperty("expiration")]
     public long? Expiration { get; set; }
-}
-
-/// <summary>
-/// Represents the intent object for a sell quote.
-/// </summary>
-public class SellIntent : Intent
-{
-    /// <summary>
-    /// The amount to sell in wei.
-    /// </summary>
-    [JsonProperty("sellAmountWei")]
-    public override string AmountWei { get; set; }
 }
 
 #endregion
@@ -234,6 +326,9 @@ public class TransferPrepareData
     [JsonProperty("estimatedExecutionTimeMs")]
     public long EstimatedExecutionTimeMs { get; set; }
 
+    [JsonProperty("id")]
+    public string Id { get; set; }
+
     [JsonProperty("transactions")]
     public List<Transaction> Transactions { get; set; }
 
@@ -250,7 +345,7 @@ public class TransferPrepareData
 public class TransferIntent
 {
     [JsonProperty("chainId")]
-    public int ChainId { get; set; }
+    public BigInteger ChainId { get; set; }
 
     [JsonProperty("tokenAddress")]
     public string TokenAddress { get; set; }
@@ -263,6 +358,12 @@ public class TransferIntent
 
     [JsonProperty("receiver")]
     public string Receiver { get; set; }
+
+    [JsonProperty("feePayer")]
+    public string FeePayer { get; set; } = "sender";
+
+    [JsonProperty("purchaseData", NullValueHandling = NullValueHandling.Ignore)]
+    public object PurchaseData { get; set; }
 }
 
 #endregion
@@ -277,7 +378,10 @@ public enum StatusType
     FAILED,
     PENDING,
     COMPLETED,
-    NOT_FOUND
+    NOT_FOUND,
+    PROCESSING,
+    CREATED,
+    UNKNOWN
 }
 
 /// <summary>
@@ -296,7 +400,7 @@ public class StatusData
             "PENDING" => StatusType.PENDING,
             "COMPLETED" => StatusType.COMPLETED,
             "NOT_FOUND" => StatusType.NOT_FOUND,
-            _ => throw new InvalidOperationException($"Unknown status: {this.Status}")
+            _ => StatusType.UNKNOWN
         };
 
     /// <summary>
@@ -310,6 +414,18 @@ public class StatusData
     /// </summary>
     [JsonProperty("transactions")]
     public List<TransactionStatus> Transactions { get; set; }
+
+    /// <summary>
+    /// The unique payment ID for the transaction.
+    /// </summary>
+    [JsonProperty("paymentId", NullValueHandling = NullValueHandling.Ignore)]
+    public string PaymentId { get; set; }
+
+    /// <summary>
+    /// The unique transaction ID for the transaction.
+    /// </summary>
+    [JsonProperty("transactionId", NullValueHandling = NullValueHandling.Ignore)]
+    public string TransactionId { get; set; }
 
     /// <summary>
     /// The origin chain ID (for PENDING and COMPLETED statuses).
@@ -346,6 +462,12 @@ public class StatusData
     /// </summary>
     [JsonProperty("destinationAmount", NullValueHandling = NullValueHandling.Ignore)]
     public string DestinationAmount { get; set; }
+
+    /// <summary>
+    /// The purchase data, which can be null.
+    /// </summary>
+    [JsonProperty("purchaseData", NullValueHandling = NullValueHandling.Ignore)]
+    public object PurchaseData { get; set; }
 }
 
 /// <summary>
@@ -362,6 +484,113 @@ public class TransactionStatus
     /// <summary>
     /// The transaction hash of the transaction.
     /// </summary>
+    [JsonProperty("transactionHash")]
+    public string TransactionHash { get; set; }
+}
+
+#endregion
+
+#region Onramp
+
+public enum OnrampProvider
+{
+    Stripe,
+    Coinbase,
+    Transak
+}
+
+/// <summary>
+/// Represents the core data of an onramp response.
+/// </summary>
+public class OnrampPrepareData
+{
+    [JsonProperty("id")]
+    public string Id { get; set; }
+
+    [JsonProperty("link")]
+    public string Link { get; set; }
+
+    [JsonProperty("currency")]
+    public string Currency { get; set; }
+
+    [JsonProperty("currencyAmount")]
+    public decimal CurrencyAmount { get; set; }
+
+    [JsonProperty("destinationAmount")]
+    public string DestinationAmount { get; set; }
+
+    [JsonProperty("timestamp", NullValueHandling = NullValueHandling.Ignore)]
+    public long? Timestamp { get; set; }
+
+    [JsonProperty("expiration", NullValueHandling = NullValueHandling.Ignore)]
+    public long? Expiration { get; set; }
+
+    [JsonProperty("steps")]
+    public List<Step> Steps { get; set; }
+
+    [JsonProperty("intent")]
+    public OnrampIntent Intent { get; set; }
+}
+
+/// <summary>
+/// Represents the intent used to prepare the onramp.
+/// </summary>
+public class OnrampIntent
+{
+    [JsonProperty("onramp")]
+    public OnrampProvider Onramp { get; set; }
+
+    [JsonProperty("chainId")]
+    public BigInteger ChainId { get; set; }
+
+    [JsonProperty("tokenAddress")]
+    public string TokenAddress { get; set; }
+
+    [JsonProperty("amount")]
+    public string Amount { get; set; }
+
+    [JsonProperty("receiver")]
+    public string Receiver { get; set; }
+
+    [JsonProperty("purchaseData", NullValueHandling = NullValueHandling.Ignore)]
+    public Dictionary<string, object> PurchaseData { get; set; }
+
+    [JsonProperty("onrampTokenAddress", NullValueHandling = NullValueHandling.Ignore)]
+    public string OnrampTokenAddress { get; set; }
+
+    [JsonProperty("onrampChainId", NullValueHandling = NullValueHandling.Ignore)]
+    public BigInteger? OnrampChainId { get; set; }
+
+    [JsonProperty("currency", NullValueHandling = NullValueHandling.Ignore)]
+    public string Currency { get; set; } = "USD";
+
+    [JsonProperty("maxSteps", NullValueHandling = NullValueHandling.Ignore)]
+    public int? MaxSteps { get; set; } = 3;
+
+    [JsonProperty("excludeChainIds", NullValueHandling = NullValueHandling.Ignore)]
+    public List<BigInteger> ExcludeChainIds { get; set; }
+}
+
+/// <summary>
+/// Represents the status of an onramp transaction.
+/// </summary>
+public class OnrampStatusData
+{
+    [JsonIgnore]
+    public StatusType StatusType =>
+        this.Status switch
+        {
+            "FAILED" => StatusType.FAILED,
+            "PENDING" => StatusType.PENDING,
+            "COMPLETED" => StatusType.COMPLETED,
+            "PROCESSING" => StatusType.PROCESSING,
+            "CREATED" => StatusType.CREATED,
+            _ => StatusType.UNKNOWN
+        };
+
+    [JsonProperty("status")]
+    public string Status { get; set; }
+
     [JsonProperty("transactionHash")]
     public string TransactionHash { get; set; }
 }
