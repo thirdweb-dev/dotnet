@@ -25,6 +25,7 @@ public class ThirdwebRPC : IDisposable
     private readonly object _responseLock = new();
     private readonly object _cacheLock = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly JsonSerializerSettings _jsonSerializerSettings = new() { NullValueHandling = NullValueHandling.Ignore, };
 
     private int _requestIdCounter = 1;
 
@@ -167,7 +168,7 @@ public class ThirdwebRPC : IDisposable
 
     private async Task SendBatchAsync(List<RpcRequest> batch)
     {
-        var batchJson = JsonConvert.SerializeObject(batch);
+        var batchJson = JsonConvert.SerializeObject(batch, this._jsonSerializerSettings);
         var content = new StringContent(batchJson, Encoding.UTF8, "application/json");
 
         try

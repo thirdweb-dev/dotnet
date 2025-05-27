@@ -209,7 +209,7 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(address);
     }
 
-    public virtual Task<string> PersonalSign(byte[] rawMessage)
+    public virtual Task<string> PersonalSign(byte[] rawMessage, object originalMessage = null, BigInteger? chainId = null)
     {
         if (rawMessage == null)
         {
@@ -221,7 +221,7 @@ public class PrivateKeyWallet : IThirdwebWallet
         return Task.FromResult(signature);
     }
 
-    public virtual Task<string> PersonalSign(string message)
+    public virtual Task<string> PersonalSign(string message, object originalMessage = null, BigInteger? chainId = null)
     {
         if (string.IsNullOrEmpty(message))
         {

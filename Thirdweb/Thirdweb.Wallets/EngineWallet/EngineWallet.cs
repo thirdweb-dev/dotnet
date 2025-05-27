@@ -188,7 +188,7 @@ public partial class EngineWallet : IThirdwebWallet
         throw new NotImplementedException();
     }
 
-    public async Task<string> PersonalSign(byte[] rawMessage)
+    public async Task<string> PersonalSign(byte[] rawMessage, object originalMessage = null, BigInteger? chainId = null)
     {
         if (rawMessage == null)
         {
@@ -207,7 +207,7 @@ public partial class EngineWallet : IThirdwebWallet
         return JObject.Parse(content)["result"].Value<string>();
     }
 
-    public async Task<string> PersonalSign(string message)
+    public async Task<string> PersonalSign(string message, object originalMessage = null, BigInteger? chainId = null)
     {
         if (string.IsNullOrEmpty(message))
         {

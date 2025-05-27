@@ -56,15 +56,19 @@ public interface IThirdwebWallet
     /// Signs a raw message using personal signing.
     /// </summary>
     /// <param name="rawMessage">The raw message to sign.</param>
+    /// <param name="originalMessage">Used for Ecosystem signing polciies purposes only.</param>
+    /// <param name="chainId">Used for Ecosystem signing polciies purposes only.</param>
     /// <returns>The signed message.</returns>
-    public Task<string> PersonalSign(byte[] rawMessage);
+    public Task<string> PersonalSign(byte[] rawMessage, object originalMessage = null, BigInteger? chainId = null);
 
     /// <summary>
     /// Signs a message using personal signing.
     /// </summary>
     /// <param name="message">The message to sign.</param>
+    /// <param name="originalMessage">Used for Ecosystem signing polciies purposes only.</param>
+    /// <param name="chainId">Used for Ecosystem signing polciies purposes only.</param>
     /// <returns>The signed message.</returns>
-    public Task<string> PersonalSign(string message);
+    public Task<string> PersonalSign(string message, object originalMessage = null, BigInteger? chainId = null);
 
     /// <summary>
     /// Recovers the address from a signed message using personal signing.

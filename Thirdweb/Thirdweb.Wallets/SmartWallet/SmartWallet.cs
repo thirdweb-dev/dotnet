@@ -873,11 +873,12 @@ public class SmartWallet : IThirdwebWallet
 
     private async Task<byte[]> HashAndSignUserOp(UserOperationV6 userOp, ThirdwebContract entryPointContract)
     {
+        var hexified = EncodeUserOperation(userOp);
         var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", userOp);
         var sig =
             this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount
-                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex()).ConfigureAwait(false)
-                : await this._personalAccount.PersonalSign(userOpHash).ConfigureAwait(false);
+                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex(), hexified, this.ActiveChainId).ConfigureAwait(false)
+                : await this._personalAccount.PersonalSign(userOpHash, hexified, this.ActiveChainId).ConfigureAwait(false);
         return sig.HexToBytes();
     }
 
@@ -945,10 +946,11 @@ public class SmartWallet : IThirdwebWallet
 
         var userOpHash = await ThirdwebContract.Read<byte[]>(entryPointContract, "getUserOpHash", packedOp).ConfigureAwait(false);
 
+        var hexified = EncodeUserOperation(userOp);
         var sig =
             this._personalAccount.AccountType == ThirdwebAccountType.ExternalAccount
-                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex()).ConfigureAwait(false)
-                : await this._personalAccount.PersonalSign(userOpHash).ConfigureAwait(false);
+                ? await this._personalAccount.PersonalSign(userOpHash.BytesToHex(), hexified, this.ActiveChainId).ConfigureAwait(false)
+                : await this._personalAccount.PersonalSign(userOpHash, hexified, this.ActiveChainId).ConfigureAwait(false);
 
         return sig.HexToBytes();
     }
@@ -1081,7 +1083,7 @@ public class SmartWallet : IThirdwebWallet
         throw new NotImplementedException();
     }
 
-    public Task<string> PersonalSign(byte[] rawMessage)
+    public Task<string> PersonalSign(byte[] rawMessage, object originalMessage = null, BigInteger? chainId = null)
     {
         throw new NotImplementedException();
     }
@@ -1089,9 +1091,7 @@ public class SmartWallet : IThirdwebWallet
     /// <summary>
     /// Signs a message with the personal account. The message will be verified using EIPs 1271 and 6492 if applicable.
     /// </summary>
-    /// <param name="message">The message to sign.</param>
-    /// <returns>The signature.</returns>
-    public async Task<string> PersonalSign(string message)
+    public async Task<string> PersonalSign(string message, object originalMessage = null, BigInteger? chainId = null)
     {
         if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
         {

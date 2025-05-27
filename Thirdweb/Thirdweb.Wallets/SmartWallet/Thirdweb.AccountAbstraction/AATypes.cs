@@ -119,6 +119,7 @@ public class PackedUserOperation
     public virtual byte[] Signature { get; set; }
 }
 
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class UserOperationHexifiedV6
 {
     [JsonProperty("sender")]
@@ -155,6 +156,7 @@ public class UserOperationHexifiedV6
     public string Signature { get; set; }
 }
 
+[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class UserOperationHexifiedV7
 {
     [JsonProperty("sender")]

@@ -48,6 +48,8 @@ public partial class EcosystemWallet : IThirdwebWallet
     private const string EMBEDDED_WALLET_PATH_V1 = $"{EMBEDDED_WALLET_BASE_PATH}/v1";
     private const string ENCLAVE_PATH = $"{EMBEDDED_WALLET_PATH_V1}/enclave-wallet";
 
+    private readonly JsonSerializerSettings _jsonSerializerSettings = new() { NullValueHandling = NullValueHandling.Ignore, };
+
     internal EcosystemWallet(
         string ecosystemId,
         string ecosystemPartnerId,
@@ -1001,7 +1003,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         throw new NotImplementedException();
     }
 
-    public async Task<string> PersonalSign(byte[] rawMessage)
+    public async Task<string> PersonalSign(byte[] rawMessage, object originalMessage = null, BigInteger? chainId = null)
     {
         if (rawMessage == null)
         {
@@ -1009,9 +1011,18 @@ public partial class EcosystemWallet : IThirdwebWallet
         }
 
         var url = $"{ENCLAVE_PATH}/sign-message";
-        var payload = new { messagePayload = new { message = rawMessage.BytesToHex(), isRaw = true } };
+        var payload = new
+        {
+            messagePayload = new
+            {
+                message = rawMessage.BytesToHex(),
+                isRaw = true,
+                originalMessage,
+                chainId
+            }
+        };
 
-        var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+        var requestContent = new StringContent(JsonConvert.SerializeObject(payload, this._jsonSerializerSettings), Encoding.UTF8, "application/json");
 
         var response = await this.HttpClient.PostAsync(url, requestContent).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
@@ -1021,7 +1032,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         return res.Signature;
     }
 
-    public async Task<string> PersonalSign(string message)
+    public async Task<string> PersonalSign(string message, object originalMessage = null, BigInteger? chainId = null)
     {
         if (string.IsNullOrEmpty(message))
         {
@@ -1029,9 +1040,18 @@ public partial class EcosystemWallet : IThirdwebWallet
         }
 
         var url = $"{ENCLAVE_PATH}/sign-message";
-        var payload = new { messagePayload = new { message, isRaw = false } };
+        var payload = new
+        {
+            messagePayload = new
+            {
+                message,
+                isRaw = false,
+                originalMessage,
+                chainId
+            }
+        };
 
-        var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+        var requestContent = new StringContent(JsonConvert.SerializeObject(payload, this._jsonSerializerSettings), Encoding.UTF8, "application/json");
 
         var response = await this.HttpClient.PostAsync(url, requestContent).ConfigureAwait(false);
         _ = response.EnsureSuccessStatusCode();
