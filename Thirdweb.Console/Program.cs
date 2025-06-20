@@ -360,20 +360,13 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region EIP-7702
 
-var chain = 11155111; // sepolia
+var chain = 11155111; // 7702-compatible chain
 
 // Connect to EOA
-var smartEoa = await InAppWallet.Create(client, authProvider: AuthProvider.Google, executionMode: ExecutionMode.EIP7702Sponsored);
+var smartEoa = await InAppWallet.Create(client, authProvider: AuthProvider.Guest, executionMode: ExecutionMode.EIP7702Sponsored);
 if (!await smartEoa.IsConnected())
 {
-    _ = await smartEoa.LoginWithOauth(
-        isMobile: false,
-        (url) =>
-        {
-            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-            _ = Process.Start(psi);
-        }
-    );
+    _ = await smartEoa.LoginWithGuest(defaultSessionIdOverride: new Guid().ToString());
 }
 var smartEoaAddress = await smartEoa.GetAddress();
 Console.WriteLine($"User Wallet address: {await smartEoa.GetAddress()}");
@@ -396,8 +389,8 @@ var sessionKeyReceipt = await smartEoa.CreateSessionKey(
         Signer = await Utils.GetAddressFromENS(client, "vitalik.eth"),
         IsWildcard = true,
         ExpiresAt = Utils.GetUnixTimeStampNow() + 86400, // 1 day
-        CallPolicies = new List<CallSpec>(),
-        TransferPolicies = new List<TransferSpec>(),
+        CallPolicies = new List<CallSpec>() { },
+        TransferPolicies = new List<TransferSpec>() { },
         Uid = "my-session-key-uid".HashMessage().HexToBytes()
     }
 );

@@ -461,11 +461,6 @@ public partial class EcosystemWallet : IThirdwebWallet
         var sessionKeySig = await EIP712.GenerateSignature_SmartAccount_7702("MinimalAccount", "1", chainId, userWalletAddress, sessionKeyParams, this);
         var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
         var sessionKeyCallData = userContract.CreateCallData("createSessionWithSig", sessionKeyParams, sessionKeySig.HexToBytes());
-
-        var tx = await ThirdwebTransaction.Create(this, new ThirdwebTransactionInput(chainId: chainId, to: userWalletAddress, value: 0, data: sessionKeyCallData));
-        var result = await ThirdwebTransaction.Simulate(tx).ConfigureAwait(false);
-        Console.WriteLine($"Simulated session key creation transaction: {result}");
-
         return await this.ExecuteTransaction(new ThirdwebTransactionInput(chainId: chainId, to: userWalletAddress, value: 0, data: sessionKeyCallData));
     }
 
