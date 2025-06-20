@@ -450,19 +450,23 @@ public partial class EcosystemWallet : IThirdwebWallet
         return $"{redirectUrl}{queryString}";
     }
 
-    public Task<ThirdwebTransactionReceipt> CreateSessionKey(BigInteger chainId, SessionSpec sessionKeyParams)
+    public async Task<ThirdwebTransactionReceipt> CreateSessionKey(BigInteger chainId, SessionSpec sessionKeyParams)
     {
-        throw new NotImplementedException("CreateSessionKey via EIP7702 execution modes is not implemented yet, check back in later versions.");
-        // if (this.ExecutionMode is not ExecutionMode.EIP7702 and not ExecutionMode.EIP7702Sponsored)
-        // {
-        //     throw new InvalidOperationException("CreateSessionKey is only supported for EIP7702 and EIP7702Sponsored execution modes.");
-        // }
+        if (this.ExecutionMode is not ExecutionMode.EIP7702 and not ExecutionMode.EIP7702Sponsored)
+        {
+            throw new InvalidOperationException("CreateSessionKey is only supported for EIP7702 and EIP7702Sponsored execution modes.");
+        }
 
-        // var userWalletAddress = await this.GetAddress();
-        // var sessionKeySig = await EIP712.GenerateSignature_SmartAccount_7702("MinimalAccount", "1", chainId, userWalletAddress, sessionKeyParams, this);
-        // var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
-        // var sessionKeyCallData = userContract.CreateCallData("createSessionWithSig", sessionKeyParams, sessionKeySig.HexToBytes());
-        // return await this.ExecuteTransaction(new ThirdwebTransactionInput(chainId: chainId, to: userWalletAddress, value: 0, data: sessionKeyCallData));
+        var userWalletAddress = await this.GetAddress();
+        var sessionKeySig = await EIP712.GenerateSignature_SmartAccount_7702("MinimalAccount", "1", chainId, userWalletAddress, sessionKeyParams, this);
+        var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
+        var sessionKeyCallData = userContract.CreateCallData("createSessionWithSig", sessionKeyParams, sessionKeySig.HexToBytes());
+
+        var tx = await ThirdwebTransaction.Create(this, new ThirdwebTransactionInput(chainId: chainId, to: userWalletAddress, value: 0, data: sessionKeyCallData));
+        var result = await ThirdwebTransaction.Simulate(tx).ConfigureAwait(false);
+        Console.WriteLine($"Simulated session key creation transaction: {result}");
+
+        return await this.ExecuteTransaction(new ThirdwebTransactionInput(chainId: chainId, to: userWalletAddress, value: 0, data: sessionKeyCallData));
     }
 
     #endregion
