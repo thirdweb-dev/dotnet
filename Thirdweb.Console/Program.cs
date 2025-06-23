@@ -360,41 +360,30 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region EIP-7702
 
-var chain = 11155111; // 7702-compatible chain
+// var chain = 11155111; // 7702-compatible chain
 
-// Connect to EOA
-var smartEoa = await InAppWallet.Create(client, authProvider: AuthProvider.Guest, executionMode: ExecutionMode.EIP7702Sponsored);
-if (!await smartEoa.IsConnected())
-{
-    _ = await smartEoa.LoginWithGuest(defaultSessionIdOverride: new Guid().ToString());
-}
-var smartEoaAddress = await smartEoa.GetAddress();
-Console.WriteLine($"User Wallet address: {await smartEoa.GetAddress()}");
+// // Connect to EOA
+// var smartEoa = await InAppWallet.Create(client, authProvider: AuthProvider.Guest, executionMode: ExecutionMode.EIP7702Sponsored);
+// if (!await smartEoa.IsConnected())
+// {
+//     _ = await smartEoa.LoginWithGuest(defaultSessionIdOverride: new Guid().ToString());
+// }
+// var smartEoaAddress = await smartEoa.GetAddress();
+// Console.WriteLine($"User Wallet address: {await smartEoa.GetAddress()}");
 
-// Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
+// // Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
 
-// Transact, will upgrade EOA
-var receipt = await smartEoa.Transfer(chainId: chain, toAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), weiAmount: 0);
-Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
+// // Transact, will upgrade EOA
+// var receipt = await smartEoa.Transfer(chainId: chain, toAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), weiAmount: 0);
+// Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
 
-// Double check that it was upgraded
-var isDelegated = await Utils.IsDelegatedAccount(client, chain, smartEoaAddress);
-Console.WriteLine($"Is delegated: {isDelegated}");
+// // Double check that it was upgraded
+// var isDelegated = await Utils.IsDelegatedAccount(client, chain, smartEoaAddress);
+// Console.WriteLine($"Is delegated: {isDelegated}");
 
-// Create a session key
-var sessionKeyReceipt = await smartEoa.CreateSessionKey(
-    chain,
-    new SessionSpec()
-    {
-        Signer = await Utils.GetAddressFromENS(client, "vitalik.eth"),
-        IsWildcard = true,
-        ExpiresAt = Utils.GetUnixTimeStampNow() + 86400, // 1 day
-        CallPolicies = new List<CallSpec>(),
-        TransferPolicies = new List<TransferSpec>(),
-        Uid = "my-session-key-uid".HashMessage().HexToBytes()
-    }
-);
-Console.WriteLine($"Session key receipt: {sessionKeyReceipt.TransactionHash}");
+// // Create a session key
+// var sessionKeyReceipt = await smartEoa.CreateSessionKey(chainId: chain, signerAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), durationInSeconds: 86400, grantFullPermissions: true);
+// Console.WriteLine($"Session key receipt: {sessionKeyReceipt.TransactionHash}");
 
 #endregion
 

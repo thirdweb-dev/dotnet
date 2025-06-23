@@ -450,12 +450,30 @@ public partial class EcosystemWallet : IThirdwebWallet
         return $"{redirectUrl}{queryString}";
     }
 
-    public async Task<ThirdwebTransactionReceipt> CreateSessionKey(BigInteger chainId, SessionSpec sessionKeyParams)
+    public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
+        BigInteger chainId,
+        string signerAddress,
+        long durationInSeconds,
+        bool grantFullPermissions = true,
+        List<CallSpec> callPolicies = null,
+        List<TransferSpec> transferPolicies = null,
+        byte[] uid = null
+    )
     {
         if (this.ExecutionMode is not ExecutionMode.EIP7702 and not ExecutionMode.EIP7702Sponsored)
         {
             throw new InvalidOperationException("CreateSessionKey is only supported for EIP7702 and EIP7702Sponsored execution modes.");
         }
+
+        var sessionKeyParams = new SessionSpec()
+        {
+            Signer = signerAddress,
+            IsWildcard = grantFullPermissions,
+            ExpiresAt = Utils.GetUnixTimeStampNow() + durationInSeconds,
+            CallPolicies = callPolicies ?? new List<CallSpec>(),
+            TransferPolicies = transferPolicies ?? new List<TransferSpec>(),
+            Uid = uid ?? Guid.NewGuid().ToByteArray()
+        };
 
         var userWalletAddress = await this.GetAddress();
         var sessionKeySig = await EIP712.GenerateSignature_SmartAccount_7702("MinimalAccount", "1", chainId, userWalletAddress, sessionKeyParams, this);
