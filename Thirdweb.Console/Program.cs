@@ -389,8 +389,8 @@ var sessionKeyReceipt = await smartEoa.CreateSessionKey(
         Signer = await Utils.GetAddressFromENS(client, "vitalik.eth"),
         IsWildcard = true,
         ExpiresAt = Utils.GetUnixTimeStampNow() + 86400, // 1 day
-        CallPolicies = new List<CallSpec>() { },
-        TransferPolicies = new List<TransferSpec>() { },
+        CallPolicies = new List<CallSpec>(),
+        TransferPolicies = new List<TransferSpec>(),
         Uid = "my-session-key-uid".HashMessage().HexToBytes()
     }
 );
