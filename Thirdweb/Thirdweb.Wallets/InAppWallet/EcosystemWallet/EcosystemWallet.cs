@@ -465,6 +465,16 @@ public partial class EcosystemWallet : IThirdwebWallet
             throw new InvalidOperationException("CreateSessionKey is only supported for EIP7702 and EIP7702Sponsored execution modes.");
         }
 
+        if (string.IsNullOrEmpty(signerAddress))
+        {
+            throw new ArgumentException("Signer address cannot be null or empty.", nameof(signerAddress));
+        }
+
+        if (durationInSeconds <= 0)
+        {
+            throw new ArgumentException("Duration must be greater than zero.", nameof(durationInSeconds));
+        }
+
         var sessionKeyParams = new SessionSpec()
         {
             Signer = signerAddress,
