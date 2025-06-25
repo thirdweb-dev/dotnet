@@ -647,4 +647,40 @@ public class WrappedCalls
     }
 }
 
+[Struct("LimitState")]
+public class LimitState
+{
+    [Parameter("uint256", "remaining", 1)]
+    [JsonProperty("remaining")]
+    public virtual BigInteger Remaining { get; set; }
+
+    [Parameter("address", "target", 2)]
+    [JsonProperty("target")]
+    public virtual string Target { get; set; }
+
+    [Parameter("bytes4", "selector", 3)]
+    [JsonProperty("selector")]
+    public virtual byte[] Selector { get; set; }
+
+    [Parameter("uint256", "index", 4)]
+    [JsonProperty("index")]
+    public virtual BigInteger Index { get; set; }
+}
+
+[Struct("SessionState")]
+public class SessionState
+{
+    [Parameter("tuple[]", "transferValue", 1, structTypeName: "LimitState[]")]
+    [JsonProperty("transferValue")]
+    public virtual List<LimitState> TransferValue { get; set; }
+
+    [Parameter("tuple[]", "callValue", 2, structTypeName: "LimitState[]")]
+    [JsonProperty("callValue")]
+    public virtual List<LimitState> CallValue { get; set; }
+
+    [Parameter("tuple[]", "callParams", 3, structTypeName: "LimitState[]")]
+    [JsonProperty("callParams")]
+    public virtual List<LimitState> CallParams { get; set; }
+}
+
 #endregion

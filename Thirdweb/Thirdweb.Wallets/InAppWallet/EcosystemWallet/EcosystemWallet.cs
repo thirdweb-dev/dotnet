@@ -450,6 +450,19 @@ public partial class EcosystemWallet : IThirdwebWallet
         return $"{redirectUrl}{queryString}";
     }
 
+    /// <summary>
+    /// Creates a session key for the user wallet. This is only supported for EIP7702 and EIP7702Sponsored execution modes.
+    /// </summary>
+    /// <param name="chainId">The chain ID for the session key.</param>
+    /// <param name="signerAddress">The address of the signer for the session key.</param>
+    /// <param name="durationInSeconds">Duration in seconds for which the session key will be valid.</param>
+    /// <param name="grantFullPermissions">Whether to grant full permissions to the session key. If false, only the specified call and transfer policies will be applied.</param>
+    /// <param name="callPolicies">List of call policies to apply to the session key. If null, no call policies will be applied.</param>
+    /// <param name="transferPolicies">List of transfer policies to apply to the session key. If null, no transfer policies will be applied.</param>
+    /// <param name="uid">A unique identifier for the session key. If null, a new GUID will be generated.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the transaction receipt for the session key creation.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the execution mode is not EIP7702 or EIP7702Sponsored.</exception>
+    /// <exception cref="ArgumentException">Thrown when the signer address is null or empty, or when the duration is less than or equal to zero.</exception>
     public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
         BigInteger chainId,
         string signerAddress,
@@ -460,10 +473,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         byte[] uid = null
     )
     {
-        if (this.ExecutionMode is not ExecutionMode.EIP7702 and not ExecutionMode.EIP7702Sponsored)
-        {
-            throw new InvalidOperationException("CreateSessionKey is only supported for EIP7702 and EIP7702Sponsored execution modes.");
-        }
+        await this.Ensure7702(chainId, false);
 
         if (string.IsNullOrEmpty(signerAddress))
         {
@@ -490,6 +500,121 @@ public partial class EcosystemWallet : IThirdwebWallet
         var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
         var sessionKeyCallData = userContract.CreateCallData("createSessionWithSig", sessionKeyParams, sessionKeySig.HexToBytes());
         return await this.ExecuteTransaction(new ThirdwebTransactionInput(chainId: chainId, to: userWalletAddress, value: 0, data: sessionKeyCallData));
+    }
+
+    /// <summary>
+    /// Checks if the signer has full permissions on the EIP7702 account.
+    /// </summary>
+    /// <param name="chainId">The chain ID of the EIP7702 account.</param>
+    /// <param name="signerAddress">The address of the signer to check permissions for.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a boolean indicating whether the signer has full permissions.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the execution mode is not EIP7702 or EIP7702Sponsored.</exception>
+    /// <exception cref="ArgumentException">Thrown when the signer address is null or empty.</exception>
+    public async Task<bool> SignerHasFullPermissions(BigInteger chainId, string signerAddress)
+    {
+        await this.Ensure7702(chainId, true);
+
+        if (string.IsNullOrEmpty(signerAddress))
+        {
+            throw new ArgumentException("Signer address cannot be null or empty.", nameof(signerAddress));
+        }
+
+        var userWalletAddress = await this.GetAddress();
+        var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
+        var isWildcard = await userContract.Read<bool>("isWildcardSigner", signerAddress);
+        return isWildcard;
+    }
+
+    /// <summary>
+    /// Gets the call policies for a specific signer on the EIP7702 account.
+    /// </summary>
+    /// <param name="chainId">The chain ID of the EIP7702 account.</param>
+    /// <param name="signerAddress">The address of the signer to get call policies for.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of call policies for the signer.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the execution mode is not EIP7702 or EIP7702Sponsored.</exception>
+    /// <exception cref="ArgumentException">Thrown when the signer address is null or empty.</exception>
+    public async Task<List<CallSpec>> GetCallPoliciesForSigner(BigInteger chainId, string signerAddress)
+    {
+        await this.Ensure7702(chainId, true);
+
+        if (string.IsNullOrEmpty(signerAddress))
+        {
+            throw new ArgumentException("Signer address cannot be null or empty.", nameof(signerAddress));
+        }
+
+        var userWalletAddress = await this.GetAddress();
+        var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
+        var callPolicies = await userContract.Read<List<CallSpec>>("getCallPoliciesForSigner", signerAddress);
+        return callPolicies;
+    }
+
+    /// <summary>
+    /// Gets the transfer policies for a specific signer on the EIP7702 account.
+    /// </summary>
+    /// <param name="chainId">The chain ID of the EIP7702 account.</param>
+    /// <param name="signerAddress">The address of the signer to get transfer policies for.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of transfer policies for the signer.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the execution mode is not EIP7702 or EIP7702Sponsored.</exception>
+    /// <exception cref="ArgumentException">Thrown when the signer address is null or empty.</exception>
+    public async Task<List<TransferSpec>> GetTransferPoliciesForSigner(BigInteger chainId, string signerAddress)
+    {
+        await this.Ensure7702(chainId, true);
+
+        if (string.IsNullOrEmpty(signerAddress))
+        {
+            throw new ArgumentException("Signer address cannot be null or empty.", nameof(signerAddress));
+        }
+
+        var userWalletAddress = await this.GetAddress();
+        var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
+        var transferPolicies = await userContract.Read<List<TransferSpec>>("getTransferPoliciesForSigner", signerAddress);
+        return transferPolicies;
+    }
+
+    /// <summary>
+    /// Gets the session expiration timestamp for a specific signer on the EIP7702 account.
+    /// </summary>
+    /// <param name="chainId">The chain ID of the EIP7702 account.</param>
+    /// <param name="signerAddress">The address of the signer to get session expiration for.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the session expiration timestamp.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the execution mode is not EIP7702 or EIP7702Sponsored.</exception>
+    /// <exception cref="ArgumentException">Thrown when the signer address is null or empty.</exception>
+    public async Task<BigInteger> GetSessionExpirationForSigner(BigInteger chainId, string signerAddress)
+    {
+        await this.Ensure7702(chainId, true);
+
+        if (string.IsNullOrEmpty(signerAddress))
+        {
+            throw new ArgumentException("Signer address cannot be null or empty.", nameof(signerAddress));
+        }
+
+        var userWalletAddress = await this.GetAddress();
+        var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
+        var expirationTimestamp = await userContract.Read<BigInteger>("getSessionExpirationForSigner", signerAddress);
+        return expirationTimestamp;
+    }
+
+    /// <summary>
+    /// Gets the complete session state for a specific signer on the EIP7702 account, including remaining limits and usage information.
+    /// </summary>
+    /// <param name="chainId">The chain ID of the EIP7702 account.</param>
+    /// <param name="signerAddress">The address of the signer to get session state for.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the session state with transfer value limits, call value limits, and call parameter limits.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the execution mode is not EIP7702 or EIP7702Sponsored.</exception>
+    /// <exception cref="ArgumentException">Thrown when the signer address is null or empty.</exception>
+    public async Task<SessionState> GetSessionStateForSigner(BigInteger chainId, string signerAddress)
+    {
+        await this.Ensure7702(chainId, true);
+
+        if (string.IsNullOrEmpty(signerAddress))
+        {
+            throw new ArgumentException("Signer address cannot be null or empty.", nameof(signerAddress));
+        }
+
+        var userWalletAddress = await this.GetAddress();
+        var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, chainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
+        var sessionState = await userContract.Read<SessionState>("getSessionStateForSigner", signerAddress);
+        return sessionState;
     }
 
     #endregion
@@ -1343,4 +1468,20 @@ public partial class EcosystemWallet : IThirdwebWallet
     }
 
     #endregion
+
+    private async Task Ensure7702(BigInteger chainId, bool ensureDelegated)
+    {
+        if (this.ExecutionMode is not ExecutionMode.EIP7702 and not ExecutionMode.EIP7702Sponsored)
+        {
+            throw new InvalidOperationException("This operation is only supported for EIP7702 and EIP7702Sponsored execution modes.");
+        }
+
+        if (!await Utils.IsDelegatedAccount(this.Client, chainId, this.Address).ConfigureAwait(false))
+        {
+            if (ensureDelegated)
+            {
+                throw new InvalidOperationException("This operation requires a delegated account. Please ensure you have transacted at least once with the account to set up delegation.");
+            }
+        }
+    }
 }

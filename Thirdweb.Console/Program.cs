@@ -372,9 +372,10 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 // Console.WriteLine($"User Wallet address: {await smartEoa.GetAddress()}");
 
 // // Upgrade EOA - This wallet explicitly uses EIP-7702 delegation to the thirdweb MinimalAccount (will delegate upon first tx)
+// var signerAddress = await Utils.GetAddressFromENS(client, "vitalik.eth");
 
 // // Transact, will upgrade EOA
-// var receipt = await smartEoa.Transfer(chainId: chain, toAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), weiAmount: 0);
+// var receipt = await smartEoa.Transfer(chainId: chain, toAddress: signerAddress, weiAmount: 0);
 // Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
 
 // // Double check that it was upgraded
@@ -382,8 +383,47 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 // Console.WriteLine($"Is delegated: {isDelegated}");
 
 // // Create a session key
-// var sessionKeyReceipt = await smartEoa.CreateSessionKey(chainId: chain, signerAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), durationInSeconds: 86400, grantFullPermissions: true);
+// var sessionKeyReceipt = await smartEoa.CreateSessionKey(chainId: chain, signerAddress: signerAddress, durationInSeconds: 86400, grantFullPermissions: true);
 // Console.WriteLine($"Session key receipt: {sessionKeyReceipt.TransactionHash}");
+
+// // Validate session key config
+// var hasFullPermissions = await smartEoa.SignerHasFullPermissions(chain, signerAddress);
+// Console.WriteLine($"Signer has full permissions: {hasFullPermissions}");
+
+// var sessionExpiration = await smartEoa.GetSessionExpirationForSigner(chain, signerAddress);
+// Console.WriteLine($"Session expires in {sessionExpiration - Utils.GetUnixTimeStampNow()} seconds");
+
+// // Create a session key with granular permissions
+// var granularSessionKeyReceipt = await smartEoa.CreateSessionKey(
+//     chainId: chain,
+//     signerAddress: signerAddress,
+//     durationInSeconds: 86400,
+//     grantFullPermissions: false,
+//     transferPolicies: new List<TransferSpec>
+//     {
+//         new()
+//         {
+//             Target = signerAddress,
+//             MaxValuePerUse = BigInteger.Parse("0.001".ToWei()),
+//             ValueLimit = new UsageLimit
+//             {
+//                 LimitType = 1, // Lifetime
+//                 Limit = BigInteger.Parse("0.01".ToWei()),
+//                 Period = 86400, // 1 day
+//             }
+//         }
+//     }
+// );
+
+// // Validate session key config
+// var sessionState = await smartEoa.GetSessionStateForSigner(chain, signerAddress);
+// Console.WriteLine($"Session state: {JsonConvert.SerializeObject(sessionState, Formatting.Indented)}");
+
+// var transferPolcies = await smartEoa.GetTransferPoliciesForSigner(chain, signerAddress);
+// Console.WriteLine($"Transfer policies: {JsonConvert.SerializeObject(transferPolcies, Formatting.Indented)}");
+
+// var callPolicies = await smartEoa.GetCallPoliciesForSigner(chain, signerAddress);
+// Console.WriteLine($"Call policies: {JsonConvert.SerializeObject(callPolicies, Formatting.Indented)}");
 
 #endregion
 
