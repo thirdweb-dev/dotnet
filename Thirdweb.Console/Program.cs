@@ -340,21 +340,54 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #endregion
 
-#region Engine Wallet
+#region Server Wallet
 
-// // EngineWallet is compatible with IThirdwebWallet and can be used with any SDK method/extension
-// var engineWallet = await EngineWallet.Create(
-//     client: client,
-//     engineUrl: Environment.GetEnvironmentVariable("ENGINE_URL"),
-//     authToken: Environment.GetEnvironmentVariable("ENGINE_ACCESS_TOKEN"),
-//     walletAddress: Environment.GetEnvironmentVariable("ENGINE_BACKEND_WALLET_ADDRESS"),
-//     timeoutSeconds: null, // no timeout
-//     additionalHeaders: null // can set things like x-account-address if using basic session keys
-// );
+// You need only pass this if you are using a self-managed vault (check your dashboard Transactions tab)
+var myAccessToken = Environment.GetEnvironmentVariable("VAULT_ACCESS_TOKEN");
 
-// // Simple self transfer
-// var receipt = await engineWallet.Transfer(chainId: 11155111, toAddress: await engineWallet.GetAddress(), weiAmount: 0);
-// Console.WriteLine($"Receipt: {receipt}");
+// ServerWallet is compatible with IThirdwebWallet and can be used with any SDK method/extension
+var serverWallet = await ServerWallet.Create(
+    client: client,
+    label: "Test",
+    // Optional, defaults to Auto - we choose between EIP-7702, EIP-4337 or native zkSync AA execution
+    executionOptions: new AutoExecutionOptions(),
+    vaultAccessToken: myAccessToken
+);
+var serverWalletAddress = await serverWallet.GetAddress();
+Console.WriteLine($"Server Wallet address: {serverWalletAddress}");
+
+var serverWalletPersonalSig = await serverWallet.PersonalSign("Hello, Thirdweb!");
+Console.WriteLine($"Server Wallet personal sign: {serverWalletPersonalSig}");
+
+var json =
+    /*lang=json,strict*/
+    "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallet\",\"type\":\"address\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person\"},{\"name\":\"contents\",\"type\":\"string\"}]},\"primaryType\":\"Mail\",\"domain\":{\"name\":\"Ether Mail\",\"version\":\"1\",\"chainId\":84532,\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\":{\"from\":{\"name\":\"Cow\",\"wallet\":\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\":{\"name\":\"Bob\",\"wallet\":\"0xbBbBBBBbbBBBbbbBbbBbbBBbBbbBbBbBbBbbBBbB\"},\"contents\":\"Hello, Bob!\"}}";
+var serverWalletTypedDataSign = await serverWallet.SignTypedDataV4(json);
+Console.WriteLine($"Server Wallet typed data sign: {serverWalletTypedDataSign}");
+
+// ServerWallet forcing ERC-4337 Execution Mode
+var smartServerWallet = await ServerWallet.Create(
+    client: client,
+    label: "Test",
+    executionOptions: new ERC4337ExecutionOptions(chainId: 84532, signerAddress: serverWalletAddress),
+    vaultAccessToken: myAccessToken
+);
+var smartServerWalletAddress = await smartServerWallet.GetAddress();
+Console.WriteLine($"Smart Server Wallet address: {smartServerWalletAddress}");
+
+var smartServerWalletPersonalSig = await smartServerWallet.PersonalSign("Hello, Thirdweb!");
+Console.WriteLine($"Smart Server Wallet personal sign: {smartServerWalletPersonalSig}");
+
+var smartServerWalletTypedDataSign = await smartServerWallet.SignTypedDataV4(json);
+Console.WriteLine($"Smart Server Wallet typed data sign: {smartServerWalletTypedDataSign}");
+
+// Simple self transfer
+var serverWalletReceipt = await serverWallet.Transfer(chainId: 421614, toAddress: await serverWallet.GetAddress(), weiAmount: 0);
+Console.WriteLine($"Server Wallet Hash: {serverWalletReceipt.TransactionHash}");
+
+// Simple self transfer
+var smartServerWalletReceipt = await smartServerWallet.Transfer(chainId: 421614, toAddress: await smartServerWallet.GetAddress(), weiAmount: 0);
+Console.WriteLine($"Server Wallet Hash: {smartServerWalletReceipt.TransactionHash}");
 
 #endregion
 

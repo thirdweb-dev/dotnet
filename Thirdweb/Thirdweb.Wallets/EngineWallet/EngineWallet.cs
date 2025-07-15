@@ -11,6 +11,7 @@ namespace Thirdweb;
 /// <summary>
 /// Enclave based secure cross ecosystem wallet.
 /// </summary>
+[Obsolete("The EngineWallet is deprecated and will be removed in a future version. Please use ServerWallet instead.")]
 public partial class EngineWallet : IThirdwebWallet
 {
     public ThirdwebClient Client { get; }
