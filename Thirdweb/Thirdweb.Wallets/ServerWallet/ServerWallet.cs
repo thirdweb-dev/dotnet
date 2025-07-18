@@ -21,7 +21,7 @@ public partial class ServerWallet : IThirdwebWallet
     private readonly IThirdwebHttpClient _engineClient;
     private readonly ExecutionOptions _executionOptions;
 
-    private readonly JsonSerializerSettings _jsonSerializerSettings = new() { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented, };
+    private readonly JsonSerializerSettings _jsonSerializerSettings = new() { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented };
 
     internal ServerWallet(ThirdwebClient client, IThirdwebHttpClient engineClient, string walletAddress, ExecutionOptions executionOptions)
     {
@@ -65,7 +65,7 @@ public partial class ServerWallet : IThirdwebWallet
         var content = await serverWalletListResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         var responseObj = JObject.Parse(content);
-        var accounts = responseObj["result"]?.ToObject<JArray>();
+        var accounts = responseObj["result"]?["accounts"]?.ToObject<JArray>(); // TODO: Support pagination
 
         if (accounts == null || accounts.Count == 0)
         {
@@ -86,14 +86,28 @@ public partial class ServerWallet : IThirdwebWallet
         }
 
         executionOptions ??= new AutoExecutionOptions { IdempotencyKey = Guid.NewGuid().ToString(), From = signerWalletAddress.ToChecksumAddress() };
-        if (executionOptions is AutoExecutionOptions autoExecutionOptions)
-        {
-            autoExecutionOptions.From ??= signerWalletAddress.ToChecksumAddress();
-        }
-        else if (executionOptions is ERC4337ExecutionOptions erc4337ExecutionOptions)
+        if (executionOptions is ERC4337ExecutionOptions erc4337ExecutionOptions)
         {
             erc4337ExecutionOptions.SmartAccountAddress = smartWalletAddress;
             erc4337ExecutionOptions.SignerAddress = signerWalletAddress;
+        }
+        else if (executionOptions is EIP7702ExecutionOptions eip7702ExecutionOptions)
+        {
+            eip7702ExecutionOptions.From = signerWalletAddress.ToChecksumAddress();
+        }
+        else if (executionOptions is EOAExecutionOptions eoaExecutionOptions)
+        {
+            eoaExecutionOptions.From = signerWalletAddress.ToChecksumAddress();
+        }
+        else if (executionOptions is AutoExecutionOptions autoExecutionOptions)
+        {
+            autoExecutionOptions.From ??= signerWalletAddress.ToChecksumAddress();
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"Unsupported execution options type: {executionOptions.GetType().Name}. Supported types are AutoExecutionOptions, EIP7702ExecutionOptions, EOAExecutionOptions, and ERC4337ExecutionOptions."
+            );
         }
 
         var wallet = new ServerWallet(client, engineClient, smartWalletAddress ?? signerWalletAddress, executionOptions);
@@ -149,22 +163,19 @@ public partial class ServerWallet : IThirdwebWallet
                     data = transaction.Data ?? "0x",
                     value = transaction.Value?.HexValue ?? "0x00",
                     authorizationList = transaction.AuthorizationList != null && transaction.AuthorizationList.Count > 0
-                        ? transaction.AuthorizationList
-                            .Select(
-                                authorization =>
-                                    new
-                                    {
-                                        chainId = authorization.ChainId.HexToNumber(),
-                                        address = authorization.Address,
-                                        nonce = authorization.Nonce.HexToNumber(),
-                                        yParity = authorization.YParity.HexToNumber(),
-                                        r = authorization.R,
-                                        s = authorization.S
-                                    }
-                            )
+                        ? transaction
+                            .AuthorizationList.Select(authorization => new
+                            {
+                                chainId = authorization.ChainId.HexToNumber(),
+                                address = authorization.Address,
+                                nonce = authorization.Nonce.HexToNumber(),
+                                yParity = authorization.YParity.HexToNumber(),
+                                r = authorization.R,
+                                s = authorization.S,
+                            })
                             .ToArray()
                         : null,
-                }
+                },
             },
         };
     }
@@ -222,9 +233,9 @@ public partial class ServerWallet : IThirdwebWallet
             {
                 type = "auto",
                 from = address,
-                chainId = this._executionOptions.ChainId
+                chainId = this._executionOptions.ChainId,
             },
-            @params = new[] { new { message = rawMessage.BytesToHex(), format = "hex" } }
+            @params = new[] { new { message = rawMessage.BytesToHex(), format = "hex" } },
         };
 
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload, this._jsonSerializerSettings), Encoding.UTF8, "application/json");
@@ -253,9 +264,9 @@ public partial class ServerWallet : IThirdwebWallet
             {
                 type = "auto",
                 from = address,
-                chainId = this._executionOptions.ChainId
+                chainId = this._executionOptions.ChainId,
             },
-            @params = new[] { new { message, format = "text" } }
+            @params = new[] { new { message, format = "text" } },
         };
 
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload, this._jsonSerializerSettings), Encoding.UTF8, "application/json");
@@ -288,7 +299,7 @@ public partial class ServerWallet : IThirdwebWallet
                 from = address,
                 chainId = BigInteger.Parse(JObject.Parse(processedJson)["domain"]?["chainId"]?.Value<string>()),
             },
-            @params = new[] { processedJson }
+            @params = new[] { processedJson },
         };
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload, this._jsonSerializerSettings), Encoding.UTF8, "application/json");
 

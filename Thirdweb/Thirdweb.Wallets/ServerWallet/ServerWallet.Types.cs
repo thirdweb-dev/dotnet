@@ -30,6 +30,32 @@ public class AutoExecutionOptions : ExecutionOptions
 }
 
 /// <summary>
+/// Externally Owned Account (EOA) execution options
+/// </summary>
+[JsonObject]
+public class EIP7702ExecutionOptions : ExecutionOptions
+{
+    [JsonProperty("type")]
+    public string Type { get; set; } = "EIP7702";
+
+    [JsonProperty("from")]
+    public string From { get; set; }
+}
+
+/// <summary>
+/// Externally Owned Account (EOA) execution options
+/// </summary>
+[JsonObject]
+public class EOAExecutionOptions : ExecutionOptions
+{
+    [JsonProperty("type")]
+    public string Type { get; set; } = "EOA";
+
+    [JsonProperty("from")]
+    public string From { get; set; }
+}
+
+/// <summary>
 /// ERC-4337 execution options
 /// </summary>
 [JsonObject]
