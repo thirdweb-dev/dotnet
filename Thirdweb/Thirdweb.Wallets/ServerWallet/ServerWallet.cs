@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 namespace Thirdweb;
 
 /// <summary>
-/// Enclave based secure cross ecosystem wallet.
+/// Interact with vault-secured server wallets created from the Thirdweb project dashboard's Transactions tab.
 /// </summary>
 public partial class ServerWallet : IThirdwebWallet
 {

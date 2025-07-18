@@ -27,7 +27,7 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
 
 // Fetch timeout options are optional, default is 120000ms
-var client = ThirdwebClient.Create(secretKey: "4qXoZMCqQo9SD8YkrdvO5Ci9gYKrgRADHSY84Q0wwKHZS53_R1QNcIs2XbFBWR0xE7HTQPER45T1sN1JvdFKlA");
+var client = ThirdwebClient.Create(secretKey: secretKey);
 
 //  Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client);
