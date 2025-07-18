@@ -10,6 +10,7 @@ public static class Constants
     internal const string PIN_URI = "https://storage.thirdweb.com/ipfs/upload";
     internal const string FALLBACK_IPFS_GATEWAY = "https://ipfs.io/ipfs/";
     internal const string NEBULA_API_URL = "https://nebula-api.thirdweb.com";
+    internal const string ENGINE_API_URL = "https://engine.thirdweb.com";
     internal const string NEBULA_DEFAULT_MODEL = "t0-003";
     internal const int DEFAULT_FETCH_TIMEOUT = 120000;
 
