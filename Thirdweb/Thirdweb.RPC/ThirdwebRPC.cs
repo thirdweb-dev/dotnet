@@ -117,7 +117,7 @@ public class ThirdwebRPC : IDisposable
         {
             Method = method,
             Params = parameters,
-            Id = requestId
+            Id = requestId,
         };
 
         lock (this._responseLock)

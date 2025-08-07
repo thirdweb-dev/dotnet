@@ -742,7 +742,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region InAppWallet - OAuth
 
-// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Github);
+// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.TikTok);
 // if (!await inAppWalletOAuth.IsConnected())
 // {
 //     _ = await inAppWalletOAuth.LoginWithOauth(

@@ -229,7 +229,7 @@ public class UtilsTests : BaseTests
             Domain = "thirdweb.com",
             IssuedAt = "0",
             ExpirationTime = "0",
-            InvalidBefore = "0"
+            InvalidBefore = "0",
         };
         var expectedSIWE =
             "thirdweb.com wants you to sign in with your Ethereum account:\n0x0000000000000000000000000000000000000000\n\n\nVersion: 1\nChain ID: 421614\nNonce: 0\nIssued At: 0\nExpiration Time: 0\nNot Before: 0";
@@ -252,7 +252,7 @@ public class UtilsTests : BaseTests
             InvalidBefore = "0",
             Statement = "This is a statement",
             Uri = "https://thirdweb.com",
-            Resources = new List<string>() { "resource1", "resource2" }
+            Resources = new List<string>() { "resource1", "resource2" },
         };
         var expectedSIWE =
             "thirdweb.com wants you to sign in with your Ethereum account:\n0x0000000000000000000000000000000000000000\n\nThis is a statement\n\nURI: https://thirdweb.com\nVersion: 1\nChain ID: 421614\nNonce: 0\nIssued At: 0\nExpiration Time: 0\nNot Before: 0\nResources:\n- resource1\n- resource2";
@@ -273,7 +273,7 @@ public class UtilsTests : BaseTests
             IssuedAt = "0",
             ExpirationTime = "0",
             InvalidBefore = "0",
-            Resources = new List<string>() { "resource1", "resource2" }
+            Resources = new List<string>() { "resource1", "resource2" },
         };
         var expectedSIWE =
             "thirdweb.com wants you to sign in with your Ethereum account:\n0x0000000000000000000000000000000000000000\n\n\nVersion: 1\nChain ID: 421614\nNonce: 0\nIssued At: 0\nExpiration Time: 0\nNot Before: 0\nResources:\n- resource1\n- resource2";
@@ -300,7 +300,7 @@ public class UtilsTests : BaseTests
             Domain = null!,
             IssuedAt = "0",
             ExpirationTime = "0",
-            InvalidBefore = "0"
+            InvalidBefore = "0",
         };
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
@@ -317,7 +317,7 @@ public class UtilsTests : BaseTests
             Domain = "thirdweb.com",
             IssuedAt = "0",
             ExpirationTime = "0",
-            InvalidBefore = "0"
+            InvalidBefore = "0",
         };
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
@@ -334,7 +334,7 @@ public class UtilsTests : BaseTests
             Domain = "thirdweb.com",
             IssuedAt = "0",
             ExpirationTime = "0",
-            InvalidBefore = "0"
+            InvalidBefore = "0",
         };
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
@@ -351,7 +351,7 @@ public class UtilsTests : BaseTests
             Domain = "thirdweb.com",
             IssuedAt = "0",
             ExpirationTime = "0",
-            InvalidBefore = "0"
+            InvalidBefore = "0",
         };
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
@@ -368,7 +368,7 @@ public class UtilsTests : BaseTests
             Domain = "thirdweb.com",
             IssuedAt = "0",
             ExpirationTime = "0",
-            InvalidBefore = "0"
+            InvalidBefore = "0",
         };
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }
@@ -385,7 +385,7 @@ public class UtilsTests : BaseTests
             Domain = "thirdweb.com",
             IssuedAt = null!,
             ExpirationTime = "0",
-            InvalidBefore = "0"
+            InvalidBefore = "0",
         };
         _ = Assert.Throws<ArgumentNullException>(() => Utils.GenerateSIWE(loginPayloadData));
     }

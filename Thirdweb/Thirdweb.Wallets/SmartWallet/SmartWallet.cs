@@ -16,7 +16,7 @@ public enum TokenPaymaster
     NONE,
     BASE_USDC,
     CELO_CUSD,
-    LISK_LSK
+    LISK_LSK,
 }
 
 public class SmartWallet : IThirdwebWallet
@@ -53,50 +53,49 @@ public class SmartWallet : IThirdwebWallet
         public BigInteger BalanceStorageSlot;
     }
 
-    private static readonly Dictionary<TokenPaymaster, TokenPaymasterConfig> _tokenPaymasterConfig =
-        new()
+    private static readonly Dictionary<TokenPaymaster, TokenPaymasterConfig> _tokenPaymasterConfig = new()
+    {
         {
+            TokenPaymaster.NONE,
+            new TokenPaymasterConfig()
             {
-                TokenPaymaster.NONE,
-                new TokenPaymasterConfig()
-                {
-                    ChainId = 0,
-                    PaymasterAddress = null,
-                    TokenAddress = null,
-                    BalanceStorageSlot = 0
-                }
-            },
-            {
-                TokenPaymaster.BASE_USDC,
-                new TokenPaymasterConfig()
-                {
-                    ChainId = 8453,
-                    PaymasterAddress = "0x2222f2738BE6bB7aA0Bfe4AEeAf2908172CF5539",
-                    TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                    BalanceStorageSlot = 9
-                }
-            },
-            {
-                TokenPaymaster.CELO_CUSD,
-                new TokenPaymasterConfig()
-                {
-                    ChainId = 42220,
-                    PaymasterAddress = "0x3feA3c5744D715ff46e91C4e5C9a94426DfF2aF9",
-                    TokenAddress = "0x765DE816845861e75A25fCA122bb6898B8B1282a",
-                    BalanceStorageSlot = 9
-                }
-            },
-            {
-                TokenPaymaster.LISK_LSK,
-                new TokenPaymasterConfig()
-                {
-                    ChainId = 1135,
-                    PaymasterAddress = "0x9eb8cf7fBa5ed9EeDCC97a0d52254cc0e9B1AC25",
-                    TokenAddress = "0xac485391EB2d7D88253a7F1eF18C37f4242D1A24",
-                    BalanceStorageSlot = 9
-                }
+                ChainId = 0,
+                PaymasterAddress = null,
+                TokenAddress = null,
+                BalanceStorageSlot = 0,
             }
-        };
+        },
+        {
+            TokenPaymaster.BASE_USDC,
+            new TokenPaymasterConfig()
+            {
+                ChainId = 8453,
+                PaymasterAddress = "0x2222f2738BE6bB7aA0Bfe4AEeAf2908172CF5539",
+                TokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                BalanceStorageSlot = 9,
+            }
+        },
+        {
+            TokenPaymaster.CELO_CUSD,
+            new TokenPaymasterConfig()
+            {
+                ChainId = 42220,
+                PaymasterAddress = "0x3feA3c5744D715ff46e91C4e5C9a94426DfF2aF9",
+                TokenAddress = "0x765DE816845861e75A25fCA122bb6898B8B1282a",
+                BalanceStorageSlot = 9,
+            }
+        },
+        {
+            TokenPaymaster.LISK_LSK,
+            new TokenPaymasterConfig()
+            {
+                ChainId = 1135,
+                PaymasterAddress = "0x9eb8cf7fBa5ed9EeDCC97a0d52254cc0e9B1AC25",
+                TokenAddress = "0xac485391EB2d7D88253a7F1eF18C37f4242D1A24",
+                BalanceStorageSlot = 9,
+            }
+        },
+    };
 
     private bool UseERC20Paymaster => !string.IsNullOrEmpty(this._erc20PaymasterAddress) && !string.IsNullOrEmpty(this._erc20PaymasterToken);
 
@@ -286,7 +285,7 @@ public class SmartWallet : IThirdwebWallet
         {
             Data = "0x",
             To = this._accountContract.Address,
-            Value = new HexBigInteger(0)
+            Value = new HexBigInteger(0),
         };
         var txHash = await this.SendTransaction(input).ConfigureAwait(false);
         _ = await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this.ActiveChainId, txHash).ConfigureAwait(false);
@@ -321,15 +320,15 @@ public class SmartWallet : IThirdwebWallet
                                 {
                                     Target = erc6492Sig.Create2Factory,
                                     AllowFailure = true,
-                                    CallData = erc6492Sig.FactoryCalldata
+                                    CallData = erc6492Sig.FactoryCalldata,
                                 },
                                 new()
                                 {
                                     Target = this._accountContract.Address,
                                     AllowFailure = true,
-                                    CallData = this._accountContract.CreateCallData("isValidSignature", message.HashPrefixedMessage().HexToBytes(), erc6492Sig.SigToValidate).HexToBytes()
-                                }
-                            }
+                                    CallData = this._accountContract.CreateCallData("isValidSignature", message.HashPrefixedMessage().HexToBytes(), erc6492Sig.SigToValidate).HexToBytes(),
+                                },
+                            },
                         }
                     )
                     .ConfigureAwait(false);
@@ -433,7 +432,7 @@ public class SmartWallet : IThirdwebWallet
             PermissionEndTimestamp = BigInteger.Parse(permissionEndTimestamp),
             ReqValidityStartTimestamp = BigInteger.Parse(reqValidityStartTimestamp),
             ReqValidityEndTimestamp = BigInteger.Parse(reqValidityEndTimestamp),
-            Uid = Guid.NewGuid().ToByteArray()
+            Uid = Guid.NewGuid().ToByteArray(),
         };
 
         var signature = await EIP712
@@ -445,7 +444,7 @@ public class SmartWallet : IThirdwebWallet
         {
             To = this._accountContract.Address,
             Value = new HexBigInteger(0),
-            Data = data
+            Data = data,
         };
         var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
         return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this.ActiveChainId, txHash).ConfigureAwait(false);
@@ -485,7 +484,7 @@ public class SmartWallet : IThirdwebWallet
             PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
             ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
             ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            Uid = Guid.NewGuid().ToByteArray()
+            Uid = Guid.NewGuid().ToByteArray(),
         };
 
         var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this.ActiveChainId, await this.GetAddress(), request, this._personalAccount).ConfigureAwait(false);
@@ -494,7 +493,7 @@ public class SmartWallet : IThirdwebWallet
         {
             To = this._accountContract.Address,
             Value = new HexBigInteger(0),
-            Data = data
+            Data = data,
         };
         var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
         return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this.ActiveChainId, txHash).ConfigureAwait(false);
@@ -522,7 +521,7 @@ public class SmartWallet : IThirdwebWallet
             PermissionEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
             ReqValidityStartTimestamp = Utils.GetUnixTimeStampNow() - 3600,
             ReqValidityEndTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            Uid = Guid.NewGuid().ToByteArray()
+            Uid = Guid.NewGuid().ToByteArray(),
         };
 
         var signature = await EIP712
@@ -533,7 +532,7 @@ public class SmartWallet : IThirdwebWallet
         {
             To = this._accountContract.Address,
             Value = new HexBigInteger(0),
-            Data = data
+            Data = data,
         };
         var txHash = await this.SendTransaction(txInput).ConfigureAwait(false);
         return await ThirdwebTransaction.WaitForTransactionReceipt(this.Client, this.ActiveChainId, txHash).ConfigureAwait(false);
@@ -914,7 +913,7 @@ public class SmartWallet : IThirdwebWallet
                 PreVerificationGas = userOp.PreVerificationGas,
                 GasFees = gasFeesBuffer,
                 PaymasterAndData = Array.Empty<byte>(),
-                Signature = userOp.Signature
+                Signature = userOp.Signature,
             };
         }
         else
@@ -939,7 +938,7 @@ public class SmartWallet : IThirdwebWallet
                 PreVerificationGas = userOp.PreVerificationGas,
                 GasFees = gasFeesBuffer,
                 PaymasterAndData = paymasterAndDataBuffer,
-                Signature = userOp.Signature
+                Signature = userOp.Signature,
             };
         }
 
@@ -967,7 +966,7 @@ public class SmartWallet : IThirdwebWallet
             MaxFeePerGas = userOperation.MaxFeePerGas.ToHexBigInteger().HexValue,
             MaxPriorityFeePerGas = userOperation.MaxPriorityFeePerGas.ToHexBigInteger().HexValue,
             PaymasterAndData = userOperation.PaymasterAndData.BytesToHex(),
-            Signature = userOperation.Signature.BytesToHex()
+            Signature = userOperation.Signature.BytesToHex(),
         };
     }
 
@@ -989,7 +988,7 @@ public class SmartWallet : IThirdwebWallet
             PaymasterVerificationGasLimit = userOperation.PaymasterVerificationGasLimit.ToHexBigInteger().HexValue,
             PaymasterPostOpGasLimit = userOperation.PaymasterPostOpGasLimit.ToHexBigInteger().HexValue,
             PaymasterData = userOperation.PaymasterData.BytesToHex(),
-            Signature = userOperation.Signature.BytesToHex()
+            Signature = userOperation.Signature.BytesToHex(),
         };
     }
 
@@ -1035,7 +1034,7 @@ public class SmartWallet : IThirdwebWallet
                             maxPriorityFeePerGas = zkTx.MaxPriorityFeePerGas.ToString(),
                             chainId = this.ActiveChainId.ToString(),
                             signedTransaction = zkTxSigned,
-                            paymaster
+                            paymaster,
                         }
                     )
                     .ConfigureAwait(false);
