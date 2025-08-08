@@ -23,7 +23,7 @@ public enum TokenType : byte
     /// <summary>
     /// Represents an ERC20 token.
     /// </summary>
-    ERC20 = 2
+    ERC20 = 2,
 }
 
 /// <summary>
@@ -49,7 +49,7 @@ public enum Status : byte
     /// <summary>
     /// The entity is cancelled.
     /// </summary>
-    CANCELLED = 3
+    CANCELLED = 3,
 }
 
 #endregion

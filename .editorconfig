@@ -1,11 +1,21 @@
 ###############################
-# Core EditorConfig Options   #
+#  Core EditorConfig Options  #
 ###############################
 
 root = true
 
 ###############################
-# .NET Coding Conventions     #
+#    Configurable behaviors   #
+###############################
+
+[*.{cs,csx}]
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+max_line_length = 200
+
+###############################
+#   .NET Coding Conventions   #
 ###############################
 
 [*.{cs,vb}]

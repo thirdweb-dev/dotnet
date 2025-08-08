@@ -1,6 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -8,19 +6,15 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Thirdweb\Thirdweb.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="dotenv.net" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update=".env">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>

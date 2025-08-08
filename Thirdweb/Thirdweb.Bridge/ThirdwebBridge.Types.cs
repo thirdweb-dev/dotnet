@@ -381,7 +381,7 @@ public enum StatusType
     NOT_FOUND,
     PROCESSING,
     CREATED,
-    UNKNOWN
+    UNKNOWN,
 }
 
 /// <summary>
@@ -400,7 +400,7 @@ public class StatusData
             "PENDING" => StatusType.PENDING,
             "COMPLETED" => StatusType.COMPLETED,
             "NOT_FOUND" => StatusType.NOT_FOUND,
-            _ => StatusType.UNKNOWN
+            _ => StatusType.UNKNOWN,
         };
 
     /// <summary>
@@ -496,7 +496,7 @@ public enum OnrampProvider
 {
     Stripe,
     Coinbase,
-    Transak
+    Transak,
 }
 
 /// <summary>
@@ -585,7 +585,7 @@ public class OnrampStatusData
             "COMPLETED" => StatusType.COMPLETED,
             "PROCESSING" => StatusType.PROCESSING,
             "CREATED" => StatusType.CREATED,
-            _ => StatusType.UNKNOWN
+            _ => StatusType.UNKNOWN,
         };
 
     [JsonProperty("status")]

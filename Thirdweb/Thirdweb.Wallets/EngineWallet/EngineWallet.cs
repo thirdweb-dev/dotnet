@@ -72,7 +72,7 @@ public partial class EngineWallet : IThirdwebWallet
 
         walletAddress = walletAddress.ToChecksumAddress();
 
-        var engineClient = Utils.ReconstructHttpClient(client.HttpClient, new Dictionary<string, string> { { "Authorization", $"Bearer {authToken}" }, });
+        var engineClient = Utils.ReconstructHttpClient(client.HttpClient, new Dictionary<string, string> { { "Authorization", $"Bearer {authToken}" } });
         engineClient.AddHeader("X-Backend-Wallet-Address", walletAddress);
         if (additionalHeaders != null)
         {
@@ -125,19 +125,16 @@ public partial class EngineWallet : IThirdwebWallet
             data = transaction.Data,
             value = transaction.Value?.HexValue ?? "0x00",
             authorizationList = transaction.AuthorizationList != null && transaction.AuthorizationList.Count > 0
-                ? transaction.AuthorizationList
-                    .Select(
-                        authorization =>
-                            new
-                            {
-                                chainId = authorization.ChainId.HexToNumber(),
-                                address = authorization.Address,
-                                nonce = authorization.Nonce.HexToNumber(),
-                                yParity = authorization.YParity.HexToNumber(),
-                                r = authorization.R,
-                                s = authorization.S
-                            }
-                    )
+                ? transaction
+                    .AuthorizationList.Select(authorization => new
+                    {
+                        chainId = authorization.ChainId.HexToNumber(),
+                        address = authorization.Address,
+                        nonce = authorization.Nonce.HexToNumber(),
+                        yParity = authorization.YParity.HexToNumber(),
+                        r = authorization.R,
+                        s = authorization.S,
+                    })
                     .ToArray()
                 : null,
             txOverrides = this._timeoutSeconds != null || transaction.Gas != null || transaction.GasPrice != null || transaction.MaxFeePerGas != null || transaction.MaxPriorityFeePerGas != null
@@ -271,7 +268,7 @@ public partial class EngineWallet : IThirdwebWallet
             throw new ArgumentNullException(nameof(transaction));
         }
 
-        object payload = new { transaction = this.ToEngineTransaction(transaction), };
+        object payload = new { transaction = this.ToEngineTransaction(transaction) };
 
         var url = $"{this._engineUrl}/backend-wallet/sign-transaction";
 

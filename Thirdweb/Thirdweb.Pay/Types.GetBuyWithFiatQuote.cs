@@ -21,7 +21,7 @@ public class BuyWithFiatQuoteParams(
     bool isTestMode = false,
     string preferredProvider = null,
     object purchaseData = null
-    )
+)
 {
     /// <summary>
     /// The symbol of the currency to be used for the purchase.

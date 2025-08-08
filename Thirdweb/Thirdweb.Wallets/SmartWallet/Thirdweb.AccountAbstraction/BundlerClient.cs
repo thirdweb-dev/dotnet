@@ -33,7 +33,7 @@ public static class BundlerClient
                         nonce = authorization?.Nonce.HexToNumber().ToString(),
                         yParity = authorization?.YParity.HexToNumber(),
                         r = authorization?.R.HexToNumber().ToString(),
-                        s = authorization?.S.HexToNumber().ToString()
+                        s = authorization?.S.HexToNumber().ToString(),
                     }
             )
             .ConfigureAwait(false);

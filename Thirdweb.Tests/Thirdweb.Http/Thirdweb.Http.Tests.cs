@@ -324,7 +324,7 @@ public class HttpTests : BaseTests
         var responseMessage = new ThirdwebHttpResponseMessage(200, new ThirdwebHttpContent("Test Content"), true)
         {
             // Act
-            StatusCode = 404
+            StatusCode = 404,
         };
 
         // Assert
@@ -340,7 +340,7 @@ public class HttpTests : BaseTests
         var responseMessage = new ThirdwebHttpResponseMessage(200, initialContent, true)
         {
             // Act
-            Content = newContent
+            Content = newContent,
         };
 
         // Assert
@@ -354,7 +354,7 @@ public class HttpTests : BaseTests
         var responseMessage = new ThirdwebHttpResponseMessage(200, new ThirdwebHttpContent("Test Content"), true)
         {
             // Act
-            IsSuccessStatusCode = false
+            IsSuccessStatusCode = false,
         };
 
         // Assert

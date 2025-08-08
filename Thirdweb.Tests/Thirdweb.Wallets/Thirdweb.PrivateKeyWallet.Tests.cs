@@ -270,7 +270,7 @@ public class PrivateKeyWalletTests : BaseTests
             To = Constants.ADDRESS_ZERO,
             Value = new HexBigInteger(0),
             Gas = new HexBigInteger(21000),
-            Data = "0x"
+            Data = "0x",
         };
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction nonce has not been set (Parameter 'transaction')", ex.Message);
@@ -288,7 +288,7 @@ public class PrivateKeyWalletTests : BaseTests
             Gas = new HexBigInteger(21000),
             Data = "0x",
             Nonce = new HexBigInteger(99999999999),
-            ChainId = new HexBigInteger(421614)
+            ChainId = new HexBigInteger(421614),
         };
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => account.SignTransaction(transaction));
         Assert.Equal("Transaction MaxPriorityFeePerGas and MaxFeePerGas must be set for EIP-1559 transactions", ex.Message);

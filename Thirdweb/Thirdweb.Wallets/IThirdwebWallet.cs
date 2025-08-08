@@ -200,7 +200,7 @@ public enum ThirdwebAccountType
 {
     PrivateKeyAccount,
     SmartAccount,
-    ExternalAccount
+    ExternalAccount,
 }
 
 /// <summary>

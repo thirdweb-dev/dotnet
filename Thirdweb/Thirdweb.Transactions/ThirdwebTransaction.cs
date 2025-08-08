@@ -262,11 +262,10 @@ public class ThirdwebTransaction
     {
         var rpc = ThirdwebRPC.GetRpcInstance(transaction.Wallet.Client, transaction.Input.ChainId.Value);
         var isZkSync = await Utils.IsZkSync(transaction.Wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false);
-        BigInteger divider = isZkSync
-            ? 7
-            : transaction.Input.AuthorizationList == null
-                ? 5
-                : 3;
+        BigInteger divider =
+            isZkSync ? 7
+            : transaction.Input.AuthorizationList == null ? 5
+            : 3;
         BigInteger baseGas;
         if (isZkSync)
         {
@@ -491,7 +490,7 @@ public class ThirdwebTransaction
             Value = transaction.Input.Value?.Value ?? 0,
             Data = transaction.Input.Data?.HexToByteArray() ?? Array.Empty<byte>(),
             FactoryDeps = transaction.Input.ZkSync.Value.FactoryDeps,
-            PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput
+            PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput,
         };
     }
 }

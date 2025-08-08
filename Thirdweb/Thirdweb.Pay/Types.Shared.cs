@@ -189,5 +189,5 @@ public enum SwapType
     /// <summary>
     /// On-ramp swap.
     /// </summary>
-    ON_RAMP
+    ON_RAMP,
 }

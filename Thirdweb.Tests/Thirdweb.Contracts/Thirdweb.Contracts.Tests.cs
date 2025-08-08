@@ -228,7 +228,7 @@ public class ContractsTests : BaseTests
             Value = BigInteger.Zero,
             Gas = BigInteger.Zero,
             Nonce = BigInteger.Zero,
-            Data = "0x"
+            Data = "0x",
         };
         var signature = await EIP712.GenerateSignature_MinimalForwarder(randomDomain, randomVersion, randomChainId, randomContractAddress, forwardRequest, signer);
         Assert.NotNull(signature);
@@ -243,7 +243,7 @@ public class ContractsTests : BaseTests
             Currency = Constants.ADDRESS_ZERO,
             ValidityEndTimestamp = 0,
             ValidityStartTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            Uid = new byte[] { 0x01 }
+            Uid = new byte[] { 0x01 },
         };
         var signature20 = await EIP712.GenerateSignature_TokenERC20(randomDomain, randomVersion, randomChainId, randomContractAddress, mintRequest20, signer);
         Assert.NotNull(signature20);
@@ -261,7 +261,7 @@ public class ContractsTests : BaseTests
             Currency = Constants.ADDRESS_ZERO,
             ValidityEndTimestamp = 0,
             ValidityStartTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            Uid = new byte[] { 0x01 }
+            Uid = new byte[] { 0x01 },
         };
         var signature721 = await EIP712.GenerateSignature_TokenERC721(randomDomain, randomVersion, randomChainId, randomContractAddress, mintRequest721, signer);
         Assert.NotNull(signature721);
@@ -281,7 +281,7 @@ public class ContractsTests : BaseTests
             Currency = Constants.ADDRESS_ZERO,
             ValidityEndTimestamp = 0,
             ValidityStartTimestamp = Utils.GetUnixTimeStampIn10Years(),
-            Uid = new byte[] { 0x01 }
+            Uid = new byte[] { 0x01 },
         };
         var signature1155 = await EIP712.GenerateSignature_TokenERC1155(randomDomain, randomVersion, randomChainId, randomContractAddress, mintRequest1155, signer);
         Assert.NotNull(signature1155);

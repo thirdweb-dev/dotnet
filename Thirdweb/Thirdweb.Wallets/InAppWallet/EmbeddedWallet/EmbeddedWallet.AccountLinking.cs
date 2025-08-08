@@ -12,8 +12,8 @@ internal partial class EmbeddedWallet
                 Email = linkedAccount.Details.Email,
                 Address = linkedAccount.Details.Address,
                 Phone = linkedAccount.Details.Phone,
-                Id = linkedAccount.Details.Id
-            }
+                Id = linkedAccount.Details.Id,
+            },
         };
         return await this._server.UnlinkAccountAsync(currentAccountToken, serverLinkedAccount).ConfigureAwait(false);
     }
