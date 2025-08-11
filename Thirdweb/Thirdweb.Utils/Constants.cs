@@ -2,7 +2,7 @@
 
 public static class Constants
 {
-    public const string VERSION = "2.24.0";
+    public const string VERSION = "2.24.1";
 
     internal const string BRIDGE_API_URL = "https://bridge.thirdweb.com";
     internal const string INSIGHT_API_URL = "https://insight.thirdweb.com";
