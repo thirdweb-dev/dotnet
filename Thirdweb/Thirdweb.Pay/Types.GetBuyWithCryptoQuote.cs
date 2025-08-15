@@ -23,7 +23,7 @@ public class BuyWithCryptoQuoteParams(
     double? maxSlippageBPS = null,
     string intentId = null,
     object purchaseData = null
-    )
+)
 {
     /// <summary>
     /// The address from which the payment is made.

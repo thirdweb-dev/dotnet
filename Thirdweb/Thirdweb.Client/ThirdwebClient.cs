@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Thirdweb.Api;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Tests")]
 
@@ -18,6 +19,12 @@ public class ThirdwebClient
     /// Gets the client ID.
     /// </summary>
     public string ClientId { get; }
+
+    /// <summary>
+    /// Interactiton with https://api.thirdweb.com
+    /// Used in some places to enhance the core SDK functionality, or even extend it
+    /// </summary>
+    internal ThirdwebApiClient Api { get; }
 
     internal string SecretKey { get; }
     internal string BundleId { get; }
@@ -70,6 +77,17 @@ public class ThirdwebClient
         this.HttpClient.SetHeaders(defaultHeaders);
 
         this.RpcOverrides = rpcOverrides;
+
+        // Initialize the API client
+        var apiHttpClient = new HttpClient { BaseAddress = new Uri("https://api.thirdweb.com") };
+
+        // Copy headers from ThirdwebClient to API client
+        foreach (var header in defaultHeaders)
+        {
+            _ = apiHttpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value);
+        }
+
+        this.Api = new ThirdwebApiClient(apiHttpClient);
     }
 
     /// <summary>

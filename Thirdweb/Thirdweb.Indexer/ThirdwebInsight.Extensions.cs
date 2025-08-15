@@ -17,7 +17,7 @@ public static class ThirdwebInsightExtensions
                 "ERC1155" => NFTType.ERC1155,
                 "erc721" => NFTType.ERC721,
                 "erc1155" => NFTType.ERC1155,
-                _ => throw new Exception($"Unknown NFT type: {token.Contract.Type}")
+                _ => throw new Exception($"Unknown NFT type: {token.Contract.Type}"),
             },
             Metadata = new NFTMetadata()
             {
@@ -31,7 +31,7 @@ public static class ThirdwebInsightExtensions
                 BackgroundColor = token.BackgroundColor,
                 Attributes = token.ExtraMetadata?.Attributes,
                 Properties = token.ExtraMetadata?.Properties,
-            }
+            },
         };
     }
 

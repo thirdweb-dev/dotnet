@@ -33,17 +33,16 @@ public class ZkSmartWalletTests : BaseTests
     public async Task CreateSessionKey_Throws()
     {
         var account = await this.GetSmartAccount();
-        _ = await Assert.ThrowsAsync<InvalidOperationException>(
-            async () =>
-                await account.CreateSessionKey(
-                    signerAddress: await account.GetAddress(),
-                    approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
-                    nativeTokenLimitPerTransactionInWei: "0",
-                    permissionStartTimestamp: "0",
-                    permissionEndTimestamp: (Utils.GetUnixTimeStampNow() + 86400).ToString(),
-                    reqValidityStartTimestamp: "0",
-                    reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
-                )
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await account.CreateSessionKey(
+                signerAddress: await account.GetAddress(),
+                approvedTargets: new List<string>() { Constants.ADDRESS_ZERO },
+                nativeTokenLimitPerTransactionInWei: "0",
+                permissionStartTimestamp: "0",
+                permissionEndTimestamp: (Utils.GetUnixTimeStampNow() + 86400).ToString(),
+                reqValidityStartTimestamp: "0",
+                reqValidityEndTimestamp: Utils.GetUnixTimeStampIn10Years().ToString()
+            )
         );
     }
 
@@ -78,7 +77,7 @@ public class ZkSmartWalletTests : BaseTests
                 From = await account.GetAddress(),
                 To = await account.GetAddress(),
                 Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                Data = "0x"
+                Data = "0x",
             }
         );
         Assert.NotNull(hash);
@@ -146,7 +145,7 @@ public class ZkSmartWalletTests : BaseTests
                 From = await account.GetAddress(),
                 To = await account.GetAddress(),
                 Value = new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                Data = "0x"
+                Data = "0x",
             }
         );
     }

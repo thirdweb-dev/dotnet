@@ -292,7 +292,7 @@ public class ThirdwebInsight
         _ = response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var result = JsonConvert.DeserializeObject<ResponseModel<Event>>(responseContent);
-        return new InsightEvents { Events = result.Data, Meta = result.Meta, };
+        return new InsightEvents { Events = result.Data, Meta = result.Meta };
     }
 
     /// <summary>
@@ -378,7 +378,7 @@ public class ThirdwebInsight
         _ = response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var result = JsonConvert.DeserializeObject<ResponseModel<Transaction>>(responseContent);
-        return new InsightTransactions { Transactions = result.Data, Meta = result.Meta, };
+        return new InsightTransactions { Transactions = result.Data, Meta = result.Meta };
     }
 
     private static string AppendChains(string url, BigInteger[] chainIds)

@@ -142,7 +142,7 @@ public class Forwarder_ForwardRequest
 public enum NFTType
 {
     ERC721,
-    ERC1155
+    ERC1155,
 }
 
 /// <summary>

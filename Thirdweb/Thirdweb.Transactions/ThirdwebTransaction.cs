@@ -262,11 +262,10 @@ public class ThirdwebTransaction
     {
         var rpc = ThirdwebRPC.GetRpcInstance(transaction.Wallet.Client, transaction.Input.ChainId.Value);
         var isZkSync = await Utils.IsZkSync(transaction.Wallet.Client, transaction.Input.ChainId.Value).ConfigureAwait(false);
-        BigInteger divider = isZkSync
-            ? 7
-            : transaction.Input.AuthorizationList == null
-                ? 5
-                : 3;
+        BigInteger divider =
+            isZkSync ? 7
+            : transaction.Input.AuthorizationList == null ? 5
+            : 3;
         BigInteger baseGas;
         if (isZkSync)
         {
@@ -471,6 +470,45 @@ public class ThirdwebTransaction
     }
 
     /// <summary>
+    /// Waits for the transaction hash given a thirdweb transaction id. Use WaitForTransactionReceipt if you have a transaction hash.
+    /// </summary>
+    /// <param name="client">The Thirdweb client.</param>
+    /// <param name="txId">The thirdweb transaction id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The transaction hash.</returns>
+    public static async Task<string> WaitForTransactionHash(ThirdwebClient client, string txId, CancellationToken cancellationToken = default)
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+
+        var api = client.Api;
+        string hash = null;
+
+        try
+        {
+            do
+            {
+                hash = (await api.GetTransactionByIdAsync(txId, cts.Token).ConfigureAwait(false)).Result.TransactionHash;
+                if (hash == null)
+                {
+                    await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
+                }
+            } while (hash == null && !cts.Token.IsCancellationRequested);
+
+            if (hash == null)
+            {
+                throw new Exception($"Transaction {txId} not found within the timeout period.");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw new Exception($"Transaction hash polling for id {txId} was cancelled.");
+        }
+
+        return hash;
+    }
+
+    /// <summary>
     /// Converts the transaction to a zkSync transaction.
     /// </summary>
     /// <param name="transaction">The transaction.</param>
@@ -491,7 +529,7 @@ public class ThirdwebTransaction
             Value = transaction.Input.Value?.Value ?? 0,
             Data = transaction.Input.Data?.HexToByteArray() ?? Array.Empty<byte>(),
             FactoryDeps = transaction.Input.ZkSync.Value.FactoryDeps,
-            PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput
+            PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput,
         };
     }
 }

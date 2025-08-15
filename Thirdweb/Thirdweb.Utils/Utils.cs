@@ -712,7 +712,7 @@ public static partial class Utils
                 "chainid no support",
                 "chainid (0)",
                 "chainid(0)",
-                "invalid sender"
+                "invalid sender",
             };
 
             if (errorSubstrings.Any(errorMsg.Contains))
@@ -1156,7 +1156,7 @@ public static partial class Utils
                 maxPriorityFeePerGas: maxPriorityFeePerGas
             )
             {
-                AuthorizationList = authorizations
+                AuthorizationList = authorizations,
             },
             signature.CreateStringSignature()
         );
@@ -1186,7 +1186,7 @@ public static partial class Utils
                 Nonce = new HexBigInteger(decodedItem[2].RLPData.ToBigIntegerFromRLPDecoded()).HexValue,
                 YParity = signature.V.BytesToHex(),
                 R = signature.R.BytesToHex(),
-                S = signature.S.BytesToHex()
+                S = signature.S.BytesToHex(),
             };
             authorizationLists.Add(authorizationListItem);
         }
@@ -1221,7 +1221,7 @@ public static partial class Utils
                         walletAddress = await wallet.GetAddress().ConfigureAwait(false),
                         walletType = wallet.WalletId,
                         contractAddress = transaction.Input.To,
-                        gasPrice = transaction.Input.GasPrice?.Value ?? transaction.Input.MaxFeePerGas?.Value
+                        gasPrice = transaction.Input.GasPrice?.Value ?? transaction.Input.MaxFeePerGas?.Value,
                     }
                 ),
                 Encoding.UTF8,

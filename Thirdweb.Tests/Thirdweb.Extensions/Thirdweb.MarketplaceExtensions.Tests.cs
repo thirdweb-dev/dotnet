@@ -49,7 +49,7 @@ public class MarketplaceExtensionsTests : BaseTests
             PricePerToken = 1,
             StartTimestamp = Utils.GetUnixTimeStampNow(),
             EndTimestamp = Utils.GetUnixTimeStampNow() + 3600,
-            Reserved = false
+            Reserved = false,
         };
 
         var receipt = await contract.Marketplace_DirectListings_CreateListing(wallet, listingParams, true);
@@ -92,7 +92,7 @@ public class MarketplaceExtensionsTests : BaseTests
             PricePerToken = 1,
             StartTimestamp = Utils.GetUnixTimeStampNow() + 1800,
             EndTimestamp = Utils.GetUnixTimeStampNow() + 3600,
-            Reserved = false
+            Reserved = false,
         };
 
         var receipt = await contract.Marketplace_DirectListings_CreateListing(wallet, originalListing, true);
@@ -130,7 +130,7 @@ public class MarketplaceExtensionsTests : BaseTests
             PricePerToken = 1,
             StartTimestamp = Utils.GetUnixTimeStampNow() + 1800,
             EndTimestamp = Utils.GetUnixTimeStampNow() + 3600,
-            Reserved = false
+            Reserved = false,
         };
 
         var receipt = await contract.Marketplace_DirectListings_CreateListing(wallet, originalListing, true);
@@ -159,7 +159,7 @@ public class MarketplaceExtensionsTests : BaseTests
             PricePerToken = 1,
             StartTimestamp = Utils.GetUnixTimeStampNow(),
             EndTimestamp = Utils.GetUnixTimeStampNow() + 3600,
-            Reserved = true
+            Reserved = true,
         };
 
         var receipt = await contract.Marketplace_DirectListings_CreateListing(wallet, reservedListing, true);

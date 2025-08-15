@@ -11,7 +11,7 @@ public class TransactionTests : BaseTests
     private async Task<ThirdwebTransaction> CreateSampleTransaction()
     {
         var wallet = await PrivateKeyWallet.Generate(this.Client);
-        var transaction = await ThirdwebTransaction.Create(wallet, new ThirdwebTransactionInput(421614) { To = await wallet.GetAddress(), });
+        var transaction = await ThirdwebTransaction.Create(wallet, new ThirdwebTransactionInput(421614) { To = await wallet.GetAddress() });
         return transaction;
     }
 
@@ -164,7 +164,7 @@ public class TransactionTests : BaseTests
         var client = this.Client;
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-        var transaction = await ThirdwebTransaction.Create(smartAccount, new ThirdwebTransactionInput(421614) { To = Constants.ADDRESS_ZERO, });
+        var transaction = await ThirdwebTransaction.Create(smartAccount, new ThirdwebTransactionInput(421614) { To = Constants.ADDRESS_ZERO });
         var signed = await ThirdwebTransaction.Sign(transaction);
         Assert.NotNull(signed);
     }
@@ -329,7 +329,7 @@ public class TransactionTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task EstimateGasFees_ReturnsCorrectly()
     {
-        var transaction = await ThirdwebTransaction.Create(await PrivateKeyWallet.Generate(this.Client), new ThirdwebTransactionInput(250) { To = Constants.ADDRESS_ZERO, });
+        var transaction = await ThirdwebTransaction.Create(await PrivateKeyWallet.Generate(this.Client), new ThirdwebTransactionInput(250) { To = Constants.ADDRESS_ZERO });
 
         (var maxFee, var maxPrio) = await ThirdwebTransaction.EstimateGasFees(transaction);
 
@@ -365,7 +365,7 @@ public class TransactionTests : BaseTests
         var client = this.Client;
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-        var transaction = await ThirdwebTransaction.Create(smartAccount, new ThirdwebTransactionInput(421614) { To = Constants.ADDRESS_ZERO, Gas = new HexBigInteger(250000), });
+        var transaction = await ThirdwebTransaction.Create(smartAccount, new ThirdwebTransactionInput(421614) { To = Constants.ADDRESS_ZERO, Gas = new HexBigInteger(250000) });
 
         try
         {

@@ -6,7 +6,7 @@ namespace Thirdweb.AI;
 public enum NebulaChatRole
 {
     User,
-    Assistant
+    Assistant,
 }
 
 public class NebulaChatMessage
@@ -82,7 +82,7 @@ public class ThirdwebNebula
                 {
                     ModelName = model,
                     Title = $"Thirdweb .NET SDK (v{Constants.VERSION}) | Nebula {model} Session | Client ID: {client.ClientId}",
-                    IsPublic = false
+                    IsPublic = false,
                 }
             );
             nebula.SessionId = session.Id;
@@ -225,7 +225,7 @@ public class ThirdwebNebula
         {
             SessionId = this.SessionId,
             ChainIds = context?.ChainIds?.Select(id => id).ToList(),
-            WalletAddress = context?.WalletAddress
+            WalletAddress = context?.WalletAddress,
         };
     }
 

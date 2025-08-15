@@ -107,13 +107,13 @@ internal partial class EmbeddedWallet
     private static async Task<byte[]> GetEncryptionKeyAsync(string password, byte[] salt, int iterationCount)
     {
         return await Task.Run(() =>
-        {
-            var generator = new Pkcs5S2ParametersGenerator(new Sha256Digest());
-            var keyLength = KEY_SIZE * 8; // will be redivided by 8 internally
-            generator.Init(Encoding.UTF8.GetBytes(password), salt, iterationCount);
-            var keyParam = (KeyParameter)generator.GenerateDerivedMacParameters(keyLength);
-            return keyParam.GetKey();
-        })
+            {
+                var generator = new Pkcs5S2ParametersGenerator(new Sha256Digest());
+                var keyLength = KEY_SIZE * 8; // will be redivided by 8 internally
+                generator.Init(Encoding.UTF8.GetBytes(password), salt, iterationCount);
+                var keyParam = (KeyParameter)generator.GenerateDerivedMacParameters(keyLength);
+                return keyParam.GetKey();
+            })
             .ConfigureAwait(false);
     }
 
@@ -123,8 +123,6 @@ internal partial class EmbeddedWallet
         var encodedSecret = secrets.Combine(shares);
         var secret = Encoding.ASCII.GetString(Secrets.GetBytes(encodedSecret));
 
-        return !secret.StartsWith(WALLET_PRIVATE_KEY_PREFIX)
-            ? throw new InvalidOperationException($"Corrupted share encountered {secret}")
-            : new Account(secret.Split(WALLET_PRIVATE_KEY_PREFIX)[1]);
+        return !secret.StartsWith(WALLET_PRIVATE_KEY_PREFIX) ? throw new InvalidOperationException($"Corrupted share encountered {secret}") : new Account(secret.Split(WALLET_PRIVATE_KEY_PREFIX)[1]);
     }
 }

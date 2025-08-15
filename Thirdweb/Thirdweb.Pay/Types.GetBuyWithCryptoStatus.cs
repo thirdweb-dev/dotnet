@@ -228,7 +228,7 @@ public enum SwapStatus
     /// <summary>
     /// Status when the swap is completed.
     /// </summary>
-    COMPLETED
+    COMPLETED,
 }
 
 /// <summary>
@@ -264,5 +264,5 @@ public enum SwapSubStatus
     /// <summary>
     /// Sub-status when there is an unknown error.
     /// </summary>
-    UNKNOWN_ERROR
+    UNKNOWN_ERROR,
 }

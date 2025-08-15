@@ -102,7 +102,7 @@ public class WalletTests : BaseTests
             PermissionStartTimestamp = 0,
             ReqValidityStartTimestamp = 0,
             PermissionEndTimestamp = 0,
-            Uid = new byte[32]
+            Uid = new byte[32],
         };
 
         var typedData2 = EIP712.GetTypedDefinition_SmartAccount("Account", "1", 421614, await wallet.GetAddress());
@@ -221,12 +221,12 @@ public class WalletTests : BaseTests
         var nullData = null as AccountAbstraction.SignerPermissionRequest;
         var nullTypedData = null as Nethereum.ABI.EIP712.TypedData<Nethereum.ABI.EIP712.Domain>;
         var nullSig = null as string;
-        _ = await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await wallet.RecoverAddressFromTypedDataV4<AccountAbstraction.SignerPermissionRequest, Nethereum.ABI.EIP712.Domain>(nullData, nullTypedData, nullSig)
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await wallet.RecoverAddressFromTypedDataV4<AccountAbstraction.SignerPermissionRequest, Nethereum.ABI.EIP712.Domain>(nullData, nullTypedData, nullSig)
         );
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await wallet.RecoverAddressFromTypedDataV4(new AccountAbstraction.SignerPermissionRequest(), nullTypedData, nullSig));
-        _ = await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await wallet.RecoverAddressFromTypedDataV4(new AccountAbstraction.SignerPermissionRequest(), new Nethereum.ABI.EIP712.TypedData<Nethereum.ABI.EIP712.Domain>(), nullSig)
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await wallet.RecoverAddressFromTypedDataV4(new AccountAbstraction.SignerPermissionRequest(), new Nethereum.ABI.EIP712.TypedData<Nethereum.ABI.EIP712.Domain>(), nullSig)
         );
 #nullable restore
     }

@@ -716,26 +716,26 @@ public class ExtensionsTests : BaseTests
         _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await contract.ERC1155_SafeTransferFrom(wallet, validAddress, validAddress, BigInteger.MinusOne, validAmount, validData));
 
         // ERC1155_SafeBatchTransferFrom
-        _ = await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await contract.ERC1155_SafeBatchTransferFrom(null, null, null, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await contract.ERC1155_SafeBatchTransferFrom(null, null, null, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
         );
-        _ = await Assert.ThrowsAsync<ArgumentException>(
-            async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, null, null, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await contract.ERC1155_SafeBatchTransferFrom(wallet, null, null, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
         );
-        _ = await Assert.ThrowsAsync<ArgumentException>(
-            async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, string.Empty, null, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await contract.ERC1155_SafeBatchTransferFrom(wallet, string.Empty, null, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
         );
-        _ = await Assert.ThrowsAsync<ArgumentException>(
-            async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, null, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, null, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
         );
-        _ = await Assert.ThrowsAsync<ArgumentException>(
-            async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, string.Empty, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, string.Empty, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
         );
-        _ = await Assert.ThrowsAsync<ArgumentException>(
-            async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, validAddress, null, new BigInteger[] { validAmount }, validData)
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, validAddress, null, new BigInteger[] { validAmount }, validData)
         );
-        _ = await Assert.ThrowsAsync<ArgumentException>(
-            async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, validAddress, new BigInteger[] { validTokenId }, null, validData)
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, validAddress, new BigInteger[] { validTokenId }, null, validData)
         );
 
         // ERC1155_URI
@@ -749,8 +749,8 @@ public class ExtensionsTests : BaseTests
 
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_SetApprovalForAll(wallet, validAddress, false));
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_SafeTransferFrom(wallet, validAddress, validAddress, validTokenId, validAmount, validData));
-        _ = await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, validAddress, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, validAddress, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
         );
 
         // Null contract checks
@@ -761,8 +761,8 @@ public class ExtensionsTests : BaseTests
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_SetApprovalForAll(wallet, validAddress, false));
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_IsApprovedForAll(validAddress, validAddress));
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_SafeTransferFrom(wallet, validAddress, validAddress, validTokenId, validAmount, validData));
-        _ = await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, validAddress, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await contract.ERC1155_SafeBatchTransferFrom(wallet, validAddress, validAddress, new BigInteger[] { validTokenId }, new BigInteger[] { validAmount }, validData)
         );
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_URI(validTokenId));
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await contract.ERC1155_TotalSupply(validTokenId));
@@ -1375,7 +1375,7 @@ public class ExtensionsTests : BaseTests
             Currency = Constants.NATIVE_TOKEN_ADDRESS,
             ValidityStartTimestamp = 0,
             ValidityEndTimestamp = 0,
-            Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes()
+            Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes(),
         };
 
         // TokenERC20_MintTo null checks
@@ -1422,7 +1422,7 @@ public class ExtensionsTests : BaseTests
         var contract = await this.GetTokenERC20Contract();
         var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
         var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
-        var mintRequest = new TokenERC20_MintRequest { To = await randomReceiver.GetAddress(), Quantity = BigInteger.Parse("1.5".ToWei()), };
+        var mintRequest = new TokenERC20_MintRequest { To = await randomReceiver.GetAddress(), Quantity = BigInteger.Parse("1.5".ToWei()) };
 
         (var payload, var signature) = await contract.TokenERC20_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
 
@@ -1477,7 +1477,7 @@ public class ExtensionsTests : BaseTests
             Currency = Constants.NATIVE_TOKEN_ADDRESS,
             ValidityStartTimestamp = 0,
             ValidityEndTimestamp = 0,
-            Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes()
+            Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes(),
         };
 
         // TokenERC721_MintTo (with URI) null checks
@@ -1530,7 +1530,7 @@ public class ExtensionsTests : BaseTests
         var contract = await this.GetTokenERC721Contract();
         var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
         var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
-        var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress(), Uri = "", };
+        var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress(), Uri = "" };
 
         (var payload, var signature) = await contract.TokenERC721_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
 
@@ -1637,7 +1637,7 @@ public class ExtensionsTests : BaseTests
             Currency = Constants.NATIVE_TOKEN_ADDRESS,
             ValidityStartTimestamp = 0,
             ValidityEndTimestamp = 0,
-            Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes()
+            Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes(),
         };
 
         // TokenERC1155_MintTo (with URI) null checks
@@ -1654,11 +1654,11 @@ public class ExtensionsTests : BaseTests
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await ThirdwebExtensions.TokenERC1155_MintTo(contract, null, validAddress, validTokenId, validQuantity, new NFTMetadata()));
         _ = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebExtensions.TokenERC1155_MintTo(contract, wallet, null, validTokenId, validQuantity, new NFTMetadata()));
         _ = await Assert.ThrowsAsync<ArgumentException>(async () => await ThirdwebExtensions.TokenERC1155_MintTo(contract, wallet, string.Empty, validTokenId, validQuantity, new NFTMetadata()));
-        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            async () => await ThirdwebExtensions.TokenERC1155_MintTo(contract, wallet, validAddress, invalidTokenId, validQuantity, new NFTMetadata())
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            await ThirdwebExtensions.TokenERC1155_MintTo(contract, wallet, validAddress, invalidTokenId, validQuantity, new NFTMetadata())
         );
-        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            async () => await ThirdwebExtensions.TokenERC1155_MintTo(contract, wallet, validAddress, validTokenId, invalidQuantity, new NFTMetadata())
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            await ThirdwebExtensions.TokenERC1155_MintTo(contract, wallet, validAddress, validTokenId, invalidQuantity, new NFTMetadata())
         );
 
         // TokenERC1155_MintWithSignature null checks
@@ -1698,7 +1698,7 @@ public class ExtensionsTests : BaseTests
         var contract = await this.GetTokenERC1155Contract();
         var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
         var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
-        var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress(), Uri = "", };
+        var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress(), Uri = "" };
 
         (var payload, var signature) = await contract.TokenERC1155_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
 

@@ -26,7 +26,7 @@ public partial class ThirdwebPay
             { "start", start.ToString() },
             { "count", count.ToString() },
             { "cursor", cursor },
-            { "pageSize", pageSize?.ToString() }
+            { "pageSize", pageSize?.ToString() },
         };
 
         var queryStringFormatted = string.Join("&", queryString.Where(kv => kv.Value != null).Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
@@ -41,7 +41,6 @@ public partial class ThirdwebPay
             ErrorResponse error;
 
             try
-
             {
                 error = JsonConvert.DeserializeObject<ErrorResponse>(content);
             }
@@ -55,14 +54,12 @@ public partial class ThirdwebPay
                         Reason = "Unknown",
                         Code = "Unknown",
                         Stack = "Unknown",
-                        StatusCode = (int)getResponse.StatusCode
-                    }
+                        StatusCode = (int)getResponse.StatusCode,
+                    },
                 };
             }
 
-            throw new Exception(
-                $"HTTP error! Code: {error.Error.Code} Message: {error.Error.Message} Reason: {error.Error.Reason} StatusCode: {error.Error.StatusCode} Stack: {error.Error.Stack}"
-            );
+            throw new Exception($"HTTP error! Code: {error.Error.Code} Message: {error.Error.Message} Reason: {error.Error.Reason} StatusCode: {error.Error.StatusCode} Stack: {error.Error.Stack}");
         }
 
         var data = JsonConvert.DeserializeObject<BuyHistoryResponse>(content);

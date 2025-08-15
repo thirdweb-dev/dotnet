@@ -38,14 +38,12 @@ public partial class ThirdwebPay
                         Reason = "Unknown",
                         Code = "Unknown",
                         Stack = "Unknown",
-                        StatusCode = (int)getResponse.StatusCode
-                    }
+                        StatusCode = (int)getResponse.StatusCode,
+                    },
                 };
             }
 
-            throw new Exception(
-                $"HTTP error! Code: {error.Error.Code} Message: {error.Error.Message} Reason: {error.Error.Reason} StatusCode: {error.Error.StatusCode} Stack: {error.Error.Stack}"
-            );
+            throw new Exception($"HTTP error! Code: {error.Error.Code} Message: {error.Error.Message} Reason: {error.Error.Reason} StatusCode: {error.Error.StatusCode} Stack: {error.Error.Stack}");
         }
 
         var data = JsonConvert.DeserializeObject<FiatCurrenciesResponse>(content);

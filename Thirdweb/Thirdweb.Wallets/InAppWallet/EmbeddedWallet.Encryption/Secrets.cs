@@ -11,7 +11,7 @@ internal class Secrets
     private const int NHexDigitBits = 4;
     private readonly Func<int, int> _getRandomInt32 = (nBits) => RandomNumberGenerator.GetInt32(1, 1 << nBits);
     private static readonly string _padding = string.Join("", Enumerable.Repeat("0", Defaults.MaxPaddingMultiple));
-    private static readonly string[] _nybbles = { "0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111", };
+    private static readonly string[] _nybbles = { "0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111" };
 
     /// <summary>
     /// Reconsitute a secret from <paramref name="shares"/>.
@@ -305,11 +305,9 @@ internal class Secrets
     private static int GetLargeBaseValue(char ch)
     {
         var rv =
-            ch >= 'a'
-                ? ch - 'a' + 10
-                : ch >= 'A'
-                    ? ch - 'A' + 10
-                    : ch - '0';
+            ch >= 'a' ? ch - 'a' + 10
+            : ch >= 'A' ? ch - 'A' + 10
+            : ch - '0';
         return rv;
     }
 
@@ -453,7 +451,7 @@ internal class Secrets
 
         // These are primitive polynomial coefficients for Galois Fields GF(2^n) for 2 <= n <= 20.  The index of each term in the
         // array corresponds to the n for that polynomial.
-        internal static readonly int[] PrimitivePolynomialCoefficients = { -1, -1, 1, 3, 3, 5, 3, 3, 29, 17, 9, 5, 83, 27, 43, 3, 45, 9, 39, 39, 9, };
+        internal static readonly int[] PrimitivePolynomialCoefficients = { -1, -1, 1, 3, 3, 5, 3, 3, 29, 17, 9, 5, 83, 27, 43, 3, 45, 9, 39, 39, 9 };
     }
 
     private class ShareComponents
