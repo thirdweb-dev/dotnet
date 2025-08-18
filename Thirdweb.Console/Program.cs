@@ -14,11 +14,11 @@ var client = ThirdwebClient.Create(secretKey: secretKey);
 
 #region Basic Wallet Interaction
 
-//  Create a private key wallet
-var privateKeyWallet = await PrivateKeyWallet.Generate(client);
+// //  Create a private key wallet
+// var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
-var walletAddress = await privateKeyWallet.GetAddress();
-Console.WriteLine($"PK Wallet address: {walletAddress}");
+// var walletAddress = await privateKeyWallet.GetAddress();
+// Console.WriteLine($"PK Wallet address: {walletAddress}");
 
 #endregion
 
@@ -334,11 +334,11 @@ Console.WriteLine($"PK Wallet address: {walletAddress}");
 
 #region AA ZkSync
 
-var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
+// var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
 
-var hash = await zkSmartWallet.SendTransaction(new ThirdwebTransactionInput(chainId: 11124, to: await zkSmartWallet.GetAddress(), value: 0, data: "0x"));
+// var hash = await zkSmartWallet.SendTransaction(new ThirdwebTransactionInput(chainId: 11124, to: await zkSmartWallet.GetAddress(), value: 0, data: "0x"));
 
-Console.WriteLine($"Transaction hash: {hash}");
+// Console.WriteLine($"Transaction hash: {hash}");
 
 #endregion
 

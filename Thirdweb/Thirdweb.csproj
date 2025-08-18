@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0</TargetFrameworks>
-    <PackageVersion>2.24.1</PackageVersion>
-    <AssemblyVersion>2.24.1</AssemblyVersion>
-    <FileVersion>2.24.1</FileVersion>
+    <PackageVersion>2.25.0</PackageVersion>
+    <AssemblyVersion>2.25.0</AssemblyVersion>
+    <FileVersion>2.25.0</FileVersion>
     <LangVersion>latest</LangVersion>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <ImplicitUsings>enable</ImplicitUsings>
