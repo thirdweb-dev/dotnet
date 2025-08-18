@@ -964,7 +964,7 @@ public static partial class Utils
             var block = await rpc.SendRequestAsync<JObject>("eth_getBlockByNumber", "latest", true).ConfigureAwait(false);
             var baseBlockFee = block["baseFeePerGas"]?.ToObject<HexBigInteger>();
             var maxFeePerGas = baseBlockFee.Value * 2;
-            var maxPriorityFeePerGas = ((await rpc.SendRequestAsync<HexBigInteger>("eth_maxPriorityFeePerGas").ConfigureAwait(false))?.Value) ?? maxFeePerGas / 2;
+            var maxPriorityFeePerGas = ((await rpc.SendRequestAsync<HexBigInteger>("eth_maxPriorityFeePerGas").ConfigureAwait(false))?.Value) ?? (maxFeePerGas / 2);
 
             if (maxPriorityFeePerGas > maxFeePerGas)
             {
