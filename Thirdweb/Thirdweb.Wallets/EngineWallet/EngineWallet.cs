@@ -22,14 +22,16 @@ public partial class EngineWallet : IThirdwebWallet
     private readonly string _walletAddress;
     private readonly IThirdwebHttpClient _engineClient;
     private readonly int? _timeoutSeconds;
+    private readonly bool _forwardLocalGasFees;
 
-    internal EngineWallet(ThirdwebClient client, IThirdwebHttpClient engineClient, string engineUrl, string walletAddress, int? timeoutSeconds)
+    internal EngineWallet(ThirdwebClient client, IThirdwebHttpClient engineClient, string engineUrl, string walletAddress, int? timeoutSeconds, bool forwardLocalGasFees)
     {
         this.Client = client;
         this._engineUrl = engineUrl;
         this._walletAddress = walletAddress;
         this._engineClient = engineClient;
         this._timeoutSeconds = timeoutSeconds;
+        this._forwardLocalGasFees = forwardLocalGasFees;
     }
 
     #region Creation
@@ -43,7 +45,16 @@ public partial class EngineWallet : IThirdwebWallet
     /// <param name="walletAddress">The backend wallet address to use.</param>
     /// <param name="timeoutSeconds">The timeout in seconds for the transaction. Defaults to no timeout.</param>
     /// <param name="additionalHeaders">Additional headers to include in requests. Authorization and X-Backend-Wallet-Address automatically included.</param>
-    public static EngineWallet Create(ThirdwebClient client, string engineUrl, string authToken, string walletAddress, int? timeoutSeconds = null, Dictionary<string, string> additionalHeaders = null)
+    /// <param name="forwardLocalGasFees">Whether to forward locally calculated gas price/fees to the engine. Defaults to false.</param>
+    public static EngineWallet Create(
+        ThirdwebClient client,
+        string engineUrl,
+        string authToken,
+        string walletAddress,
+        int? timeoutSeconds = null,
+        Dictionary<string, string> additionalHeaders = null,
+        bool forwardLocalGasFees = false
+    )
     {
         if (client == null)
         {
@@ -81,7 +92,7 @@ public partial class EngineWallet : IThirdwebWallet
                 engineClient.AddHeader(header.Key, header.Value);
             }
         }
-        var wallet = new EngineWallet(client, engineClient, engineUrl, walletAddress, timeoutSeconds);
+        var wallet = new EngineWallet(client, engineClient, engineUrl, walletAddress, timeoutSeconds, forwardLocalGasFees);
         Utils.TrackConnection(wallet);
         return wallet;
     }
@@ -141,9 +152,9 @@ public partial class EngineWallet : IThirdwebWallet
                 ? new
                 {
                     gas = transaction.Gas?.Value.ToString(),
-                    gasPrice = transaction.GasPrice?.Value.ToString(),
-                    maxFeePerGas = transaction.MaxFeePerGas?.Value.ToString(),
-                    maxPriorityFeePerGas = transaction.MaxPriorityFeePerGas?.Value.ToString(),
+                    gasPrice = this._forwardLocalGasFees ? transaction.GasPrice?.Value.ToString() : null,
+                    maxFeePerGas = this._forwardLocalGasFees ? transaction.MaxFeePerGas?.Value.ToString() : null,
+                    maxPriorityFeePerGas = this._forwardLocalGasFees ? transaction.MaxPriorityFeePerGas?.Value.ToString() : null,
                     timeoutSeconds = this._timeoutSeconds,
                 }
                 : null,

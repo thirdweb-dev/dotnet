@@ -470,6 +470,55 @@ public class ThirdwebTransaction
     }
 
     /// <summary>
+    /// Waits for the transaction hash given a thirdweb transaction id. Use WaitForTransactionReceipt if you have a transaction hash.
+    /// </summary>
+    /// <param name="client">The Thirdweb client.</param>
+    /// <param name="txId">The thirdweb transaction id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The transaction hash.</returns>
+    public static async Task<string> WaitForTransactionHash(ThirdwebClient client, string txId, CancellationToken cancellationToken = default)
+    {
+        if (client == null)
+        {
+            throw new ArgumentNullException(nameof(client));
+        }
+
+        if (string.IsNullOrEmpty(txId))
+        {
+            throw new ArgumentException("Transaction id cannot be null or empty.", nameof(txId));
+        }
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
+
+        var api = client.Api;
+        string hash = null;
+
+        try
+        {
+            do
+            {
+                var resp = await api.GetTransactionByIdAsync(txId, cts.Token).ConfigureAwait(false);
+                hash = resp?.Result?.TransactionHash;
+                if (hash == null)
+                {
+                    await ThirdwebTask.Delay(100, cts.Token).ConfigureAwait(false);
+                }
+            } while (hash == null && !cts.Token.IsCancellationRequested);
+
+            if (hash == null)
+            {
+                throw new Exception($"Transaction {txId} not found within the timeout period.");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw new Exception($"Transaction hash polling for id {txId} was cancelled.");
+        }
+
+        return hash;
+    }
+
+    /// <summary>
     /// Converts the transaction to a zkSync transaction.
     /// </summary>
     /// <param name="transaction">The transaction.</param>

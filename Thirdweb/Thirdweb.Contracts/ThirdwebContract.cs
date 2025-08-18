@@ -29,6 +29,133 @@ public class ThirdwebContract
     }
 
     /// <summary>
+    /// Deploys a new contract on the specified chain.
+    /// </summary>
+    /// <param name="client">The Thirdweb client.</param>
+    /// <param name="chainId">The chain ID.</param>
+    /// <param name="serverWalletAddress">The server wallet address.</param>
+    /// <param name="bytecode">The bytecode of the contract.</param>
+    /// <param name="abi">The ABI of the contract.</param>
+    /// <param name="constructorParams">The constructor parameters (optional).</param>
+    /// <param name="salt">The salt for the contract deployment (optional).</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The contract address of the fully deployed contract.</returns>
+    /// <remarks>
+    /// This method deploys a new contract using a server wallet, create one via the ServerWallet class or api.thirdweb.com, or the dashboard.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown if any of the required parameters are null.</exception>
+    /// <exception cref="ArgumentException">Thrown if any of the required parameters are invalid.</exception>
+    /// <exception cref="OverflowException">Thrown if the chain ID is too large.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the deployment fails or the API response is invalid.</exception>
+    /// <exception cref="JsonException">Thrown if the ABI JSON cannot be parsed.</exception>
+    public static async Task<string> Deploy(
+        ThirdwebClient client,
+        BigInteger chainId,
+        string serverWalletAddress,
+        string bytecode,
+        string abi,
+        Dictionary<string, object> constructorParams = null,
+        string salt = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // Input validation
+        if (client == null)
+        {
+            throw new ArgumentNullException(nameof(client));
+        }
+
+        if (chainId <= 0)
+        {
+            throw new ArgumentException("Chain ID must be greater than 0.", nameof(chainId));
+        }
+
+        if (string.IsNullOrEmpty(serverWalletAddress))
+        {
+            throw new ArgumentException("Server wallet address cannot be null or empty.", nameof(serverWalletAddress));
+        }
+
+        if (string.IsNullOrEmpty(bytecode))
+        {
+            throw new ArgumentException("Bytecode cannot be null or empty.", nameof(bytecode));
+        }
+
+        if (string.IsNullOrEmpty(abi))
+        {
+            throw new ArgumentException("ABI cannot be null or empty.", nameof(abi));
+        }
+
+        // Perform checked cast to int
+        // TODO: Remove this when generated client supports BigInteger for chainId
+        int chainIdInt;
+        try
+        {
+            chainIdInt = checked((int)chainId);
+        }
+        catch (OverflowException)
+        {
+            throw new OverflowException($"Chain ID {chainId} is too large; ThirdwebContract.Deploy currently only supports chain IDs up to {int.MaxValue}.");
+        }
+
+        // Parse ABI with error handling
+        List<object> parsedAbi;
+        try
+        {
+            parsedAbi = JsonConvert.DeserializeObject<List<object>>(abi);
+            if (parsedAbi == null)
+            {
+                throw new InvalidOperationException("ABI deserialization returned null.");
+            }
+        }
+        catch (JsonException ex)
+        {
+            throw new ArgumentException($"Failed to parse ABI JSON: {ex.Message}", nameof(abi), ex);
+        }
+
+        var response =
+            await client
+                .Api.DeployContractAsync(
+                    new Api.Body8()
+                    {
+                        ChainId = chainIdInt,
+                        From = serverWalletAddress,
+                        Bytecode = bytecode,
+                        Abi = parsedAbi,
+                        ConstructorParams = constructorParams,
+                        Salt = salt,
+                    },
+                    cancellationToken
+                )
+                .ConfigureAwait(false) ?? throw new InvalidOperationException("Failed to deploy contract: API response was null.");
+
+        if (response.Result is null)
+        {
+            throw new InvalidOperationException("Failed to deploy contract: API response result was null.");
+        }
+
+        var contractAddress = response.Result.Address;
+        if (string.IsNullOrEmpty(contractAddress))
+        {
+            throw new InvalidOperationException("Failed to deploy contract: Could not compute contract address.");
+        }
+
+        var transactionId = response.Result.TransactionId;
+        if (string.IsNullOrEmpty(transactionId))
+        {
+            throw new InvalidOperationException("Failed to deploy contract: Transaction ID is empty.");
+        }
+
+        var hash = await ThirdwebTransaction.WaitForTransactionHash(client, transactionId, cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrEmpty(hash))
+        {
+            throw new InvalidOperationException("Failed to deploy contract: Transaction hash is empty.");
+        }
+
+        _ = await ThirdwebTransaction.WaitForTransactionReceipt(client, chainId, hash, cancellationToken).ConfigureAwait(false);
+        return contractAddress;
+    }
+
+    /// <summary>
     /// Creates a new instance of <see cref="ThirdwebContract"/>.
     /// </summary>
     /// <param name="client">The Thirdweb client.</param>
