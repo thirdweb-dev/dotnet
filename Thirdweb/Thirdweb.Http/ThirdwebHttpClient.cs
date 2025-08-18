@@ -78,7 +78,7 @@ public class ThirdwebHttpClient : IThirdwebHttpClient
         this.AddHeaders(request);
         var result = await this._httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
 #pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
-        var resultContent = new ThirdwebHttpContent(await result.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false));
+        var resultContent = new ThirdwebHttpContent(await result.Content.ReadAsByteArrayAsync().ConfigureAwait(false));
 #pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
         return new ThirdwebHttpResponseMessage((long)result.StatusCode, resultContent, result.IsSuccessStatusCode);
     }
