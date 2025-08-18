@@ -478,6 +478,15 @@ public class ThirdwebTransaction
     /// <returns>The transaction hash.</returns>
     public static async Task<string> WaitForTransactionHash(ThirdwebClient client, string txId, CancellationToken cancellationToken = default)
     {
+        if (client == null)
+        {
+            throw new ArgumentNullException(nameof(client));
+        }
+        
+        if (string.IsNullOrEmpty(txId))
+        {
+            throw new ArgumentException("Transaction id cannot be null or empty.", nameof(txId));
+        }
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(client.FetchTimeoutOptions.GetTimeout(TimeoutType.Other));
 
@@ -488,10 +497,11 @@ public class ThirdwebTransaction
         {
             do
             {
-                hash = (await api.GetTransactionByIdAsync(txId, cts.Token).ConfigureAwait(false)).Result.TransactionHash;
+                var resp = await api.GetTransactionByIdAsync(txId, cts.Token).ConfigureAwait(false);
+                hash = resp?.Result?.TransactionHash;
                 if (hash == null)
                 {
-                    await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
+                    await ThirdwebTask.Delay(100, cts.Token).ConfigureAwait(false);
                 }
             } while (hash == null && !cts.Token.IsCancellationRequested);
 

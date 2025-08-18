@@ -38,7 +38,7 @@ if errorlevel 1 (
     dotnet tool install --global NSwag.ConsoleCore
     if errorlevel 1 (
         echo Failed to install NSwag CLI
-        goto end
+        exit /b 1
     )
 )
 
@@ -47,11 +47,11 @@ echo Running NSwag to generate client...
 nswag run nswag.json
 if errorlevel 1 (
     echo Failed to generate API client
-    goto end
+    exit /b 1
 )
 
 echo API client generation complete!
-goto end
+exit /b 0
 
 :build
 echo Building solution...
