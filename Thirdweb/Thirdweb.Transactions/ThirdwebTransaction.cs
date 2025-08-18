@@ -482,7 +482,7 @@ public class ThirdwebTransaction
         {
             throw new ArgumentNullException(nameof(client));
         }
-        
+
         if (string.IsNullOrEmpty(txId))
         {
             throw new ArgumentException("Transaction id cannot be null or empty.", nameof(txId));
