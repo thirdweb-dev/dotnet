@@ -686,43 +686,47 @@ public static partial class Utils
         }
 
         var result = false;
-        var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
 
-        try
+        var isArachnidDeployed = await IsDeployed(client, chainId, "0x4e59b44847b379578588920ca78fbf26c0b4956c").ConfigureAwait(false);
+        if (!isArachnidDeployed)
         {
-            // Pre-155 tx that will fail
-            var rawTransaction =
-                "0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222";
-            _ = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", rawTransaction);
-        }
-        catch (Exception e)
-        {
-            var errorMsg = e.Message.ToLower();
-
-            var errorSubstrings = new List<string>
+            try
             {
-                "eip-155",
-                "eip155",
-                "protected",
-                "invalid chain id for signer",
-                "chain id none",
-                "chain_id mismatch",
-                "recovered sender mismatch",
-                "transaction hash mismatch",
-                "chainid no support",
-                "chainid (0)",
-                "chainid(0)",
-                "invalid sender"
-            };
-
-            if (errorSubstrings.Any(errorMsg.Contains))
-            {
-                result = true;
+                // Pre-155 tx that will fail
+                var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
+                var rawTransaction =
+                    "0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222";
+                _ = await rpc.SendRequestAsync<string>("eth_sendRawTransaction", rawTransaction).ConfigureAwait(false);
             }
-            else
+            catch (Exception e)
             {
-                // Check if all substrings in any of the composite substrings are present
-                result = _errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
+                var errorMsg = e.Message.ToLower();
+
+                var errorSubstrings = new List<string>
+                {
+                    "eip-155",
+                    "eip155",
+                    "protected",
+                    "invalid chain id for signer",
+                    "chain id none",
+                    "chain_id mismatch",
+                    "recovered sender mismatch",
+                    "transaction hash mismatch",
+                    "chainid no support",
+                    "chainid (0)",
+                    "chainid(0)",
+                    "invalid sender",
+                };
+
+                if (errorSubstrings.Any(errorMsg.Contains))
+                {
+                    result = true;
+                }
+                else
+                {
+                    // Check if all substrings in any of the composite substrings are present
+                    result = _errorSubstringsComposite.Any(arr => arr.All(substring => errorMsg.Contains(substring)));
+                }
             }
         }
 
@@ -960,7 +964,7 @@ public static partial class Utils
             var block = await rpc.SendRequestAsync<JObject>("eth_getBlockByNumber", "latest", true).ConfigureAwait(false);
             var baseBlockFee = block["baseFeePerGas"]?.ToObject<HexBigInteger>();
             var maxFeePerGas = baseBlockFee.Value * 2;
-            var maxPriorityFeePerGas = ((await rpc.SendRequestAsync<HexBigInteger>("eth_maxPriorityFeePerGas").ConfigureAwait(false))?.Value) ?? maxFeePerGas / 2;
+            var maxPriorityFeePerGas = ((await rpc.SendRequestAsync<HexBigInteger>("eth_maxPriorityFeePerGas").ConfigureAwait(false))?.Value) ?? (maxFeePerGas / 2);
 
             if (maxPriorityFeePerGas > maxFeePerGas)
             {
@@ -1156,7 +1160,7 @@ public static partial class Utils
                 maxPriorityFeePerGas: maxPriorityFeePerGas
             )
             {
-                AuthorizationList = authorizations
+                AuthorizationList = authorizations,
             },
             signature.CreateStringSignature()
         );
@@ -1186,7 +1190,7 @@ public static partial class Utils
                 Nonce = new HexBigInteger(decodedItem[2].RLPData.ToBigIntegerFromRLPDecoded()).HexValue,
                 YParity = signature.V.BytesToHex(),
                 R = signature.R.BytesToHex(),
-                S = signature.S.BytesToHex()
+                S = signature.S.BytesToHex(),
             };
             authorizationLists.Add(authorizationListItem);
         }
@@ -1221,7 +1225,7 @@ public static partial class Utils
                         walletAddress = await wallet.GetAddress().ConfigureAwait(false),
                         walletType = wallet.WalletId,
                         contractAddress = transaction.Input.To,
-                        gasPrice = transaction.Input.GasPrice?.Value ?? transaction.Input.MaxFeePerGas?.Value
+                        gasPrice = transaction.Input.GasPrice?.Value ?? transaction.Input.MaxFeePerGas?.Value,
                     }
                 ),
                 Encoding.UTF8,

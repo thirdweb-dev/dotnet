@@ -16,7 +16,7 @@ public enum ExecutionMode
 {
     EOA,
     EIP7702,
-    EIP7702Sponsored
+    EIP7702Sponsored,
 }
 
 /// <summary>
@@ -195,7 +195,7 @@ public partial class EcosystemWallet : IThirdwebWallet
                 executionMode
             )
             {
-                Address = userAddress
+                Address = userAddress,
             };
         }
         catch
@@ -216,7 +216,7 @@ public partial class EcosystemWallet : IThirdwebWallet
                 executionMode
             )
             {
-                Address = null
+                Address = null,
             };
         }
     }
@@ -316,8 +316,8 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     private async Task<string> MigrateShardToEnclave(Server.VerifyResult authResult)
     {
-        var (address, encryptedPrivateKeyB64, ivB64, kmsCiphertextB64) = await this.EmbeddedWallet
-            .GenerateEncryptionDataAsync(authResult.AuthToken, this.LegacyEncryptionKey ?? authResult.RecoveryCode)
+        var (address, encryptedPrivateKeyB64, ivB64, kmsCiphertextB64) = await this
+            .EmbeddedWallet.GenerateEncryptionDataAsync(authResult.AuthToken, this.LegacyEncryptionKey ?? authResult.RecoveryCode)
             .ConfigureAwait(false);
 
         var url = $"{ENCLAVE_PATH}/migrate";
@@ -326,7 +326,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             address,
             encryptedPrivateKeyB64,
             ivB64,
-            kmsCiphertextB64
+            kmsCiphertextB64,
         };
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
 
@@ -492,7 +492,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             ExpiresAt = Utils.GetUnixTimeStampNow() + durationInSeconds,
             CallPolicies = callPolicies ?? new List<CallSpec>(),
             TransferPolicies = transferPolicies ?? new List<TransferSpec>(),
-            Uid = uid ?? Guid.NewGuid().ToByteArray()
+            Uid = uid ?? Guid.NewGuid().ToByteArray(),
         };
 
         var userWalletAddress = await this.GetAddress();
@@ -643,8 +643,8 @@ public partial class EcosystemWallet : IThirdwebWallet
                         Email = linkedAccount.Details?.Email,
                         Address = linkedAccount.Details?.Address,
                         Phone = linkedAccount.Details?.Phone,
-                        Id = linkedAccount.Details?.Id
-                    }
+                        Id = linkedAccount.Details?.Id,
+                    },
                 }
             );
         }
@@ -770,8 +770,8 @@ public partial class EcosystemWallet : IThirdwebWallet
                         Email = linkedAccount.Details?.Email,
                         Address = linkedAccount.Details?.Address,
                         Phone = linkedAccount.Details?.Phone,
-                        Id = linkedAccount.Details?.Id
-                    }
+                        Id = linkedAccount.Details?.Id,
+                    },
                 }
             );
         }
@@ -794,8 +794,8 @@ public partial class EcosystemWallet : IThirdwebWallet
                         Email = linkedAccount.Details?.Email,
                         Address = linkedAccount.Details?.Address,
                         Phone = linkedAccount.Details?.Phone,
-                        Id = linkedAccount.Details?.Id
-                    }
+                        Id = linkedAccount.Details?.Id,
+                    },
                 }
             );
         }
@@ -838,11 +838,9 @@ public partial class EcosystemWallet : IThirdwebWallet
         }
 
         var serverRes =
-            string.IsNullOrEmpty(this.Email) && string.IsNullOrEmpty(this.PhoneNumber)
-                ? throw new Exception("Email or Phone Number is required for OTP login")
-                : this.Email == null
-                    ? await this.EmbeddedWallet.VerifyPhoneOtpAsync(this.PhoneNumber, otp).ConfigureAwait(false)
-                    : await this.EmbeddedWallet.VerifyEmailOtpAsync(this.Email, otp).ConfigureAwait(false);
+            string.IsNullOrEmpty(this.Email) && string.IsNullOrEmpty(this.PhoneNumber) ? throw new Exception("Email or Phone Number is required for OTP login")
+            : this.Email == null ? await this.EmbeddedWallet.VerifyPhoneOtpAsync(this.PhoneNumber, otp).ConfigureAwait(false)
+            : await this.EmbeddedWallet.VerifyEmailOtpAsync(this.Email, otp).ConfigureAwait(false);
 
         return serverRes;
     }
@@ -1258,22 +1256,19 @@ public partial class EcosystemWallet : IThirdwebWallet
                 maxPriorityFeePerGas = transaction.MaxPriorityFeePerGas,
                 chainId = transaction.ChainId,
                 authorizationList = transaction.AuthorizationList != null && transaction.AuthorizationList.Count > 0
-                    ? transaction.AuthorizationList
-                        .Select(
-                            authorization =>
-                                new
-                                {
-                                    chainId = authorization.ChainId.HexToNumber(),
-                                    address = authorization.Address,
-                                    nonce = authorization.Nonce.HexToNumber().ToString(),
-                                    yParity = authorization.YParity.HexToNumber(),
-                                    r = authorization.R.HexToNumber().ToString(),
-                                    s = authorization.S.HexToNumber().ToString()
-                                }
-                        )
+                    ? transaction
+                        .AuthorizationList.Select(authorization => new
+                        {
+                            chainId = authorization.ChainId.HexToNumber(),
+                            address = authorization.Address,
+                            nonce = authorization.Nonce.HexToNumber().ToString(),
+                            yParity = authorization.YParity.HexToNumber(),
+                            r = authorization.R.HexToNumber().ToString(),
+                            s = authorization.S.HexToNumber().ToString(),
+                        })
                         .ToArray()
-                    : null
-            }
+                    : null,
+            },
         };
 
         var url = $"{ENCLAVE_PATH}/sign-transaction";
@@ -1308,8 +1303,8 @@ public partial class EcosystemWallet : IThirdwebWallet
             {
                 Target = transaction.To,
                 Value = transaction.Value?.Value ?? BigInteger.Zero,
-                Data = transaction.Data.HexToBytes()
-            }
+                Data = transaction.Data.HexToBytes(),
+            },
         };
 
         switch (this.ExecutionMode)
@@ -1441,7 +1436,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         {
             address = contractAddress,
             chainId,
-            nonce
+            nonce,
         };
 
         var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");

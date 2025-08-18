@@ -108,13 +108,12 @@ internal partial class Server : ServerBase
     // embedded-wallet/embedded-wallet-shares GET
     private async Task<SharesGetResponse> FetchRemoteSharesAsync(string authToken, bool wantsRecoveryShare)
     {
-        Dictionary<string, string> queryParams =
-            new()
-            {
-                { "getEncryptedAuthShare", "true" },
-                { "getEncryptedRecoveryShare", wantsRecoveryShare ? "true" : "false" },
-                { "useSealedSecret", "false" }
-            };
+        Dictionary<string, string> queryParams = new()
+        {
+            { "getEncryptedAuthShare", "true" },
+            { "getEncryptedRecoveryShare", wantsRecoveryShare ? "true" : "false" },
+            { "useSealedSecret", "false" },
+        };
         var uri = MakeUri2023("/embedded-wallet/embedded-wallet-shares", queryParams);
         var response = await this.SendHttpWithAuthAsync(uri, authToken).ConfigureAwait(false);
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
@@ -389,7 +388,7 @@ internal partial class Server : ServerBase
 
     private static Uri MakeUri2024(string path, IDictionary<string, string> parameters = null)
     {
-        UriBuilder b = new(ROOT_URL) { Path = API_ROOT_PATH_2024 + path, };
+        UriBuilder b = new(ROOT_URL) { Path = API_ROOT_PATH_2024 + path };
         if (parameters != null && parameters.Any())
         {
             var queryString = string.Join('&', parameters.Select((p) => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
@@ -400,7 +399,7 @@ internal partial class Server : ServerBase
 
     private static Uri MakeUri2023(string path, IDictionary<string, string> parameters = null)
     {
-        UriBuilder b = new(ROOT_URL) { Path = API_ROOT_PATH_2023 + path, };
+        UriBuilder b = new(ROOT_URL) { Path = API_ROOT_PATH_2023 + path };
         if (parameters != null && parameters.Any())
         {
             var queryString = string.Join('&', parameters.Select((p) => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
@@ -418,7 +417,7 @@ internal partial class Server : ServerBase
 
     private static string Serialize(object data)
     {
-        JsonSerializer jsonSerializer = new() { NullValueHandling = NullValueHandling.Ignore, };
+        JsonSerializer jsonSerializer = new() { NullValueHandling = NullValueHandling.Ignore };
         StringWriter stringWriter = new();
         jsonSerializer.Serialize(stringWriter, data);
         var rv = stringWriter.ToString();

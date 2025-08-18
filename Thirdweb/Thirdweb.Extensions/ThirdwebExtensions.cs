@@ -107,11 +107,9 @@ public static class ThirdwebExtensions
     /// <exception cref="ArgumentNullException">Thrown when the client is null.</exception>
     public static async Task<byte[]> GetNFTImageBytes(this NFT nft, ThirdwebClient client)
     {
-        return client == null
-            ? throw new ArgumentNullException(nameof(client))
-            : string.IsNullOrEmpty(nft.Metadata.Image)
-                ? Array.Empty<byte>()
-                : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image).ConfigureAwait(false);
+        return client == null ? throw new ArgumentNullException(nameof(client))
+            : string.IsNullOrEmpty(nft.Metadata.Image) ? Array.Empty<byte>()
+            : await ThirdwebStorage.Download<byte[]>(client, nft.Metadata.Image).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1238,7 +1236,7 @@ public static class ThirdwebExtensions
             Owner = Constants.ADDRESS_ZERO,
             Type = NFTType.ERC721,
             Supply = 1,
-            QuantityOwned = 1
+            QuantityOwned = 1,
         };
 
         if (fillOwner)
@@ -1272,7 +1270,7 @@ public static class ThirdwebExtensions
 
         return nft with
         {
-            Metadata = nftMetadata
+            Metadata = nftMetadata,
         };
     }
 
@@ -1594,7 +1592,7 @@ public static class ThirdwebExtensions
             activeClaimCondition.Currency, // currency
             activeClaimCondition.PricePerToken, // pricePerToken
             allowlistProof, // allowlistProof
-            Array.Empty<byte>() // data
+            Array.Empty<byte>(), // data
         };
 
         return await ThirdwebContract.Write(wallet, contract, "claim", payableAmount, fnArgs);
@@ -1732,7 +1730,7 @@ public static class ThirdwebExtensions
             activeClaimCondition.Currency, // currency
             activeClaimCondition.PricePerToken, // pricePerToken
             allowlistProof, // allowlistProof
-            Array.Empty<byte>() // data
+            Array.Empty<byte>(), // data
         };
 
         return await ThirdwebContract.Write(wallet, contract, "claim", payableAmount, fnArgs);
@@ -1896,7 +1894,7 @@ public static class ThirdwebExtensions
             activeClaimCondition.Currency, // currency
             activeClaimCondition.PricePerToken, // pricePerToken
             allowlistProof, // allowlistProof
-            Array.Empty<byte>() // data
+            Array.Empty<byte>(), // data
         };
 
         return await ThirdwebContract.Write(wallet, contract, "claim", payableAmount, fnArgs);
@@ -2088,7 +2086,7 @@ public static class ThirdwebExtensions
             Currency = mintRequest.Currency ?? Constants.NATIVE_TOKEN_ADDRESS,
             ValidityStartTimestamp = mintRequest.ValidityStartTimestamp,
             ValidityEndTimestamp = mintRequest.ValidityEndTimestamp > 0 ? mintRequest.ValidityEndTimestamp : Utils.GetUnixTimeStampIn10Years(),
-            Uid = mintRequest.Uid ?? Guid.NewGuid().ToByteArray().PadTo32Bytes()
+            Uid = mintRequest.Uid ?? Guid.NewGuid().ToByteArray().PadTo32Bytes(),
         };
 
         var contractMetadata = await contract.GetMetadata();
@@ -2335,7 +2333,7 @@ public static class ThirdwebExtensions
             Currency = mintRequest.Currency ?? Constants.NATIVE_TOKEN_ADDRESS,
             ValidityStartTimestamp = mintRequest.ValidityStartTimestamp,
             ValidityEndTimestamp = mintRequest.ValidityEndTimestamp > 0 ? mintRequest.ValidityEndTimestamp : Utils.GetUnixTimeStampIn10Years(),
-            Uid = mintRequest.Uid ?? Guid.NewGuid().ToByteArray().PadTo32Bytes()
+            Uid = mintRequest.Uid ?? Guid.NewGuid().ToByteArray().PadTo32Bytes(),
         };
 
         var signature = await EIP712.GenerateSignature_TokenERC721(
@@ -2682,7 +2680,7 @@ public static class ThirdwebExtensions
             Currency = mintRequest.Currency ?? Constants.NATIVE_TOKEN_ADDRESS,
             ValidityStartTimestamp = mintRequest.ValidityStartTimestamp,
             ValidityEndTimestamp = mintRequest.ValidityEndTimestamp > 0 ? mintRequest.ValidityEndTimestamp : Utils.GetUnixTimeStampIn10Years(),
-            Uid = mintRequest.Uid ?? Guid.NewGuid().ToByteArray().PadTo32Bytes()
+            Uid = mintRequest.Uid ?? Guid.NewGuid().ToByteArray().PadTo32Bytes(),
         };
 
         var signature = await EIP712.GenerateSignature_TokenERC1155(

@@ -1,11 +1,46 @@
 ###############################
-# Core EditorConfig Options   #
+#  Core EditorConfig Options  #
 ###############################
 
 root = true
 
 ###############################
-# .NET Coding Conventions     #
+# Generated Code Exclusions   #
+###############################
+
+# Exclude Thirdweb.Api generated files from all linting and formatting rules
+[Thirdweb/Thirdweb.Api/GeneratedClient.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+dotnet_style_qualification_for_field = false
+dotnet_style_qualification_for_property = false
+dotnet_style_qualification_for_method = false
+dotnet_style_qualification_for_event = false
+csharp_style_namespace_declarations = block_scoped
+dotnet_diagnostic.IDE0130.severity = none
+dotnet_diagnostic.IDE0046.severity = none
+dotnet_diagnostic.IDE0045.severity = none
+dotnet_diagnostic.IDE0066.severity = none
+dotnet_diagnostic.IDE0028.severity = none
+dotnet_diagnostic.CA1822.severity = none
+dotnet_diagnostic.IDE0290.severity = none
+# Disable all naming convention rules for generated code
+dotnet_naming_rule.constant_fields_should_be_pascal_case.severity = none
+dotnet_naming_rule.public_members_should_be_pascal_case.severity = none
+dotnet_naming_rule.private_fields_should_have_underscore_prefix.severity = none
+
+###############################
+#    Configurable behaviors   #
+###############################
+
+[*.{cs,csx}]
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+max_line_length = 200
+
+###############################
+#   .NET Coding Conventions   #
 ###############################
 
 [*.{cs,vb}]
@@ -148,3 +183,9 @@ dotnet_diagnostic.CA1822.severity = suggestion
 
 # IDE0290: Use primary constructor
 dotnet_diagnostic.IDE0290.severity = silent
+
+# JSON002: Probable JSON string detected
+dotnet_diagnostic.JSON002.severity = silent
+
+# CS8981: The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
+dotnet_diagnostic.CS8981.severity = suggestion

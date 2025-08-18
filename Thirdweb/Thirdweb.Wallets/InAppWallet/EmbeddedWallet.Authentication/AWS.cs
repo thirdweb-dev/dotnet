@@ -49,7 +49,7 @@ internal class AWS
         {
             AccessKeyId = credentialsResponse.Credentials.AccessKeyId,
             SecretAccessKey = credentialsResponse.Credentials.SecretKey,
-            SessionToken = credentialsResponse.Credentials.SessionToken
+            SessionToken = credentialsResponse.Credentials.SessionToken,
         };
     }
 

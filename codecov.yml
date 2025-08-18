@@ -1,3 +1,4 @@
 ignore:
   - "Thirdweb/Thirdweb.Wallets/InAppWallet"
   - "Thirdweb/Thirdweb.Pay"
+  - "Thirdweb/Thirdweb.Api/GeneratedClient.cs"

@@ -1,11 +1,11 @@
-using System.Text;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.ABI;
-using Nethereum.ABI.FunctionEncoding;
-using Nethereum.Util;
 using System.Collections;
 using System.Numerics;
+using System.Text;
+using Nethereum.ABI;
 using Nethereum.ABI.EIP712;
+using Nethereum.ABI.FunctionEncoding;
+using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Util;
 
 namespace Thirdweb;
 
@@ -268,10 +268,10 @@ public class EIP712Encoder
             Types = new Dictionary<string, MemberDescription[]>
             {
                 [primaryTypeName] = typeMembers.ToArray(),
-                ["EIP712Domain"] = MemberDescriptionFactory.GetTypesMemberDescription(typeof(TDomain))["EIP712Domain"]
+                ["EIP712Domain"] = MemberDescriptionFactory.GetTypesMemberDescription(typeof(TDomain))["EIP712Domain"],
             },
             Message = typeValues.ToArray(),
-            Domain = domain
+            Domain = domain,
         };
 
         return result;

@@ -358,7 +358,7 @@ public class PrivateKeyWallet : IThirdwebWallet
                         RLP.EncodeElement(authorizationList.Nonce.HexToNumber().ToByteArrayForRLPEncoding()),
                         RLP.EncodeElement(authorizationList.YParity is "0x00" or "0x0" or "0x" ? Array.Empty<byte>() : authorizationList.YParity.HexToBytes()),
                         RLP.EncodeElement(authorizationList.R.HexToBytes().TrimZeroes()),
-                        RLP.EncodeElement(authorizationList.S.HexToBytes().TrimZeroes())
+                        RLP.EncodeElement(authorizationList.S.HexToBytes().TrimZeroes()),
                     };
                     encodedAuthorizationList.Add(RLP.EncodeList(encodedItem.ToArray()));
                 }
@@ -467,7 +467,7 @@ public class PrivateKeyWallet : IThirdwebWallet
         {
             RLP.EncodeElement(chainId.ToByteArrayForRLPEncoding()),
             RLP.EncodeElement(contractAddress.HexToBytes()),
-            RLP.EncodeElement(nonce.ToByteArrayForRLPEncoding())
+            RLP.EncodeElement(nonce.ToByteArrayForRLPEncoding()),
         };
         var encodedBytes = RLP.EncodeList(encodedData.ToArray());
         var returnElements = new byte[encodedBytes.Length + 1];

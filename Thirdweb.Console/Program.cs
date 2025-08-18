@@ -1,45 +1,54 @@
 ﻿#pragma warning disable IDE0005
 #pragma warning disable IDE0059
 
-using System.Diagnostics;
-using System.Numerics;
-using System.Text;
 using dotenv.net;
-using Nethereum.ABI;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Hex.HexTypes;
-using Nethereum.Util;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Thirdweb;
-using Thirdweb.AccountAbstraction;
-using Thirdweb.AI;
-using Thirdweb.Bridge;
-using Thirdweb.Indexer;
-using Thirdweb.Pay;
 
 DotEnv.Load();
 
 // Do not use secret keys client side, use client id/bundle id instead
 var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 
-// Do not use private keys client side, use InAppWallet/SmartWallet instead
-var privateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY");
-
 // Fetch timeout options are optional, default is 120000ms
 var client = ThirdwebClient.Create(secretKey: secretKey);
+
+#region Basic Wallet Interaction
 
 //  Create a private key wallet
 var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
-// var walletAddress = await privateKeyWallet.GetAddress();
-// Console.WriteLine($"PK Wallet address: {walletAddress}");
+var walletAddress = await privateKeyWallet.GetAddress();
+Console.WriteLine($"PK Wallet address: {walletAddress}");
 
-#region Contract Interaction
+#endregion
+
+#region Basic Contract Interaction
 
 // var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
 // var nfts = await contract.ERC721_GetAllNFTs();
 // Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
+
+#endregion
+
+#region Deploy Contract
+
+// var serverWallet = await ServerWallet.Create(client: client, label: "TestFromDotnet");
+
+// var abi =
+//     "[ { \"inputs\": [], \"name\": \"welcome\", \"outputs\": [ { \"internalType\": \"string\", \"name\": \"\", \"type\": \"string\" } ], \"stateMutability\": \"pure\", \"type\": \"function\" } ]";
+
+// var contractAddress = await ThirdwebContract.Deploy(
+//     client: client,
+//     chainId: 11155111,
+//     serverWalletAddress: await serverWallet.GetAddress(),
+//     bytecode: "6080604052348015600e575f5ffd5b5061014e8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063b627cf3b1461002d575b5f5ffd5b61003561004b565b60405161004291906100f8565b60405180910390f35b60606040518060400160405280601481526020017f57656c636f6d6520746f20746869726477656221000000000000000000000000815250905090565b5f81519050919050565b5f82825260208201905092915050565b8281835e5f83830152505050565b5f601f19601f8301169050919050565b5f6100ca82610088565b6100d48185610092565b93506100e48185602086016100a2565b6100ed816100b0565b840191505092915050565b5f6020820190508181035f83015261011081846100c0565b90509291505056fea264697066735822122001498e9d7d6125ce22613ef32fdb7e8e03bf11ad361d7b00e210b82d7b7e0d4464736f6c634300081e0033",
+//     abi: abi
+// );
+// Console.WriteLine($"Contract deployed at: {contractAddress}");
+
+// var contract = await ThirdwebContract.Create(client: client, address: contractAddress, chain: 11155111, abi: abi);
+// var welcomeMessage = await contract.Read<string>("welcome");
+// Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
 
 #endregion
 
@@ -325,18 +334,11 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region AA ZkSync
 
-// var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 4654, gasless: true);
+var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
 
-// var hash = await zkSmartWallet.SendTransaction(
-//     new ThirdwebTransactionInput(4654)
-//     {
-//         To = await zkSmartWallet.GetAddress(),
-//         Value = new HexBigInteger(BigInteger.Zero),
-//         Data = "0x",
-//     }
-// );
+var hash = await zkSmartWallet.SendTransaction(new ThirdwebTransactionInput(chainId: 11124, to: await zkSmartWallet.GetAddress(), value: 0, data: "0x"));
 
-// Console.WriteLine($"Transaction hash: {hash}");
+Console.WriteLine($"Transaction hash: {hash}");
 
 #endregion
 

@@ -44,8 +44,8 @@ public partial class ThirdwebPay
                         Reason = "Unknown",
                         Code = "Unknown",
                         Stack = "Unknown",
-                        StatusCode = (int)response.StatusCode
-                    }
+                        StatusCode = (int)response.StatusCode,
+                    },
                 };
             }
 

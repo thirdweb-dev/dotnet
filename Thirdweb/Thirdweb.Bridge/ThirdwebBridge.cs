@@ -73,7 +73,7 @@ public class ThirdwebBridge
             { "destinationChainId", destinationChainId.ToString() },
             { "destinationTokenAddress", destinationTokenAddress },
             { "buyAmountWei", buyAmountWei.ToString() },
-            { "maxSteps", maxSteps.ToString() }
+            { "maxSteps", maxSteps.ToString() },
         };
         url = AppendQueryParams(url, queryParams);
 
@@ -150,7 +150,7 @@ public class ThirdwebBridge
             sender,
             receiver,
             maxSteps,
-            purchaseData
+            purchaseData,
         };
 
         var url = $"{Constants.BRIDGE_API_URL}/v1/buy/prepare";
@@ -219,7 +219,7 @@ public class ThirdwebBridge
             { "destinationChainId", destinationChainId.ToString() },
             { "destinationTokenAddress", destinationTokenAddress },
             { "sellAmountWei", sellAmountWei.ToString() },
-            { "maxSteps", maxSteps.ToString() }
+            { "maxSteps", maxSteps.ToString() },
         };
         url = AppendQueryParams(url, queryParams);
 
@@ -296,7 +296,7 @@ public class ThirdwebBridge
             sender,
             receiver,
             maxSteps,
-            purchaseData
+            purchaseData,
         };
 
         var url = $"{Constants.BRIDGE_API_URL}/v1/sell/prepare";
@@ -372,7 +372,7 @@ public class ThirdwebBridge
             sender,
             receiver,
             feePayer,
-            purchaseData
+            purchaseData,
         };
 
         var url = $"{Constants.BRIDGE_API_URL}/v1/transfer/prepare";
@@ -439,7 +439,7 @@ public class ThirdwebBridge
             currency,
             maxSteps,
             excludeChainIds = excludeChainIds != null && excludeChainIds.Count > 0 ? excludeChainIds.Select(id => id.ToString()).ToList() : null,
-            purchaseData
+            purchaseData,
         };
 
         var url = $"{Constants.BRIDGE_API_URL}/v1/onramp/prepare";

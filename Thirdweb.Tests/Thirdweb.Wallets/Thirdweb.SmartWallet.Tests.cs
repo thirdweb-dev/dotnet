@@ -34,8 +34,8 @@ public class SmartWalletTests : BaseTests
         var client = this.Client;
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         await privateKeyAccount.Disconnect();
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614)
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614)
         );
         Assert.Equal("SmartAccount.Connect: Personal account must be connected.", ex.Message);
     }
@@ -85,7 +85,7 @@ public class SmartWalletTests : BaseTests
     public async Task SendTransaction_Success()
     {
         var account = await this.GetSmartAccount();
-        var tx = await account.SendTransaction(new ThirdwebTransactionInput(421614) { To = await account.GetAddress(), });
+        var tx = await account.SendTransaction(new ThirdwebTransactionInput(421614) { To = await account.GetAddress() });
         Assert.NotNull(tx);
     }
 
@@ -95,7 +95,7 @@ public class SmartWalletTests : BaseTests
         var client = ThirdwebClient.Create(clientId: this.ClientIdBundleIdOnly, bundleId: this.BundleIdBundleIdOnly);
         var privateKeyAccount = await PrivateKeyWallet.Generate(client);
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-        var tx = await smartAccount.SendTransaction(new ThirdwebTransactionInput(421614) { To = await smartAccount.GetAddress(), });
+        var tx = await smartAccount.SendTransaction(new ThirdwebTransactionInput(421614) { To = await smartAccount.GetAddress() });
         Assert.NotNull(tx);
     }
 
@@ -289,7 +289,7 @@ public class SmartWalletTests : BaseTests
             entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
         );
 
-        var hash07 = await smartWallet07.SendTransaction(new ThirdwebTransactionInput(11155111) { To = await smartWallet07.GetAddress(), });
+        var hash07 = await smartWallet07.SendTransaction(new ThirdwebTransactionInput(11155111) { To = await smartWallet07.GetAddress() });
 
         Assert.NotNull(hash07);
         Assert.True(hash07.Length == 66);
@@ -306,8 +306,8 @@ public class SmartWalletTests : BaseTests
             entryPoint: Constants.ENTRYPOINT_ADDRESS_V07
         );
 
-        var hash07 = smartWallet07.ExecuteTransaction(new ThirdwebTransactionInput(11155111) { To = await smartWallet07.GetAddress(), });
-        var hash07_2 = smartWallet07.ExecuteTransaction(new ThirdwebTransactionInput(11155111) { To = await smartWallet07.GetAddress(), });
+        var hash07 = smartWallet07.ExecuteTransaction(new ThirdwebTransactionInput(11155111) { To = await smartWallet07.GetAddress() });
+        var hash07_2 = smartWallet07.ExecuteTransaction(new ThirdwebTransactionInput(11155111) { To = await smartWallet07.GetAddress() });
 
         var hashes = await Task.WhenAll(hash07, hash07_2);
 

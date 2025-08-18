@@ -1,10 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFrameworks>$(DefaultTargetFrameworks)</TargetFrameworks>
-    <PackageVersion>$(DefaultVersion)</PackageVersion>
-    <AssemblyVersion>$(DefaultVersion)</AssemblyVersion>
-    <FileVersion>$(DefaultVersion)</FileVersion>
+    <TargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0</TargetFrameworks>
+    <PackageVersion>2.24.1</PackageVersion>
+    <AssemblyVersion>2.24.1</AssemblyVersion>
+    <FileVersion>2.24.1</FileVersion>
+    <LangVersion>latest</LangVersion>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+    <ImplicitUsings>enable</ImplicitUsings>
     <PackageId>Thirdweb</PackageId>
     <Title>Thirdweb</Title>
     <Authors>0xfirekeeper</Authors>
@@ -18,27 +20,24 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
-
   <PropertyGroup>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" />
-    <PackageReference Include="Nethereum.ABI" />
-    <PackageReference Include="Nethereum.Hex" />
-    <PackageReference Include="Nethereum.Contracts" />
-    <PackageReference Include="Nethereum.Signer" />
-    <PackageReference Include="Portable.BouncyCastle" />
-    <PackageReference Include="Nethereum.Signer.EIP712" />
-    <PackageReference Include="Nethereum.HdWallet" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Nethereum.ABI" Version="4.19.0" />
+    <PackageReference Include="Nethereum.Hex" Version="4.19.0" />
+    <PackageReference Include="Nethereum.Contracts" Version="4.19.0" />
+    <PackageReference Include="Nethereum.Signer" Version="4.19.0" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
+    <PackageReference Include="Nethereum.Signer.EIP712" Version="4.19.0" />
+    <PackageReference Include="Nethereum.HdWallet" Version="4.14.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
-
   <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\resources\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
-
 </Project>

@@ -625,7 +625,7 @@ public class Call
         {
             target = this.Target,
             value = this.Value,
-            data = this.Data != null ? this.Data.BytesToHex() : "0x"
+            data = this.Data != null ? this.Data.BytesToHex() : "0x",
         };
     }
 }
