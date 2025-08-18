@@ -186,3 +186,6 @@ dotnet_diagnostic.IDE0290.severity = silent
 
 # JSON002: Probable JSON string detected
 dotnet_diagnostic.JSON002.severity = silent
+
+# CS8981: The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
+dotnet_diagnostic.CS8981.severity = suggestion

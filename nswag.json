@@ -10,6 +10,7 @@
   "codeGenerators": {
     "openApiToCSharpClient": {
       "clientBaseClass": null,
+      "httpClientType": "ThirdwebHttpClientWrapper",
       "generateClientClasses": true,
       "generateClientInterfaces": false,
       "generateDtoTypes": true,
@@ -19,7 +20,6 @@
       "exceptionClass": "ThirdwebApiException",
       "wrapDtoExceptions": true,
       "useHttpClientCreationMethod": false,
-      "httpClientType": "System.Net.Http.HttpClient",
       "useHttpRequestMessageCreationMethod": false,
       "useBaseUrl": true,
       "generateBaseUrlProperty": true,

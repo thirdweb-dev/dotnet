@@ -19,7 +19,6 @@
 #pragma warning disable 8604 // Disable "CS8604 Possible null reference argument for parameter"
 #pragma warning disable 8625 // Disable "CS8625 Cannot convert null literal to non-nullable reference type"
 #pragma warning disable 8765 // Disable "CS8765 Nullability of type of parameter doesn't match overridden member (possibly because of nullability attributes)."
-#pragma warning disable 8981 // Disable "CS8981 The type name only contains lower-cased ascii characters."
 
 namespace Thirdweb.Api
 {
@@ -32,12 +31,12 @@ namespace Thirdweb.Api
         private string _baseUrl;
         #pragma warning restore 8618
 
-        private System.Net.Http.HttpClient _httpClient;
+        private ThirdwebHttpClientWrapper _httpClient;
         private static System.Lazy<Newtonsoft.Json.JsonSerializerSettings> _settings = new System.Lazy<Newtonsoft.Json.JsonSerializerSettings>(CreateSerializerSettings, true);
         private Newtonsoft.Json.JsonSerializerSettings _instanceSettings;
 
     #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public ThirdwebApiClient(System.Net.Http.HttpClient httpClient)
+        public ThirdwebApiClient(ThirdwebHttpClientWrapper httpClient)
     #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             BaseUrl = "https://api.thirdweb.com";
@@ -69,9 +68,9 @@ namespace Thirdweb.Api
 
         partial void Initialize();
 
-        partial void PrepareRequest(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, string url);
-        partial void PrepareRequest(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, System.Text.StringBuilder urlBuilder);
-        partial void ProcessResponse(System.Net.Http.HttpClient client, System.Net.Http.HttpResponseMessage response);
+        partial void PrepareRequest(ThirdwebHttpClientWrapper client, System.Net.Http.HttpRequestMessage request, string url);
+        partial void PrepareRequest(ThirdwebHttpClientWrapper client, System.Net.Http.HttpRequestMessage request, System.Text.StringBuilder urlBuilder);
+        partial void ProcessResponse(ThirdwebHttpClientWrapper client, System.Net.Http.HttpResponseMessage response);
 
         /// <summary>
         /// Initiate Auth
@@ -91,6 +90,8 @@ namespace Thirdweb.Api
         /// <br/>2. Provide method-specific parameters
         /// <br/>3. Receive challenge data to complete authentication
         /// <br/>4. Use the `/complete` endpoint to finish the process
+        /// <br/>
+        /// <br/>NOTE: for custom authentication (JWT, auth-payload) and for guest authentication, you can skip this step and use the `/complete` endpoint directly.
         /// <br/>
         /// <br/>**Authentication:** Requires `x-client-id` header for frontend usage or `x-secret-key` for backend usage.
         /// </remarks>
@@ -120,6 +121,8 @@ namespace Thirdweb.Api
         /// <br/>2. Provide method-specific parameters
         /// <br/>3. Receive challenge data to complete authentication
         /// <br/>4. Use the `/complete` endpoint to finish the process
+        /// <br/>
+        /// <br/>NOTE: for custom authentication (JWT, auth-payload) and for guest authentication, you can skip this step and use the `/complete` endpoint directly.
         /// <br/>
         /// <br/>**Authentication:** Requires `x-client-id` header for frontend usage or `x-secret-key` for backend usage.
         /// </remarks>
@@ -220,7 +223,7 @@ namespace Thirdweb.Api
         /// <br/>- **Passkey** - Provide the WebAuthn signature response
         /// <br/>- **SIWE** - Submit your signed Ethereum message
         /// <br/>- **Guest** - Create an ephemeral guest wallet
-        /// <br/>- **Custom** - Send your JWT token or custom payload
+        /// <br/>- **Custom (JWT, auth-payload)** - Send your JWT token or custom payload
         /// <br/>
         /// <br/>**Response:**
         /// <br/>- `isNewUser` - Whether this is a new wallet creation
@@ -249,7 +252,7 @@ namespace Thirdweb.Api
         /// <br/>- **Passkey** - Provide the WebAuthn signature response
         /// <br/>- **SIWE** - Submit your signed Ethereum message
         /// <br/>- **Guest** - Create an ephemeral guest wallet
-        /// <br/>- **Custom** - Send your JWT token or custom payload
+        /// <br/>- **Custom (JWT, auth-payload)** - Send your JWT token or custom payload
         /// <br/>
         /// <br/>**Response:**
         /// <br/>- `isNewUser` - Whether this is a new wallet creation
@@ -959,17 +962,18 @@ namespace Thirdweb.Api
         /// Get Balance
         /// </summary>
         /// <remarks>
-        /// Get native token balance for a wallet address across multiple blockchain networks. This endpoint retrieves native token balances (ETH, MATIC, BNB, etc.) for a given wallet address on multiple chains simultaneously, making it efficient for cross-chain native balance checking.
+        /// Get native or ERC20 token balance for a wallet address. Can retrieve live balances for any ERC20 token on a signle chain, or native token balances across multiple chains.
         /// <br/>
         /// <br/>**Authentication**: Pass `x-client-id` header for frontend usage from allowlisted origins or `x-secret-key` for backend usage.
         /// </remarks>
         /// <param name="address">A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).</param>
         /// <param name="chainId">Chain ID(s) to request balance data for. You can specify multiple chain IDs by repeating the parameter, up to a maximum of 50. Example: ?chainId=1&amp;chainId=137</param>
+        /// <param name="tokenAddress">The token contract address. Omit for native token (ETH, MATIC, etc.).</param>
         /// <returns>Wallet native balances retrieved successfully. Returns detailed native token balance information for each chain including token metadata and formatted values.</returns>
         /// <exception cref="ThirdwebApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response8> GetWalletBalanceAsync(string address, System.Collections.Generic.IEnumerable<int> chainId)
+        public virtual System.Threading.Tasks.Task<Response8> GetWalletBalanceAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, string tokenAddress)
         {
-            return GetWalletBalanceAsync(address, chainId, System.Threading.CancellationToken.None);
+            return GetWalletBalanceAsync(address, chainId, tokenAddress, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -977,15 +981,16 @@ namespace Thirdweb.Api
         /// Get Balance
         /// </summary>
         /// <remarks>
-        /// Get native token balance for a wallet address across multiple blockchain networks. This endpoint retrieves native token balances (ETH, MATIC, BNB, etc.) for a given wallet address on multiple chains simultaneously, making it efficient for cross-chain native balance checking.
+        /// Get native or ERC20 token balance for a wallet address. Can retrieve live balances for any ERC20 token on a signle chain, or native token balances across multiple chains.
         /// <br/>
         /// <br/>**Authentication**: Pass `x-client-id` header for frontend usage from allowlisted origins or `x-secret-key` for backend usage.
         /// </remarks>
         /// <param name="address">A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).</param>
         /// <param name="chainId">Chain ID(s) to request balance data for. You can specify multiple chain IDs by repeating the parameter, up to a maximum of 50. Example: ?chainId=1&amp;chainId=137</param>
+        /// <param name="tokenAddress">The token contract address. Omit for native token (ETH, MATIC, etc.).</param>
         /// <returns>Wallet native balances retrieved successfully. Returns detailed native token balance information for each chain including token metadata and formatted values.</returns>
         /// <exception cref="ThirdwebApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response8> GetWalletBalanceAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response8> GetWalletBalanceAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, string tokenAddress, System.Threading.CancellationToken cancellationToken)
         {
             if (address == null)
                 throw new System.ArgumentNullException("address");
@@ -1016,6 +1021,10 @@ namespace Thirdweb.Api
                     }
                     urlBuilder_.Length--;
                     urlBuilder_.Append("&");
+                    if (tokenAddress != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("tokenAddress")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(tokenAddress, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
                     urlBuilder_.Length--;
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -5273,6 +5282,12 @@ namespace Thirdweb.Api
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Recipient { get; set; }
 
+        /// <summary>
+        /// App specific purchase data for this payment
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("purchaseData", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public object PurchaseData { get; set; }
+
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
         [Newtonsoft.Json.JsonExtensionData]
@@ -5925,7 +5940,7 @@ namespace Thirdweb.Api
     }
 
     /// <summary>
-    /// Successful product creation response containing the product ID and link to purchase the product
+    /// Successful payment creation response containing the payment ID and link to purchase the product
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Response27
@@ -7308,11 +7323,11 @@ namespace Thirdweb.Api
     public partial class Result23
     {
         /// <summary>
-        /// The product ID
+        /// The payment ID
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("productId", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ProductId { get; set; }
+        public string Id { get; set; }
 
         /// <summary>
         /// The link to purchase the product

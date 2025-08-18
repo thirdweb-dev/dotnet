@@ -78,16 +78,9 @@ public class ThirdwebClient
 
         this.RpcOverrides = rpcOverrides;
 
-        // Initialize the API client
-        var apiHttpClient = new HttpClient { BaseAddress = new Uri("https://api.thirdweb.com") };
-
-        // Copy headers from ThirdwebClient to API client
-        foreach (var header in defaultHeaders)
-        {
-            _ = apiHttpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value);
-        }
-
-        this.Api = new ThirdwebApiClient(apiHttpClient);
+        // Initialize the API client with the wrapped HTTP client
+        var wrappedHttpClient = new ThirdwebHttpClientWrapper(this.HttpClient);
+        this.Api = new ThirdwebApiClient(wrappedHttpClient);
     }
 
     /// <summary>

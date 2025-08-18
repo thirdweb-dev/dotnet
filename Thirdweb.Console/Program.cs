@@ -14,23 +14,23 @@ var client = ThirdwebClient.Create(secretKey: secretKey);
 
 #region Deploy Contract
 
-// var serverWallet = await ServerWallet.Create(client: client, label: "TestFromDotnet");
+var serverWallet = await ServerWallet.Create(client: client, label: "TestFromDotnet");
 
-// var abi =
-//     "[ { \"inputs\": [], \"name\": \"welcome\", \"outputs\": [ { \"internalType\": \"string\", \"name\": \"\", \"type\": \"string\" } ], \"stateMutability\": \"pure\", \"type\": \"function\" } ]";
+var abi =
+    "[ { \"inputs\": [], \"name\": \"welcome\", \"outputs\": [ { \"internalType\": \"string\", \"name\": \"\", \"type\": \"string\" } ], \"stateMutability\": \"pure\", \"type\": \"function\" } ]";
 
-// var contractAddress = await ThirdwebContract.Deploy(
-//     client: client,
-//     chainId: 421614,
-//     serverWalletAddress: await serverWallet.GetAddress(),
-//     bytecode: "6080604052348015600e575f5ffd5b5061014e8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063b627cf3b1461002d575b5f5ffd5b61003561004b565b60405161004291906100f8565b60405180910390f35b60606040518060400160405280601481526020017f57656c636f6d6520746f20746869726477656221000000000000000000000000815250905090565b5f81519050919050565b5f82825260208201905092915050565b8281835e5f83830152505050565b5f601f19601f8301169050919050565b5f6100ca82610088565b6100d48185610092565b93506100e48185602086016100a2565b6100ed816100b0565b840191505092915050565b5f6020820190508181035f83015261011081846100c0565b90509291505056fea264697066735822122001498e9d7d6125ce22613ef32fdb7e8e03bf11ad361d7b00e210b82d7b7e0d4464736f6c634300081e0033",
-//     abi: abi
-// );
-// Console.WriteLine($"Contract deployed at: {contractAddress}");
+var contractAddress = await ThirdwebContract.Deploy(
+    client: client,
+    chainId: 11155111,
+    serverWalletAddress: await serverWallet.GetAddress(),
+    bytecode: "6080604052348015600e575f5ffd5b5061014e8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063b627cf3b1461002d575b5f5ffd5b61003561004b565b60405161004291906100f8565b60405180910390f35b60606040518060400160405280601481526020017f57656c636f6d6520746f20746869726477656221000000000000000000000000815250905090565b5f81519050919050565b5f82825260208201905092915050565b8281835e5f83830152505050565b5f601f19601f8301169050919050565b5f6100ca82610088565b6100d48185610092565b93506100e48185602086016100a2565b6100ed816100b0565b840191505092915050565b5f6020820190508181035f83015261011081846100c0565b90509291505056fea264697066735822122001498e9d7d6125ce22613ef32fdb7e8e03bf11ad361d7b00e210b82d7b7e0d4464736f6c634300081e0033",
+    abi: abi
+);
+Console.WriteLine($"Contract deployed at: {contractAddress}");
 
-// var contract = await ThirdwebContract.Create(client: client, address: contractAddress, chain: 421614, abi: abi);
-// var welcomeMessage = await contract.Read<string>("welcome");
-// Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
+var contract = await ThirdwebContract.Create(client: client, address: contractAddress, chain: 11155111, abi: abi);
+var welcomeMessage = await contract.Read<string>("welcome");
+Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
 
 #endregion
 
