@@ -408,7 +408,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 // Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
 
 // // Double check that it was upgraded
-// var isDelegated = await Utils.IsDelegatedAccount(client, chain, smartEoaAddress);
+// var isDelegated = await Utils.IsDeployed(client, chain, smartEoaAddress);
 // Console.WriteLine($"Is delegated: {isDelegated}");
 
 // // Create a session key
