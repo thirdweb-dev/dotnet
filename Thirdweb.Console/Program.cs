@@ -1,7 +1,9 @@
 ﻿#pragma warning disable IDE0005
 #pragma warning disable IDE0059
 
+using System.Diagnostics;
 using dotenv.net;
+using Newtonsoft.Json;
 using Thirdweb;
 
 DotEnv.Load();
@@ -14,8 +16,8 @@ var client = ThirdwebClient.Create(secretKey: secretKey);
 
 #region Basic Wallet Interaction
 
-// //  Create a private key wallet
-// var privateKeyWallet = await PrivateKeyWallet.Generate(client);
+//  Create a private key wallet
+var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 // var walletAddress = await privateKeyWallet.GetAddress();
 // Console.WriteLine($"PK Wallet address: {walletAddress}");
@@ -744,7 +746,7 @@ var client = ThirdwebClient.Create(secretKey: secretKey);
 
 #region InAppWallet - OAuth
 
-// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Github);
+// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.TikTok);
 // if (!await inAppWalletOAuth.IsConnected())
 // {
 //     _ = await inAppWalletOAuth.LoginWithOauth(

@@ -200,7 +200,7 @@ internal partial class Server : ServerBase
     // login/oauthprovider
     internal override Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform)
     {
-        return Task.FromResult(MakeUri2024($"/login/{authProvider}", new Dictionary<string, string> { { "clientId", this._clientId }, { "platform", platform } }).ToString());
+        return Task.FromResult(MakeUri2024($"/login/{authProvider.ToLower()}", new Dictionary<string, string> { { "clientId", this._clientId }, { "platform", platform } }).ToString());
     }
 
     // login/email

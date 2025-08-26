@@ -137,6 +137,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             Thirdweb.AuthProvider.Line => "Line",
             Thirdweb.AuthProvider.Guest => "Guest",
             Thirdweb.AuthProvider.X => "X",
+            Thirdweb.AuthProvider.TikTok => "TikTok",
             Thirdweb.AuthProvider.Coinbase => "Coinbase",
             Thirdweb.AuthProvider.Github => "Github",
             Thirdweb.AuthProvider.Twitch => "Twitch",
@@ -744,6 +745,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             case "Telegram":
             case "Line":
             case "X":
+            case "TikTok":
             case "Coinbase":
             case "Github":
             case "Twitch":
@@ -871,7 +873,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         var platform = this.HttpClient?.Headers?["x-sdk-name"] == "UnitySDK_WebGL" ? "web" : "dotnet";
         var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
         var loginUrl = await this.EmbeddedWallet.FetchHeadlessOauthLoginLinkAsync(this.AuthProvider, platform).ConfigureAwait(false);
-        loginUrl = platform == "web" ? loginUrl : $"{loginUrl}&redirectUrl={redirectUrl}&developerClientId={this.Client.ClientId}&authOption={this.AuthProvider}";
+        loginUrl = platform == "web" ? loginUrl : $"{loginUrl}&redirectUrl={redirectUrl}&developerClientId={this.Client.ClientId}&authOption={this.AuthProvider.ToLower()}";
         if (!string.IsNullOrEmpty(this._ecosystemId))
         {
             loginUrl = $"{loginUrl}&ecosystemId={this._ecosystemId}";

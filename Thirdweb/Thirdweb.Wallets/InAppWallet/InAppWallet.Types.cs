@@ -20,6 +20,7 @@ public enum AuthProvider
     Line,
     Guest,
     X,
+    TikTok,
     Coinbase,
     Github,
     Twitch,
