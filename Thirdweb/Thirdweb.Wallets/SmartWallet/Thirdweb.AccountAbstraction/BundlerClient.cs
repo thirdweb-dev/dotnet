@@ -6,6 +6,12 @@ namespace Thirdweb.AccountAbstraction;
 public static class BundlerClient
 {
     // EIP 7702 requests
+    public static async Task<TwGetDelegationContractResponse> TwGetDelegationContract(ThirdwebClient client, string url, int requestId)
+    {
+        var response = await BundlerRequest(client, url, requestId, "tw_getDelegationContract").ConfigureAwait(false);
+        return JsonConvert.DeserializeObject<TwGetDelegationContractResponse>(response.Result.ToString());
+    }
+
     public static async Task<TwExecuteResponse> TwExecute(
         ThirdwebClient client,
         string url,

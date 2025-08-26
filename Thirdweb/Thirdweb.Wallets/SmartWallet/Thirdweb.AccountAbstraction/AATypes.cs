@@ -240,6 +240,12 @@ public class EthGetUserOperationReceiptResponse
     public ThirdwebTransactionReceipt Receipt { get; set; }
 }
 
+public class TwGetDelegationContractResponse
+{
+    [JsonProperty("delegationContract")]
+    public string DelegationContract { get; set; }
+}
+
 public class TwExecuteResponse
 {
     [JsonProperty("queueId")]
