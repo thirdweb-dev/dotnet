@@ -1332,10 +1332,10 @@ public static partial class Utils
         return receipt;
     }
 
-    public static async Task<bool> IsDelegatedAccount(ThirdwebClient client, BigInteger chainId, string address)
+    public static async Task<bool> IsDelegatedAccount(ThirdwebClient client, BigInteger chainId, string address, string delegationContract)
     {
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var code = await rpc.SendRequestAsync<string>("eth_getCode", address, "latest");
-        return code.Equals($"0xef0100{Constants.MINIMAL_ACCOUNT_7702[2..]}", StringComparison.OrdinalIgnoreCase);
+        return code.Equals($"0xef0100{delegationContract[2..]}", StringComparison.OrdinalIgnoreCase);
     }
 }

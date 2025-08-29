@@ -20,9 +20,10 @@ public class InAppWallet : EcosystemWallet
         string address,
         string legacyEncryptionKey,
         string walletSecret,
-        ExecutionMode executionMode
+        ExecutionMode executionMode,
+        string delegationContractAddress
     )
-        : base(null, null, client, embeddedWallet, httpClient, email, phoneNumber, authProvider, siweSigner, legacyEncryptionKey, walletSecret, executionMode)
+        : base(null, null, client, embeddedWallet, httpClient, email, phoneNumber, authProvider, siweSigner, legacyEncryptionKey, walletSecret, executionMode, delegationContractAddress)
     {
         this.Address = address;
     }
@@ -68,7 +69,8 @@ public class InAppWallet : EcosystemWallet
             ecoWallet.Address,
             ecoWallet.LegacyEncryptionKey,
             ecoWallet.WalletSecret,
-            ecoWallet.ExecutionMode
+            ecoWallet.ExecutionMode,
+            ecoWallet.DelegationContractAddress
         );
     }
 }

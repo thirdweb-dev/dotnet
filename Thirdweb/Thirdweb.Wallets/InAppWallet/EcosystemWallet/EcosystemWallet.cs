@@ -39,6 +39,7 @@ public partial class EcosystemWallet : IThirdwebWallet
 
     internal string Address;
     internal ExecutionMode ExecutionMode;
+    internal string DelegationContractAddress;
 
     private readonly string _ecosystemId;
     private readonly string _ecosystemPartnerId;
@@ -60,7 +61,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         IThirdwebWallet siweSigner,
         string legacyEncryptionKey,
         string walletSecret,
-        ExecutionMode executionMode
+        ExecutionMode executionMode,
+        string delegationContractAddress
     )
     {
         this.Client = client;
@@ -76,7 +78,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         this.WalletSecret = walletSecret;
         this.ExecutionMode = executionMode;
         this.AccountType = executionMode == ExecutionMode.EOA ? ThirdwebAccountType.PrivateKeyAccount : ThirdwebAccountType.ExternalAccount;
-        ;
+        this.DelegationContractAddress = delegationContractAddress;
     }
 
     #region Creation
@@ -117,6 +119,8 @@ public partial class EcosystemWallet : IThirdwebWallet
         {
             throw new ArgumentNullException(nameof(client), "Client cannot be null.");
         }
+
+        var delegationContractResponse = await BundlerClient.TwGetDelegationContract(client: client, url: $"https://1.bundler.thirdweb.com", requestId: 7702);
 
         if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber) && authProvider == Thirdweb.AuthProvider.Default)
         {
@@ -193,7 +197,8 @@ public partial class EcosystemWallet : IThirdwebWallet
                 siweSigner,
                 legacyEncryptionKey,
                 walletSecret,
-                executionMode
+                executionMode,
+                delegationContractResponse.DelegationContract
             )
             {
                 Address = userAddress,
@@ -214,7 +219,8 @@ public partial class EcosystemWallet : IThirdwebWallet
                 siweSigner,
                 legacyEncryptionKey,
                 walletSecret,
-                executionMode
+                executionMode,
+                delegationContractResponse.DelegationContract
             )
             {
                 Address = null,
@@ -1294,9 +1300,9 @@ public partial class EcosystemWallet : IThirdwebWallet
     {
         var userWalletAddress = await this.GetAddress();
         var userContract = await ThirdwebContract.Create(this.Client, userWalletAddress, transaction.ChainId, Constants.MINIMAL_ACCOUNT_7702_ABI);
-        var needsDelegation = !await Utils.IsDelegatedAccount(this.Client, transaction.ChainId, userWalletAddress);
+        var needsDelegation = !await Utils.IsDelegatedAccount(this.Client, transaction.ChainId, userWalletAddress, this.DelegationContractAddress);
         EIP7702Authorization? authorization = needsDelegation
-            ? await this.SignAuthorization(transaction.ChainId, Constants.MINIMAL_ACCOUNT_7702, willSelfExecute: this.ExecutionMode != ExecutionMode.EIP7702Sponsored)
+            ? await this.SignAuthorization(transaction.ChainId, this.DelegationContractAddress, willSelfExecute: this.ExecutionMode != ExecutionMode.EIP7702Sponsored)
             : null;
 
         var calls = new List<Call>
@@ -1337,7 +1343,7 @@ public partial class EcosystemWallet : IThirdwebWallet
                     eoaAddress: userWalletAddress,
                     wrappedCalls: wrappedCalls,
                     signature: signature,
-                    authorization: authorization != null && !await Utils.IsDelegatedAccount(this.Client, transaction.ChainId, userWalletAddress) ? authorization : null
+                    authorization: authorization != null && !await Utils.IsDelegatedAccount(this.Client, transaction.ChainId, userWalletAddress, this.DelegationContractAddress) ? authorization : null
                 );
                 var queueId = response?.QueueId;
                 string txHash = null;
@@ -1473,7 +1479,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             throw new InvalidOperationException("This operation is only supported for EIP7702 and EIP7702Sponsored execution modes.");
         }
 
-        if (!await Utils.IsDelegatedAccount(this.Client, chainId, this.Address).ConfigureAwait(false))
+        if (!await Utils.IsDelegatedAccount(this.Client, chainId, this.Address, this.DelegationContractAddress).ConfigureAwait(false))
         {
             if (ensureDelegated)
             {
