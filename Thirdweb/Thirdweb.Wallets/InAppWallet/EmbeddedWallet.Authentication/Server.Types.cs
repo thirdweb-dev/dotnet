@@ -6,13 +6,12 @@ internal partial class Server
 {
     internal class VerifyResult
     {
-        internal VerifyResult(string authProvider, bool isNewUser, string authToken, string walletUserId, string recoveryCode, string email, string phoneNumber, string authIdentifier)
+        internal VerifyResult(string authProvider, bool isNewUser, string authToken, string walletUserId, string email, string phoneNumber, string authIdentifier)
         {
             this.AuthProvider = authProvider;
             this.IsNewUser = isNewUser;
             this.AuthToken = authToken;
             this.WalletUserId = walletUserId;
-            this.RecoveryCode = recoveryCode;
             this.Email = email;
             this.PhoneNumber = phoneNumber;
             this.AuthIdentifier = authIdentifier;
@@ -22,7 +21,6 @@ internal partial class Server
         internal bool IsNewUser { get; }
         internal string AuthToken { get; }
         internal string WalletUserId { get; }
-        internal string RecoveryCode { get; }
         internal string Email { get; }
         internal string PhoneNumber { get; }
         internal string AuthIdentifier { get; }

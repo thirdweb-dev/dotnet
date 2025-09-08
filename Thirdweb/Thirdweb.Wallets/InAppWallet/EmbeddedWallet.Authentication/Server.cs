@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Thirdweb.EWS;
 
@@ -30,11 +29,9 @@ internal abstract class ServerBase
     internal abstract Task<Server.VerifyResult> VerifyJwtAsync(string jwtToken);
 
     internal abstract Task<string> FetchHeadlessOauthLoginLinkAsync(string authProvider, string platform);
-    internal abstract Task<Server.VerifyResult> VerifyOAuthAsync(string authResultStr);
+    internal abstract Server.VerifyResult VerifyOAuthAsync(string authResultStr);
 
     internal abstract Task<Server.VerifyResult> VerifyAuthEndpointAsync(string payload);
-
-    internal abstract Task<JToken> GenerateEncryptedKeyResultAsync(string authToken);
 }
 
 internal partial class Server : ServerBase
@@ -121,15 +118,6 @@ internal partial class Server : ServerBase
         return rv;
     }
 
-    // login/web-token-exchange
-    private async Task<IdTokenResponse> FetchCognitoIdTokenAsync(string authToken)
-    {
-        var uri = MakeUri2024("/login/web-token-exchange");
-        var response = await this.SendHttpWithAuthAsync(uri, authToken).ConfigureAwait(false);
-        await CheckStatusCodeAsync(response).ConfigureAwait(false);
-        return await DeserializeAsync<IdTokenResponse>(response).ConfigureAwait(false);
-    }
-
     // login/siwe
     internal override async Task<LoginPayloadData> FetchSiwePayloadAsync(string address, string chainId)
     {
@@ -149,7 +137,7 @@ internal partial class Server : ServerBase
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
-        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+        return this.ToVerifyResult(authResult);
     }
 
     internal override async Task<VerifyResult> VerifySiweExternalAsync(LoginPayloadData payload, string signature)
@@ -169,7 +157,7 @@ internal partial class Server : ServerBase
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
-        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+        return this.ToVerifyResult(authResult);
     }
 
     // login/backend
@@ -181,7 +169,7 @@ internal partial class Server : ServerBase
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
-        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+        return this.ToVerifyResult(authResult);
     }
 
     // login/guest
@@ -194,7 +182,7 @@ internal partial class Server : ServerBase
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
         authResult.StoredToken.AuthDetails.AuthIdentifier = sessionId;
-        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+        return this.ToVerifyResult(authResult);
     }
 
     // login/oauthprovider
@@ -224,7 +212,7 @@ internal partial class Server : ServerBase
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
-        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+        return this.ToVerifyResult(authResult);
     }
 
     // login/phone
@@ -248,7 +236,7 @@ internal partial class Server : ServerBase
         await CheckStatusCodeAsync(response).ConfigureAwait(false);
 
         var authResult = await DeserializeAsync<AuthResultType>(response).ConfigureAwait(false);
-        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+        return this.ToVerifyResult(authResult);
     }
 
     // embedded-wallet/validate-custom-jwt
@@ -266,7 +254,6 @@ internal partial class Server : ServerBase
             authVerifiedToken.VerifiedToken.IsNewUser,
             authVerifiedToken.VerifiedTokenJwtString,
             authVerifiedToken.VerifiedToken.AuthDetails.UserWalletId,
-            authVerifiedToken.VerifiedToken.AuthDetails.RecoveryCode,
             authVerifiedToken.VerifiedToken.AuthDetails.Email,
             authVerifiedToken.VerifiedToken.AuthDetails.PhoneNumber,
             authVerifiedToken.VerifiedToken.AuthDetails.AuthIdentifier
@@ -288,44 +275,27 @@ internal partial class Server : ServerBase
             authVerifiedToken.VerifiedToken.IsNewUser,
             authVerifiedToken.VerifiedTokenJwtString,
             authVerifiedToken.VerifiedToken.AuthDetails.UserWalletId,
-            authVerifiedToken.VerifiedToken.AuthDetails.RecoveryCode,
             authVerifiedToken.VerifiedToken.AuthDetails.Email,
             authVerifiedToken.VerifiedToken.AuthDetails.PhoneNumber,
             authVerifiedToken.VerifiedToken.AuthDetails.AuthIdentifier
         );
     }
 
-    internal override async Task<VerifyResult> VerifyOAuthAsync(string authResultStr)
+    internal override VerifyResult VerifyOAuthAsync(string authResultStr)
     {
         var authResult = JsonConvert.DeserializeObject<AuthResultType>(authResultStr);
-        return await this.InvokeAuthResultLambdaAsync(authResult).ConfigureAwait(false);
+        return this.ToVerifyResult(authResult);
     }
 
     #region Misc
 
-    internal override async Task<JToken> GenerateEncryptedKeyResultAsync(string authToken)
+    private VerifyResult ToVerifyResult(AuthResultType authResult)
     {
-        var webExchangeResult = await this.FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
-        return await AWS.GenerateDataKey(webExchangeResult.IdentityId, webExchangeResult.Token, this._httpClient).ConfigureAwait(false);
-    }
-
-    private async Task<VerifyResult> InvokeAuthResultLambdaAsync(AuthResultType authResult)
-    {
-        var authToken = authResult.StoredToken.CookieString;
-        var idTokenResponse = await this.FetchCognitoIdTokenAsync(authToken).ConfigureAwait(false);
-
-        var invokePayload = Serialize(new { token = idTokenResponse.LambdaToken });
-        var responsePayload = await AWS.InvokeRecoverySharePasswordLambdaAsync(idTokenResponse.IdentityId, idTokenResponse.Token, invokePayload, this._httpClient).ConfigureAwait(false);
-
-        var jsonSerializer = new JsonSerializer();
-        var payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StreamReader(responsePayload)));
-        payload = jsonSerializer.Deserialize<RecoverySharePasswordResponse>(new JsonTextReader(new StringReader(payload.Body)));
         return new VerifyResult(
             authResult.StoredToken.AuthProvider,
             authResult.StoredToken.IsNewUser,
-            authToken,
+            authResult.StoredToken.CookieString,
             authResult.StoredToken.AuthDetails.UserWalletId,
-            payload.RecoverySharePassword,
             authResult.StoredToken.AuthDetails.Email,
             authResult.StoredToken.AuthDetails.PhoneNumber,
             authResult.StoredToken.AuthDetails.AuthIdentifier

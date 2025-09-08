@@ -304,7 +304,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             }
             else
             {
-                address = await this.MigrateShardToEnclave(result).ConfigureAwait(false);
+                throw new InvalidOperationException("Existing user does not have an enclave wallet.");
             }
         }
 
@@ -319,29 +319,6 @@ public partial class EcosystemWallet : IThirdwebWallet
             Utils.TrackConnection(this);
             return this.Address;
         }
-    }
-
-    private async Task<string> MigrateShardToEnclave(Server.VerifyResult authResult)
-    {
-        var (address, encryptedPrivateKeyB64, ivB64, kmsCiphertextB64) = await this
-            .EmbeddedWallet.GenerateEncryptionDataAsync(authResult.AuthToken, this.LegacyEncryptionKey ?? authResult.RecoveryCode)
-            .ConfigureAwait(false);
-
-        var url = $"{ENCLAVE_PATH}/migrate";
-        var payload = new
-        {
-            address,
-            encryptedPrivateKeyB64,
-            ivB64,
-            kmsCiphertextB64,
-        };
-        var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-
-        var response = await this.HttpClient.PostAsync(url, requestContent).ConfigureAwait(false);
-        _ = response.EnsureSuccessStatusCode();
-
-        var userStatus = await GetUserStatus(this.HttpClient).ConfigureAwait(false);
-        return userStatus.Wallets[0].Address;
     }
 
     #endregion
@@ -927,7 +904,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             authResultJson = queryDict["authResult"];
         }
 
-        var serverRes = await this.EmbeddedWallet.SignInWithOauthAsync(authResultJson).ConfigureAwait(false);
+        var serverRes = this.EmbeddedWallet.SignInWithOauthAsync(authResultJson);
         return serverRes;
     }
 

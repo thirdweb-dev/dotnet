@@ -4,15 +4,6 @@ internal partial class EmbeddedWallet
 {
     private readonly LocalStorage _localStorage;
     private readonly Server _server;
-    private readonly IvGenerator _ivGenerator;
-
-    private const int DEVICE_SHARE_ID = 1;
-    private const int KEY_SIZE = 256 / 8;
-    private const int TAG_SIZE = 16;
-    private const int CURRENT_ITERATION_COUNT = 650_000;
-    private const int DEPRECATED_ITERATION_COUNT = 5_000_000;
-    private const string WALLET_PRIVATE_KEY_PREFIX = "thirdweb_";
-    private const string ENCRYPTION_SEPARATOR = ":";
 
     public EmbeddedWallet(ThirdwebClient client, string storageDirectoryPath = null, string ecosystemId = null, string ecosystemPartnerId = null)
     {
@@ -45,7 +36,5 @@ internal partial class EmbeddedWallet
         var ewsHttpClient = Utils.ReconstructHttpClient(client.HttpClient, headers);
 
         this._server = new Server(client, ewsHttpClient);
-
-        this._ivGenerator = new IvGenerator(storageDirectoryPath);
     }
 }
