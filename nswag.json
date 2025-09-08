@@ -64,7 +64,7 @@
       "generateImmutableDictionaryProperties": false,
       "jsonConverters": null,
       "anyType": "object",
-      "output": "Thirdweb/Thirdweb.Api/GeneratedClient.cs"
+      "output": "Thirdweb/Thirdweb.Api/ThirdwebApi.cs"
     }
   }
 }
