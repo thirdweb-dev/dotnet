@@ -1,5 +1,5 @@
-﻿using Nethereum.JsonRpc.Client.RpcMessages;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using Thirdweb.RPC;
 
 namespace Thirdweb.AccountAbstraction;
 
