@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Thirdweb.RPC;
 
 namespace Thirdweb.Tests.RPC;
 

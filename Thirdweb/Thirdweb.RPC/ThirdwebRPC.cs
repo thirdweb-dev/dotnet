@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Tests")]
 
-namespace Thirdweb;
+namespace Thirdweb.RPC;
 
 /// <summary>
 /// Represents the Thirdweb RPC client for sending requests and handling responses.

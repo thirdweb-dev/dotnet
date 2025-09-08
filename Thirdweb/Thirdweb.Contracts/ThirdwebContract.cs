@@ -4,6 +4,7 @@ using Nethereum.ABI.Model;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
+using Thirdweb.RPC;
 
 namespace Thirdweb;
 

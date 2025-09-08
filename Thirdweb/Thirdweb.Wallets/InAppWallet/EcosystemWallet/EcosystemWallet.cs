@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Thirdweb.AccountAbstraction;
 using Thirdweb.EWS;
+using Thirdweb.RPC;
 
 namespace Thirdweb;
 
@@ -120,7 +121,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             throw new ArgumentNullException(nameof(client), "Client cannot be null.");
         }
 
-        var delegationContractResponse = await BundlerClient.TwGetDelegationContract(client: client, url: $"https://1.bundler.thirdweb.com", requestId: 7702);
+        var delegationContractResponse = await ThirdwebBundler.TwGetDelegationContract(client: client, url: $"https://1.bundler.thirdweb.com", requestId: 7702);
 
         if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber) && authProvider == Thirdweb.AuthProvider.Default)
         {
@@ -1313,7 +1314,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             case ExecutionMode.EIP7702Sponsored:
                 var wrappedCalls = new WrappedCalls() { Calls = calls, Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes() };
                 var signature = await EIP712.GenerateSignature_SmartAccount_7702_WrappedCalls("MinimalAccount", "1", transaction.ChainId, userWalletAddress, wrappedCalls, this);
-                var response = await BundlerClient.TwExecute(
+                var response = await ThirdwebBundler.TwExecute(
                     client: this.Client,
                     url: $"https://{transaction.ChainId}.bundler.thirdweb.com",
                     requestId: 7702,
@@ -1331,7 +1332,7 @@ public partial class EcosystemWallet : IThirdwebWallet
                     {
                         ct.Token.ThrowIfCancellationRequested();
 
-                        var hashResponse = await BundlerClient
+                        var hashResponse = await ThirdwebBundler
                             .TwGetTransactionHash(client: this.Client, url: $"https://{transaction.ChainId}.bundler.thirdweb.com", requestId: 7702, queueId)
                             .ConfigureAwait(false);
 

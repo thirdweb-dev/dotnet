@@ -18,6 +18,7 @@ using Nethereum.Signer;
 using Nethereum.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Thirdweb.RPC;
 
 namespace Thirdweb;
 

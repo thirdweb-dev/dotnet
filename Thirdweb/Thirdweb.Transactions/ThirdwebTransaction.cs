@@ -4,6 +4,7 @@ using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Thirdweb.RPC;
 
 namespace Thirdweb;
 

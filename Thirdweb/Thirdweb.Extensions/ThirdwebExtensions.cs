@@ -2,6 +2,7 @@ using System.Numerics;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Util;
 using Newtonsoft.Json;
+using Thirdweb.RPC;
 
 namespace Thirdweb;
 

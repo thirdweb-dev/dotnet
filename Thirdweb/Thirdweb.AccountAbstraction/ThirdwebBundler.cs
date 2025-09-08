@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Thirdweb.AccountAbstraction;
 
-public static class BundlerClient
+public static class ThirdwebBundler
 {
     // EIP 7702 requests
     public static async Task<TwGetDelegationContractResponse> TwGetDelegationContract(ThirdwebClient client, string url, int requestId)

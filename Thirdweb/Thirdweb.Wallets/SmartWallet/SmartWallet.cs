@@ -8,6 +8,7 @@ using Nethereum.Hex.HexTypes;
 using Nethereum.Util;
 using Newtonsoft.Json;
 using Thirdweb.AccountAbstraction;
+using Thirdweb.RPC;
 
 namespace Thirdweb;
 
@@ -639,7 +640,7 @@ public class SmartWallet : IThirdwebWallet
 
         // Create the user operation and its safe (hexified) version
 
-        var fees = await BundlerClient.ThirdwebGetUserOperationGasPrice(this.Client, this._bundlerUrl, requestId).ConfigureAwait(false);
+        var fees = await ThirdwebBundler.ThirdwebGetUserOperationGasPrice(this.Client, this._bundlerUrl, requestId).ConfigureAwait(false);
         var maxFee = new HexBigInteger(fees.MaxFeePerGas).Value;
         var maxPriorityFee = new HexBigInteger(fees.MaxPriorityFeePerGas).Value;
 
@@ -680,7 +681,7 @@ public class SmartWallet : IThirdwebWallet
 
             if (pmSponsorResult.VerificationGasLimit == null || pmSponsorResult.PreVerificationGas == null)
             {
-                var gasEstimates = await BundlerClient.EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address);
+                var gasEstimates = await ThirdwebBundler.EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address);
                 partialUserOp.CallGasLimit = new HexBigInteger(gasEstimates.CallGasLimit).Value;
                 partialUserOp.VerificationGasLimit = new HexBigInteger(gasEstimates.VerificationGasLimit).Value;
                 partialUserOp.PreVerificationGas = new HexBigInteger(gasEstimates.PreVerificationGas).Value;
@@ -760,7 +761,7 @@ public class SmartWallet : IThirdwebWallet
 
             if (partialUserOp.PreVerificationGas == 0 || partialUserOp.VerificationGasLimit == 0)
             {
-                var gasEstimates = await BundlerClient
+                var gasEstimates = await ThirdwebBundler
                     .EthEstimateUserOperationGas(this.Client, this._bundlerUrl, requestId, EncodeUserOperation(partialUserOp), this._entryPointContract.Address, stateDict)
                     .ConfigureAwait(false);
                 partialUserOp.CallGasLimit = new HexBigInteger(gasEstimates.CallGasLimit).Value;
@@ -796,7 +797,7 @@ public class SmartWallet : IThirdwebWallet
 
         // Send the user operation
 
-        var userOpHash = await BundlerClient.EthSendUserOperation(this.Client, this._bundlerUrl, requestId, encodedOp, this._entryPointContract.Address).ConfigureAwait(false);
+        var userOpHash = await ThirdwebBundler.EthSendUserOperation(this.Client, this._bundlerUrl, requestId, encodedOp, this._entryPointContract.Address).ConfigureAwait(false);
 
         // Wait for the transaction to be mined
 
@@ -808,7 +809,7 @@ public class SmartWallet : IThirdwebWallet
             {
                 ct.Token.ThrowIfCancellationRequested();
 
-                var userOpReceipt = await BundlerClient.EthGetUserOperationReceipt(this.Client, this._bundlerUrl, requestId, userOpHash).ConfigureAwait(false);
+                var userOpReceipt = await ThirdwebBundler.EthGetUserOperationReceipt(this.Client, this._bundlerUrl, requestId, userOpHash).ConfigureAwait(false);
 
                 txHash = userOpReceipt?.Receipt?.TransactionHash;
                 await ThirdwebTask.Delay(100, ct.Token).ConfigureAwait(false);
@@ -836,7 +837,7 @@ public class SmartWallet : IThirdwebWallet
     {
         if (this._gasless)
         {
-            var result = await BundlerClient.ZkPaymasterData(this.Client, this._paymasterUrl, 1, transactionInput).ConfigureAwait(false);
+            var result = await ThirdwebBundler.ZkPaymasterData(this.Client, this._paymasterUrl, 1, transactionInput).ConfigureAwait(false);
             return (result.Paymaster, result.PaymasterInput);
         }
         else
@@ -847,7 +848,7 @@ public class SmartWallet : IThirdwebWallet
 
     private async Task<string> ZkBroadcastTransaction(object transactionInput)
     {
-        var result = await BundlerClient.ZkBroadcastTransaction(this.Client, this._bundlerUrl, 1, transactionInput).ConfigureAwait(false);
+        var result = await ThirdwebBundler.ZkBroadcastTransaction(this.Client, this._bundlerUrl, 1, transactionInput).ConfigureAwait(false);
         return result.TransactionHash;
     }
 
@@ -865,7 +866,7 @@ public class SmartWallet : IThirdwebWallet
         else
         {
             return this._gasless
-                ? await BundlerClient.PMSponsorUserOperation(this.Client, this._paymasterUrl, requestId, userOp, this._entryPointContract.Address).ConfigureAwait(false)
+                ? await ThirdwebBundler.PMSponsorUserOperation(this.Client, this._paymasterUrl, requestId, userOp, this._entryPointContract.Address).ConfigureAwait(false)
                 : new PMSponsorOperationResponse();
         }
     }
