@@ -2,7 +2,6 @@
 using Nethereum.ABI.EIP712;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Model;
-using Nethereum.RLP;
 using Nethereum.Signer;
 
 namespace Thirdweb;
