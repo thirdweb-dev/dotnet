@@ -1,7 +1,7 @@
 using System.Numerics;
 using Newtonsoft.Json;
 
-namespace Thirdweb.Bridge;
+namespace Thirdweb;
 
 /// <summary>
 /// Represents the response model wrapping the result of an API call.

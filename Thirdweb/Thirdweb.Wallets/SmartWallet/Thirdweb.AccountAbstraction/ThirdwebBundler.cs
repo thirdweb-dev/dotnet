@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Thirdweb.RPC;
 
 namespace Thirdweb.AccountAbstraction;
 

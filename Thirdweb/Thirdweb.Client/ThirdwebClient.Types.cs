@@ -9,7 +9,7 @@
 /// <param name="storage">The timeout for storage operations (optional).</param>
 /// <param name="rpc">The timeout for RPC operations (optional).</param>
 /// <param name="other">The timeout for other operations (optional).</param>
-public class TimeoutOptions(int? storage = null, int? rpc = null, int? other = null) : ITimeoutOptions
+public class TimeoutOptions(int? storage = null, int? rpc = null, int? other = null)
 {
     internal int? Storage { get; private set; } = storage;
     internal int? Rpc { get; private set; } = rpc;
@@ -31,4 +31,25 @@ public class TimeoutOptions(int? storage = null, int? rpc = null, int? other = n
             _ => fallback,
         };
     }
+}
+
+/// <summary>
+/// Specifies the type of timeout for various operations.
+/// </summary>
+public enum TimeoutType
+{
+    /// <summary>
+    /// Timeout for storage operations.
+    /// </summary>
+    Storage,
+
+    /// <summary>
+    /// Timeout for RPC operations.
+    /// </summary>
+    Rpc,
+
+    /// <summary>
+    /// Timeout for other types of operations.
+    /// </summary>
+    Other,
 }

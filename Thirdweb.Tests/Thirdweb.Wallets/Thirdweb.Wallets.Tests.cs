@@ -1,5 +1,4 @@
 ﻿using Nethereum.Hex.HexTypes;
-using Thirdweb.RPC;
 
 namespace Thirdweb.Tests.Wallets;
 

@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Thirdweb.Bridge;
+namespace Thirdweb;
 
 public static class ThirdwebBridgeExtensions
 {

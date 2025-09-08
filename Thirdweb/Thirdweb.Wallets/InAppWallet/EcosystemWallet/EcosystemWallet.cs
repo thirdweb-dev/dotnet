@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Thirdweb.AccountAbstraction;
 using Thirdweb.EWS;
-using Thirdweb.RPC;
 
 namespace Thirdweb;
 

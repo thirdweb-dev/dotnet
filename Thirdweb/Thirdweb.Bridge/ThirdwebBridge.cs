@@ -2,7 +2,7 @@ using System.Numerics;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Thirdweb.Bridge;
+namespace Thirdweb;
 
 public class ThirdwebBridge
 {

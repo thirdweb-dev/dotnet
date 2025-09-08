@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Thirdweb.RPC;
+namespace Thirdweb;
 
 [JsonObject]
 public class RpcError

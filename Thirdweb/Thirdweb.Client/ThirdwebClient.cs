@@ -28,14 +28,14 @@ public class ThirdwebClient
 
     internal string SecretKey { get; }
     internal string BundleId { get; }
-    internal ITimeoutOptions FetchTimeoutOptions { get; }
+    internal TimeoutOptions FetchTimeoutOptions { get; }
     internal Dictionary<BigInteger, string> RpcOverrides { get; }
 
     private ThirdwebClient(
         string clientId = null,
         string secretKey = null,
         string bundleId = null,
-        ITimeoutOptions fetchTimeoutOptions = null,
+        TimeoutOptions fetchTimeoutOptions = null,
         IThirdwebHttpClient httpClient = null,
         string sdkName = null,
         string sdkOs = null,
@@ -101,7 +101,7 @@ public class ThirdwebClient
         string clientId = null,
         string secretKey = null,
         string bundleId = null,
-        ITimeoutOptions fetchTimeoutOptions = null,
+        TimeoutOptions fetchTimeoutOptions = null,
         IThirdwebHttpClient httpClient = null,
         string sdkName = null,
         string sdkOs = null,
