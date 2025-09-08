@@ -16,18 +16,17 @@ var client = ThirdwebClient.Create(secretKey: secretKey);
 
 #region Basic Wallet Interaction
 
-//  Create a private key wallet
-var privateKeyWallet = await PrivateKeyWallet.Generate(client);
-
-// var walletAddress = await privateKeyWallet.GetAddress();
-// Console.WriteLine($"PK Wallet address: {walletAddress}");
+//  Create a guest wallet
+var guestWallet = await InAppWallet.Create(client, authProvider: AuthProvider.Guest);
+var walletAddress = await guestWallet.LoginWithGuest();
+Console.WriteLine($"Guest Wallet address: {walletAddress}");
 
 #endregion
 
 #region Basic Contract Interaction
 
 // var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
-// var nfts = await contract.ERC721_GetAllNFTs();
+// var nfts = await contract.ERC721_GetNFT(0);
 // Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
 
 #endregion
@@ -320,7 +319,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region AA 0.6
 
-// var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true);
+// var smartWallet06 = await SmartWallet.Create(personalWallet: guestWallet, chainId: 421614, gasless: true);
 // var receipt06 = await smartWallet06.Transfer(chainId: 421614, toAddress: await smartWallet06.GetAddress(), weiAmount: 0);
 // Console.WriteLine($"Receipt: {receipt06}");
 
@@ -328,7 +327,7 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #region AA 0.7
 
-// var smartWallet07 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V07);
+// var smartWallet07 = await SmartWallet.Create(personalWallet: guestWallet, chainId: 421614, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V07);
 // var receipt07 = await smartWallet07.Transfer(chainId: 421614, toAddress: await smartWallet07.GetAddress(), weiAmount: 0);
 // Console.WriteLine($"Receipt: {receipt07}");
 
@@ -498,8 +497,6 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 // var ecosystemPersonalSignature = await ecosystemWallet.PersonalSign("Hello, Thirdweb!");
 // Console.WriteLine($"Ecosystem Wallet personal sign: {ecosystemPersonalSignature}");
-// var isValidPersonal = (await ecosystemWallet.RecoverAddressFromPersonalSign("Hello, Thirdweb!", ecosystemPersonalSignature)) == ecosystemWalletAddress;
-// Console.WriteLine($"Ecosystem Wallet personal sign valid: {isValidPersonal}");
 
 // var ecosystemTypedSignature = await ecosystemWallet.SignTypedDataV4(
 //     /*lang=json,strict*/

@@ -1,8 +1,6 @@
 using System.Numerics;
 using System.Text;
 using Nethereum.ABI.EIP712;
-using Nethereum.Signer;
-using Nethereum.Signer.EIP712;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -177,26 +175,6 @@ public partial class EngineWallet : IThirdwebWallet
         }
     }
 
-    public Task<string> EthSign(byte[] rawMessage)
-    {
-        if (rawMessage == null)
-        {
-            throw new ArgumentNullException(nameof(rawMessage), "Message to sign cannot be null.");
-        }
-
-        throw new NotImplementedException();
-    }
-
-    public Task<string> EthSign(string message)
-    {
-        if (message == null)
-        {
-            throw new ArgumentNullException(nameof(message), "Message to sign cannot be null.");
-        }
-
-        throw new NotImplementedException();
-    }
-
     public async Task<string> PersonalSign(byte[] rawMessage)
     {
         if (rawMessage == null)
@@ -327,51 +305,6 @@ public partial class EngineWallet : IThirdwebWallet
     public Task Disconnect()
     {
         return Task.CompletedTask;
-    }
-
-    public virtual Task<string> RecoverAddressFromEthSign(string message, string signature)
-    {
-        throw new InvalidOperationException();
-    }
-
-    public virtual Task<string> RecoverAddressFromPersonalSign(string message, string signature)
-    {
-        if (string.IsNullOrEmpty(message))
-        {
-            throw new ArgumentNullException(nameof(message), "Message to sign cannot be null.");
-        }
-
-        if (string.IsNullOrEmpty(signature))
-        {
-            throw new ArgumentNullException(nameof(signature), "Signature cannot be null.");
-        }
-
-        var signer = new EthereumMessageSigner();
-        var address = signer.EncodeUTF8AndEcRecover(message, signature);
-        return Task.FromResult(address);
-    }
-
-    public virtual Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
-        where TDomain : IDomain
-    {
-        if (data == null)
-        {
-            throw new ArgumentNullException(nameof(data), "Data to sign cannot be null.");
-        }
-
-        if (typedData == null)
-        {
-            throw new ArgumentNullException(nameof(typedData), "Typed data cannot be null.");
-        }
-
-        if (signature == null)
-        {
-            throw new ArgumentNullException(nameof(signature), "Signature cannot be null.");
-        }
-
-        var signer = new Eip712TypedDataSigner();
-        var address = signer.RecoverFromSignatureV4(data, typedData, signature);
-        return Task.FromResult(address);
     }
 
     public Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress, bool willSelfExecute)

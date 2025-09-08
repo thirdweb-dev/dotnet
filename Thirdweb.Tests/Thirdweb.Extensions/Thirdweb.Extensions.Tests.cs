@@ -20,7 +20,7 @@ public class ExtensionsTests : BaseTests
 
     private async Task<IThirdwebWallet> GetSmartWallet()
     {
-        var privateKeyWallet = await PrivateKeyWallet.Generate(this.Client);
+        var privateKeyWallet = await this.GetGuestAccount();
         return await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614);
     }
 
@@ -1420,8 +1420,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC20_GenerateMintSignature_WithVerify()
     {
         var contract = await this.GetTokenERC20Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
+        var fakeAuthorizedSigner = await this.GetGuestAccount();
+        var randomReceiver = await this.GetGuestAccount();
         var mintRequest = new TokenERC20_MintRequest { To = await randomReceiver.GetAddress(), Quantity = BigInteger.Parse("1.5".ToWei()) };
 
         (var payload, var signature) = await contract.TokenERC20_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
@@ -1528,8 +1528,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC721_GenerateMintSignature_WithUri_WithVerify()
     {
         var contract = await this.GetTokenERC721Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
+        var fakeAuthorizedSigner = await this.GetGuestAccount();
+        var randomReceiver = await this.GetGuestAccount();
         var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress(), Uri = "" };
 
         (var payload, var signature) = await contract.TokenERC721_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
@@ -1563,8 +1563,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC721_GenerateMintSignature_WithNFTMetadata_WithVerify()
     {
         var contract = await this.GetTokenERC721Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
+        var fakeAuthorizedSigner = await this.GetGuestAccount();
+        var randomReceiver = await this.GetGuestAccount();
         var mintRequest = new TokenERC721_MintRequest { To = await randomReceiver.GetAddress() };
 
         (var payload, var signature) = await contract.TokenERC721_GenerateMintSignature(
@@ -1696,8 +1696,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC1155_GenerateMintSignature_WithUri_WithVerify()
     {
         var contract = await this.GetTokenERC1155Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
+        var fakeAuthorizedSigner = await this.GetGuestAccount();
+        var randomReceiver = await this.GetGuestAccount();
         var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress(), Uri = "" };
 
         (var payload, var signature) = await contract.TokenERC1155_GenerateMintSignature(fakeAuthorizedSigner, mintRequest);
@@ -1733,8 +1733,8 @@ public class ExtensionsTests : BaseTests
     public async Task TokenERC1155_GenerateMintSignature_WithNFTMetadata_WithVerify()
     {
         var contract = await this.GetTokenERC1155Contract();
-        var fakeAuthorizedSigner = await PrivateKeyWallet.Generate(this.Client);
-        var randomReceiver = await PrivateKeyWallet.Generate(this.Client);
+        var fakeAuthorizedSigner = await this.GetGuestAccount();
+        var randomReceiver = await this.GetGuestAccount();
         var mintRequest = new TokenERC1155_MintRequest { To = await randomReceiver.GetAddress() };
 
         (var payload, var signature) = await contract.TokenERC1155_GenerateMintSignature(

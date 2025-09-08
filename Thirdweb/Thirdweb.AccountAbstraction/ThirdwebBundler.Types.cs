@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using Nethereum.ABI.FunctionEncoding.Attributes;
-using Nethereum.Contracts;
 using Newtonsoft.Json;
 
 namespace Thirdweb.AccountAbstraction;
@@ -201,19 +200,6 @@ public class UserOperationHexifiedV7
 
     [JsonProperty("signature")]
     public string Signature { get; set; }
-}
-
-[Function("execute")]
-public class ExecuteFunction : FunctionMessage
-{
-    [Parameter("address", "_target", 1)]
-    public virtual string Target { get; set; }
-
-    [Parameter("uint256", "_value", 2)]
-    public virtual BigInteger Value { get; set; }
-
-    [Parameter("bytes", "_calldata", 3)]
-    public virtual byte[] Calldata { get; set; }
 }
 
 public class EthEstimateUserOperationGasResponse

@@ -29,4 +29,16 @@ public class BaseTests
     {
         Assert.NotNull(this.SecretKey);
     }
+
+    public async Task<IThirdwebWallet> GetGuestAccount()
+    {
+        return await InAppWallet.Create(this.Client, authProvider: AuthProvider.Guest);
+    }
+
+    public async Task<SmartWallet> GetSmartAccount(int chainId = 421614)
+    {
+        var privateKeyAccount = await this.GetGuestAccount();
+        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, chainId: chainId);
+        return smartAccount;
+    }
 }

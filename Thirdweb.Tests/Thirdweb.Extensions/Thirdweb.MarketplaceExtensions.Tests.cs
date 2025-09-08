@@ -14,7 +14,7 @@ public class MarketplaceExtensionsTests : BaseTests
 
     private async Task<IThirdwebWallet> GetSmartWallet(int claimAmount)
     {
-        var privateKeyWallet = await PrivateKeyWallet.Generate(this.Client);
+        var privateKeyWallet = await this.GetGuestAccount();
         var smartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614);
 
         if (claimAmount > 0)
@@ -168,7 +168,7 @@ public class MarketplaceExtensionsTests : BaseTests
 
         var listingId = await contract.Marketplace_DirectListings_TotalListings() - 1;
 
-        var buyer = await PrivateKeyWallet.Generate(this.Client);
+        var buyer = await this.GetGuestAccount();
         var approveReceipt = await contract.Marketplace_DirectListings_ApproveBuyerForListing(wallet, listingId, await buyer.GetAddress(), true);
         Assert.NotNull(approveReceipt);
         Assert.True(approveReceipt.TransactionHash.Length == 66);

@@ -31,28 +31,6 @@ public interface IThirdwebWallet
     public Task<string> GetAddress();
 
     /// <summary>
-    /// Signs a raw message using Ethereum's signing method.
-    /// </summary>
-    /// <param name="rawMessage">The raw message to sign.</param>
-    /// <returns>The signed message.</returns>
-    public Task<string> EthSign(byte[] rawMessage);
-
-    /// <summary>
-    /// Signs a message using Ethereum's signing method.
-    /// </summary>
-    /// <param name="message">The message to sign.</param>
-    /// <returns>The signed message.</returns>
-    public Task<string> EthSign(string message);
-
-    /// <summary>
-    /// Recovers the address from a signed message using Ethereum's signing method.
-    /// </summary>
-    /// <param name="message">The UTF-8 encoded message.</param>
-    /// <param name="signature">The signature.</param>
-    /// <returns>The recovered address.</returns>
-    public Task<string> RecoverAddressFromEthSign(string message, string signature);
-
-    /// <summary>
     /// Signs a raw message using personal signing.
     /// </summary>
     /// <param name="rawMessage">The raw message to sign.</param>
@@ -65,14 +43,6 @@ public interface IThirdwebWallet
     /// <param name="message">The message to sign.</param>
     /// <returns>The signed message.</returns>
     public Task<string> PersonalSign(string message);
-
-    /// <summary>
-    /// Recovers the address from a signed message using personal signing.
-    /// </summary>
-    /// <param name="message">The UTF-8 encoded and prefixed message.</param>
-    /// <param name="signature">The signature.</param>
-    /// <returns>The recovered address.</returns>
-    public Task<string> RecoverAddressFromPersonalSign(string message, string signature);
 
     /// <summary>
     /// Signs typed data (version 4).
@@ -90,18 +60,6 @@ public interface IThirdwebWallet
     /// <param name="typedData">The typed data.</param>
     /// <returns>The signed data.</returns>
     public Task<string> SignTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData)
-        where TDomain : IDomain;
-
-    /// <summary>
-    /// Recovers the address from a signed message using typed data (version 4).
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="TDomain"></typeparam>
-    /// <param name="data">The data to sign.</param>
-    /// <param name="typedData">The typed data.</param>
-    /// <param name="signature">The signature.</param>
-    /// <returns>The recovered address.</returns>
-    public Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
         where TDomain : IDomain;
 
     /// <summary>

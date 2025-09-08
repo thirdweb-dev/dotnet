@@ -3,7 +3,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Nethereum.ABI;
 using Nethereum.ABI.EIP712;
-using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Util;
 using Newtonsoft.Json;
@@ -439,8 +438,7 @@ public class SmartWallet : IThirdwebWallet
         var signature = await EIP712
             .GenerateSignature_SmartAccount("Account", "1", this.ActiveChainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount)
             .ConfigureAwait(false);
-        // Do it this way to avoid triggering an extra sig from estimation
-        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var data = this._accountContract.CreateCallData("setPermissionsForSigner", request, signature.HexToBytes());
         var txInput = new ThirdwebTransactionInput(this.ActiveChainId)
         {
             To = this._accountContract.Address,
@@ -489,7 +487,7 @@ public class SmartWallet : IThirdwebWallet
         };
 
         var signature = await EIP712.GenerateSignature_SmartAccount("Account", "1", this.ActiveChainId, await this.GetAddress(), request, this._personalAccount).ConfigureAwait(false);
-        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var data = this._accountContract.CreateCallData("setPermissionsForSigner", request, signature.HexToBytes());
         var txInput = new ThirdwebTransactionInput(this.ActiveChainId)
         {
             To = this._accountContract.Address,
@@ -528,7 +526,7 @@ public class SmartWallet : IThirdwebWallet
         var signature = await EIP712
             .GenerateSignature_SmartAccount("Account", "1", this.ActiveChainId, await this.GetAddress().ConfigureAwait(false), request, this._personalAccount)
             .ConfigureAwait(false);
-        var data = new Contract(null, this._accountContract.Abi, this._accountContract.Address).GetFunction("setPermissionsForSigner").GetData(request, signature.HexToBytes());
+        var data = this._accountContract.CreateCallData("setPermissionsForSigner", request, signature.HexToBytes());
         var txInput = new ThirdwebTransactionInput(this.ActiveChainId)
         {
             To = this._accountContract.Address,
@@ -581,9 +579,7 @@ public class SmartWallet : IThirdwebWallet
         }
 
         var personalAccountAddress = await this._personalAccount.GetAddress().ConfigureAwait(false);
-        var factoryContract = new Contract(null, this._factoryContract.Abi, this._factoryContract.Address);
-        var createFunction = factoryContract.GetFunction("createAccount");
-        var data = createFunction.GetData(personalAccountAddress, Array.Empty<byte>());
+        var data = this._factoryContract.CreateCallData("createAccount", personalAccountAddress, Array.Empty<byte>());
         return (Utils.HexConcat(this._factoryContract.Address, data).HexToBytes(), this._factoryContract.Address, data);
     }
 
@@ -646,25 +642,24 @@ public class SmartWallet : IThirdwebWallet
 
         var entryPointVersion = Utils.GetEntryPointVersion(this._entryPointContract.Address);
 
+#pragma warning disable IDE0078 // Use pattern matching
+        // function execute(address _target, uint256 _value, bytes calldata _calldata)
+        var executeInput = this._accountContract.CreateCallData(
+            "execute",
+            transactionInput.To,
+            transactionInput.ChainId.Value == 295 || transactionInput.ChainId.Value == 296 ? transactionInput.Value.Value / BigInteger.Pow(10, 10) : transactionInput.Value.Value,
+            transactionInput.Data.HexToBytes()
+        );
+#pragma warning restore IDE0078 // Use pattern matching
+
         if (entryPointVersion == 6)
         {
-#pragma warning disable IDE0078 // Use pattern matching
-            var executeFn = new ExecuteFunction
-            {
-                Target = transactionInput.To,
-                Value = transactionInput.ChainId.Value == 295 || transactionInput.ChainId.Value == 296 ? transactionInput.Value.Value / BigInteger.Pow(10, 10) : transactionInput.Value.Value,
-                Calldata = transactionInput.Data.HexToBytes(),
-                FromAddress = await this.GetAddress().ConfigureAwait(false),
-            };
-#pragma warning restore IDE0078 // Use pattern matching
-            var executeInput = executeFn.CreateTransactionInput(await this.GetAddress().ConfigureAwait(false));
-
             var partialUserOp = new UserOperationV6()
             {
                 Sender = this._accountContract.Address,
                 Nonce = await this.GetNonce().ConfigureAwait(false),
                 InitCode = initCode,
-                CallData = executeInput.Data.HexToBytes(),
+                CallData = executeInput.HexToBytes(),
                 CallGasLimit = transactionInput.Gas == null ? 0 : 21000 + transactionInput.Gas.Value,
                 VerificationGasLimit = 0,
                 PreVerificationGas = 0,
@@ -704,24 +699,13 @@ public class SmartWallet : IThirdwebWallet
         }
         else
         {
-#pragma warning disable IDE0078 // Use pattern matching
-            var executeFn = new ExecuteFunction
-            {
-                Target = transactionInput.To,
-                Value = transactionInput.ChainId.Value == 295 || transactionInput.ChainId.Value == 296 ? transactionInput.Value.Value / BigInteger.Pow(10, 10) : transactionInput.Value.Value,
-                Calldata = transactionInput.Data.HexToBytes(),
-                FromAddress = await this.GetAddress().ConfigureAwait(false),
-            };
-#pragma warning restore IDE0078 // Use pattern matching
-            var executeInput = executeFn.CreateTransactionInput(await this.GetAddress().ConfigureAwait(false));
-
             var partialUserOp = new UserOperationV7()
             {
                 Sender = this._accountContract.Address,
                 Nonce = await this.GetNonce().ConfigureAwait(false),
                 Factory = factory,
                 FactoryData = factoryData.HexToBytes(),
-                CallData = executeInput.Data.HexToBytes(),
+                CallData = executeInput.HexToBytes(),
                 CallGasLimit = 0,
                 VerificationGasLimit = 0,
                 PreVerificationGas = 0,
@@ -1066,21 +1050,6 @@ public class SmartWallet : IThirdwebWallet
             : this._accountContract.Address.ToChecksumAddress();
     }
 
-    public Task<string> EthSign(byte[] rawMessage)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<string> EthSign(string message)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<string> RecoverAddressFromEthSign(string message, string signature)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task<string> PersonalSign(byte[] rawMessage)
     {
         throw new NotImplementedException();
@@ -1114,13 +1083,6 @@ public class SmartWallet : IThirdwebWallet
         return isValid ? sig : throw new Exception("Invalid signature.");
     }
 
-    public async Task<string> RecoverAddressFromPersonalSign(string message, string signature)
-    {
-        return !await this.IsValidSignature(message, signature).ConfigureAwait(false)
-            ? await this._personalAccount.RecoverAddressFromPersonalSign(message, signature).ConfigureAwait(false)
-            : await this.GetAddress().ConfigureAwait(false);
-    }
-
     public Task<string> SignTypedDataV4(string json)
     {
         // TODO: Implement wrapped version
@@ -1132,12 +1094,6 @@ public class SmartWallet : IThirdwebWallet
     {
         // TODO: Implement wrapped version
         return this._personalAccount.SignTypedDataV4(data, typedData);
-    }
-
-    public Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
-        where TDomain : IDomain
-    {
-        return this._personalAccount.RecoverAddressFromTypedDataV4(data, typedData, signature);
     }
 
     public async Task<string> SignTransaction(ThirdwebTransactionInput transaction)

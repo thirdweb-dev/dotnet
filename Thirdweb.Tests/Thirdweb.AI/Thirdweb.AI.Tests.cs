@@ -49,7 +49,7 @@ public class NebulaTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task Chat_UnderstandsWalletContext()
     {
-        var wallet = await PrivateKeyWallet.Generate(this.Client);
+        var wallet = await this.GetGuestAccount();
         var expectedAddress = await wallet.GetAddress();
         var nebula = await ThirdwebNebula.Create(this.Client);
         var response = await nebula.Chat(message: "What is my wallet address?", wallet: wallet);
@@ -61,7 +61,7 @@ public class NebulaTests : BaseTests
     // [Fact(Timeout = 120000)]
     // public async Task Execute_ReturnsMessageAndReceipt()
     // {
-    //     var signer = await PrivateKeyWallet.Generate(this.Client);
+    //     var signer = await this.GetGuestAccount();
     //     var wallet = await SmartWallet.Create(signer, NEBULA_TEST_CHAIN);
     //     var nebula = await ThirdwebNebula.Create(this.Client);
     //     var response = await nebula.Execute(

@@ -9,7 +9,6 @@ using Nethereum.ABI.EIP712;
 using Nethereum.ABI.FunctionEncoding;
 using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.ABI.Model;
-using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Signer;
@@ -386,18 +385,6 @@ public static partial class Utils
     public static string ToChecksumAddress(this string address)
     {
         return new AddressUtil().ConvertToChecksumAddress(address);
-    }
-
-    /// <summary>
-    /// Decodes all events of the specified type from the transaction receipt logs.
-    /// </summary>
-    /// <typeparam name="TEventDTO">The event DTO type.</typeparam>
-    /// <param name="transactionReceipt">The transaction receipt.</param>
-    /// <returns>A list of decoded events.</returns>
-    public static List<EventLog<TEventDTO>> DecodeAllEvents<TEventDTO>(this ThirdwebTransactionReceipt transactionReceipt)
-        where TEventDTO : new()
-    {
-        return transactionReceipt.Logs.DecodeAllEvents<TEventDTO>();
     }
 
     /// <summary>
@@ -1201,29 +1188,6 @@ public static partial class Utils
             if (receipt.Status != null && receipt.Status.Value == 0)
             {
                 throw new Exception($"Transaction {txHash} execution reverted.");
-            }
-
-            var userOpEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationEventEventDTO>();
-            if (userOpEvent != null && userOpEvent.Count > 0 && !userOpEvent[0].Event.Success)
-            {
-                var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
-                var postOpRevertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.PostOpRevertReasonEventDTO>();
-                if (revertReasonEvent != null && revertReasonEvent.Count > 0)
-                {
-                    var revertReason = revertReasonEvent[0].Event.RevertReason;
-                    var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
-                    throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
-                }
-                else if (postOpRevertReasonEvent != null && postOpRevertReasonEvent.Count > 0)
-                {
-                    var revertReason = postOpRevertReasonEvent[0].Event.RevertReason;
-                    var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
-                    throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
-                }
-                else
-                {
-                    throw new Exception($"Transaction {txHash} execution silently reverted with no reason string");
-                }
             }
         }
         catch (OperationCanceledException)
