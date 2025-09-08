@@ -7,44 +7,36 @@ internal partial class LocalStorage : LocalStorageBase
     [DataContract]
     internal class DataStorage
     {
-        internal string AuthToken => this._authToken;
-        internal string DeviceShare => this._deviceShare;
-        internal string EmailAddress => this._emailAddress;
-        internal string PhoneNumber => this._phoneNumber;
-        internal string WalletUserId => this._walletUserId;
-        internal string AuthProvider => this._authProvider;
-        internal string AuthIdentifier => this._authIdentifier;
+        [field: DataMember(Name = "authToken")]
+        internal string AuthToken { get; }
 
-        [DataMember(Name = "authToken")]
-        private string _authToken;
+        [field: DataMember(Name = "deviceShare")]
+        internal string DeviceShare { get; }
 
-        [DataMember(Name = "deviceShare")]
-        private string _deviceShare;
+        [field: DataMember(Name = "emailAddress")]
+        internal string EmailAddress { get; }
 
-        [DataMember(Name = "emailAddress")]
-        private string _emailAddress;
+        [field: DataMember(Name = "phoneNumber")]
+        internal string PhoneNumber { get; }
 
-        [DataMember(Name = "phoneNumber")]
-        private string _phoneNumber;
+        [field: DataMember(Name = "walletUserId")]
+        internal string WalletUserId { get; }
 
-        [DataMember(Name = "walletUserId")]
-        private string _walletUserId;
+        [field: DataMember(Name = "authProvider")]
+        internal string AuthProvider { get; }
 
-        [DataMember(Name = "authProvider")]
-        private string _authProvider;
-
-        [DataMember(Name = "authIdentifier")]
-        private string _authIdentifier;
+        [field: DataMember(Name = "authIdentifier")]
+        internal string AuthIdentifier { get; }
 
         internal DataStorage(string authToken, string deviceShare, string emailAddress, string phoneNumber, string walletUserId, string authProvider, string authIdentifier)
         {
-            this._authToken = authToken;
-            this._deviceShare = deviceShare;
-            this._emailAddress = emailAddress;
-            this._phoneNumber = phoneNumber;
-            this._walletUserId = walletUserId;
-            this._authProvider = authProvider;
-            this._authIdentifier = authIdentifier;
+            this.AuthToken = authToken;
+            this.DeviceShare = deviceShare;
+            this.EmailAddress = emailAddress;
+            this.PhoneNumber = phoneNumber;
+            this.WalletUserId = walletUserId;
+            this.AuthProvider = authProvider;
+            this.AuthIdentifier = authIdentifier;
         }
     }
 
