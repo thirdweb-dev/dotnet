@@ -132,8 +132,8 @@ internal class AWS
 
         var dateTimeNow = dateOverride ?? DateTime.UtcNow;
         var amzDateFormat = "yyyyMMddTHHmmssZ";
-        var amzDate = dateTimeNow.ToString(amzDateFormat);
-        var dateStamp = dateTimeNow.ToString("yyyyMMdd");
+        var amzDate = dateTimeNow.ToString(amzDateFormat, System.Globalization.CultureInfo.InvariantCulture);
+        var dateStamp = dateTimeNow.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
 
         var canonicalHeaders = $"host:{new Uri(endpoint).Host}\n" + $"x-amz-date:{amzDate}\n";
         var signedHeaders = "host;x-amz-date";
@@ -181,7 +181,7 @@ internal class AWS
                 if (idx > -1)
                 {
                     var parsedTimeString = responseContent.Substring(idx + 1, amzDate.Length);
-                    var serverTime = DateTime.ParseExact(parsedTimeString, amzDateFormat, System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime();
+                    var serverTime = DateTime.ParseExact(parsedTimeString, amzDateFormat, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal);
 
                     return await PostAwsRequestWithDateOverride(
                             credentials,
