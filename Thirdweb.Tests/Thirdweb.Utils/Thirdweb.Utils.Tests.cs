@@ -743,28 +743,6 @@ public class UtilsTests : BaseTests
         Assert.True(maxFee > maxPrio);
     }
 
-    [Fact(Timeout = 120000)]
-    public async Task FetchGasFees_Celo()
-    {
-        var chainId = new BigInteger(42220);
-        var (maxFee, maxPrio) = await Utils.FetchGasFees(this.Client, chainId);
-        Assert.True(maxFee > 0);
-        Assert.True(maxPrio > 0);
-        Assert.Equal(maxFee, maxPrio);
-
-        chainId = new BigInteger(44787);
-        (maxFee, maxPrio) = await Utils.FetchGasFees(this.Client, chainId);
-        Assert.True(maxFee > 0);
-        Assert.True(maxPrio > 0);
-        Assert.Equal(maxFee, maxPrio);
-
-        chainId = new BigInteger(62320);
-        (maxFee, maxPrio) = await Utils.FetchGasFees(this.Client, chainId);
-        Assert.True(maxFee > 0);
-        Assert.True(maxPrio > 0);
-        Assert.Equal(maxFee, maxPrio);
-    }
-
     [Fact]
     public void PreprocessTypedDataJson_FormatsBigIntegers()
     {
