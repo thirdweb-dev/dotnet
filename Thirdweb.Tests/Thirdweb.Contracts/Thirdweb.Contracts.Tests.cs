@@ -219,19 +219,6 @@ public class ContractsTests : BaseTests
         var randomChainId = 421614;
         var randomContractAddress = "0xD04F98C88cE1054c90022EE34d566B9237a1203C";
 
-        // GenerateSignature_MinimalForwarder
-        var forwardRequest = new Forwarder_ForwardRequest
-        {
-            From = "0x123",
-            To = "0x456",
-            Value = BigInteger.Zero,
-            Gas = BigInteger.Zero,
-            Nonce = BigInteger.Zero,
-            Data = "0x",
-        };
-        var signature = await EIP712.GenerateSignature_MinimalForwarder(randomDomain, randomVersion, randomChainId, randomContractAddress, forwardRequest, signer);
-        Assert.NotNull(signature);
-        Assert.StartsWith("0x", signature);
         // GenerateSignature_TokenERC20
         var mintRequest20 = new TokenERC20_MintRequest
         {

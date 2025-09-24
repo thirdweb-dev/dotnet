@@ -128,29 +128,6 @@ public static class EIP712
     }
 
     /// <summary>
-    /// Generates a signature for a minimal forwarder request.
-    /// </summary>
-    /// <param name="domainName">The domain name.</param>
-    /// <param name="version">The version.</param>
-    /// <param name="chainId">The chain ID.</param>
-    /// <param name="verifyingContract">The verifying contract.</param>
-    /// <param name="forwardRequest">The forward request.</param>
-    /// <param name="signer">The wallet signer.</param>
-    /// <returns>The generated signature.</returns>
-    public static async Task<string> GenerateSignature_MinimalForwarder(
-        string domainName,
-        string version,
-        BigInteger chainId,
-        string verifyingContract,
-        Forwarder_ForwardRequest forwardRequest,
-        IThirdwebWallet signer
-    )
-    {
-        var typedData = GetTypedDefinition_MinimalForwarder(domainName, version, chainId, verifyingContract);
-        return await signer.SignTypedDataV4(forwardRequest, typedData);
-    }
-
-    /// <summary>
     /// Generates a signature for an ERC20 token mint request.
     /// </summary>
     /// <param name="domainName">The domain name.</param>
@@ -417,30 +394,6 @@ public static class EIP712
             },
             Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(TokenERC1155_MintRequest)),
             PrimaryType = "MintRequest",
-        };
-    }
-
-    /// <summary>
-    /// Gets the typed data definition for a minimal forwarder request.
-    /// </summary>
-    /// <param name="domainName">The domain name.</param>
-    /// <param name="version">The version.</param>
-    /// <param name="chainId">The chain ID.</param>
-    /// <param name="verifyingContract">The verifying contract.</param>
-    /// <returns>The typed data definition.</returns>
-    public static TypedData<Domain> GetTypedDefinition_MinimalForwarder(string domainName, string version, BigInteger chainId, string verifyingContract)
-    {
-        return new TypedData<Domain>
-        {
-            Domain = new Domain
-            {
-                Name = domainName,
-                Version = version,
-                ChainId = chainId,
-                VerifyingContract = verifyingContract,
-            },
-            Types = MemberDescriptionFactory.GetTypesMemberDescription(typeof(Domain), typeof(Forwarder_ForwardRequest)),
-            PrimaryType = "ForwardRequest",
         };
     }
 

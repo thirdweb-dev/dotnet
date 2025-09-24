@@ -80,59 +80,6 @@ public class ContractMetadata
 
 #endregion
 
-#region Forwarder
-
-/// <summary>
-/// Represents a forward request for a forwarder.
-/// </summary>
-[Struct("ForwardRequest")]
-public class Forwarder_ForwardRequest
-{
-    /// <summary>
-    /// Gets or sets the address of the sender.
-    /// </summary>
-    [Parameter("address", "from", 1)]
-    [JsonProperty("from")]
-    public string From { get; set; }
-
-    /// <summary>
-    /// Gets or sets the address of the recipient.
-    /// </summary>
-    [Parameter("address", "to", 2)]
-    [JsonProperty("to")]
-    public string To { get; set; }
-
-    /// <summary>
-    /// Gets or sets the value to be transferred.
-    /// </summary>
-    [Parameter("uint256", "value", 3)]
-    [JsonProperty("value")]
-    public BigInteger Value { get; set; }
-
-    /// <summary>
-    /// Gets or sets the gas limit for the transaction.
-    /// </summary>
-    [Parameter("uint256", "gas", 4)]
-    [JsonProperty("gas")]
-    public BigInteger Gas { get; set; }
-
-    /// <summary>
-    /// Gets or sets the nonce for the transaction.
-    /// </summary>
-    [Parameter("uint256", "nonce", 5)]
-    [JsonProperty("nonce")]
-    public BigInteger Nonce { get; set; }
-
-    /// <summary>
-    /// Gets or sets the data to be sent with the transaction.
-    /// </summary>
-    [Parameter("bytes", "data", 6)]
-    [JsonProperty("data")]
-    public string Data { get; set; }
-}
-
-#endregion
-
 #region NFT
 
 /// <summary>
