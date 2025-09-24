@@ -1176,7 +1176,7 @@ public static partial class Utils
                 receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
                 if (receipt == null)
                 {
-                    await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
+                    await ThirdwebTask.Delay(100, cts.Token).ConfigureAwait(false);
                 }
             } while (receipt == null && !cts.Token.IsCancellationRequested);
 
