@@ -53,18 +53,14 @@ public class ThirdwebTransactionInput
     [JsonProperty(PropertyName = "nonce")]
     public HexBigInteger Nonce { get; set; }
 
-    private string _from;
-    private string _to;
-    private string _data;
-
     /// <summary>
     /// Gets or sets the sender address of the transaction.
     /// </summary>
     [JsonProperty(PropertyName = "from")]
-    internal string From
+    public string From
     {
-        get => this._from.EnsureHexPrefix();
-        set => this._from = value;
+        get => field.EnsureHexPrefix();
+        set;
     }
 
     /// <summary>
@@ -73,8 +69,8 @@ public class ThirdwebTransactionInput
     [JsonProperty(PropertyName = "to")]
     public string To
     {
-        get => this._to.EnsureHexPrefix();
-        set => this._to = value;
+        get => field.EnsureHexPrefix();
+        set;
     }
 
     /// <summary>
@@ -101,8 +97,8 @@ public class ThirdwebTransactionInput
     [JsonProperty(PropertyName = "data")]
     public string Data
     {
-        get => this._data.EnsureHexPrefix();
-        set => this._data = value;
+        get => field.EnsureHexPrefix();
+        set;
     }
 
     /// <summary>
@@ -121,7 +117,7 @@ public class ThirdwebTransactionInput
     /// Gets or sets the chain ID for the transaction.
     /// </summary>
     [JsonProperty(PropertyName = "chainId")]
-    internal HexBigInteger ChainId { get; set; }
+    public HexBigInteger ChainId { get; set; }
 
     /// <summary>
     /// Gets or sets the zkSync options for the transaction.
