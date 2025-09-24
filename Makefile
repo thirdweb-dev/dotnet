@@ -57,7 +57,7 @@ help:
 	@$(hr)
 	@printf 'Usage: $(C_BOLD)make$(C_RST) $(C_CYN)[target]$(C_RST)\n\n'
 	@printf '$(C_BOLD)Targets:$(C_RST)\n'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'build' 'Generate API (if needed) and build the solution'
+	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'build' 'Generate API and build the solution'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'clean' 'Clean build artifacts'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'restore' 'Restore NuGet packages'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'test' 'Run tests'
@@ -90,7 +90,7 @@ publish:
 	$(call msg,$(C_GRN),$(IC_OK),Publish succeeded) || \
 	$(call msg,$(C_RED),$(IC_ERR),Publish failed)
 
-.PHONY: generate generate-api
+.PHONY: generate
 # Clean previous file and generate API client
 generate:
 	@$(call msg,$(C_BLU),$(IC_INFO),$(IC_GEN) Cleaning generated API files)
@@ -104,9 +104,6 @@ generate:
 		$(DOTNET) run --project '$(GENERATOR_PROJ)' \
 	)
 	@$(call msg,$(C_GRN),$(IC_OK),API client generation complete)
-
-# Alias for compatibility with older naming
-generate-api: generate
 
 .PHONY: build
 build:
