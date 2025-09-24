@@ -1,6 +1,4 @@
-﻿using Nethereum.Hex.HexTypes;
-
-namespace Thirdweb.Tests.Wallets;
+﻿namespace Thirdweb.Tests.Wallets;
 
 public class WalletTests : BaseTests
 {
@@ -87,15 +85,7 @@ public class WalletTests : BaseTests
     public async Task SignTransaction()
     {
         var wallet = await this.GetSmartAccount();
-        var transaction = new ThirdwebTransactionInput(421614)
-        {
-            To = await wallet.GetAddress(),
-            Data = "0x",
-            Value = new HexBigInteger(0),
-            Gas = new HexBigInteger(21000),
-            GasPrice = new HexBigInteger(10000000000),
-            Nonce = new HexBigInteger(9999999999999),
-        };
+        var transaction = new ThirdwebTransactionInput(chainId: 421614, to: await wallet.GetAddress(), data: "0x", value: 0, gas: 21000, gasPrice: 10000000000, nonce: 9999999999999);
         _ = ThirdwebRPC.GetRpcInstance(this.Client, 421614);
         var signature = await wallet.SignTransaction(transaction);
         Assert.NotNull(signature);

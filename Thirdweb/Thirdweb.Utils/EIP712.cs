@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using Nethereum.ABI.EIP712;
-using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Model;
 using Nethereum.Signer;
 
@@ -482,14 +481,14 @@ public static class EIP712
             // Add meta
             transaction.GasPerPubdataByteLimit.ToByteArray(isUnsigned: true, isBigEndian: true),
             Array.Empty<byte>(), // TODO: FactoryDeps
-            signature.CreateStringSignature().HexToByteArray(),
+            signature.CreateStringSignature().HexToBytes(),
             // add array of rlp encoded paymaster/paymasterinput
             transaction.Paymaster != 0
                 ? RLP.EncodeElement(transaction.Paymaster.ToByteArray(isUnsigned: true, isBigEndian: true)).Concat(RLP.EncodeElement(transaction.PaymasterInput)).ToArray()
                 : new byte[] { 0xc0 },
         };
 
-        return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray(), _indexOfListDataItems).ToHex();
+        return "0x71" + RLP.EncodeDataItemsAsElementOrListAndCombineAsList(fields.ToArray(), _indexOfListDataItems).BytesToHex(false);
     }
 
     #endregion

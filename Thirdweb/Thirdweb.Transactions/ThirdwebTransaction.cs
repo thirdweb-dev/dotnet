@@ -1,5 +1,4 @@
 using System.Numerics;
-using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -513,7 +512,7 @@ public class ThirdwebTransaction
             Paymaster = transaction.Input.ZkSync.Value.Paymaster,
             Nonce = transaction.Input.Nonce ?? new HexBigInteger(await GetNonce(transaction).ConfigureAwait(false)),
             Value = transaction.Input.Value?.Value ?? 0,
-            Data = transaction.Input.Data?.HexToByteArray() ?? Array.Empty<byte>(),
+            Data = transaction.Input.Data?.HexToBytes() ?? Array.Empty<byte>(),
             FactoryDeps = transaction.Input.ZkSync.Value.FactoryDeps,
             PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput,
         };

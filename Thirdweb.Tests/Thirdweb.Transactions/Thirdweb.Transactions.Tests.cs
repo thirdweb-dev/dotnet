@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using Nethereum.Hex.HexTypes;
 
 namespace Thirdweb.Tests.Transactions;
 
@@ -105,7 +104,7 @@ public class TransactionTests : BaseTests
         var transaction = await this.CreateSampleTransaction();
         var value = new BigInteger(1000);
         _ = transaction.SetValue(value);
-        Assert.Equal(value.ToHexBigInteger(), transaction.Input.Value);
+        Assert.Equal(value, transaction.Input.Value.Value);
     }
 
     [Fact(Timeout = 120000)]
@@ -123,7 +122,7 @@ public class TransactionTests : BaseTests
         var transaction = await this.CreateSampleTransaction();
         var gas = new BigInteger(1000);
         _ = transaction.SetGasPrice(gas);
-        Assert.Equal(gas.ToHexBigInteger(), transaction.Input.GasPrice);
+        Assert.Equal(gas, transaction.Input.GasPrice.Value);
     }
 
     [Fact(Timeout = 120000)]
@@ -132,7 +131,7 @@ public class TransactionTests : BaseTests
         var transaction = await this.CreateSampleTransaction();
         var gas = new BigInteger(1000);
         _ = transaction.SetMaxFeePerGas(gas);
-        Assert.Equal(gas.ToHexBigInteger(), transaction.Input.MaxFeePerGas);
+        Assert.Equal(gas, transaction.Input.MaxFeePerGas.Value);
     }
 
     [Fact(Timeout = 120000)]
@@ -141,7 +140,7 @@ public class TransactionTests : BaseTests
         var transaction = await this.CreateSampleTransaction();
         var gas = new BigInteger(1000);
         _ = transaction.SetMaxPriorityFeePerGas(gas);
-        Assert.Equal(gas.ToHexBigInteger(), transaction.Input.MaxPriorityFeePerGas);
+        Assert.Equal(gas, transaction.Input.MaxPriorityFeePerGas.Value);
     }
 
     [Fact(Timeout = 120000)]
@@ -362,7 +361,7 @@ public class TransactionTests : BaseTests
     {
         var privateKeyAccount = await this.GetGuestAccount();
         var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, factoryAddress: "0xbf1C9aA4B1A085f7DA890a44E82B0A1289A40052", gasless: true, chainId: 421614);
-        var transaction = await ThirdwebTransaction.Create(smartAccount, new ThirdwebTransactionInput(421614) { To = Constants.ADDRESS_ZERO, Gas = new HexBigInteger(250000) });
+        var transaction = await ThirdwebTransaction.Create(smartAccount, new ThirdwebTransactionInput(chainId: 421614, to: Constants.ADDRESS_ZERO, gas: 250000));
 
         try
         {

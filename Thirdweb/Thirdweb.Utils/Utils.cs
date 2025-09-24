@@ -114,10 +114,11 @@ public static partial class Utils
     /// Converts the given bytes to a hex string.
     /// </summary>
     /// <param name="bytes">The bytes to convert.</param>
+    /// <param name="addPrefix">Whether to add the "0x" prefix.</param>
     /// <returns>The hex string.</returns>
-    public static string BytesToHex(this byte[] bytes)
+    public static string BytesToHex(this byte[] bytes, bool addPrefix = true)
     {
-        return bytes.ToHex(true);
+        return bytes.ToHex(addPrefix);
     }
 
     /// <summary>

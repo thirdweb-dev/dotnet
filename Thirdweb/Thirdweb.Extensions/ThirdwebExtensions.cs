@@ -1,5 +1,4 @@
 using System.Numerics;
-using Nethereum.Hex.HexTypes;
 using Nethereum.Util;
 using Newtonsoft.Json;
 
@@ -190,7 +189,7 @@ public static class ThirdwebExtensions
 
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", address, "latest").ConfigureAwait(false);
-        return new HexBigInteger(balanceHex).Value;
+        return balanceHex.HexToNumber();
     }
 
     /// <summary>
@@ -262,7 +261,7 @@ public static class ThirdwebExtensions
 
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var balanceHex = await rpc.SendRequestAsync<string>("eth_getTransactionCount", address, blocktag).ConfigureAwait(false);
-        return new HexBigInteger(balanceHex).Value;
+        return balanceHex.HexToNumber();
     }
 
     /// <summary>
@@ -350,7 +349,7 @@ public static class ThirdwebExtensions
         }
         else
         {
-            var txInput = new ThirdwebTransactionInput(chainId) { To = toAddress, Value = new HexBigInteger(weiAmount) };
+            var txInput = new ThirdwebTransactionInput(chainId: chainId, to: toAddress, value: weiAmount);
             var tx = await ThirdwebTransaction.Create(wallet, txInput).ConfigureAwait(false);
             return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx).ConfigureAwait(false);
         }

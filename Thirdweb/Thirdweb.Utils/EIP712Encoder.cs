@@ -4,7 +4,6 @@ using System.Text;
 using Nethereum.ABI;
 using Nethereum.ABI.EIP712;
 using Nethereum.ABI.FunctionEncoding;
-using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Util;
 
 namespace Thirdweb;
@@ -64,7 +63,7 @@ public class EIP712Encoder
     {
         using var memoryStream = new MemoryStream();
         using var writer = new BinaryWriter(memoryStream);
-        writer.Write("1901".HexToByteArray());
+        writer.Write("1901".HexToBytes());
         writer.Write(this.HashStruct(typedData.Types, "EIP712Domain", typedData.DomainRawValues));
         writer.Write(this.HashStruct(typedData.Types, typedData.PrimaryType, typedData.Message));
 
@@ -186,7 +185,7 @@ public class EIP712Encoder
                     byte[] value;
                     if (memberValue.Value is string v)
                     {
-                        value = v.HexToByteArray();
+                        value = v.HexToBytes();
                     }
                     else
                     {
