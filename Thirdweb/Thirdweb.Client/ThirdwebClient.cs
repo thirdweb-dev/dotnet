@@ -21,10 +21,10 @@ public class ThirdwebClient
     public string ClientId { get; }
 
     /// <summary>
-    /// Interactiton with https://api.thirdweb.com
+    /// Low-level interactiton with https://api.thirdweb.com
     /// Used in some places to enhance the core SDK functionality, or even extend it
     /// </summary>
-    internal ThirdwebApiClient Api { get; }
+    public ThirdwebApiClient Api { get; }
 
     internal string SecretKey { get; }
     internal string BundleId { get; }

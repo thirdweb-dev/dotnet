@@ -3,7 +3,7 @@ namespace Thirdweb.Api;
 /// <summary>
 /// Wrapper class that adapts IThirdwebHttpClient to work with System.Net.Http.HttpClient expectations
 /// </summary>
-internal class ThirdwebHttpClientWrapper : HttpClient
+public class ThirdwebHttpClientWrapper : HttpClient
 {
     private readonly IThirdwebHttpClient _thirdwebClient;
 
