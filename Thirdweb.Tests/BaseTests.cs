@@ -37,7 +37,7 @@ public class BaseTests
         {
             await iaw.Disconnect();
         }
-        _ = iaw.LoginWithGuest(defaultSessionIdOverride: Guid.NewGuid().ToString());
+        _ = await iaw.LoginWithGuest(defaultSessionIdOverride: Guid.NewGuid().ToString());
         return iaw;
     }
 
