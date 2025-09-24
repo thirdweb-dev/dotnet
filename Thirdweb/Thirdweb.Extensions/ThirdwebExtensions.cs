@@ -40,6 +40,26 @@ public static class ThirdwebExtensions
     }
 
     /// <summary>
+    /// Sends the transaction.
+    /// </summary>
+    /// <param name="transaction">The transaction.</param>
+    /// <returns>The transaction hash.</returns>
+    public static async Task<string> Send(this ThirdwebTransaction transaction)
+    {
+        return await ThirdwebTransaction.Send(transaction);
+    }
+
+    /// <summary>
+    /// Sends the transaction and waits for the transaction receipt.
+    /// </summary>
+    /// <param name="transaction">The transaction.</param>
+    /// <returns>The transaction receipt.</returns>
+    public static async Task<ThirdwebTransactionReceipt> SendAndWaitForTransactionReceipt(this ThirdwebTransaction transaction)
+    {
+        return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(transaction);
+    }
+
+    /// <summary>
     /// Reads data from the contract using the specified method.
     /// </summary>
     /// <typeparam name="T">The type of the return value.</typeparam>
