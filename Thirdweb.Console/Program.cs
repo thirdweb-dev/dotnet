@@ -34,27 +34,27 @@ Console.WriteLine($"Guest Wallet personal sign: {signature}");
 
 #endregion
 
-#region User Wallets
+#region User Wallets (Social Auth Example)
 
-var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
-if (!await inAppWalletOAuth.IsConnected())
-{
-    _ = await inAppWalletOAuth.LoginWithOauth(
-        isMobile: false,
-        (url) =>
-        {
-            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-            _ = Process.Start(psi);
-        },
-        "thirdweb://",
-        new InAppWalletBrowser()
-    );
-}
-var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
-Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
+// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+// if (!await inAppWalletOAuth.IsConnected())
+// {
+//     _ = await inAppWalletOAuth.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         "thirdweb://",
+//         new InAppWalletBrowser()
+//     );
+// }
+// var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
+// Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
 
-var inAppWalletAuthDetails = inAppWalletOAuth.GetUserAuthDetails();
-Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
+// var inAppWalletAuthDetails = inAppWalletOAuth.GetUserAuthDetails();
+// Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
 
 #endregion
 
