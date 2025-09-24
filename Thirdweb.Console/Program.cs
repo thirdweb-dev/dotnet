@@ -14,16 +14,19 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 // Fetch timeout options are optional, default is 120000ms
 var client = ThirdwebClient.Create(secretKey: secretKey);
 
-#region Basic Wallet Interaction
+#region Signing Messages
 
 //  Create a guest wallet
 var guestWallet = await InAppWallet.Create(client, authProvider: AuthProvider.Guest);
 var walletAddress = await guestWallet.LoginWithGuest();
 Console.WriteLine($"Guest Wallet address: {walletAddress}");
 
+var signature = await guestWallet.PersonalSign("Hello, Thirdweb!");
+Console.WriteLine($"Guest Wallet personal sign: {signature}");
+
 #endregion
 
-#region Basic Contract Interaction
+#region Reading from Contracts
 
 // var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
 // var nfts = await contract.ERC721_GetNFT(0);
@@ -31,25 +34,118 @@ Console.WriteLine($"Guest Wallet address: {walletAddress}");
 
 #endregion
 
+#region User Wallets
+
+var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+if (!await inAppWalletOAuth.IsConnected())
+{
+    _ = await inAppWalletOAuth.LoginWithOauth(
+        isMobile: false,
+        (url) =>
+        {
+            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+            _ = Process.Start(psi);
+        },
+        "thirdweb://",
+        new InAppWalletBrowser()
+    );
+}
+var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
+Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
+
+var inAppWalletAuthDetails = inAppWalletOAuth.GetUserAuthDetails();
+Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
+
+#endregion
+
+#region Server Wallets
+
+// // ServerWallet is compatible with IThirdwebWallet and can be used with any SDK method/extension
+// var serverWallet = await ServerWallet.Create(
+//     client: client,
+//     label: "Test",
+//     // Optional, defaults to Auto - we choose between EIP-7702, EIP-4337 or native zkSync AA execution / EOA is also available
+//     executionOptions: new AutoExecutionOptions()
+// );
+
+// var serverWalletAddress = await serverWallet.GetAddress();
+// Console.WriteLine($"Server Wallet address: {serverWalletAddress}");
+
+// var serverWalletPersonalSig = await serverWallet.PersonalSign("Hello, Thirdweb!");
+// Console.WriteLine($"Server Wallet personal sign: {serverWalletPersonalSig}");
+
+// var json =
+//     /*lang=json,strict*/
+//     "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallet\",\"type\":\"address\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person\"},{\"name\":\"contents\",\"type\":\"string\"}]},\"primaryType\":\"Mail\",\"domain\":{\"name\":\"Ether Mail\",\"version\":\"1\",\"chainId\":84532,\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\":{\"from\":{\"name\":\"Cow\",\"wallet\":\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\":{\"name\":\"Bob\",\"wallet\":\"0xbBbBBBBbbBBBbbbBbbBbbBBbBbbBbBbBbBbbBBbB\"},\"contents\":\"Hello, Bob!\"}}";
+// var serverWalletTypedDataSign = await serverWallet.SignTypedDataV4(json);
+// Console.WriteLine($"Server Wallet typed data sign: {serverWalletTypedDataSign}");
+
+// // Simple self transfer
+// var serverWalletReceipt = await serverWallet.Transfer(chainId: 84532, toAddress: await serverWallet.GetAddress(), weiAmount: 0);
+// Console.WriteLine($"Server Wallet Hash: {serverWalletReceipt.TransactionHash}");
+
+// // ServerWallet forcing ERC-4337 Execution Mode
+// var smartServerWallet = await ServerWallet.Create(client: client, label: "Test", executionOptions: new ERC4337ExecutionOptions(chainId: 84532, signerAddress: serverWalletAddress));
+// var smartServerWalletAddress = await smartServerWallet.GetAddress();
+// Console.WriteLine($"Smart Server Wallet address: {smartServerWalletAddress}");
+
+// var smartServerWalletPersonalSig = await smartServerWallet.PersonalSign("Hello, Thirdweb!");
+// Console.WriteLine($"Smart Server Wallet personal sign: {smartServerWalletPersonalSig}");
+
+// var smartServerWalletTypedDataSign = await smartServerWallet.SignTypedDataV4(json);
+// Console.WriteLine($"Smart Server Wallet typed data sign: {smartServerWalletTypedDataSign}");
+
+// // Simple self transfer
+// var smartServerWalletReceipt = await smartServerWallet.Transfer(chainId: 84532, toAddress: await smartServerWallet.GetAddress(), weiAmount: 0);
+// Console.WriteLine($"Server Wallet Hash: {smartServerWalletReceipt.TransactionHash}");
+
+#endregion
+
+#region AA 0.6
+
+var smartWallet06 = await SmartWallet.Create(personalWallet: guestWallet, chainId: 421614, gasless: true);
+var receipt06 = await smartWallet06.Transfer(chainId: 421614, toAddress: await smartWallet06.GetAddress(), weiAmount: 0);
+Console.WriteLine($"Receipt: {receipt06}");
+
+#endregion
+
+#region AA 0.7
+
+// var smartWallet07 = await SmartWallet.Create(personalWallet: guestWallet, chainId: 421614, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V07);
+// var receipt07 = await smartWallet07.Transfer(chainId: 421614, toAddress: await smartWallet07.GetAddress(), weiAmount: 0);
+// Console.WriteLine($"Receipt: {receipt07}");
+
+#endregion
+
+#region AA ZkSync
+
+// var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
+
+// var hash = await zkSmartWallet.SendTransaction(new ThirdwebTransactionInput(chainId: 11124, to: await zkSmartWallet.GetAddress(), value: 0, data: "0x"));
+
+// Console.WriteLine($"Transaction hash: {hash}");
+
+#endregion
+
 #region Deploy Contract
 
-var serverWallet = await ServerWallet.Create(client: client, label: "TestFromDotnet");
+// var serverWallet = await ServerWallet.Create(client: client, label: "TestFromDotnet");
 
-var abi =
-    "[ { \"inputs\": [], \"name\": \"welcome\", \"outputs\": [ { \"internalType\": \"string\", \"name\": \"\", \"type\": \"string\" } ], \"stateMutability\": \"pure\", \"type\": \"function\" } ]";
+// var abi =
+//     "[ { \"inputs\": [], \"name\": \"welcome\", \"outputs\": [ { \"internalType\": \"string\", \"name\": \"\", \"type\": \"string\" } ], \"stateMutability\": \"pure\", \"type\": \"function\" } ]";
 
-var contractAddress = await ThirdwebContract.Deploy(
-    client: client,
-    chainId: 11155111,
-    serverWalletAddress: await serverWallet.GetAddress(),
-    bytecode: "6080604052348015600e575f5ffd5b5061014e8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063b627cf3b1461002d575b5f5ffd5b61003561004b565b60405161004291906100f8565b60405180910390f35b60606040518060400160405280601481526020017f57656c636f6d6520746f20746869726477656221000000000000000000000000815250905090565b5f81519050919050565b5f82825260208201905092915050565b8281835e5f83830152505050565b5f601f19601f8301169050919050565b5f6100ca82610088565b6100d48185610092565b93506100e48185602086016100a2565b6100ed816100b0565b840191505092915050565b5f6020820190508181035f83015261011081846100c0565b90509291505056fea264697066735822122001498e9d7d6125ce22613ef32fdb7e8e03bf11ad361d7b00e210b82d7b7e0d4464736f6c634300081e0033",
-    abi: abi
-);
-Console.WriteLine($"Contract deployed at: {contractAddress}");
+// var contractAddress = await ThirdwebContract.Deploy(
+//     client: client,
+//     chainId: 11155111,
+//     serverWalletAddress: await serverWallet.GetAddress(),
+//     bytecode: "6080604052348015600e575f5ffd5b5061014e8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063b627cf3b1461002d575b5f5ffd5b61003561004b565b60405161004291906100f8565b60405180910390f35b60606040518060400160405280601481526020017f57656c636f6d6520746f20746869726477656221000000000000000000000000815250905090565b5f81519050919050565b5f82825260208201905092915050565b8281835e5f83830152505050565b5f601f19601f8301169050919050565b5f6100ca82610088565b6100d48185610092565b93506100e48185602086016100a2565b6100ed816100b0565b840191505092915050565b5f6020820190508181035f83015261011081846100c0565b90509291505056fea264697066735822122001498e9d7d6125ce22613ef32fdb7e8e03bf11ad361d7b00e210b82d7b7e0d4464736f6c634300081e0033",
+//     abi: abi
+// );
+// Console.WriteLine($"Contract deployed at: {contractAddress}");
 
-var contract = await ThirdwebContract.Create(client: client, address: contractAddress, chain: 11155111, abi: abi);
-var welcomeMessage = await contract.Read<string>("welcome");
-Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
+// var contract = await ThirdwebContract.Create(client: client, address: contractAddress, chain: 11155111, abi: abi);
+// var welcomeMessage = await contract.Read<string>("welcome");
+// Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
 
 #endregion
 
@@ -180,76 +276,7 @@ Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
 
 #endregion
 
-#region AA 0.6
-
-// var smartWallet06 = await SmartWallet.Create(personalWallet: guestWallet, chainId: 421614, gasless: true);
-// var receipt06 = await smartWallet06.Transfer(chainId: 421614, toAddress: await smartWallet06.GetAddress(), weiAmount: 0);
-// Console.WriteLine($"Receipt: {receipt06}");
-
-#endregion
-
-#region AA 0.7
-
-// var smartWallet07 = await SmartWallet.Create(personalWallet: guestWallet, chainId: 421614, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V07);
-// var receipt07 = await smartWallet07.Transfer(chainId: 421614, toAddress: await smartWallet07.GetAddress(), weiAmount: 0);
-// Console.WriteLine($"Receipt: {receipt07}");
-
-#endregion
-
-#region AA ZkSync
-
-// var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
-
-// var hash = await zkSmartWallet.SendTransaction(new ThirdwebTransactionInput(chainId: 11124, to: await zkSmartWallet.GetAddress(), value: 0, data: "0x"));
-
-// Console.WriteLine($"Transaction hash: {hash}");
-
-#endregion
-
-#region Server Wallet
-
-// // ServerWallet is compatible with IThirdwebWallet and can be used with any SDK method/extension
-// var serverWallet = await ServerWallet.Create(
-//     client: client,
-//     label: "Test",
-//     // Optional, defaults to Auto - we choose between EIP-7702, EIP-4337 or native zkSync AA execution / EOA is also available
-//     executionOptions: new AutoExecutionOptions()
-// );
-
-// var serverWalletAddress = await serverWallet.GetAddress();
-// Console.WriteLine($"Server Wallet address: {serverWalletAddress}");
-
-// var serverWalletPersonalSig = await serverWallet.PersonalSign("Hello, Thirdweb!");
-// Console.WriteLine($"Server Wallet personal sign: {serverWalletPersonalSig}");
-
-// var json =
-//     /*lang=json,strict*/
-//     "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallet\",\"type\":\"address\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person\"},{\"name\":\"contents\",\"type\":\"string\"}]},\"primaryType\":\"Mail\",\"domain\":{\"name\":\"Ether Mail\",\"version\":\"1\",\"chainId\":84532,\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\"},\"message\":{\"from\":{\"name\":\"Cow\",\"wallet\":\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\"},\"to\":{\"name\":\"Bob\",\"wallet\":\"0xbBbBBBBbbBBBbbbBbbBbbBBbBbbBbBbBbBbbBBbB\"},\"contents\":\"Hello, Bob!\"}}";
-// var serverWalletTypedDataSign = await serverWallet.SignTypedDataV4(json);
-// Console.WriteLine($"Server Wallet typed data sign: {serverWalletTypedDataSign}");
-
-// // Simple self transfer
-// var serverWalletReceipt = await serverWallet.Transfer(chainId: 84532, toAddress: await serverWallet.GetAddress(), weiAmount: 0);
-// Console.WriteLine($"Server Wallet Hash: {serverWalletReceipt.TransactionHash}");
-
-// // ServerWallet forcing ERC-4337 Execution Mode
-// var smartServerWallet = await ServerWallet.Create(client: client, label: "Test", executionOptions: new ERC4337ExecutionOptions(chainId: 84532, signerAddress: serverWalletAddress));
-// var smartServerWalletAddress = await smartServerWallet.GetAddress();
-// Console.WriteLine($"Smart Server Wallet address: {smartServerWalletAddress}");
-
-// var smartServerWalletPersonalSig = await smartServerWallet.PersonalSign("Hello, Thirdweb!");
-// Console.WriteLine($"Smart Server Wallet personal sign: {smartServerWalletPersonalSig}");
-
-// var smartServerWalletTypedDataSign = await smartServerWallet.SignTypedDataV4(json);
-// Console.WriteLine($"Smart Server Wallet typed data sign: {smartServerWalletTypedDataSign}");
-
-// // Simple self transfer
-// var smartServerWalletReceipt = await smartServerWallet.Transfer(chainId: 84532, toAddress: await smartServerWallet.GetAddress(), weiAmount: 0);
-// Console.WriteLine($"Server Wallet Hash: {smartServerWalletReceipt.TransactionHash}");
-
-#endregion
-
-#region EIP-7702
+#region EIP-7702 (Low Level)
 
 // var chain = 11155111; // 7702-compatible chain
 
@@ -441,29 +468,6 @@ Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
 
 #endregion
 
-#region Guest Login
-
-// var guestWallet = await EcosystemWallet.Create(ecosystemId: "ecosystem.the-bonfire", client: client, authProvider: AuthProvider.Guest);
-// if (!await guestWallet.IsConnected())
-// {
-//     _ = await guestWallet.LoginWithGuest();
-// }
-// var address = await guestWallet.GetAddress();
-// Console.WriteLine($"Guest address: {address}");
-
-// var oldLinkedAccounts = await guestWallet.GetLinkedAccounts();
-// Console.WriteLine($"Old linked accounts: {JsonConvert.SerializeObject(oldLinkedAccounts, Formatting.Indented)}");
-
-// var emailWalletFresh = await EcosystemWallet.Create(ecosystemId: "ecosystem.the-bonfire", client: client, email: "firekeeper+guestupgrade5@thirdweb.com");
-// _ = await emailWalletFresh.SendOTP();
-// Console.WriteLine("Enter OTP:");
-// var otp = Console.ReadLine();
-
-// var linkedAccounts = await guestWallet.LinkAccount(walletToLink: emailWalletFresh, otp: otp);
-// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
-
-#endregion
-
 #region Backend Wallet Auth
 
 // var inAppWalletBackend = await InAppWallet.Create(client: client, authProvider: AuthProvider.Backend, walletSecret: "very-secret");
@@ -601,55 +605,6 @@ Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
 // );
 // var txHash = await ThirdwebTransaction.Send(tx);
 // Console.WriteLine($"Transaction hash: {txHash}");
-
-#endregion
-
-#region InAppWallet - OAuth
-
-// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.TikTok);
-// if (!await inAppWalletOAuth.IsConnected())
-// {
-//     _ = await inAppWalletOAuth.LoginWithOauth(
-//         isMobile: false,
-//         (url) =>
-//         {
-//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-//             _ = Process.Start(psi);
-//         },
-//         "thirdweb://",
-//         new InAppWalletBrowser()
-//     );
-// }
-// var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
-// Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
-
-// var inAppWalletAuthDetails = inAppWalletOAuth.GetUserAuthDetails();
-// Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
-
-#endregion
-
-#region InAppWallet - SiweExternal
-
-// var inAppWalletSiweExternal = await InAppWallet.Create(client: client, authProvider: AuthProvider.SiweExternal);
-// if (!await inAppWalletSiweExternal.IsConnected())
-// {
-//     _ = await inAppWalletSiweExternal.LoginWithSiweExternal(
-//         isMobile: false,
-//         browserOpenAction: (url) =>
-//         {
-//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-//             _ = Process.Start(psi);
-//         },
-//         forceWalletIds: new List<string> { "io.metamask", "com.coinbase.wallet", "xyz.abs" }
-//     );
-// }
-// var inAppWalletOAuthAddress = await inAppWalletSiweExternal.GetAddress();
-// Console.WriteLine($"InAppWallet SiweExternal address: {inAppWalletOAuthAddress}");
-
-// var inAppWalletAuthDetails = inAppWalletSiweExternal.GetUserAuthDetails();
-// Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
-
-// await inAppWalletSiweExternal.Disconnect();
 
 #endregion
 

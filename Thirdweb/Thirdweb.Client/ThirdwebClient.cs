@@ -21,10 +21,10 @@ public class ThirdwebClient
     public string ClientId { get; }
 
     /// <summary>
-    /// Low-level interactiton with https://api.thirdweb.com
+    /// Low-level interaction with https://api.thirdweb.com
     /// Used in some places to enhance the core SDK functionality, or even extend it
     /// </summary>
-    public ThirdwebApiClient Api { get; }
+    public ThirdwebApiClient Api { get; internal set; }
 
     internal string SecretKey { get; }
     internal string BundleId { get; }
@@ -111,5 +111,11 @@ public class ThirdwebClient
     )
     {
         return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient, sdkName, sdkOs, sdkPlatform, sdkVersion, rpcOverrides);
+    }
+
+    internal void UpdateApiClient(IThirdwebHttpClient httpClient)
+    {
+        var wrappedHttpClient = new ThirdwebHttpClientWrapper(httpClient);
+        this.Api = new ThirdwebApiClient(wrappedHttpClient);
     }
 }

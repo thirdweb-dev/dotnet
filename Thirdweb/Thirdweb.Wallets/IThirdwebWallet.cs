@@ -107,7 +107,6 @@ public interface IThirdwebWallet
     /// <param name="jwt">The JWT token if linking custom JWT auth.</param>
     /// <param name="payload">The login payload if linking custom AuthEndpoint auth.</param>
     /// <param name="defaultSessionIdOverride">The default session ID override if linking Guest auth.</param>
-    /// <param name="forceWalletIds">The wallet IDs to force display if linking using SiweExternal auth.</param>
     /// <returns>A list of <see cref="LinkedAccount"/> objects.</returns>
     public Task<List<LinkedAccount>> LinkAccount(
         IThirdwebWallet walletToLink,
@@ -119,8 +118,7 @@ public interface IThirdwebWallet
         BigInteger? chainId = null,
         string jwt = null,
         string payload = null,
-        string defaultSessionIdOverride = null,
-        List<string> forceWalletIds = null
+        string defaultSessionIdOverride = null
     );
 
     /// <summary>

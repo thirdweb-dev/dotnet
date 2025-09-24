@@ -367,8 +367,7 @@ public partial class ServerWallet : IThirdwebWallet
         BigInteger? chainId = null,
         string jwt = null,
         string payload = null,
-        string defaultSessionIdOverride = null,
-        List<string> forceWalletIds = null
+        string defaultSessionIdOverride = null
     )
     {
         throw new NotImplementedException();

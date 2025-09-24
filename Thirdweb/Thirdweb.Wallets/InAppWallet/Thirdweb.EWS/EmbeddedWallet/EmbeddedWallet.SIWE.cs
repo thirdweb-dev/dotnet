@@ -13,9 +13,4 @@ internal partial class EmbeddedWallet
 
         return await this._server.VerifySiweAsync(payload, signature).ConfigureAwait(false);
     }
-
-    public async Task<Server.VerifyResult> SignInWithSiweExternalRawAsync(LoginPayloadData payload, string signature)
-    {
-        return await this._server.VerifySiweExternalAsync(payload, signature).ConfigureAwait(false);
-    }
 }

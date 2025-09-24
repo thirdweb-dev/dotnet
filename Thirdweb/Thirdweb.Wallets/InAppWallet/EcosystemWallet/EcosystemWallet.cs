@@ -32,7 +32,6 @@ public partial class EcosystemWallet : IThirdwebWallet
     internal readonly string Email;
     internal readonly string PhoneNumber;
     internal readonly string AuthProvider;
-    internal readonly string LegacyEncryptionKey;
     internal readonly string WalletSecret;
 
     internal string Address;
@@ -57,7 +56,6 @@ public partial class EcosystemWallet : IThirdwebWallet
         string phoneNumber,
         string authProvider,
         IThirdwebWallet siweSigner,
-        string legacyEncryptionKey,
         string walletSecret,
         ExecutionMode executionMode,
         string delegationContractAddress
@@ -66,7 +64,6 @@ public partial class EcosystemWallet : IThirdwebWallet
         this.Client = client;
         this._ecosystemId = ecosystemId;
         this._ecosystemPartnerId = ecosystemPartnerId;
-        this.LegacyEncryptionKey = legacyEncryptionKey;
         this.EmbeddedWallet = embeddedWallet;
         this.HttpClient = httpClient;
         this.Email = email;
@@ -92,7 +89,6 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// <param name="authProvider">The authentication provider to use.</param>
     /// <param name="storageDirectoryPath">The path to the storage directory.</param>
     /// <param name="siweSigner">The SIWE signer wallet for SIWE authentication.</param>
-    /// <param name="legacyEncryptionKey">The encryption key that is no longer required but was used in the past. Only pass this if you had used custom auth before this was deprecated.</param>
     /// <param name="walletSecret">The wallet secret for Backend authentication.</param>
     /// <param name="twAuthTokenOverride">The auth token to use for the session. This will automatically connect using a raw thirdweb auth token.</param>
     /// <param name="executionMode">The execution mode for the wallet. EOA represents traditional direct calls, EIP7702 represents upgraded account self sponsored calls, and EIP7702Sponsored represents upgraded account calls with managed/sponsored execution.</param>
@@ -100,14 +96,13 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
     public static async Task<EcosystemWallet> Create(
         ThirdwebClient client,
-        string ecosystemId,
+        string ecosystemId = null,
         string ecosystemPartnerId = null,
         string email = null,
         string phoneNumber = null,
         AuthProvider authProvider = Thirdweb.AuthProvider.Default,
         string storageDirectoryPath = null,
         IThirdwebWallet siweSigner = null,
-        string legacyEncryptionKey = null,
         string walletSecret = null,
         string twAuthTokenOverride = null,
         ExecutionMode executionMode = ExecutionMode.EOA
@@ -145,7 +140,6 @@ public partial class EcosystemWallet : IThirdwebWallet
             Thirdweb.AuthProvider.Twitch => "Twitch",
             Thirdweb.AuthProvider.Steam => "Steam",
             Thirdweb.AuthProvider.Backend => "Backend",
-            Thirdweb.AuthProvider.SiweExternal => "SiweExternal",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -193,7 +187,6 @@ public partial class EcosystemWallet : IThirdwebWallet
                 phoneNumber,
                 authproviderStr,
                 siweSigner,
-                legacyEncryptionKey,
                 walletSecret,
                 executionMode,
                 delegationContractResponse.DelegationContract
@@ -215,7 +208,6 @@ public partial class EcosystemWallet : IThirdwebWallet
                 phoneNumber,
                 authproviderStr,
                 siweSigner,
-                legacyEncryptionKey,
                 walletSecret,
                 executionMode,
                 delegationContractResponse.DelegationContract
@@ -643,8 +635,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         BigInteger? chainId = null,
         string jwt = null,
         string payload = null,
-        string defaultSessionIdOverride = null,
-        List<string> forceWalletIds = null
+        string defaultSessionIdOverride = null
     )
     {
         if (!await this.IsConnected().ConfigureAwait(false))
@@ -714,9 +705,6 @@ public partial class EcosystemWallet : IThirdwebWallet
                 break;
             case "Guest":
                 serverRes = await ecosystemWallet.PreAuth_Guest(defaultSessionIdOverride).ConfigureAwait(false);
-                break;
-            case "SiweExternal":
-                serverRes = await ecosystemWallet.PreAuth_SiweExternal(isMobile ?? false, browserOpenAction, forceWalletIds, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             case "Google":
             case "Apple":
@@ -915,81 +903,6 @@ public partial class EcosystemWallet : IThirdwebWallet
     )
     {
         var serverRes = await this.PreAuth_OAuth(isMobile, browserOpenAction, mobileRedirectScheme, browser, cancellationToken).ConfigureAwait(false);
-        return await this.PostAuth(serverRes).ConfigureAwait(false);
-    }
-
-    #endregion
-
-    #region SiweExternal
-
-    private async Task<Server.VerifyResult> PreAuth_SiweExternal(
-        bool isMobile,
-        Action<string> browserOpenAction,
-        List<string> forceWalletIds = null,
-        string mobileRedirectScheme = "thirdweb://",
-        IThirdwebBrowser browser = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
-        var loginUrl = $"https://static.thirdweb.com/auth/siwe?redirectUrl={redirectUrl}";
-        if (forceWalletIds != null && forceWalletIds.Count > 0)
-        {
-            loginUrl += $"&wallets={string.Join(",", forceWalletIds)}";
-        }
-
-        browser ??= new InAppWalletBrowser();
-        var browserResult = await browser.Login(this.Client, loginUrl, redirectUrl, browserOpenAction, cancellationToken).ConfigureAwait(false);
-        switch (browserResult.Status)
-        {
-            case BrowserStatus.Success:
-                break;
-            case BrowserStatus.UserCanceled:
-                throw new TaskCanceledException(browserResult.Error ?? "LoginWithSiwe was cancelled.");
-            case BrowserStatus.Timeout:
-                throw new TimeoutException(browserResult.Error ?? "LoginWithSiwe timed out.");
-            case BrowserStatus.UnknownError:
-            default:
-                throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}");
-        }
-        var callbackUrl =
-            browserResult.Status != BrowserStatus.Success
-                ? throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}")
-                : browserResult.CallbackUrl;
-
-        while (string.IsNullOrEmpty(callbackUrl))
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                throw new TaskCanceledException("LoginWithSiwe was cancelled.");
-            }
-            await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
-        }
-
-        string signature;
-        string payload;
-        var decodedUrl = HttpUtility.UrlDecode(callbackUrl);
-        Uri uri = new(decodedUrl);
-        var queryString = uri.Query;
-        var queryDict = HttpUtility.ParseQueryString(queryString);
-        signature = queryDict["signature"];
-        payload = HttpUtility.UrlDecode(queryDict["payload"]);
-        var payloadData = JsonConvert.DeserializeObject<LoginPayloadData>(payload);
-
-        var serverRes = await this.EmbeddedWallet.SignInWithSiweExternalRawAsync(payloadData, signature).ConfigureAwait(false);
-        return serverRes;
-    }
-
-    public async Task<string> LoginWithSiweExternal(
-        bool isMobile,
-        Action<string> browserOpenAction,
-        List<string> forceWalletIds = null,
-        string mobileRedirectScheme = "thirdweb://",
-        IThirdwebBrowser browser = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var serverRes = await this.PreAuth_SiweExternal(isMobile, browserOpenAction, forceWalletIds, mobileRedirectScheme, browser, cancellationToken).ConfigureAwait(false);
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
