@@ -14,6 +14,13 @@ DOTNET := dotnet
 API_CLIENT := Thirdweb/Thirdweb.Api/ThirdwebApi.cs
 CONSOLE_PROJ := Thirdweb.Console
 GENERATOR_PROJ := Thirdweb.Generator
+LIB_PROJ := Thirdweb/Thirdweb.csproj
+
+# Defaults for publishing/building
+CONFIG ?= Release
+TFM ?= netstandard2.1
+RID ?=
+OUT ?=
 
 # Colors (best effort; will be empty if tput is unavailable)
 C_RST  := $(shell tput sgr0 2>/dev/null || echo "")
@@ -39,6 +46,7 @@ IC_OK := OK
 IC_WARN := WARN
 IC_ERR := ERR
 IC_FMT := FMT
+IC_PUB := PUBLISH
 
 hr = printf '$(C_DIM)%s$(C_RST)\n' '--------------------------------------------------------------------'
 msg = printf '%s[%s]%s %s\n' '$(1)' '$(2)' '$(C_RST)' '$(3)'
@@ -54,12 +62,33 @@ help:
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'restore' 'Restore NuGet packages'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'test' 'Run tests'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'pack' 'Generate API (if needed) and create NuGet package'
+	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'publish' 'Publish the Thirdweb project (dotnet publish)'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'run' 'Run the console application'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'generate' 'Generate API client from OpenAPI spec'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'lint' 'Check code formatting (dry run)'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'fix' 'Fix code formatting issues'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'help' 'Show this help message'
 	@$(hr)
+
+.PHONY: publish
+# Publish the Thirdweb library project
+# Usage examples:
+#   make publish                          # Release publish
+#   make publish CONFIG=Debug              # Debug config
+#   make publish RID=win-x64               # Target runtime
+#   make publish OUT=artifacts/publish     # Custom output dir
+publish:
+	@if [ ! -f '$(API_CLIENT)' ]; then \
+		$(call msg,$(C_YEL),$(IC_WARN),API client not found, generating it first) ; \
+		$(MAKE) --no-print-directory generate ; \
+	fi
+	@$(call msg,$(C_BLU),$(IC_INFO),$(IC_PUB) Publishing Thirdweb project)
+	@CMD="$(DOTNET) publish '$(LIB_PROJ)' -c '$(CONFIG)' -f '$(TFM)'"; \
+	if [ -n "$(RID)" ]; then CMD="$$CMD -r '$(RID)'"; fi; \
+	if [ -n "$(OUT)" ]; then CMD="$$CMD -o '$(OUT)'"; fi; \
+	echo $$CMD; eval $$CMD && \
+	$(call msg,$(C_GRN),$(IC_OK),Publish succeeded) || \
+	$(call msg,$(C_RED),$(IC_ERR),Publish failed)
 
 .PHONY: generate generate-api
 # Clean previous file and generate API client
