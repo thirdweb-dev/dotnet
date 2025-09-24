@@ -32,13 +32,19 @@ public class BaseTests
 
     public async Task<IThirdwebWallet> GetGuestAccount()
     {
-        return await InAppWallet.Create(this.Client, authProvider: AuthProvider.Guest);
+        var iaw = await InAppWallet.Create(this.Client, authProvider: AuthProvider.Guest);
+        if (await iaw.IsConnected())
+        {
+            await iaw.Disconnect();
+        }
+        _ = iaw.LoginWithGuest(defaultSessionIdOverride: Guid.NewGuid().ToString());
+        return iaw;
     }
 
     public async Task<SmartWallet> GetSmartAccount(int chainId = 421614)
     {
-        var privateKeyAccount = await this.GetGuestAccount();
-        var smartAccount = await SmartWallet.Create(personalWallet: privateKeyAccount, chainId: chainId);
+        var guestAccount = await this.GetGuestAccount();
+        var smartAccount = await SmartWallet.Create(personalWallet: guestAccount, chainId: chainId);
         return smartAccount;
     }
 }
