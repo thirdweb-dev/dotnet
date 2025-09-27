@@ -9,23 +9,21 @@
 
 The Thirdweb .NET SDK is a comprehensive and easy to use library that allows developers to interact with the blockchain using the .NET framework. It simplifies the integration of all [thirdweb](https://thirdweb.com/) functionality with a minimal set of dependencies.
 
-## Features
+## Core Features
 
-- **Connect to any EVM network:** Easily connect to Ethereum and other EVM-compatible networks.
-- **Query blockchain data:** Use Thirdweb RPC to fetch blockchain data efficiently.
+- **Connect to any EVM network:** Easily connect to blockchain network with its chain id alone.
 - **Interact with smart contracts:** Simplified read and write operations for smart contracts, with various out-of-the-box extensions provided.
-- **In-App Wallets:** Integrate user-friendly wallets within your applications, supporting email, phone, and OAuth login.
+- **In-App Wallets:** Integrate user-friendly wallets within your applications, supporting email, phone, OAuth login or plug your own auth in.
 - **Ecosystem Wallets:** Basically In-App Wallets functionality wise, with the added benefit of being able to securely share your wallets with third party partners.
-- **Account Abstraction:** Simplify complex account management tasks with smart wallets.
-- **Gasless Transactions:** Enable transactions without requiring users to pay gas fees.
-- **Storage Solutions:** Download and upload files using IPFS.
+- **Account Abstraction:** Turn any wallet into a programmable smart wallet (EIP-4337 or EIP-7702) with built-in gas sponsorship and granular session key features.
+- **Storage Solutions:** Download and upload files using IPFS or HTTPS.
 - **Transaction Builder:** Create, manipulate and send low level transactions.
 - **Session Keys:** Advanced control for smart wallets to manage permissions and session durations.
 - **Thirdweb Bridge:** Universal interface to use any asset onchain.
 - **Thirdweb Nebula:** Create blockchain-powered AI Agents.
 - **Thirdweb Insight:** Query blockchain data at the speed of light.
 - **Thirdweb Engine:** Interact in creative ways from your backend.
-- **Unity Compatibility**: This SDK has been tested successfully in [Unity 2021.3+](https://portal.thirdweb.com/unity/v5) (Standalone, Mobile and WebGL).
+- **Unity Compatibility**: This SDK has been tested successfully in [Unity 2022.3+](https://portal.thirdweb.com/unity/v5) (All build targets).
 - **Godot Compatibility**: This SDK has been tested successfully in [Godot .NET](https://portal.thirdweb.com/dotnet/godot)
 - **MAUI Compatibility**: This SDK has been tested successfully in [MAUI](https://portal.thirdweb.com/dotnet/maui)
 

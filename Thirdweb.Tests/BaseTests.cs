@@ -29,4 +29,22 @@ public class BaseTests
     {
         Assert.NotNull(this.SecretKey);
     }
+
+    public async Task<IThirdwebWallet> GetGuestAccount()
+    {
+        var iaw = await InAppWallet.Create(this.Client, authProvider: AuthProvider.Guest);
+        if (await iaw.IsConnected())
+        {
+            await iaw.Disconnect();
+        }
+        _ = await iaw.LoginWithGuest(defaultSessionIdOverride: Guid.NewGuid().ToString());
+        return iaw;
+    }
+
+    public async Task<SmartWallet> GetSmartAccount(int chainId = 421614)
+    {
+        var guestAccount = await this.GetGuestAccount();
+        var smartAccount = await SmartWallet.Create(personalWallet: guestAccount, chainId: chainId);
+        return smartAccount;
+    }
 }

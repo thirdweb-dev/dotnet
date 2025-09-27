@@ -1,5 +1,4 @@
 using System.Numerics;
-using Nethereum.Hex.HexTypes;
 using Nethereum.Util;
 using Newtonsoft.Json;
 
@@ -37,6 +36,26 @@ public static class ThirdwebExtensions
     {
         (var data, _) = ThirdwebContract.EncodeFunctionCall(contract, method, parameters);
         return data;
+    }
+
+    /// <summary>
+    /// Sends the transaction.
+    /// </summary>
+    /// <param name="transaction">The transaction.</param>
+    /// <returns>The transaction hash.</returns>
+    public static async Task<string> Send(this ThirdwebTransaction transaction)
+    {
+        return await ThirdwebTransaction.Send(transaction);
+    }
+
+    /// <summary>
+    /// Sends the transaction and waits for the transaction receipt.
+    /// </summary>
+    /// <param name="transaction">The transaction.</param>
+    /// <returns>The transaction receipt.</returns>
+    public static async Task<ThirdwebTransactionReceipt> SendAndWaitForTransactionReceipt(this ThirdwebTransaction transaction)
+    {
+        return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(transaction);
     }
 
     /// <summary>
@@ -170,7 +189,7 @@ public static class ThirdwebExtensions
 
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var balanceHex = await rpc.SendRequestAsync<string>("eth_getBalance", address, "latest").ConfigureAwait(false);
-        return new HexBigInteger(balanceHex).Value;
+        return balanceHex.HexToNumber();
     }
 
     /// <summary>
@@ -242,7 +261,7 @@ public static class ThirdwebExtensions
 
         var rpc = ThirdwebRPC.GetRpcInstance(client, chainId);
         var balanceHex = await rpc.SendRequestAsync<string>("eth_getTransactionCount", address, blocktag).ConfigureAwait(false);
-        return new HexBigInteger(balanceHex).Value;
+        return balanceHex.HexToNumber();
     }
 
     /// <summary>
@@ -330,7 +349,7 @@ public static class ThirdwebExtensions
         }
         else
         {
-            var txInput = new ThirdwebTransactionInput(chainId) { To = toAddress, Value = new HexBigInteger(weiAmount) };
+            var txInput = new ThirdwebTransactionInput(chainId: chainId, to: toAddress, value: weiAmount);
             var tx = await ThirdwebTransaction.Create(wallet, txInput).ConfigureAwait(false);
             return await ThirdwebTransaction.SendAndWaitForTransactionReceipt(tx).ConfigureAwait(false);
         }

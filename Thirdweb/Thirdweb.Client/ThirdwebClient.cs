@@ -21,21 +21,21 @@ public class ThirdwebClient
     public string ClientId { get; }
 
     /// <summary>
-    /// Interactiton with https://api.thirdweb.com
+    /// Low-level interaction with https://api.thirdweb.com
     /// Used in some places to enhance the core SDK functionality, or even extend it
     /// </summary>
-    internal ThirdwebApiClient Api { get; }
+    public ThirdwebApiClient Api { get; internal set; }
 
     internal string SecretKey { get; }
     internal string BundleId { get; }
-    internal ITimeoutOptions FetchTimeoutOptions { get; }
+    internal TimeoutOptions FetchTimeoutOptions { get; }
     internal Dictionary<BigInteger, string> RpcOverrides { get; }
 
     private ThirdwebClient(
         string clientId = null,
         string secretKey = null,
         string bundleId = null,
-        ITimeoutOptions fetchTimeoutOptions = null,
+        TimeoutOptions fetchTimeoutOptions = null,
         IThirdwebHttpClient httpClient = null,
         string sdkName = null,
         string sdkOs = null,
@@ -101,7 +101,7 @@ public class ThirdwebClient
         string clientId = null,
         string secretKey = null,
         string bundleId = null,
-        ITimeoutOptions fetchTimeoutOptions = null,
+        TimeoutOptions fetchTimeoutOptions = null,
         IThirdwebHttpClient httpClient = null,
         string sdkName = null,
         string sdkOs = null,
@@ -111,5 +111,11 @@ public class ThirdwebClient
     )
     {
         return new ThirdwebClient(clientId, secretKey, bundleId, fetchTimeoutOptions, httpClient, sdkName, sdkOs, sdkPlatform, sdkVersion, rpcOverrides);
+    }
+
+    internal void UpdateApiClient(IThirdwebHttpClient httpClient)
+    {
+        var wrappedHttpClient = new ThirdwebHttpClientWrapper(httpClient);
+        this.Api = new ThirdwebApiClient(wrappedHttpClient);
     }
 }

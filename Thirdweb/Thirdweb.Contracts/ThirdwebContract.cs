@@ -2,7 +2,6 @@
 using Nethereum.ABI.FunctionEncoding;
 using Nethereum.ABI.Model;
 using Nethereum.Contracts;
-using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 
 namespace Thirdweb;
@@ -280,13 +279,7 @@ public class ThirdwebContract
     public static async Task<ThirdwebTransaction> Prepare(IThirdwebWallet wallet, ThirdwebContract contract, string method, BigInteger weiValue, params object[] parameters)
     {
         var data = contract.CreateCallData(method, parameters);
-        var transaction = new ThirdwebTransactionInput(chainId: contract.Chain)
-        {
-            To = contract.Address,
-            Data = data,
-            Value = new HexBigInteger(weiValue),
-        };
-
+        var transaction = new ThirdwebTransactionInput(chainId: contract.Chain, to: contract.Address, data: data, value: weiValue);
         return await ThirdwebTransaction.Create(wallet, transaction).ConfigureAwait(false);
     }
 

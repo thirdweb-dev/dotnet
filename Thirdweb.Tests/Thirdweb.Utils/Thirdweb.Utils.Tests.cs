@@ -502,7 +502,7 @@ public class UtilsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async void ToJsonExternalWalletFriendly_ReturnsCorrectValue4()
     {
-        var pkWallet = await PrivateKeyWallet.Generate(this.Client); // Assume external wallet
+        var pkWallet = await this.GetGuestAccount(); // Assume external wallet
         var msg = new AccountAbstraction.AccountMessage { Message = new byte[] { 0x01, 0x02, 0x03, 0x04 } };
         var verifyingContract = await pkWallet.GetAddress(); // doesn't matter here
         var typedDataRaw = EIP712.GetTypedDefinition_SmartAccount_AccountMessage("Account", "1", 137, verifyingContract);
@@ -843,33 +843,5 @@ public class UtilsTests : BaseTests
         var processedJObject = JObject.Parse(processedJson);
 
         Assert.Equal(expectedJObject, processedJObject);
-    }
-
-    [Fact]
-    public void DecodeTransaction_1559WithAuthList()
-    {
-        var signedTxStr =
-            "0x04f8ca830de9fb8082011882031083025bee94ff5d95e5aa1b5af3f106079518228a92818737728080c0f85ef85c830de9fb94654f42b74885ee6803f403f077bc0409f1066c588080a0a5caed9b0c46657a452250a3279f45937940c87c45854aead6a902d99bc638f39faa58026c6b018d36b8935a42f2bcf68097c712c9f09ca014c70887678e08a980a027ecc69e66eb9e28cbe6edab10fc827fcb6d2a34cdcb89d8b6aabc6e35608692a0750d306b04a50a35de57bd6aca11f207a8dd404f9d92502ce6e3817e52f79a1c";
-        (var txInput, var signature) = Utils.DecodeTransaction(signedTxStr);
-        Assert.Equal("0xfF5D95e5aA1B5Af3F106079518228A9281873772", txInput.To);
-        Assert.Equal("0x", txInput.Data);
-        Assert.Equal(0, txInput.Value.Value);
-        Assert.NotNull(txInput.AuthorizationList);
-        _ = Assert.Single(txInput.AuthorizationList);
-        Assert.Equal("0x654F42b74885EE6803F403f077bc0409f1066c58", txInput.AuthorizationList[0].Address);
-        Assert.Equal("0xde9fb", txInput.AuthorizationList[0].ChainId);
-        Assert.Equal("0x0", txInput.AuthorizationList[0].Nonce);
-
-        (txInput, var signature2) = Utils.DecodeTransaction(signedTxStr.HexToBytes());
-        Assert.Equal("0xfF5D95e5aA1B5Af3F106079518228A9281873772", txInput.To);
-        Assert.Equal("0x", txInput.Data);
-        Assert.Equal(0, txInput.Value.Value);
-        Assert.NotNull(txInput.AuthorizationList);
-        _ = Assert.Single(txInput.AuthorizationList);
-        Assert.Equal("0x654F42b74885EE6803F403f077bc0409f1066c58", txInput.AuthorizationList[0].Address);
-        Assert.Equal("0xde9fb", txInput.AuthorizationList[0].ChainId);
-        Assert.Equal("0x0", txInput.AuthorizationList[0].Nonce);
-
-        Assert.Equal(signature, signature2);
     }
 }

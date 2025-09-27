@@ -26,7 +26,6 @@ public enum AuthProvider
     Twitch,
     Steam,
     Backend,
-    SiweExternal,
 }
 
 /// <summary>

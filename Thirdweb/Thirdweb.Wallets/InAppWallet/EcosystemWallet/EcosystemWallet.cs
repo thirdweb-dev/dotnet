@@ -2,8 +2,6 @@ using System.Numerics;
 using System.Text;
 using System.Web;
 using Nethereum.ABI.EIP712;
-using Nethereum.Signer;
-using Nethereum.Signer.EIP712;
 using Nethereum.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -34,7 +32,6 @@ public partial class EcosystemWallet : IThirdwebWallet
     internal readonly string Email;
     internal readonly string PhoneNumber;
     internal readonly string AuthProvider;
-    internal readonly string LegacyEncryptionKey;
     internal readonly string WalletSecret;
 
     internal string Address;
@@ -59,7 +56,6 @@ public partial class EcosystemWallet : IThirdwebWallet
         string phoneNumber,
         string authProvider,
         IThirdwebWallet siweSigner,
-        string legacyEncryptionKey,
         string walletSecret,
         ExecutionMode executionMode,
         string delegationContractAddress
@@ -68,7 +64,6 @@ public partial class EcosystemWallet : IThirdwebWallet
         this.Client = client;
         this._ecosystemId = ecosystemId;
         this._ecosystemPartnerId = ecosystemPartnerId;
-        this.LegacyEncryptionKey = legacyEncryptionKey;
         this.EmbeddedWallet = embeddedWallet;
         this.HttpClient = httpClient;
         this.Email = email;
@@ -94,7 +89,6 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// <param name="authProvider">The authentication provider to use.</param>
     /// <param name="storageDirectoryPath">The path to the storage directory.</param>
     /// <param name="siweSigner">The SIWE signer wallet for SIWE authentication.</param>
-    /// <param name="legacyEncryptionKey">The encryption key that is no longer required but was used in the past. Only pass this if you had used custom auth before this was deprecated.</param>
     /// <param name="walletSecret">The wallet secret for Backend authentication.</param>
     /// <param name="twAuthTokenOverride">The auth token to use for the session. This will automatically connect using a raw thirdweb auth token.</param>
     /// <param name="executionMode">The execution mode for the wallet. EOA represents traditional direct calls, EIP7702 represents upgraded account self sponsored calls, and EIP7702Sponsored represents upgraded account calls with managed/sponsored execution.</param>
@@ -102,14 +96,13 @@ public partial class EcosystemWallet : IThirdwebWallet
     /// <exception cref="ArgumentException">Thrown when required parameters are not provided.</exception>
     public static async Task<EcosystemWallet> Create(
         ThirdwebClient client,
-        string ecosystemId,
+        string ecosystemId = null,
         string ecosystemPartnerId = null,
         string email = null,
         string phoneNumber = null,
         AuthProvider authProvider = Thirdweb.AuthProvider.Default,
         string storageDirectoryPath = null,
         IThirdwebWallet siweSigner = null,
-        string legacyEncryptionKey = null,
         string walletSecret = null,
         string twAuthTokenOverride = null,
         ExecutionMode executionMode = ExecutionMode.EOA
@@ -120,7 +113,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             throw new ArgumentNullException(nameof(client), "Client cannot be null.");
         }
 
-        var delegationContractResponse = await BundlerClient.TwGetDelegationContract(client: client, url: $"https://1.bundler.thirdweb.com", requestId: 7702);
+        var delegationContractResponse = await ThirdwebBundler.TwGetDelegationContract(client: client, url: $"https://1.bundler.thirdweb.com", requestId: 7702);
 
         if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(phoneNumber) && authProvider == Thirdweb.AuthProvider.Default)
         {
@@ -147,7 +140,6 @@ public partial class EcosystemWallet : IThirdwebWallet
             Thirdweb.AuthProvider.Twitch => "Twitch",
             Thirdweb.AuthProvider.Steam => "Steam",
             Thirdweb.AuthProvider.Backend => "Backend",
-            Thirdweb.AuthProvider.SiweExternal => "SiweExternal",
             Thirdweb.AuthProvider.Default => string.IsNullOrEmpty(email) ? "Phone" : "Email",
             _ => throw new ArgumentException("Invalid AuthProvider"),
         };
@@ -195,7 +187,6 @@ public partial class EcosystemWallet : IThirdwebWallet
                 phoneNumber,
                 authproviderStr,
                 siweSigner,
-                legacyEncryptionKey,
                 walletSecret,
                 executionMode,
                 delegationContractResponse.DelegationContract
@@ -217,7 +208,6 @@ public partial class EcosystemWallet : IThirdwebWallet
                 phoneNumber,
                 authproviderStr,
                 siweSigner,
-                legacyEncryptionKey,
                 walletSecret,
                 executionMode,
                 delegationContractResponse.DelegationContract
@@ -304,7 +294,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             }
             else
             {
-                address = await this.MigrateShardToEnclave(result).ConfigureAwait(false);
+                throw new InvalidOperationException("Existing user does not have an enclave wallet.");
             }
         }
 
@@ -319,29 +309,6 @@ public partial class EcosystemWallet : IThirdwebWallet
             Utils.TrackConnection(this);
             return this.Address;
         }
-    }
-
-    private async Task<string> MigrateShardToEnclave(Server.VerifyResult authResult)
-    {
-        var (address, encryptedPrivateKeyB64, ivB64, kmsCiphertextB64) = await this
-            .EmbeddedWallet.GenerateEncryptionDataAsync(authResult.AuthToken, this.LegacyEncryptionKey ?? authResult.RecoveryCode)
-            .ConfigureAwait(false);
-
-        var url = $"{ENCLAVE_PATH}/migrate";
-        var payload = new
-        {
-            address,
-            encryptedPrivateKeyB64,
-            ivB64,
-            kmsCiphertextB64,
-        };
-        var requestContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-
-        var response = await this.HttpClient.PostAsync(url, requestContent).ConfigureAwait(false);
-        _ = response.EnsureSuccessStatusCode();
-
-        var userStatus = await GetUserStatus(this.HttpClient).ConfigureAwait(false);
-        return userStatus.Wallets[0].Address;
     }
 
     #endregion
@@ -668,8 +635,7 @@ public partial class EcosystemWallet : IThirdwebWallet
         BigInteger? chainId = null,
         string jwt = null,
         string payload = null,
-        string defaultSessionIdOverride = null,
-        List<string> forceWalletIds = null
+        string defaultSessionIdOverride = null
     )
     {
         if (!await this.IsConnected().ConfigureAwait(false))
@@ -739,9 +705,6 @@ public partial class EcosystemWallet : IThirdwebWallet
                 break;
             case "Guest":
                 serverRes = await ecosystemWallet.PreAuth_Guest(defaultSessionIdOverride).ConfigureAwait(false);
-                break;
-            case "SiweExternal":
-                serverRes = await ecosystemWallet.PreAuth_SiweExternal(isMobile ?? false, browserOpenAction, forceWalletIds, mobileRedirectScheme, browser).ConfigureAwait(false);
                 break;
             case "Google":
             case "Apple":
@@ -927,7 +890,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             authResultJson = queryDict["authResult"];
         }
 
-        var serverRes = await this.EmbeddedWallet.SignInWithOauthAsync(authResultJson).ConfigureAwait(false);
+        var serverRes = this.EmbeddedWallet.SignInWithOauthAsync(authResultJson);
         return serverRes;
     }
 
@@ -940,81 +903,6 @@ public partial class EcosystemWallet : IThirdwebWallet
     )
     {
         var serverRes = await this.PreAuth_OAuth(isMobile, browserOpenAction, mobileRedirectScheme, browser, cancellationToken).ConfigureAwait(false);
-        return await this.PostAuth(serverRes).ConfigureAwait(false);
-    }
-
-    #endregion
-
-    #region SiweExternal
-
-    private async Task<Server.VerifyResult> PreAuth_SiweExternal(
-        bool isMobile,
-        Action<string> browserOpenAction,
-        List<string> forceWalletIds = null,
-        string mobileRedirectScheme = "thirdweb://",
-        IThirdwebBrowser browser = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var redirectUrl = isMobile ? mobileRedirectScheme : "http://localhost:8789/";
-        var loginUrl = $"https://static.thirdweb.com/auth/siwe?redirectUrl={redirectUrl}";
-        if (forceWalletIds != null && forceWalletIds.Count > 0)
-        {
-            loginUrl += $"&wallets={string.Join(",", forceWalletIds)}";
-        }
-
-        browser ??= new InAppWalletBrowser();
-        var browserResult = await browser.Login(this.Client, loginUrl, redirectUrl, browserOpenAction, cancellationToken).ConfigureAwait(false);
-        switch (browserResult.Status)
-        {
-            case BrowserStatus.Success:
-                break;
-            case BrowserStatus.UserCanceled:
-                throw new TaskCanceledException(browserResult.Error ?? "LoginWithSiwe was cancelled.");
-            case BrowserStatus.Timeout:
-                throw new TimeoutException(browserResult.Error ?? "LoginWithSiwe timed out.");
-            case BrowserStatus.UnknownError:
-            default:
-                throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}");
-        }
-        var callbackUrl =
-            browserResult.Status != BrowserStatus.Success
-                ? throw new Exception($"Failed to login with {this.AuthProvider}: {browserResult.Status} | {browserResult.Error}")
-                : browserResult.CallbackUrl;
-
-        while (string.IsNullOrEmpty(callbackUrl))
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                throw new TaskCanceledException("LoginWithSiwe was cancelled.");
-            }
-            await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
-        }
-
-        string signature;
-        string payload;
-        var decodedUrl = HttpUtility.UrlDecode(callbackUrl);
-        Uri uri = new(decodedUrl);
-        var queryString = uri.Query;
-        var queryDict = HttpUtility.ParseQueryString(queryString);
-        signature = queryDict["signature"];
-        payload = HttpUtility.UrlDecode(queryDict["payload"]);
-        var payloadData = JsonConvert.DeserializeObject<LoginPayloadData>(payload);
-
-        var serverRes = await this.EmbeddedWallet.SignInWithSiweExternalRawAsync(payloadData, signature).ConfigureAwait(false);
-        return serverRes;
-    }
-
-    public async Task<string> LoginWithSiweExternal(
-        bool isMobile,
-        Action<string> browserOpenAction,
-        List<string> forceWalletIds = null,
-        string mobileRedirectScheme = "thirdweb://",
-        IThirdwebBrowser browser = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var serverRes = await this.PreAuth_SiweExternal(isMobile, browserOpenAction, forceWalletIds, mobileRedirectScheme, browser, cancellationToken).ConfigureAwait(false);
         return await this.PostAuth(serverRes).ConfigureAwait(false);
     }
 
@@ -1137,26 +1025,6 @@ public partial class EcosystemWallet : IThirdwebWallet
         {
             return Task.FromResult(this.Address);
         }
-    }
-
-    public Task<string> EthSign(byte[] rawMessage)
-    {
-        if (rawMessage == null)
-        {
-            throw new ArgumentNullException(nameof(rawMessage), "Message to sign cannot be null.");
-        }
-
-        throw new NotImplementedException();
-    }
-
-    public Task<string> EthSign(string message)
-    {
-        if (message == null)
-        {
-            throw new ArgumentNullException(nameof(message), "Message to sign cannot be null.");
-        }
-
-        throw new NotImplementedException();
     }
 
     public async Task<string> PersonalSign(byte[] rawMessage)
@@ -1336,7 +1204,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             case ExecutionMode.EIP7702Sponsored:
                 var wrappedCalls = new WrappedCalls() { Calls = calls, Uid = Guid.NewGuid().ToByteArray().PadTo32Bytes() };
                 var signature = await EIP712.GenerateSignature_SmartAccount_7702_WrappedCalls("MinimalAccount", "1", transaction.ChainId, userWalletAddress, wrappedCalls, this);
-                var response = await BundlerClient.TwExecute(
+                var response = await ThirdwebBundler.TwExecute(
                     client: this.Client,
                     url: $"https://{transaction.ChainId}.bundler.thirdweb.com",
                     requestId: 7702,
@@ -1354,7 +1222,7 @@ public partial class EcosystemWallet : IThirdwebWallet
                     {
                         ct.Token.ThrowIfCancellationRequested();
 
-                        var hashResponse = await BundlerClient
+                        var hashResponse = await ThirdwebBundler
                             .TwGetTransactionHash(client: this.Client, url: $"https://{transaction.ChainId}.bundler.thirdweb.com", requestId: 7702, queueId)
                             .ConfigureAwait(false);
 
@@ -1382,51 +1250,6 @@ public partial class EcosystemWallet : IThirdwebWallet
     {
         this.Address = null;
         await this.EmbeddedWallet.SignOutAsync().ConfigureAwait(false);
-    }
-
-    public virtual Task<string> RecoverAddressFromEthSign(string message, string signature)
-    {
-        throw new InvalidOperationException();
-    }
-
-    public virtual Task<string> RecoverAddressFromPersonalSign(string message, string signature)
-    {
-        if (string.IsNullOrEmpty(message))
-        {
-            throw new ArgumentNullException(nameof(message), "Message to sign cannot be null.");
-        }
-
-        if (string.IsNullOrEmpty(signature))
-        {
-            throw new ArgumentNullException(nameof(signature), "Signature cannot be null.");
-        }
-
-        var signer = new EthereumMessageSigner();
-        var address = signer.EncodeUTF8AndEcRecover(message, signature);
-        return Task.FromResult(address);
-    }
-
-    public virtual Task<string> RecoverAddressFromTypedDataV4<T, TDomain>(T data, TypedData<TDomain> typedData, string signature)
-        where TDomain : IDomain
-    {
-        if (data == null)
-        {
-            throw new ArgumentNullException(nameof(data), "Data to sign cannot be null.");
-        }
-
-        if (typedData == null)
-        {
-            throw new ArgumentNullException(nameof(typedData), "Typed data cannot be null.");
-        }
-
-        if (signature == null)
-        {
-            throw new ArgumentNullException(nameof(signature), "Signature cannot be null.");
-        }
-
-        var signer = new Eip712TypedDataSigner();
-        var address = signer.RecoverFromSignatureV4(data, typedData, signature);
-        return Task.FromResult(address);
     }
 
     public async Task<EIP7702Authorization> SignAuthorization(BigInteger chainId, string contractAddress, bool willSelfExecute)

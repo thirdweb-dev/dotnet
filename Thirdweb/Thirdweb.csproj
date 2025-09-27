@@ -27,13 +27,10 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Nethereum.ABI" Version="4.19.0" />
-    <PackageReference Include="Nethereum.Hex" Version="4.19.0" />
-    <PackageReference Include="Nethereum.Contracts" Version="4.19.0" />
-    <PackageReference Include="Nethereum.Signer" Version="4.19.0" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-    <PackageReference Include="Nethereum.Signer.EIP712" Version="4.19.0" />
-    <PackageReference Include="Nethereum.HdWallet" Version="4.14.0" />
+    <PackageReference Include="Nethereum.ABI" Version="5.0.0" />
+    <PackageReference Include="Nethereum.Hex" Version="5.0.0" />
+    <PackageReference Include="Nethereum.Contracts" Version="5.0.0" />
+    <PackageReference Include="Nethereum.Signer" Version="5.0.0" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>

@@ -4,14 +4,10 @@ public static class Constants
 {
     public const string VERSION = "2.25.2";
 
-    internal const string BRIDGE_API_URL = "https://bridge.thirdweb.com";
-    internal const string INSIGHT_API_URL = "https://insight.thirdweb.com";
     internal const string SOCIAL_API_URL = "https://social.thirdweb.com";
     internal const string PIN_URI = "https://storage.thirdweb.com/ipfs/upload";
     internal const string FALLBACK_IPFS_GATEWAY = "https://ipfs.io/ipfs/";
-    internal const string NEBULA_API_URL = "https://nebula-api.thirdweb.com";
     internal const string ENGINE_API_URL = "https://engine.thirdweb.com";
-    internal const string NEBULA_DEFAULT_MODEL = "t0-003";
     internal const int DEFAULT_FETCH_TIMEOUT = 120000;
 
     public const string ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";

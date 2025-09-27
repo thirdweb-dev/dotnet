@@ -14,337 +14,51 @@ var secretKey = Environment.GetEnvironmentVariable("THIRDWEB_SECRET_KEY");
 // Fetch timeout options are optional, default is 120000ms
 var client = ThirdwebClient.Create(secretKey: secretKey);
 
-#region Basic Wallet Interaction
+#region Signing Messages
 
-//  Create a private key wallet
-var privateKeyWallet = await PrivateKeyWallet.Generate(client);
+//  Create a guest wallet
+var guestWallet = await InAppWallet.Create(client, authProvider: AuthProvider.Guest);
+var walletAddress = await guestWallet.LoginWithGuest();
+Console.WriteLine($"Guest Wallet address: {walletAddress}");
 
-// var walletAddress = await privateKeyWallet.GetAddress();
-// Console.WriteLine($"PK Wallet address: {walletAddress}");
+var signature = await guestWallet.PersonalSign("Hello, Thirdweb!");
+Console.WriteLine($"Guest Wallet personal sign: {signature}");
 
 #endregion
 
-#region Basic Contract Interaction
+#region Reading from Contracts
 
 // var contract = await ThirdwebContract.Create(client: client, address: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", chain: 1);
-// var nfts = await contract.ERC721_GetAllNFTs();
+// var nfts = await contract.ERC721_GetNFT(0);
 // Console.WriteLine($"NFTs: {JsonConvert.SerializeObject(nfts, Formatting.Indented)}");
 
 #endregion
 
-#region Deploy Contract
+#region User Wallets (Social Auth Example)
 
-// var serverWallet = await ServerWallet.Create(client: client, label: "TestFromDotnet");
-
-// var abi =
-//     "[ { \"inputs\": [], \"name\": \"welcome\", \"outputs\": [ { \"internalType\": \"string\", \"name\": \"\", \"type\": \"string\" } ], \"stateMutability\": \"pure\", \"type\": \"function\" } ]";
-
-// var contractAddress = await ThirdwebContract.Deploy(
-//     client: client,
-//     chainId: 11155111,
-//     serverWalletAddress: await serverWallet.GetAddress(),
-//     bytecode: "6080604052348015600e575f5ffd5b5061014e8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063b627cf3b1461002d575b5f5ffd5b61003561004b565b60405161004291906100f8565b60405180910390f35b60606040518060400160405280601481526020017f57656c636f6d6520746f20746869726477656221000000000000000000000000815250905090565b5f81519050919050565b5f82825260208201905092915050565b8281835e5f83830152505050565b5f601f19601f8301169050919050565b5f6100ca82610088565b6100d48185610092565b93506100e48185602086016100a2565b6100ed816100b0565b840191505092915050565b5f6020820190508181035f83015261011081846100c0565b90509291505056fea264697066735822122001498e9d7d6125ce22613ef32fdb7e8e03bf11ad361d7b00e210b82d7b7e0d4464736f6c634300081e0033",
-//     abi: abi
-// );
-// Console.WriteLine($"Contract deployed at: {contractAddress}");
-
-// var contract = await ThirdwebContract.Create(client: client, address: contractAddress, chain: 11155111, abi: abi);
-// var welcomeMessage = await contract.Read<string>("welcome");
-// Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
-
-#endregion
-
-#region Bridge
-
-// // Create a ThirdwebBridge instance
-// var bridge = await ThirdwebBridge.Create(client);
-
-// // Buy - Get a quote for buying a specific amount of tokens
-// var buyQuote = await bridge.Buy_Quote(
-//     originChainId: 1,
-//     originTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
-//     destinationChainId: 324,
-//     destinationTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
-//     buyAmountWei: BigInteger.Parse("0.01".ToWei())
-// );
-// Console.WriteLine($"Buy quote: {JsonConvert.SerializeObject(buyQuote, Formatting.Indented)}");
-
-// // Buy - Get an executable set of transactions (alongside a quote) for buying a specific amount of tokens
-// var preparedBuy = await bridge.Buy_Prepare(
-//     originChainId: 1,
-//     originTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
-//     destinationChainId: 324,
-//     destinationTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
-//     buyAmountWei: BigInteger.Parse("0.01".ToWei()),
-//     sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
-//     receiver: await myWallet.GetAddress()
-// );
-// Console.WriteLine($"Prepared Buy contains {preparedBuy.Steps.Count} steps(s) with a total of {preparedBuy.Steps.Sum(step => step.Transactions.Count)} transactions!");
-
-// // Sell - Get a quote for selling a specific amount of tokens
-// var sellQuote = await bridge.Sell_Quote(
-//     originChainId: 324,
-//     originTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
-//     destinationChainId: 1,
-//     destinationTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
-//     sellAmountWei: BigInteger.Parse("0.01".ToWei())
-// );
-// Console.WriteLine($"Sell quote: {JsonConvert.SerializeObject(sellQuote, Formatting.Indented)}");
-
-// // Sell - Get an executable set of transactions (alongside a quote) for selling a specific amount of tokens
-// var preparedSell = await bridge.Sell_Prepare(
-//     originChainId: 324,
-//     originTokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // ETH on zkSync
-//     destinationChainId: 1,
-//     destinationTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
-//     sellAmountWei: BigInteger.Parse("0.01".ToWei()),
-//     sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
-//     receiver: await myWallet.GetAddress()
-// );
-// Console.WriteLine($"Prepared Sell contains {preparedBuy.Steps.Count} steps(s) with a total of {preparedBuy.Steps.Sum(step => step.Transactions.Count)} transactions!");
-
-// // Transfer - Get an executable transaction for transferring a specific amount of tokens
-// var preparedTransfer = await bridge.Transfer_Prepare(
-//     chainId: 137,
-//     tokenAddress: Constants.NATIVE_TOKEN_ADDRESS, // POL on Polygon
-//     transferAmountWei: BigInteger.Parse("0.01".ToWei()),
-//     sender: await Utils.GetAddressFromENS(client, "vitalik.eth"),
-//     receiver: await myWallet.GetAddress()
-// );
-// Console.WriteLine($"Prepared Transfer: {JsonConvert.SerializeObject(preparedTransfer, Formatting.Indented)}");
-
-// // You may use our extensions to execute yourself...
-// var myTx = await preparedTransfer.Transactions[0].ToThirdwebTransaction(myWallet);
-// var myHash = await ThirdwebTransaction.Send(myTx);
-
-// // ...and poll for the status...
-// var status = await bridge.Status(transactionHash: myHash, chainId: 1);
-// var isComplete = status.StatusType == StatusType.COMPLETED;
-// Console.WriteLine($"Status: {JsonConvert.SerializeObject(status, Formatting.Indented)}");
-
-// // Or use our Execute extensions directly to handle everything for you!
-
-// // Execute a prepared Buy
-// var buyResult = await bridge.Execute(myWallet, preparedBuy);
-// var buyHashes = buyResult.Select(receipt => receipt.TransactionHash).ToList();
-// Console.WriteLine($"Buy hashes: {JsonConvert.SerializeObject(buyHashes, Formatting.Indented)}");
-
-// // Execute a prepared Sell
-// var sellResult = await bridge.Execute(myWallet, preparedSell);
-// var sellHashes = sellResult.Select(receipt => receipt.TransactionHash).ToList();
-// Console.WriteLine($"Sell hashes: {JsonConvert.SerializeObject(sellHashes, Formatting.Indented)}");
-
-// // Execute a prepared Transfer
-// var transferResult = await bridge.Execute(myWallet, preparedTransfer);
-// var transferHashes = transferResult.Select(receipt => receipt.TransactionHash).ToList();
-// Console.WriteLine($"Transfer hashes: {JsonConvert.SerializeObject(transferHashes, Formatting.Indented)}");
-
-// // Onramp - Get a quote for buying crypto with Fiat
-// var preparedOnramp = await bridge.Onramp_Prepare(
-//     onramp: OnrampProvider.Coinbase,
-//     chainId: 8453,
-//     tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base
-//     amount: "10000000",
-//     receiver: await myWallet.GetAddress()
-// );
-// Console.WriteLine($"Onramp link: {preparedOnramp.Link}");
-// Console.WriteLine($"Full onramp quote and steps data: {JsonConvert.SerializeObject(preparedOnramp, Formatting.Indented)}");
-
-// while (true)
+// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.Google);
+// if (!await inAppWalletOAuth.IsConnected())
 // {
-//     var onrampStatus = await bridge.Onramp_Status(id: preparedOnramp.Id);
-//     Console.WriteLine($"Full Onramp Status: {JsonConvert.SerializeObject(onrampStatus, Formatting.Indented)}");
-//     if (onrampStatus.StatusType is StatusType.COMPLETED or StatusType.FAILED)
-//     {
-//         break;
-//     }
-//     await ThirdwebTask.Delay(5000);
+//     _ = await inAppWalletOAuth.LoginWithOauth(
+//         isMobile: false,
+//         (url) =>
+//         {
+//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+//             _ = Process.Start(psi);
+//         },
+//         "thirdweb://",
+//         new InAppWalletBrowser()
+//     );
 // }
+// var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
+// Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
 
-// if (preparedOnramp.IsSwapRequiredPostOnramp())
-// {
-//     // Execute additional steps that are required post-onramp to get to your token, manually or via the Execute extension
-//     var receipts = await bridge.Execute(myWallet, preparedOnramp);
-//     Console.WriteLine($"Onramp receipts: {JsonConvert.SerializeObject(receipts, Formatting.Indented)}");
-// }
-// else
-// {
-//     Console.WriteLine("No additional steps required post-onramp, you can use the tokens directly!");
-// }
+// var inAppWalletAuthDetails = inAppWalletOAuth.GetUserAuthDetails();
+// Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
 
 #endregion
 
-#region Indexer
-
-// // Create a ThirdwebInsight instance
-// var insight = await ThirdwebInsight.Create(client);
-
-// var ethPriceToday = await insight.GetTokenPrice(addressOrSymbol: "ETH", chainId: 1);
-// Console.WriteLine($"ETH price today: {ethPriceToday.PriceUsd}");
-
-// var ethPriceYesterday = await insight.GetTokenPrice(addressOrSymbol: "ETH", chainId: 1, timestamp: Utils.GetUnixTimeStampNow() - 86400);
-// Console.WriteLine($"ETH price yesterday: {ethPriceYesterday.PriceUsd}");
-
-// var multiTokenPrices = await insight.GetTokenPrices(addressOrSymbols: new[] { "POL", "APE" }, chainIds: new BigInteger[] { 137, 33139 });
-// Console.WriteLine($"Multi token prices: {JsonConvert.SerializeObject(multiTokenPrices, Formatting.Indented)}");
-
-// // Setup some filters
-// var address = await Utils.GetAddressFromENS(client, "vitalik.eth");
-// var chains = new BigInteger[] { 1, 137, 42161 };
-
-// // Fetch all token types
-// var tokens = await insight.GetTokens(address, chains);
-// Console.WriteLine($"ERC20 Count: {tokens.erc20Tokens.Length} | ERC721 Count: {tokens.erc721Tokens.Length} | ERC1155 Count: {tokens.erc1155Tokens.Length}");
-
-// // Fetch specific token types
-// var erc20Tokens = await insight.GetTokens_ERC20(address, chains);
-// Console.WriteLine($"ERC20 Tokens: {JsonConvert.SerializeObject(erc20Tokens, Formatting.Indented)}");
-
-// // Fetch specific token types
-// var erc721Tokens = await insight.GetTokens_ERC721(address, chains);
-// Console.WriteLine($"ERC721 Tokens: {JsonConvert.SerializeObject(erc721Tokens, Formatting.Indented)}");
-
-// // Fetch specific token types
-// var erc1155Tokens = await insight.GetTokens_ERC1155(address, chains);
-// Console.WriteLine($"ERC1155 Tokens: {JsonConvert.SerializeObject(erc1155Tokens, Formatting.Indented)}");
-
-// // Fetch events (great amount of optional filters available)
-// var events = await insight.GetEvents(
-//     chainIds: new BigInteger[] { 1 }, // ethereum
-//     contractAddress: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", // bored apes
-//     eventSignature: "Transfer(address,address,uint256)", // transfer event
-//     fromTimestamp: Utils.GetUnixTimeStampNow() - 3600, // last hour
-//     sortBy: SortBy.TransactionIndex, // block number, block timestamp or transaction index
-//     sortOrder: SortOrder.Desc, // latest first
-//     limit: 5 // last 5 transfers
-// );
-// Console.WriteLine($"Events: {JsonConvert.SerializeObject(events, Formatting.Indented)}");
-
-// // Fetch transactions (great amount of optional filters available)
-// var transactions = await insight.GetTransactions(
-//     chainIds: new BigInteger[] { 1 }, // ethereum
-//     contractAddress: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", // bored apes
-//     fromTimestamp: Utils.GetUnixTimeStampNow() - 3600, // last hour
-//     sortBy: SortBy.TransactionIndex, // block number, block timestamp or transaction index
-//     sortOrder: SortOrder.Desc, // latest first
-//     limit: 5 // last 5 transactions
-// );
-// Console.WriteLine($"Transactions: {JsonConvert.SerializeObject(transactions, Formatting.Indented)}");
-
-// // Use ToNFT to ToNFTList extensions
-// var convertedNft = erc721Tokens[0].ToNFT();
-
-// var convertedNfts = erc721Tokens.ToNFTList();
-
-// // Use NFT Extensions (GetNFTImageBytes, or GetNFTSprite in Unity)
-// var imageBytes = await convertedNft.GetNFTImageBytes(client);
-// var pathToSave = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "nft.png");
-// await File.WriteAllBytesAsync(pathToSave, imageBytes);
-// Console.WriteLine($"NFT image saved to: {pathToSave}");
-
-#endregion
-
-#region AI
-
-// // Prepare some context
-// var myChain = 11155111;
-// var myWallet = await SmartWallet.Create(personalWallet: await PrivateKeyWallet.Generate(client), chainId: myChain, gasless: true);
-// var myContractAddress = "0xe2cb0eb5147b42095c2FfA6F7ec953bb0bE347D8"; // DropERC1155
-// var usdcAddress = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
-
-// // Create a Nebula session
-// var nebula = await ThirdwebNebula.Create(client);
-
-// // Chat, passing wallet context
-// var response1 = await nebula.Chat(message: "What is my wallet address?", wallet: myWallet);
-// Console.WriteLine($"Response 1: {response1.Message}");
-
-// // Chat, passing contract context
-// var response2 = await nebula.Chat(
-//     message: "What's the total supply of token id 0 for this contract?",
-//     context: new NebulaContext(contractAddresses: new List<string> { myContractAddress }, chainIds: new List<BigInteger> { myChain })
-// );
-// Console.WriteLine($"Response 2: {response2.Message}");
-
-// // Chat, passing multiple messages and context
-// var response3 = await nebula.Chat(
-//     messages: new List<NebulaChatMessage>
-//     {
-//         new($"Tell me the name of this contract: {myContractAddress}", NebulaChatRole.User),
-//         new("The name of the contract is CatDrop", NebulaChatRole.Assistant),
-//         new("What's the symbol of this contract?", NebulaChatRole.User),
-//     },
-//     context: new NebulaContext(contractAddresses: new List<string> { myContractAddress }, chainIds: new List<BigInteger> { myChain })
-// );
-// Console.WriteLine($"Response 3: {response3.Message}");
-
-// // Execute, this directly sends transactions
-// var executionResult = await nebula.Execute("Approve 1 USDC to vitalik.eth", wallet: myWallet, context: new NebulaContext(contractAddresses: new List<string>() { usdcAddress }));
-// if (executionResult.TransactionReceipts != null && executionResult.TransactionReceipts.Count > 0)
-// {
-//     Console.WriteLine($"Receipt: {executionResult.TransactionReceipts[0]}");
-// }
-// else
-// {
-//     Console.WriteLine($"Message: {executionResult.Message}");
-// }
-
-// // Batch execute
-// var batchExecutionResult = await nebula.Execute(
-//     new List<NebulaChatMessage>
-//     {
-//         new("What's the address of vitalik.eth", NebulaChatRole.User),
-//         new("The address of vitalik.eth is 0xd8dA6BF26964aF8E437eEa5e3616511D7G3a3298", NebulaChatRole.Assistant),
-//         new("Approve 1 USDC to them", NebulaChatRole.User),
-//     },
-//     wallet: myWallet,
-//     context: new NebulaContext(contractAddresses: new List<string>() { usdcAddress })
-// );
-// if (batchExecutionResult.TransactionReceipts != null && batchExecutionResult.TransactionReceipts.Count > 0)
-// {
-//     Console.WriteLine($"Receipts: {JsonConvert.SerializeObject(batchExecutionResult.TransactionReceipts, Formatting.Indented)}");
-// }
-// else
-// {
-//     Console.WriteLine($"Message: {batchExecutionResult.Message}");
-// }
-
-#endregion
-
-#region Get Social Profiles
-
-// var socialProfiles = await Utils.GetSocialProfiles(client, "joenrv.eth");
-// Console.WriteLine($"Social Profiles: {socialProfiles}");
-
-#endregion
-
-#region AA 0.6
-
-// var smartWallet06 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true);
-// var receipt06 = await smartWallet06.Transfer(chainId: 421614, toAddress: await smartWallet06.GetAddress(), weiAmount: 0);
-// Console.WriteLine($"Receipt: {receipt06}");
-
-#endregion
-
-#region AA 0.7
-
-// var smartWallet07 = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 421614, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V07);
-// var receipt07 = await smartWallet07.Transfer(chainId: 421614, toAddress: await smartWallet07.GetAddress(), weiAmount: 0);
-// Console.WriteLine($"Receipt: {receipt07}");
-
-#endregion
-
-#region AA ZkSync
-
-// var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
-
-// var hash = await zkSmartWallet.SendTransaction(new ThirdwebTransactionInput(chainId: 11124, to: await zkSmartWallet.GetAddress(), value: 0, data: "0x"));
-
-// Console.WriteLine($"Transaction hash: {hash}");
-
-#endregion
-
-#region Server Wallet
+#region Server Wallets
 
 // // ServerWallet is compatible with IThirdwebWallet and can be used with any SDK method/extension
 // var serverWallet = await ServerWallet.Create(
@@ -387,7 +101,71 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 #endregion
 
-#region EIP-7702
+#region Thirdweb API Wrapper
+
+var metadata = await client.Api.GetContractMetadataAsync(chainId: 1, address: "0xBd3531dA5CF5857e7CfAA92426877b022e612cf8");
+
+Console.WriteLine($"ABI: {JsonConvert.SerializeObject(metadata.Result.Output.Abi, Formatting.Indented)}");
+Console.WriteLine($"Compiler version: {metadata.Result.Compiler.Version}");
+
+#endregion
+
+#region AA 0.6
+
+// var smartWallet06 = await SmartWallet.Create(personalWallet: guestWallet, chainId: 421614, gasless: true);
+// var receipt06 = await smartWallet06.Transfer(chainId: 421614, toAddress: await smartWallet06.GetAddress(), weiAmount: 0);
+// Console.WriteLine($"Receipt: {receipt06}");
+
+#endregion
+
+#region AA 0.7
+
+// var smartWallet07 = await SmartWallet.Create(personalWallet: guestWallet, chainId: 421614, gasless: true, entryPoint: Constants.ENTRYPOINT_ADDRESS_V07);
+// var receipt07 = await smartWallet07.Transfer(chainId: 421614, toAddress: await smartWallet07.GetAddress(), weiAmount: 0);
+// Console.WriteLine($"Receipt: {receipt07}");
+
+#endregion
+
+#region AA ZkSync
+
+// var zkSmartWallet = await SmartWallet.Create(personalWallet: privateKeyWallet, chainId: 11124, gasless: true);
+
+// var hash = await zkSmartWallet.SendTransaction(new ThirdwebTransactionInput(chainId: 11124, to: await zkSmartWallet.GetAddress(), value: 0, data: "0x"));
+
+// Console.WriteLine($"Transaction hash: {hash}");
+
+#endregion
+
+#region Deploy Contract
+
+// var serverWallet = await ServerWallet.Create(client: client, label: "TestFromDotnet");
+
+// var abi =
+//     "[ { \"inputs\": [], \"name\": \"welcome\", \"outputs\": [ { \"internalType\": \"string\", \"name\": \"\", \"type\": \"string\" } ], \"stateMutability\": \"pure\", \"type\": \"function\" } ]";
+
+// var contractAddress = await ThirdwebContract.Deploy(
+//     client: client,
+//     chainId: 11155111,
+//     serverWalletAddress: await serverWallet.GetAddress(),
+//     bytecode: "6080604052348015600e575f5ffd5b5061014e8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063b627cf3b1461002d575b5f5ffd5b61003561004b565b60405161004291906100f8565b60405180910390f35b60606040518060400160405280601481526020017f57656c636f6d6520746f20746869726477656221000000000000000000000000815250905090565b5f81519050919050565b5f82825260208201905092915050565b8281835e5f83830152505050565b5f601f19601f8301169050919050565b5f6100ca82610088565b6100d48185610092565b93506100e48185602086016100a2565b6100ed816100b0565b840191505092915050565b5f6020820190508181035f83015261011081846100c0565b90509291505056fea264697066735822122001498e9d7d6125ce22613ef32fdb7e8e03bf11ad361d7b00e210b82d7b7e0d4464736f6c634300081e0033",
+//     abi: abi
+// );
+// Console.WriteLine($"Contract deployed at: {contractAddress}");
+
+// var contract = await ThirdwebContract.Create(client: client, address: contractAddress, chain: 11155111, abi: abi);
+// var welcomeMessage = await contract.Read<string>("welcome");
+// Console.WriteLine($"Welcome message from deployed contract: {welcomeMessage}");
+
+#endregion
+
+#region Get Social Profiles
+
+// var socialProfiles = await Utils.GetSocialProfiles(client, "joenrv.eth");
+// Console.WriteLine($"Social Profiles: {socialProfiles}");
+
+#endregion
+
+#region EIP-7702 (Low Level)
 
 // var chain = 11155111; // 7702-compatible chain
 
@@ -498,8 +276,6 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 // var ecosystemPersonalSignature = await ecosystemWallet.PersonalSign("Hello, Thirdweb!");
 // Console.WriteLine($"Ecosystem Wallet personal sign: {ecosystemPersonalSignature}");
-// var isValidPersonal = (await ecosystemWallet.RecoverAddressFromPersonalSign("Hello, Thirdweb!", ecosystemPersonalSignature)) == ecosystemWalletAddress;
-// Console.WriteLine($"Ecosystem Wallet personal sign valid: {isValidPersonal}");
 
 // var ecosystemTypedSignature = await ecosystemWallet.SignTypedDataV4(
 //     /*lang=json,strict*/
@@ -578,29 +354,6 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 // var rpcInstance = ThirdwebRPC.GetRpcInstance(client, chainId);
 // var hash = await rpcInstance.SendRequestAsync<string>("eth_sendRawTransaction", signedZkRawTx);
 // Console.WriteLine($"Transaction hash: {hash}");
-
-#endregion
-
-#region Guest Login
-
-// var guestWallet = await EcosystemWallet.Create(ecosystemId: "ecosystem.the-bonfire", client: client, authProvider: AuthProvider.Guest);
-// if (!await guestWallet.IsConnected())
-// {
-//     _ = await guestWallet.LoginWithGuest();
-// }
-// var address = await guestWallet.GetAddress();
-// Console.WriteLine($"Guest address: {address}");
-
-// var oldLinkedAccounts = await guestWallet.GetLinkedAccounts();
-// Console.WriteLine($"Old linked accounts: {JsonConvert.SerializeObject(oldLinkedAccounts, Formatting.Indented)}");
-
-// var emailWalletFresh = await EcosystemWallet.Create(ecosystemId: "ecosystem.the-bonfire", client: client, email: "firekeeper+guestupgrade5@thirdweb.com");
-// _ = await emailWalletFresh.SendOTP();
-// Console.WriteLine("Enter OTP:");
-// var otp = Console.ReadLine();
-
-// var linkedAccounts = await guestWallet.LinkAccount(walletToLink: emailWalletFresh, otp: otp);
-// Console.WriteLine($"Linked accounts: {JsonConvert.SerializeObject(linkedAccounts, Formatting.Indented)}");
 
 #endregion
 
@@ -725,90 +478,6 @@ var privateKeyWallet = await PrivateKeyWallet.Generate(client);
 
 // var chainData = await Utils.GetChainMetadata(client, 421614);
 // Console.WriteLine($"Chain data: {JsonConvert.SerializeObject(chainData, Formatting.Indented)}");
-
-#endregion
-
-#region Self Transfer Transaction
-
-// var tx = await ThirdwebTransaction.Create(
-//     wallet: privateKeyWallet,
-//     txInput: new ThirdwebTransactionInput()
-//     {
-//         To = await privateKeyWallet.GetAddress(),
-//         Value = new HexBigInteger(BigInteger.Zero),
-//     },
-//     chainId: 842
-// );
-// var txHash = await ThirdwebTransaction.Send(tx);
-// Console.WriteLine($"Transaction hash: {txHash}");
-
-#endregion
-
-#region InAppWallet - OAuth
-
-// var inAppWalletOAuth = await InAppWallet.Create(client: client, authProvider: AuthProvider.TikTok);
-// if (!await inAppWalletOAuth.IsConnected())
-// {
-//     _ = await inAppWalletOAuth.LoginWithOauth(
-//         isMobile: false,
-//         (url) =>
-//         {
-//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-//             _ = Process.Start(psi);
-//         },
-//         "thirdweb://",
-//         new InAppWalletBrowser()
-//     );
-// }
-// var inAppWalletOAuthAddress = await inAppWalletOAuth.GetAddress();
-// Console.WriteLine($"InAppWallet OAuth address: {inAppWalletOAuthAddress}");
-
-// var inAppWalletAuthDetails = inAppWalletOAuth.GetUserAuthDetails();
-// Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
-
-#endregion
-
-#region InAppWallet - SiweExternal
-
-// var inAppWalletSiweExternal = await InAppWallet.Create(client: client, authProvider: AuthProvider.SiweExternal);
-// if (!await inAppWalletSiweExternal.IsConnected())
-// {
-//     _ = await inAppWalletSiweExternal.LoginWithSiweExternal(
-//         isMobile: false,
-//         browserOpenAction: (url) =>
-//         {
-//             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-//             _ = Process.Start(psi);
-//         },
-//         forceWalletIds: new List<string> { "io.metamask", "com.coinbase.wallet", "xyz.abs" }
-//     );
-// }
-// var inAppWalletOAuthAddress = await inAppWalletSiweExternal.GetAddress();
-// Console.WriteLine($"InAppWallet SiweExternal address: {inAppWalletOAuthAddress}");
-
-// var inAppWalletAuthDetails = inAppWalletSiweExternal.GetUserAuthDetails();
-// Console.WriteLine($"InAppWallet OAuth auth details: {JsonConvert.SerializeObject(inAppWalletAuthDetails, Formatting.Indented)}");
-
-// await inAppWalletSiweExternal.Disconnect();
-
-#endregion
-
-#region Smart Wallet - Gasless Transaction
-
-// var smartWallet = await SmartWallet.Create(privateKeyWallet, 78600);
-
-// // Self transfer 0
-// var tx2 = await ThirdwebTransaction.Create(
-//     smartWallet,
-//     new ThirdwebTransactionInput()
-//     {
-//         To = await smartWallet.GetAddress(),
-//         Value = new HexBigInteger(BigInteger.Zero)
-//     },
-//     78600
-// );
-// var txHash2 = await ThirdwebTransaction.Send(tx2);
-// Console.WriteLine($"Transaction hash: {txHash2}");
 
 #endregion
 

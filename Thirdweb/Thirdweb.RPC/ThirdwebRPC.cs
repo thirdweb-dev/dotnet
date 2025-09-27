@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Thirdweb.Tests")]
 
@@ -206,7 +207,7 @@ public class ThirdwebRPC : IDisposable
                                 }
                                 catch
                                 {
-                                    revertMsg = rpcResponse.Error.Data is string ? rpcResponse.Error.Data.ToString() : JsonConvert.SerializeObject(rpcResponse.Error.Data);
+                                    revertMsg = rpcResponse.Error.Data.Type == JTokenType.String ? rpcResponse.Error.Data.ToString() : JsonConvert.SerializeObject(rpcResponse.Error.Data);
                                 }
                             }
                             tcs.SetException(new Exception($"RPC Error for request {rpcResponse.Id}: {rpcResponse.Error.Message} {revertMsg}"));

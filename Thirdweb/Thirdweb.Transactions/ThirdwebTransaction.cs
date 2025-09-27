@@ -1,6 +1,4 @@
 using System.Numerics;
-using Nethereum.ABI.FunctionEncoding;
-using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -28,7 +26,7 @@ public struct TotalCosts
 /// </summary>
 public class ThirdwebTransaction
 {
-    public ThirdwebTransactionInput Input { get; }
+    public ThirdwebTransactionInput Input { get; set; }
 
     internal readonly IThirdwebWallet Wallet;
 
@@ -424,7 +422,7 @@ public class ThirdwebTransaction
                 receipt = await rpc.SendRequestAsync<ThirdwebTransactionReceipt>("eth_getTransactionReceipt", txHash).ConfigureAwait(false);
                 if (receipt == null)
                 {
-                    await ThirdwebTask.Delay(100, cancellationToken).ConfigureAwait(false);
+                    await ThirdwebTask.Delay(100, cts.Token).ConfigureAwait(false);
                 }
             } while (receipt == null && !cts.Token.IsCancellationRequested);
 
@@ -436,29 +434,6 @@ public class ThirdwebTransaction
             if (receipt.Status != null && receipt.Status.Value == 0)
             {
                 throw new Exception($"Transaction {txHash} execution reverted.");
-            }
-
-            var userOpEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationEventEventDTO>();
-            if (userOpEvent != null && userOpEvent.Count > 0 && !userOpEvent[0].Event.Success)
-            {
-                var revertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.UserOperationRevertReasonEventDTO>();
-                var postOpRevertReasonEvent = receipt.DecodeAllEvents<AccountAbstraction.PostOpRevertReasonEventDTO>();
-                if (revertReasonEvent != null && revertReasonEvent.Count > 0)
-                {
-                    var revertReason = revertReasonEvent[0].Event.RevertReason;
-                    var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
-                    throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
-                }
-                else if (postOpRevertReasonEvent != null && postOpRevertReasonEvent.Count > 0)
-                {
-                    var revertReason = postOpRevertReasonEvent[0].Event.RevertReason;
-                    var revertReasonString = new FunctionCallDecoder().DecodeFunctionErrorMessage(revertReason.ToHex(true));
-                    throw new Exception($"Transaction {txHash} execution silently reverted: {revertReasonString}");
-                }
-                else
-                {
-                    throw new Exception($"Transaction {txHash} execution silently reverted with no reason string");
-                }
             }
         }
         catch (OperationCanceledException)
@@ -537,7 +512,7 @@ public class ThirdwebTransaction
             Paymaster = transaction.Input.ZkSync.Value.Paymaster,
             Nonce = transaction.Input.Nonce ?? new HexBigInteger(await GetNonce(transaction).ConfigureAwait(false)),
             Value = transaction.Input.Value?.Value ?? 0,
-            Data = transaction.Input.Data?.HexToByteArray() ?? Array.Empty<byte>(),
+            Data = transaction.Input.Data?.HexToBytes() ?? Array.Empty<byte>(),
             FactoryDeps = transaction.Input.ZkSync.Value.FactoryDeps,
             PaymasterInput = transaction.Input.ZkSync.Value.PaymasterInput,
         };

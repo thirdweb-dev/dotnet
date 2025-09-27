@@ -1,0 +1,323 @@
+using System.Numerics;
+using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Hex.HexTypes;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace Thirdweb;
+
+/// <summary>
+/// Represents the input parameters for a Thirdweb transaction.
+/// </summary>
+public class ThirdwebTransactionInput
+{
+    internal ThirdwebTransactionInput() { }
+
+    public ThirdwebTransactionInput(BigInteger chainId)
+    {
+        this.ChainId = chainId > 0 ? new HexBigInteger(chainId) : throw new ArgumentException("Invalid Chain ID");
+    }
+
+    public ThirdwebTransactionInput(
+        BigInteger chainId,
+        string from = null,
+        string to = null,
+        BigInteger? nonce = null,
+        BigInteger? gas = null,
+        BigInteger? gasPrice = null,
+        BigInteger? value = null,
+        string data = null,
+        BigInteger? maxFeePerGas = null,
+        BigInteger? maxPriorityFeePerGas = null,
+        ZkSyncOptions? zkSync = null,
+        EIP7702Authorization? authorization = null
+    )
+    {
+        this.ChainId = chainId > 0 ? new HexBigInteger(chainId) : throw new ArgumentException("Invalid Chain ID");
+        this.From = string.IsNullOrEmpty(from) ? Constants.ADDRESS_ZERO : from;
+        this.To = string.IsNullOrEmpty(to) ? Constants.ADDRESS_ZERO : to;
+        this.Nonce = nonce == null ? null : new HexBigInteger(nonce.Value);
+        this.Gas = gas == null ? null : new HexBigInteger(gas.Value);
+        this.GasPrice = gasPrice == null ? null : new HexBigInteger(gasPrice.Value);
+        this.Value = value == null ? null : new HexBigInteger(value.Value);
+        this.Data = string.IsNullOrEmpty(data) ? "0x" : data;
+        this.MaxFeePerGas = maxFeePerGas == null ? null : new HexBigInteger(maxFeePerGas.Value);
+        this.MaxPriorityFeePerGas = maxPriorityFeePerGas == null ? null : new HexBigInteger(maxPriorityFeePerGas.Value);
+        this.ZkSync = zkSync;
+        this.AuthorizationList = authorization == null ? null : new List<EIP7702Authorization> { authorization.Value };
+    }
+
+    /// <summary>
+    /// Gets or sets the nonce of the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "nonce")]
+    public HexBigInteger Nonce { get; set; }
+
+    private string _from;
+    private string _to;
+    private string _data;
+
+    /// <summary>
+    /// Gets or sets the sender address of the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "from")]
+    public string From
+    {
+        get => this._from.EnsureHexPrefix();
+        set => this._from = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the recipient address of the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "to")]
+    public string To
+    {
+        get => this._to.EnsureHexPrefix();
+        set => this._to = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the gas limit for the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "gas")]
+    public HexBigInteger Gas { get; set; }
+
+    /// <summary>
+    /// Gets or sets the gas price for the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "gasPrice")]
+    public HexBigInteger GasPrice { get; set; }
+
+    /// <summary>
+    /// Gets or sets the value to be transferred in the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "value")]
+    public HexBigInteger Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the data to be sent with the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "data")]
+    public string Data
+    {
+        get => this._data.EnsureHexPrefix();
+        set => this._data = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum fee per gas for the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "maxFeePerGas")]
+    public HexBigInteger MaxFeePerGas { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum priority fee per gas for the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "maxPriorityFeePerGas")]
+    public HexBigInteger MaxPriorityFeePerGas { get; set; }
+
+    /// <summary>
+    /// Gets or sets the chain ID for the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "chainId")]
+    public HexBigInteger ChainId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the zkSync options for the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "zkSyncOptions", NullValueHandling = NullValueHandling.Ignore)]
+    public ZkSyncOptions? ZkSync { get; set; }
+
+#nullable enable
+    [JsonProperty(PropertyName = "authorizationList", NullValueHandling = NullValueHandling.Ignore)]
+    public List<EIP7702Authorization>? AuthorizationList { get; set; }
+#nullable disable
+}
+
+/// <summary>
+/// Represents the zkSync options for a transaction.
+/// </summary>
+public struct ZkSyncOptions
+{
+    /// <summary>
+    /// Gets or sets the gas limit per pubdata byte.
+    /// </summary>
+    [JsonProperty(PropertyName = "gasPerPubdataByteLimit")]
+    public BigInteger? GasPerPubdataByteLimit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the factory dependencies.
+    /// </summary>
+    [JsonProperty(PropertyName = "factoryDeps")]
+    public List<byte[]> FactoryDeps { get; set; }
+
+    /// <summary>
+    /// Gets or sets the paymaster.
+    /// </summary>
+    [JsonProperty(PropertyName = "paymaster")]
+    public BigInteger Paymaster { get; set; }
+
+    /// <summary>
+    /// Gets or sets the paymaster input data.
+    /// </summary>
+    [JsonProperty(PropertyName = "paymasterInput")]
+    public byte[] PaymasterInput { get; set; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ZkSyncOptions"/> struct.
+    /// </summary>
+    /// <param name="paymaster">The paymaster.</param>
+    /// <param name="paymasterInput">The paymaster input data.</param>
+    /// <param name="gasPerPubdataByteLimit">The gas limit per pubdata byte.</param>
+    /// <param name="factoryDeps">The factory dependencies.</param>
+    public ZkSyncOptions(string paymaster = null, string paymasterInput = null, BigInteger? gasPerPubdataByteLimit = null, List<byte[]> factoryDeps = null)
+    {
+        if (string.IsNullOrEmpty(paymaster) || string.IsNullOrEmpty(paymasterInput))
+        {
+            this.Paymaster = 0;
+            this.PaymasterInput = Array.Empty<byte>();
+            this.GasPerPubdataByteLimit = gasPerPubdataByteLimit;
+            this.FactoryDeps = factoryDeps ?? new List<byte[]>();
+        }
+        else
+        {
+            this.Paymaster = new HexBigInteger(paymaster).Value;
+            this.PaymasterInput = paymasterInput.HexToByteArray();
+            this.GasPerPubdataByteLimit = gasPerPubdataByteLimit;
+            this.FactoryDeps = factoryDeps ?? new List<byte[]>();
+        }
+    }
+}
+
+public struct EIP7702Authorization
+{
+    [JsonProperty(PropertyName = "chainId")]
+    public string ChainId { get; set; }
+
+    [JsonProperty(PropertyName = "address")]
+    public string Address { get; set; }
+
+    [JsonProperty(PropertyName = "nonce")]
+    public string Nonce { get; set; }
+
+    [JsonProperty(PropertyName = "yParity")]
+    public string YParity { get; set; }
+
+    [JsonProperty(PropertyName = "r")]
+    public string R { get; set; }
+
+    [JsonProperty(PropertyName = "s")]
+    public string S { get; set; }
+
+    public EIP7702Authorization(BigInteger chainId, string address, BigInteger nonce, byte[] yParity, byte[] r, byte[] s)
+    {
+        this.ChainId = new HexBigInteger(chainId).HexValue;
+        this.Address = address;
+        this.Nonce = new HexBigInteger(nonce).HexValue;
+        this.YParity = yParity.BytesToHex() == "0x00" ? "0x0" : "0x1";
+        this.R = r.BytesToHex();
+        this.S = s.BytesToHex();
+    }
+}
+
+/// <summary>
+/// Represents the receipt of a transaction.
+/// </summary>
+public class ThirdwebTransactionReceipt
+{
+    /// <summary>
+    /// Gets or sets the transaction hash.
+    /// </summary>
+    [JsonProperty(PropertyName = "transactionHash")]
+    public string TransactionHash { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transaction index within the block.
+    /// </summary>
+    [JsonProperty(PropertyName = "transactionIndex")]
+    public HexBigInteger TransactionIndex { get; set; }
+
+    /// <summary>
+    /// Gets or sets the hash of the block containing the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "blockHash")]
+    public string BlockHash { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of the block containing the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "blockNumber")]
+    public HexBigInteger BlockNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets the address of the sender.
+    /// </summary>
+    [JsonProperty(PropertyName = "from")]
+    public string From { get; set; }
+
+    /// <summary>
+    /// Gets or sets the address of the recipient.
+    /// </summary>
+    [JsonProperty(PropertyName = "to")]
+    public string To { get; set; }
+
+    /// <summary>
+    /// Gets or sets the cumulative gas used by the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "cumulativeGasUsed")]
+    public HexBigInteger CumulativeGasUsed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the gas used by the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "gasUsed")]
+    public HexBigInteger GasUsed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the effective gas price for the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "effectiveGasPrice")]
+    public HexBigInteger EffectiveGasPrice { get; set; }
+
+    /// <summary>
+    /// Gets or sets the contract address created by the transaction, if applicable.
+    /// </summary>
+    [JsonProperty(PropertyName = "contractAddress")]
+    public string ContractAddress { get; set; }
+
+    /// <summary>
+    /// Gets or sets the status of the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "status")]
+    public HexBigInteger Status { get; set; }
+
+    /// <summary>
+    /// Gets or sets the logs generated by the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "logs")]
+    public JArray Logs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transaction type.
+    /// </summary>
+    [JsonProperty(PropertyName = "type")]
+    public HexBigInteger Type { get; set; }
+
+    /// <summary>
+    /// Gets or sets the logs bloom filter.
+    /// </summary>
+    [JsonProperty(PropertyName = "logsBloom")]
+    public string LogsBloom { get; set; }
+
+    /// <summary>
+    /// Gets or sets the root of the transaction.
+    /// </summary>
+    [JsonProperty(PropertyName = "root")]
+    public string Root { get; set; }
+
+    public override string ToString()
+    {
+        return JsonConvert.SerializeObject(this, Formatting.Indented);
+    }
+}
