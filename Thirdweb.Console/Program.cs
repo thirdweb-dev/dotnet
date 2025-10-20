@@ -103,10 +103,29 @@ Console.WriteLine($"Guest Wallet personal sign: {signature}");
 
 #region Thirdweb API Wrapper
 
-var metadata = await client.Api.GetContractMetadataAsync(chainId: 1, address: "0xBd3531dA5CF5857e7CfAA92426877b022e612cf8");
+// var metadata = await client.Api.GetContractMetadataAsync(chainId: 1, address: "0xBd3531dA5CF5857e7CfAA92426877b022e612cf8");
 
-Console.WriteLine($"ABI: {JsonConvert.SerializeObject(metadata.Result.Output.Abi, Formatting.Indented)}");
-Console.WriteLine($"Compiler version: {metadata.Result.Compiler.Version}");
+// Console.WriteLine($"ABI: {JsonConvert.SerializeObject(metadata.Result.Output.Abi, Formatting.Indented)}");
+// Console.WriteLine($"Compiler version: {metadata.Result.Compiler.Version}");
+
+#endregion
+
+#region AA 7702
+
+// var chain = 84532; // 7702-compatible chain
+
+// // Connect to EOA
+// var smartEoa = await InAppWallet.Create(client, authProvider: AuthProvider.Guest, executionMode: ExecutionMode.EIP7702Sponsored);
+// if (!await smartEoa.IsConnected())
+// {
+//     _ = await smartEoa.LoginWithGuest(defaultSessionIdOverride: new Guid().ToString());
+// }
+// var smartEoaAddress = await smartEoa.GetAddress();
+// Console.WriteLine($"User Wallet address: {await smartEoa.GetAddress()}");
+
+// // Transact, will upgrade EOA
+// var receipt = await smartEoa.Transfer(chainId: chain, toAddress: await Utils.GetAddressFromENS(client, "vitalik.eth"), weiAmount: 0);
+// Console.WriteLine($"Transfer Receipt: {receipt.TransactionHash}");
 
 #endregion
 
@@ -167,7 +186,7 @@ Console.WriteLine($"Compiler version: {metadata.Result.Compiler.Version}");
 
 #region EIP-7702 (Low Level)
 
-// var chain = 11155111; // 7702-compatible chain
+// var chain = 42220; // 7702-compatible chain
 
 // // Connect to EOA
 // var smartEoa = await InAppWallet.Create(client, authProvider: AuthProvider.Guest, executionMode: ExecutionMode.EIP7702Sponsored);

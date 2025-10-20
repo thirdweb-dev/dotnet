@@ -114,7 +114,7 @@ public class ThirdwebContract
         var response =
             await client
                 .Api.DeployContractAsync(
-                    new Api.Body8()
+                    new Api.Body10()
                     {
                         ChainId = chainIdInt,
                         From = serverWalletAddress,

@@ -395,6 +395,270 @@ namespace Thirdweb.Api
         }
 
         /// <summary>
+        /// Link Auth
+        /// </summary>
+        /// <remarks>
+        /// Link an additional authentication method or external wallet to the currently authenticated user. Provide the authentication token from another completed login (for example, a SIWE wallet or OAuth account) and this endpoint will associate it with the user's existing wallet.
+        /// <br/>
+        /// <br/>**Usage:**
+        /// <br/>1. Complete an authentication flow using `/auth/complete` to obtain the new authentication token
+        /// <br/>2. Call this endpoint with the token you want to link
+        /// <br/>3. Receive the full list of linked authentication profiles for the wallet
+        /// <br/>
+        /// <br/>**Authentication:** Requires both client authentication (`x-client-id` or `x-secret-key`) and a wallet access token via `Authorization: Bearer &lt;jwt&gt;`.
+        /// </remarks>
+        /// <returns>Authentication method linked successfully. The response contains the updated list of linked authentication profiles.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response3> LinkAuthenticationAsync(Body3 body)
+        {
+            return LinkAuthenticationAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Link Auth
+        /// </summary>
+        /// <remarks>
+        /// Link an additional authentication method or external wallet to the currently authenticated user. Provide the authentication token from another completed login (for example, a SIWE wallet or OAuth account) and this endpoint will associate it with the user's existing wallet.
+        /// <br/>
+        /// <br/>**Usage:**
+        /// <br/>1. Complete an authentication flow using `/auth/complete` to obtain the new authentication token
+        /// <br/>2. Call this endpoint with the token you want to link
+        /// <br/>3. Receive the full list of linked authentication profiles for the wallet
+        /// <br/>
+        /// <br/>**Authentication:** Requires both client authentication (`x-client-id` or `x-secret-key`) and a wallet access token via `Authorization: Bearer &lt;jwt&gt;`.
+        /// </remarks>
+        /// <returns>Authentication method linked successfully. The response contains the updated list of linked authentication profiles.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response3> LinkAuthenticationAsync(Body3 body, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/auth/link"
+                    urlBuilder_.Append("v1/auth/link");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response3>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Invalid request parameters", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Wallet authentication required. Include Authorization: Bearer <jwt> header.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 429)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Rate limit exceeded - Please wait before trying again", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 502)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Third-party provider did not return any linked accounts after processing the request.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Unlink Auth
+        /// </summary>
+        /// <remarks>
+        /// Disconnect an authentication method or external wallet from the currently authenticated user. Provide the identifiers for the provider you want to remove (for example, an email address or wallet address) and this endpoint will detach it from the user's account.
+        /// <br/>
+        /// <br/>**Usage:**
+        /// <br/>1. Choose the provider type you want to disconnect (email, phone, siwe, oauth, etc.)
+        /// <br/>2. Supply the provider-specific identifiers in the request body
+        /// <br/>3. Receive the updated list of linked authentication profiles
+        /// <br/>
+        /// <br/>**Authentication:** Requires both client authentication (`x-client-id` or `x-secret-key`) and a wallet access token via `Authorization: Bearer &lt;jwt&gt;`.
+        /// </remarks>
+        /// <returns>Authentication method unlinked successfully. The response contains the updated list of linked authentication profiles.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response4> UnlinkAuthenticationAsync(Body4 body)
+        {
+            return UnlinkAuthenticationAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Unlink Auth
+        /// </summary>
+        /// <remarks>
+        /// Disconnect an authentication method or external wallet from the currently authenticated user. Provide the identifiers for the provider you want to remove (for example, an email address or wallet address) and this endpoint will detach it from the user's account.
+        /// <br/>
+        /// <br/>**Usage:**
+        /// <br/>1. Choose the provider type you want to disconnect (email, phone, siwe, oauth, etc.)
+        /// <br/>2. Supply the provider-specific identifiers in the request body
+        /// <br/>3. Receive the updated list of linked authentication profiles
+        /// <br/>
+        /// <br/>**Authentication:** Requires both client authentication (`x-client-id` or `x-secret-key`) and a wallet access token via `Authorization: Bearer &lt;jwt&gt;`.
+        /// </remarks>
+        /// <returns>Authentication method unlinked successfully. The response contains the updated list of linked authentication profiles.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response4> UnlinkAuthenticationAsync(Body4 body, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/auth/unlink"
+                    urlBuilder_.Append("v1/auth/unlink");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response4>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Invalid request parameters", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Wallet authentication required. Include Authorization: Bearer <jwt> header.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 429)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Rate limit exceeded - Please wait before trying again", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 502)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Third-party provider did not return any linked accounts after processing the request.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
         /// Social Auth
         /// </summary>
         /// <remarks>
@@ -641,7 +905,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Wallet retrieved successfully. Returns comprehensive user information including wallet addresses, public key, and linked wallets.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response3> GetMyWalletAsync()
+        public virtual System.Threading.Tasks.Task<Response5> GetMyWalletAsync()
         {
             return GetMyWalletAsync(System.Threading.CancellationToken.None);
         }
@@ -664,7 +928,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Wallet retrieved successfully. Returns comprehensive user information including wallet addresses, public key, and linked wallets.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response3> GetMyWalletAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response5> GetMyWalletAsync(System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -705,7 +969,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response3>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response5>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -760,7 +1024,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Returns a list of user wallet addresses, smart wallet addresses, and auth details.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response4> ListUserWalletsAsync(double? limit, double? page, string email, string phone, string address, string externalWalletAddress, string id)
+        public virtual System.Threading.Tasks.Task<Response6> ListUserWalletsAsync(double? limit, double? page, string email, string phone, string address, string externalWalletAddress, string id)
         {
             return ListUserWalletsAsync(limit, page, email, phone, address, externalWalletAddress, id, System.Threading.CancellationToken.None);
         }
@@ -776,7 +1040,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Returns a list of user wallet addresses, smart wallet addresses, and auth details.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response4> ListUserWalletsAsync(double? limit, double? page, string email, string phone, string address, string externalWalletAddress, string id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response6> ListUserWalletsAsync(double? limit, double? page, string email, string phone, string address, string externalWalletAddress, string id, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -847,7 +1111,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response4>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response6>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -896,7 +1160,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Successfully created a user wallet with wallet.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response5> CreateUserWalletAsync(Body3 body)
+        public virtual System.Threading.Tasks.Task<Response7> CreateUserWalletAsync(Body5 body)
         {
             return CreateUserWalletAsync(body, System.Threading.CancellationToken.None);
         }
@@ -912,7 +1176,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Successfully created a user wallet with wallet.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response5> CreateUserWalletAsync(Body3 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response7> CreateUserWalletAsync(Body5 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -957,7 +1221,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response5>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response7>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1012,7 +1276,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Returns a list of server wallet addresses, smart wallet addresses, and auth details.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response6> ListServerWalletsAsync(double? limit, double? page)
+        public virtual System.Threading.Tasks.Task<Response8> ListServerWalletsAsync(double? limit, double? page)
         {
             return ListServerWalletsAsync(limit, page, System.Threading.CancellationToken.None);
         }
@@ -1028,7 +1292,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Returns a list of server wallet addresses, smart wallet addresses, and auth details.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response6> ListServerWalletsAsync(double? limit, double? page, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response8> ListServerWalletsAsync(double? limit, double? page, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1079,7 +1343,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response6>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response8>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1128,7 +1392,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Server wallet created or connected successfully. Returns wallet addresses for subsequent operations.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response7> CreateServerWalletAsync(Body4 body)
+        public virtual System.Threading.Tasks.Task<Response9> CreateServerWalletAsync(Body6 body)
         {
             return CreateServerWalletAsync(body, System.Threading.CancellationToken.None);
         }
@@ -1144,7 +1408,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Server wallet created or connected successfully. Returns wallet addresses for subsequent operations.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response7> CreateServerWalletAsync(Body4 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response9> CreateServerWalletAsync(Body6 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1189,7 +1453,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response7>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response9>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1247,7 +1511,7 @@ namespace Thirdweb.Api
         /// <param name="tokenAddress">The token contract address. Omit for native token (ETH, MATIC, etc.).</param>
         /// <returns>Wallet native balances retrieved successfully. Returns detailed native token balance information for each chain including token metadata and formatted values.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response8> GetWalletBalanceAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, string tokenAddress)
+        public virtual System.Threading.Tasks.Task<Response10> GetWalletBalanceAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, string tokenAddress)
         {
             return GetWalletBalanceAsync(address, chainId, tokenAddress, System.Threading.CancellationToken.None);
         }
@@ -1266,7 +1530,7 @@ namespace Thirdweb.Api
         /// <param name="tokenAddress">The token contract address. Omit for native token (ETH, MATIC, etc.).</param>
         /// <returns>Wallet native balances retrieved successfully. Returns detailed native token balance information for each chain including token metadata and formatted values.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response8> GetWalletBalanceAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, string tokenAddress, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response10> GetWalletBalanceAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, string tokenAddress, System.Threading.CancellationToken cancellationToken)
         {
             if (address == null)
                 throw new System.ArgumentNullException("address");
@@ -1328,7 +1592,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response8>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response10>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1394,7 +1658,7 @@ namespace Thirdweb.Api
         /// <param name="chainId">Chain ID(s) to request transaction data for. You can specify multiple chain IDs by repeating the parameter, up to a maximum of 50. Example: ?chainId=1&amp;chainId=137</param>
         /// <returns>Wallet transactions retrieved successfully. Returns transaction data with metadata including pagination information and chain details. Includes decoded function calls when ABI is available.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response9> GetWalletTransactionsAsync(string address, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, string filterValueGt, string filterFunctionSelector, double? page, double? limit, SortOrder? sortOrder, System.Collections.Generic.IEnumerable<int> chainId)
+        public virtual System.Threading.Tasks.Task<Response11> GetWalletTransactionsAsync(string address, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, string filterValueGt, string filterFunctionSelector, double? page, double? limit, SortOrder? sortOrder, System.Collections.Generic.IEnumerable<int> chainId)
         {
             return GetWalletTransactionsAsync(address, filterBlockTimestampGte, filterBlockTimestampLte, filterBlockNumberGte, filterBlockNumberLte, filterValueGt, filterFunctionSelector, page, limit, sortOrder, chainId, System.Threading.CancellationToken.None);
         }
@@ -1421,7 +1685,7 @@ namespace Thirdweb.Api
         /// <param name="chainId">Chain ID(s) to request transaction data for. You can specify multiple chain IDs by repeating the parameter, up to a maximum of 50. Example: ?chainId=1&amp;chainId=137</param>
         /// <returns>Wallet transactions retrieved successfully. Returns transaction data with metadata including pagination information and chain details. Includes decoded function calls when ABI is available.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response9> GetWalletTransactionsAsync(string address, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, string filterValueGt, string filterFunctionSelector, double? page, double? limit, SortOrder? sortOrder, System.Collections.Generic.IEnumerable<int> chainId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response11> GetWalletTransactionsAsync(string address, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, string filterValueGt, string filterFunctionSelector, double? page, double? limit, SortOrder? sortOrder, System.Collections.Generic.IEnumerable<int> chainId, System.Threading.CancellationToken cancellationToken)
         {
             if (address == null)
                 throw new System.ArgumentNullException("address");
@@ -1515,7 +1779,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response9>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response11>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1588,7 +1852,7 @@ namespace Thirdweb.Api
         /// <param name="includeWithoutPrice">Whether to include tokens without price data (default: true).</param>
         /// <returns>Wallet tokens retrieved successfully. Returns token data with metadata including pagination information and chain details. Includes token balances, metadata, and price information when available. Results are sorted by the specified criteria (default: USD value descending) and filtered according to the provided parameters.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response10> GetWalletTokensAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, System.Collections.Generic.IEnumerable<string> tokenAddresses, int? limit, int? page, Metadata? metadata, ResolveMetadataLinks? resolveMetadataLinks, IncludeSpam? includeSpam, IncludeNative? includeNative, SortBy? sortBy, SortOrder2? sortOrder, IncludeWithoutPrice? includeWithoutPrice)
+        public virtual System.Threading.Tasks.Task<Response12> GetWalletTokensAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, System.Collections.Generic.IEnumerable<string> tokenAddresses, int? limit, int? page, Metadata? metadata, ResolveMetadataLinks? resolveMetadataLinks, IncludeSpam? includeSpam, IncludeNative? includeNative, SortBy? sortBy, SortOrder2? sortOrder, IncludeWithoutPrice? includeWithoutPrice)
         {
             return GetWalletTokensAsync(address, chainId, tokenAddresses, limit, page, metadata, resolveMetadataLinks, includeSpam, includeNative, sortBy, sortOrder, includeWithoutPrice, System.Threading.CancellationToken.None);
         }
@@ -1616,7 +1880,7 @@ namespace Thirdweb.Api
         /// <param name="includeWithoutPrice">Whether to include tokens without price data (default: true).</param>
         /// <returns>Wallet tokens retrieved successfully. Returns token data with metadata including pagination information and chain details. Includes token balances, metadata, and price information when available. Results are sorted by the specified criteria (default: USD value descending) and filtered according to the provided parameters.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response10> GetWalletTokensAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, System.Collections.Generic.IEnumerable<string> tokenAddresses, int? limit, int? page, Metadata? metadata, ResolveMetadataLinks? resolveMetadataLinks, IncludeSpam? includeSpam, IncludeNative? includeNative, SortBy? sortBy, SortOrder2? sortOrder, IncludeWithoutPrice? includeWithoutPrice, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response12> GetWalletTokensAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, System.Collections.Generic.IEnumerable<string> tokenAddresses, int? limit, int? page, Metadata? metadata, ResolveMetadataLinks? resolveMetadataLinks, IncludeSpam? includeSpam, IncludeNative? includeNative, SortBy? sortBy, SortOrder2? sortOrder, IncludeWithoutPrice? includeWithoutPrice, System.Threading.CancellationToken cancellationToken)
         {
             if (address == null)
                 throw new System.ArgumentNullException("address");
@@ -1720,7 +1984,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response10>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response12>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1786,7 +2050,7 @@ namespace Thirdweb.Api
         /// <param name="page">The page number for pagination (default: 1, max: 20).</param>
         /// <returns>Wallet NFTs retrieved successfully. Returns NFT data with metadata including pagination information and chain details. Includes NFT metadata, attributes, and collection information when available.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response11> GetWalletNFTsAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, System.Collections.Generic.IEnumerable<string> contractAddresses, int? limit, int? page)
+        public virtual System.Threading.Tasks.Task<Response13> GetWalletNFTsAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, System.Collections.Generic.IEnumerable<string> contractAddresses, int? limit, int? page)
         {
             return GetWalletNFTsAsync(address, chainId, contractAddresses, limit, page, System.Threading.CancellationToken.None);
         }
@@ -1807,7 +2071,7 @@ namespace Thirdweb.Api
         /// <param name="page">The page number for pagination (default: 1, max: 20).</param>
         /// <returns>Wallet NFTs retrieved successfully. Returns NFT data with metadata including pagination information and chain details. Includes NFT metadata, attributes, and collection information when available.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response11> GetWalletNFTsAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, System.Collections.Generic.IEnumerable<string> contractAddresses, int? limit, int? page, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response13> GetWalletNFTsAsync(string address, System.Collections.Generic.IEnumerable<int> chainId, System.Collections.Generic.IEnumerable<string> contractAddresses, int? limit, int? page, System.Threading.CancellationToken cancellationToken)
         {
             if (address == null)
                 throw new System.ArgumentNullException("address");
@@ -1883,7 +2147,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response11>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response13>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1944,7 +2208,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Message signed successfully. Returns the cryptographic signature that can be used for verification.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response12> SignMessageAsync(Body5 body)
+        public virtual System.Threading.Tasks.Task<Response14> SignMessageAsync(Body7 body)
         {
             return SignMessageAsync(body, System.Threading.CancellationToken.None);
         }
@@ -1960,7 +2224,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Message signed successfully. Returns the cryptographic signature that can be used for verification.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response12> SignMessageAsync(Body5 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response14> SignMessageAsync(Body7 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2005,7 +2269,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response12>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response14>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2060,7 +2324,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Typed data signed successfully. Returns the EIP-712 compliant signature that can be used for on-chain verification.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response13> SignTypedDataAsync(Body6 body)
+        public virtual System.Threading.Tasks.Task<Response15> SignTypedDataAsync(Body8 body)
         {
             return SignTypedDataAsync(body, System.Threading.CancellationToken.None);
         }
@@ -2076,7 +2340,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Typed data signed successfully. Returns the EIP-712 compliant signature that can be used for on-chain verification.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response13> SignTypedDataAsync(Body6 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response15> SignTypedDataAsync(Body8 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2121,7 +2385,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response13>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response15>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2182,7 +2446,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Tokens sent successfully. Returns transaction IDs for tracking and monitoring.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response14> SendTokensAsync(Body7 body)
+        public virtual System.Threading.Tasks.Task<Response16> SendTokensAsync(Body9 body)
         {
             return SendTokensAsync(body, System.Threading.CancellationToken.None);
         }
@@ -2204,7 +2468,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Tokens sent successfully. Returns transaction IDs for tracking and monitoring.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response14> SendTokensAsync(Body7 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response16> SendTokensAsync(Body9 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2249,7 +2513,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response14>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response16>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2308,7 +2572,7 @@ namespace Thirdweb.Api
         /// <param name="page">The page number for pagination (default: 1).</param>
         /// <returns>Successfully retrieved list of contracts</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response15> ListContractsAsync(int? limit, int? page)
+        public virtual System.Threading.Tasks.Task<Response17> ListContractsAsync(int? limit, int? page)
         {
             return ListContractsAsync(limit, page, System.Threading.CancellationToken.None);
         }
@@ -2328,7 +2592,7 @@ namespace Thirdweb.Api
         /// <param name="page">The page number for pagination (default: 1).</param>
         /// <returns>Successfully retrieved list of contracts</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response15> ListContractsAsync(int? limit, int? page, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response17> ListContractsAsync(int? limit, int? page, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2379,7 +2643,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response15>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response17>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2440,7 +2704,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Contract deployed successfully</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response16> DeployContractAsync(Body8 body)
+        public virtual System.Threading.Tasks.Task<Response18> DeployContractAsync(Body10 body)
         {
             return DeployContractAsync(body, System.Threading.CancellationToken.None);
         }
@@ -2456,7 +2720,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Contract deployed successfully</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response16> DeployContractAsync(Body8 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response18> DeployContractAsync(Body10 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2501,7 +2765,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response16>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response18>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2562,7 +2826,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Contract read operations completed successfully. Returns an array of results corresponding to each input call, including both successful and failed operations.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response17> ReadContractAsync(Body9 body)
+        public virtual System.Threading.Tasks.Task<Response19> ReadContractAsync(Body11 body)
         {
             return ReadContractAsync(body, System.Threading.CancellationToken.None);
         }
@@ -2578,7 +2842,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Contract read operations completed successfully. Returns an array of results corresponding to each input call, including both successful and failed operations.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response17> ReadContractAsync(Body9 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response19> ReadContractAsync(Body11 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2623,7 +2887,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response17>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response19>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2678,7 +2942,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Contract write operations submitted successfully. Returns transaction IDs for tracking and monitoring.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response18> WriteContractAsync(Body10 body)
+        public virtual System.Threading.Tasks.Task<Response20> WriteContractAsync(Body12 body)
         {
             return WriteContractAsync(body, System.Threading.CancellationToken.None);
         }
@@ -2694,7 +2958,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Contract write operations submitted successfully. Returns transaction IDs for tracking and monitoring.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response18> WriteContractAsync(Body10 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response20> WriteContractAsync(Body12 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2739,7 +3003,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response18>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response20>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2761,12 +3025,12 @@ namespace Thirdweb.Api
                         else
                         if (status_ == 402)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response19>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response21>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Response19>("Payment required. Insufficient wallet balance to complete the purchase.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Response21>("Payment required. Insufficient wallet balance to complete the purchase.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 404)
@@ -2823,7 +3087,7 @@ namespace Thirdweb.Api
         /// <param name="sortOrder">Sort order: 'asc' for ascending, 'desc' for descending</param>
         /// <returns>Contract transactions retrieved successfully. Returns transaction data with metadata including pagination information. Includes decoded function calls when ABI is available.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response20> GetContractTransactionsAsync(int chainId, string address, string filterFromAddress, string filterToAddress, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, string filterValueGt, string filterFunctionSelector, double? page, double? limit, SortOrder3? sortOrder)
+        public virtual System.Threading.Tasks.Task<Response22> GetContractTransactionsAsync(int chainId, string address, string filterFromAddress, string filterToAddress, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, string filterValueGt, string filterFunctionSelector, double? page, double? limit, SortOrder3? sortOrder)
         {
             return GetContractTransactionsAsync(chainId, address, filterFromAddress, filterToAddress, filterBlockTimestampGte, filterBlockTimestampLte, filterBlockNumberGte, filterBlockNumberLte, filterValueGt, filterFunctionSelector, page, limit, sortOrder, System.Threading.CancellationToken.None);
         }
@@ -2852,7 +3116,7 @@ namespace Thirdweb.Api
         /// <param name="sortOrder">Sort order: 'asc' for ascending, 'desc' for descending</param>
         /// <returns>Contract transactions retrieved successfully. Returns transaction data with metadata including pagination information. Includes decoded function calls when ABI is available.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response20> GetContractTransactionsAsync(int chainId, string address, string filterFromAddress, string filterToAddress, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, string filterValueGt, string filterFunctionSelector, double? page, double? limit, SortOrder3? sortOrder, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response22> GetContractTransactionsAsync(int chainId, string address, string filterFromAddress, string filterToAddress, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, string filterValueGt, string filterFunctionSelector, double? page, double? limit, SortOrder3? sortOrder, System.Threading.CancellationToken cancellationToken)
         {
             if (chainId == null)
                 throw new System.ArgumentNullException("chainId");
@@ -2949,7 +3213,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response20>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response22>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -3024,7 +3288,7 @@ namespace Thirdweb.Api
         /// <param name="sortOrder">Sort order: 'asc' for ascending, 'desc' for descending</param>
         /// <returns>Contract events retrieved successfully. Returns event data with metadata including pagination information. Includes decoded event parameters when ABI is available.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response21> GetContractEventsAsync(int chainId, string address, string signature, string filterTopic0, string filterTopic1, string filterTopic2, string filterTopic3, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, double? page, double? limit, SortOrder4? sortOrder)
+        public virtual System.Threading.Tasks.Task<Response23> GetContractEventsAsync(int chainId, string address, string signature, string filterTopic0, string filterTopic1, string filterTopic2, string filterTopic3, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, double? page, double? limit, SortOrder4? sortOrder)
         {
             return GetContractEventsAsync(chainId, address, signature, filterTopic0, filterTopic1, filterTopic2, filterTopic3, filterBlockTimestampGte, filterBlockTimestampLte, filterBlockNumberGte, filterBlockNumberLte, page, limit, sortOrder, System.Threading.CancellationToken.None);
         }
@@ -3054,7 +3318,7 @@ namespace Thirdweb.Api
         /// <param name="sortOrder">Sort order: 'asc' for ascending, 'desc' for descending</param>
         /// <returns>Contract events retrieved successfully. Returns event data with metadata including pagination information. Includes decoded event parameters when ABI is available.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response21> GetContractEventsAsync(int chainId, string address, string signature, string filterTopic0, string filterTopic1, string filterTopic2, string filterTopic3, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, double? page, double? limit, SortOrder4? sortOrder, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response23> GetContractEventsAsync(int chainId, string address, string signature, string filterTopic0, string filterTopic1, string filterTopic2, string filterTopic3, int? filterBlockTimestampGte, int? filterBlockTimestampLte, int? filterBlockNumberGte, int? filterBlockNumberLte, double? page, double? limit, SortOrder4? sortOrder, System.Threading.CancellationToken cancellationToken)
         {
             if (chainId == null)
                 throw new System.ArgumentNullException("chainId");
@@ -3155,7 +3419,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response21>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response23>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -3220,7 +3484,7 @@ namespace Thirdweb.Api
         /// <param name="address">The smart contract address or ENS name.</param>
         /// <returns>Successfully retrieved contract metadata</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response22> GetContractMetadataAsync(int chainId, string address)
+        public virtual System.Threading.Tasks.Task<Response24> GetContractMetadataAsync(int chainId, string address)
         {
             return GetContractMetadataAsync(chainId, address, System.Threading.CancellationToken.None);
         }
@@ -3240,7 +3504,7 @@ namespace Thirdweb.Api
         /// <param name="address">The smart contract address or ENS name.</param>
         /// <returns>Successfully retrieved contract metadata</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response22> GetContractMetadataAsync(int chainId, string address, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response24> GetContractMetadataAsync(int chainId, string address, System.Threading.CancellationToken cancellationToken)
         {
             if (chainId == null)
                 throw new System.ArgumentNullException("chainId");
@@ -3291,7 +3555,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response22>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response24>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -3362,7 +3626,7 @@ namespace Thirdweb.Api
         /// <param name="address">The smart contract address or ENS name.</param>
         /// <returns>Successfully retrieved contract signatures</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response23> GetContractSignaturesAsync(int chainId, string address)
+        public virtual System.Threading.Tasks.Task<Response25> GetContractSignaturesAsync(int chainId, string address)
         {
             return GetContractSignaturesAsync(chainId, address, System.Threading.CancellationToken.None);
         }
@@ -3382,7 +3646,7 @@ namespace Thirdweb.Api
         /// <param name="address">The smart contract address or ENS name.</param>
         /// <returns>Successfully retrieved contract signatures</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response23> GetContractSignaturesAsync(int chainId, string address, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response25> GetContractSignaturesAsync(int chainId, string address, System.Threading.CancellationToken cancellationToken)
         {
             if (chainId == null)
                 throw new System.ArgumentNullException("chainId");
@@ -3433,7 +3697,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response23>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response25>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -3501,7 +3765,7 @@ namespace Thirdweb.Api
         /// <param name="transactionId">Unique identifier of the transaction to retrieve.</param>
         /// <returns>Transaction details retrieved successfully. Returns comprehensive transaction information including status, blockchain details, and execution metadata.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response24> GetTransactionByIdAsync(string transactionId)
+        public virtual System.Threading.Tasks.Task<Response26> GetTransactionByIdAsync(string transactionId)
         {
             return GetTransactionByIdAsync(transactionId, System.Threading.CancellationToken.None);
         }
@@ -3518,7 +3782,7 @@ namespace Thirdweb.Api
         /// <param name="transactionId">Unique identifier of the transaction to retrieve.</param>
         /// <returns>Transaction details retrieved successfully. Returns comprehensive transaction information including status, blockchain details, and execution metadata.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response24> GetTransactionByIdAsync(string transactionId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response26> GetTransactionByIdAsync(string transactionId, System.Threading.CancellationToken cancellationToken)
         {
             if (transactionId == null)
                 throw new System.ArgumentNullException("transactionId");
@@ -3563,7 +3827,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response24>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response26>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -3627,7 +3891,7 @@ namespace Thirdweb.Api
         /// <param name="page">Page number for pagination, starting from 1.</param>
         /// <returns>Transactions retrieved successfully. Returns a paginated list of transactions with metadata including creation and confirmation timestamps.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response25> ListTransactionsAsync(string from, int? limit, int? page)
+        public virtual System.Threading.Tasks.Task<Response27> ListTransactionsAsync(string from, int? limit, int? page)
         {
             return ListTransactionsAsync(from, limit, page, System.Threading.CancellationToken.None);
         }
@@ -3646,7 +3910,7 @@ namespace Thirdweb.Api
         /// <param name="page">Page number for pagination, starting from 1.</param>
         /// <returns>Transactions retrieved successfully. Returns a paginated list of transactions with metadata including creation and confirmation timestamps.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response25> ListTransactionsAsync(string from, int? limit, int? page, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response27> ListTransactionsAsync(string from, int? limit, int? page, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -3701,7 +3965,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response25>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response27>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -3756,7 +4020,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Encoded transactions submitted successfully. Returns the transaction IDs for tracking and monitoring.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response26> SendTransactionsAsync(Body11 body)
+        public virtual System.Threading.Tasks.Task<Response28> SendTransactionsAsync(Body13 body)
         {
             return SendTransactionsAsync(body, System.Threading.CancellationToken.None);
         }
@@ -3772,7 +4036,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Encoded transactions submitted successfully. Returns the transaction IDs for tracking and monitoring.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response26> SendTransactionsAsync(Body11 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response28> SendTransactionsAsync(Body13 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -3817,7 +4081,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response26>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response28>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -3839,12 +4103,12 @@ namespace Thirdweb.Api
                         else
                         if (status_ == 402)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response27>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response29>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Response27>("Payment required. Insufficient wallet balance to complete the purchase.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Response29>("Payment required. Insufficient wallet balance to complete the purchase.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 500)
@@ -3882,7 +4146,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Payment created successfully. Returns the ID and link to complete the payment.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response28> CreatePaymentAsync(Body12 body)
+        public virtual System.Threading.Tasks.Task<Response30> CreatePaymentAsync(Body14 body)
         {
             return CreatePaymentAsync(body, System.Threading.CancellationToken.None);
         }
@@ -3898,7 +4162,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Payment created successfully. Returns the ID and link to complete the payment.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response28> CreatePaymentAsync(Body12 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response30> CreatePaymentAsync(Body14 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -3943,7 +4207,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response28>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response30>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -3998,7 +4262,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Product purchased successfully. Returns the transaction used for the purchase.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response29> PaymentsPurchaseAsync(string id, Body13 body)
+        public virtual System.Threading.Tasks.Task<Response31> PaymentsPurchaseAsync(string id, Body15 body)
         {
             return PaymentsPurchaseAsync(id, body, System.Threading.CancellationToken.None);
         }
@@ -4014,7 +4278,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Product purchased successfully. Returns the transaction used for the purchase.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response29> PaymentsPurchaseAsync(string id, Body13 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response31> PaymentsPurchaseAsync(string id, Body15 body, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -4063,7 +4327,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response29>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response31>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4085,12 +4349,12 @@ namespace Thirdweb.Api
                         else
                         if (status_ == 402)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response30>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response32>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Response30>("Payment required. Insufficient wallet balance to complete the purchase.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Response32>("Payment required. Insufficient wallet balance to complete the purchase.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 500)
@@ -4126,7 +4390,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Payment history retrieved successfully</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response31> GetPaymentHistoryAsync(string id)
+        public virtual System.Threading.Tasks.Task<Response33> GetPaymentHistoryAsync(string id)
         {
             return GetPaymentHistoryAsync(id, System.Threading.CancellationToken.None);
         }
@@ -4140,7 +4404,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Payment history retrieved successfully</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response31> GetPaymentHistoryAsync(string id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response33> GetPaymentHistoryAsync(string id, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -4185,7 +4449,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response31>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response33>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4195,22 +4459,22 @@ namespace Thirdweb.Api
                         else
                         if (status_ == 400)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response32>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response34>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Response32>("Bad request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Response34>("Bad request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 404)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response33>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response35>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Response33>("Payment link not found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Response35>("Payment link not found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {
@@ -4240,9 +4504,9 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Verification successful</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response34> FacilitatorVerifyAsync(Body14 body)
+        public virtual System.Threading.Tasks.Task<Response36> VerifyX402PaymentAsync(Body16 body)
         {
-            return FacilitatorVerifyAsync(body, System.Threading.CancellationToken.None);
+            return VerifyX402PaymentAsync(body, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4254,7 +4518,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Verification successful</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response34> FacilitatorVerifyAsync(Body14 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response36> VerifyX402PaymentAsync(Body16 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -4299,7 +4563,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response34>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response36>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4352,9 +4616,9 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Settlement successful</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response35> FacilitatorSettleAsync(Body15 body)
+        public virtual System.Threading.Tasks.Task<Response37> SettleX402PaymentAsync(Body17 body)
         {
-            return FacilitatorSettleAsync(body, System.Threading.CancellationToken.None);
+            return SettleX402PaymentAsync(body, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4366,7 +4630,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Settlement successful</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response35> FacilitatorSettleAsync(Body15 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response37> SettleX402PaymentAsync(Body17 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -4411,7 +4675,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response35>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response37>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4460,13 +4724,15 @@ namespace Thirdweb.Api
         /// x402 - Supported payment methods
         /// </summary>
         /// <remarks>
-        /// List supported x402 payment methods. Compatible with any standard x402 middleware.
+        /// List supported x402 payment methods, optionally filtered by token address and chainId. Compatible with any standard x402 middleware.
         /// </remarks>
+        /// <param name="tokenAddress">A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).</param>
+        /// <param name="chainId">The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).</param>
         /// <returns>Supported payment kinds</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response36> FacilitatorSupportedAsync()
+        public virtual System.Threading.Tasks.Task<Response38> SupportedX402PaymentsAsync(string tokenAddress, int? chainId)
         {
-            return FacilitatorSupportedAsync(System.Threading.CancellationToken.None);
+            return SupportedX402PaymentsAsync(tokenAddress, chainId, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -4474,11 +4740,13 @@ namespace Thirdweb.Api
         /// x402 - Supported payment methods
         /// </summary>
         /// <remarks>
-        /// List supported x402 payment methods. Compatible with any standard x402 middleware.
+        /// List supported x402 payment methods, optionally filtered by token address and chainId. Compatible with any standard x402 middleware.
         /// </remarks>
+        /// <param name="tokenAddress">A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).</param>
+        /// <param name="chainId">The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).</param>
         /// <returns>Supported payment kinds</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response36> FacilitatorSupportedAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response38> SupportedX402PaymentsAsync(string tokenAddress, int? chainId, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -4493,6 +4761,16 @@ namespace Thirdweb.Api
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
                     // Operation Path: "v1/payments/x402/supported"
                     urlBuilder_.Append("v1/payments/x402/supported");
+                    urlBuilder_.Append('?');
+                    if (tokenAddress != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("tokenAddress")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(tokenAddress, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (chainId != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("chainId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(chainId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -4519,7 +4797,301 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response36>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response38>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. For backend usage, include `x-secret-key` header.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// x402 - Fetch with payment
+        /// </summary>
+        /// <remarks>
+        /// Fetch any given url. If the url returns HTTP 402 payment required, this endpoint handles payment with the authenticated wallet.
+        /// <br/>
+        /// <br/>Optionally pass a 'from' query parameter with the authenticated wallet address (server or user wallet) to complete the payment.
+        /// <br/>
+        /// <br/>If no 'from' parameter is passed, the default project wallet address will be used.
+        /// <br/>
+        /// <br/>- Works with any x402 compatible endpoint.
+        /// <br/>- Automatically selects a compatible payment method.
+        /// <br/>- Signs the appropriate payment payload.
+        /// <br/>- Sends the payment to the url.
+        /// <br/>- Returns the final result from the url called.
+        /// <br/>
+        /// <br/>Request body and headers are always passed through to the url called.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires wallet authentication for the payment. For frontend usage, include `x-client-id` and `Authorization: Bearer &lt;jwt&gt;` headers. For backend usage, include `x-secret-key` header.
+        /// </remarks>
+        /// <returns>Returns the final result from the API call</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task FetchWithPaymentAsync(string from, System.Uri url, Method method, string maxValue, string asset, int? chainId, object body)
+        {
+            return FetchWithPaymentAsync(from, url, method, maxValue, asset, chainId, body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// x402 - Fetch with payment
+        /// </summary>
+        /// <remarks>
+        /// Fetch any given url. If the url returns HTTP 402 payment required, this endpoint handles payment with the authenticated wallet.
+        /// <br/>
+        /// <br/>Optionally pass a 'from' query parameter with the authenticated wallet address (server or user wallet) to complete the payment.
+        /// <br/>
+        /// <br/>If no 'from' parameter is passed, the default project wallet address will be used.
+        /// <br/>
+        /// <br/>- Works with any x402 compatible endpoint.
+        /// <br/>- Automatically selects a compatible payment method.
+        /// <br/>- Signs the appropriate payment payload.
+        /// <br/>- Sends the payment to the url.
+        /// <br/>- Returns the final result from the url called.
+        /// <br/>
+        /// <br/>Request body and headers are always passed through to the url called.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires wallet authentication for the payment. For frontend usage, include `x-client-id` and `Authorization: Bearer &lt;jwt&gt;` headers. For backend usage, include `x-secret-key` header.
+        /// </remarks>
+        /// <returns>Returns the final result from the API call</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task FetchWithPaymentAsync(string from, System.Uri url, Method method, string maxValue, string asset, int? chainId, object body, System.Threading.CancellationToken cancellationToken)
+        {
+            if (url == null)
+                throw new System.ArgumentNullException("url");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("*/*");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/payments/x402/fetch"
+                    urlBuilder_.Append("v1/payments/x402/fetch");
+                    urlBuilder_.Append('?');
+                    if (from != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("from")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(from, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Append(System.Uri.EscapeDataString("url")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(url, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    if (method != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("method")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(method, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (maxValue != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("maxValue")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(maxValue, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (asset != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("asset")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(asset, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (chainId != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("chainId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(chainId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            return;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Invalid request parameters", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. For frontend usage, include `x-client-id` and `Authorization: Bearer <jwt>` headers. For backend usage, include `x-secret-key` header.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 402)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response39>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<Response39>("Payment required. The user does not have enough funds to cover the payment requirements. Returns a payment link to fund the wallet and complete the payment.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// x402 - Discover resources
+        /// </summary>
+        /// <remarks>
+        /// Discover payable x402 compatible services and HTTP endpoints that can be paid for using the fetchWithPayment tool. Use this tool to browse services, APIs and endpoints to find what you need for your tasks. Each item has a resource url that you can call with the fetchWithPayment tool.Price is in the base units of the asset. For example, if the price is 1000000 and the asset is USDC (which is the default and has 6 decimals), the price is 1 USDC.Examples: if network is eip155:8453, asset is 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, max amount required is 10000, resource is https://api.example.com/paid-api, then you should interpret that as "the api.example.com/paid-api service costs 0.01 USDC per call".
+        /// </remarks>
+        /// <returns>List of discovered x402 resources</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response40> ListPayableServicesAsync(double? limit, double? offset, string query, SortBy2? sortBy, SortOrder5? sortOrder)
+        {
+            return ListPayableServicesAsync(limit, offset, query, sortBy, sortOrder, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// x402 - Discover resources
+        /// </summary>
+        /// <remarks>
+        /// Discover payable x402 compatible services and HTTP endpoints that can be paid for using the fetchWithPayment tool. Use this tool to browse services, APIs and endpoints to find what you need for your tasks. Each item has a resource url that you can call with the fetchWithPayment tool.Price is in the base units of the asset. For example, if the price is 1000000 and the asset is USDC (which is the default and has 6 decimals), the price is 1 USDC.Examples: if network is eip155:8453, asset is 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, max amount required is 10000, resource is https://api.example.com/paid-api, then you should interpret that as "the api.example.com/paid-api service costs 0.01 USDC per call".
+        /// </remarks>
+        /// <returns>List of discovered x402 resources</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response40> ListPayableServicesAsync(double? limit, double? offset, string query, SortBy2? sortBy, SortOrder5? sortOrder, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/payments/x402/discovery/resources"
+                    urlBuilder_.Append("v1/payments/x402/discovery/resources");
+                    urlBuilder_.Append('?');
+                    if (limit != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("limit")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(limit, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (offset != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("offset")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(offset, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (query != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("query")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(query, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (sortBy != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("sortBy")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(sortBy, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (sortOrder != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("sortOrder")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(sortOrder, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response40>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4568,7 +5140,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>The token is being deployed. Returns the predicted token address.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response37> CreateTokenAsync(Body16 body)
+        public virtual System.Threading.Tasks.Task<Response41> CreateTokenAsync(Body18 body)
         {
             return CreateTokenAsync(body, System.Threading.CancellationToken.None);
         }
@@ -4584,7 +5156,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>The token is being deployed. Returns the predicted token address.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response37> CreateTokenAsync(Body16 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response41> CreateTokenAsync(Body18 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -4629,7 +5201,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 202)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response37>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response41>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4698,7 +5270,7 @@ namespace Thirdweb.Api
         /// <param name="name">Limit tokens to a specific name.</param>
         /// <returns>Tokens returned successfully.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response38> ListTokensAsync(int? limit, int? page, int? chainId, string tokenAddress, string symbol, string name)
+        public virtual System.Threading.Tasks.Task<Response42> ListTokensAsync(int? limit, int? page, int? chainId, string tokenAddress, string symbol, string name)
         {
             return ListTokensAsync(limit, page, chainId, tokenAddress, symbol, name, System.Threading.CancellationToken.None);
         }
@@ -4722,7 +5294,7 @@ namespace Thirdweb.Api
         /// <param name="name">Limit tokens to a specific name.</param>
         /// <returns>Tokens returned successfully.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response38> ListTokensAsync(int? limit, int? page, int? chainId, string tokenAddress, string symbol, string name, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response42> ListTokensAsync(int? limit, int? page, int? chainId, string tokenAddress, string symbol, string name, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -4789,7 +5361,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response38>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response42>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -4855,7 +5427,7 @@ namespace Thirdweb.Api
         /// <param name="page">Page number for pagination, starting from 1.</param>
         /// <returns>Token owners retrieved successfully. Returns owners with pagination information. For ERC-20 tokens, `amount` represents token balance. For NFTs, `amount` represents quantity owned (usually '1' for ERC-721, can be &gt;1 for ERC-1155).</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response39> GetTokenOwnersAsync(int chainId, string address, string tokenId, int? limit, int? page)
+        public virtual System.Threading.Tasks.Task<Response43> GetTokenOwnersAsync(int chainId, string address, string tokenId, int? limit, int? page)
         {
             return GetTokenOwnersAsync(chainId, address, tokenId, limit, page, System.Threading.CancellationToken.None);
         }
@@ -4882,7 +5454,7 @@ namespace Thirdweb.Api
         /// <param name="page">Page number for pagination, starting from 1.</param>
         /// <returns>Token owners retrieved successfully. Returns owners with pagination information. For ERC-20 tokens, `amount` represents token balance. For NFTs, `amount` represents quantity owned (usually '1' for ERC-721, can be &gt;1 for ERC-1155).</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response39> GetTokenOwnersAsync(int chainId, string address, string tokenId, int? limit, int? page, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response43> GetTokenOwnersAsync(int chainId, string address, string tokenId, int? limit, int? page, System.Threading.CancellationToken cancellationToken)
         {
             if (chainId == null)
                 throw new System.ArgumentNullException("chainId");
@@ -4947,7 +5519,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response39>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response43>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -5008,7 +5580,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Successfully retrieved supported bridge chains.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response40> GetBridgeChainsAsync()
+        public virtual System.Threading.Tasks.Task<Response44> GetBridgeChainsAsync()
         {
             return GetBridgeChainsAsync(System.Threading.CancellationToken.None);
         }
@@ -5024,7 +5596,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Successfully retrieved supported bridge chains.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response40> GetBridgeChainsAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response44> GetBridgeChainsAsync(System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -5065,7 +5637,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response40>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response44>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -5105,6 +5677,162 @@ namespace Thirdweb.Api
         }
 
         /// <summary>
+        /// List Supported Routes
+        /// </summary>
+        /// <remarks>
+        /// List supported bridge routes with simple pagination and optional chain or token filters.
+        /// <br/>
+        /// <br/>**Authentication**: Pass `x-client-id` header for frontend usage from allowlisted origins or `x-secret-key` for backend usage.
+        /// </remarks>
+        /// <param name="limit">Maximum number of routes to return (1-100).</param>
+        /// <param name="page">Page number for pagination, starting at 1.</param>
+        /// <param name="originChainId">Filter routes by the origin chain ID.</param>
+        /// <param name="destinationChainId">Filter routes by the destination chain ID.</param>
+        /// <param name="originTokenAddress">Filter routes by origin token address.</param>
+        /// <param name="destinationTokenAddress">Filter routes by destination token address.</param>
+        /// <param name="maxSteps">Maximum number of bridge steps allowed in the route.</param>
+        /// <returns>Successfully retrieved supported bridge routes.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response45> GetBridgeSupportedRoutesAsync(int? limit, int? page, int? originChainId, int? destinationChainId, string originTokenAddress, string destinationTokenAddress, int? maxSteps)
+        {
+            return GetBridgeSupportedRoutesAsync(limit, page, originChainId, destinationChainId, originTokenAddress, destinationTokenAddress, maxSteps, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// List Supported Routes
+        /// </summary>
+        /// <remarks>
+        /// List supported bridge routes with simple pagination and optional chain or token filters.
+        /// <br/>
+        /// <br/>**Authentication**: Pass `x-client-id` header for frontend usage from allowlisted origins or `x-secret-key` for backend usage.
+        /// </remarks>
+        /// <param name="limit">Maximum number of routes to return (1-100).</param>
+        /// <param name="page">Page number for pagination, starting at 1.</param>
+        /// <param name="originChainId">Filter routes by the origin chain ID.</param>
+        /// <param name="destinationChainId">Filter routes by the destination chain ID.</param>
+        /// <param name="originTokenAddress">Filter routes by origin token address.</param>
+        /// <param name="destinationTokenAddress">Filter routes by destination token address.</param>
+        /// <param name="maxSteps">Maximum number of bridge steps allowed in the route.</param>
+        /// <returns>Successfully retrieved supported bridge routes.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response45> GetBridgeSupportedRoutesAsync(int? limit, int? page, int? originChainId, int? destinationChainId, string originTokenAddress, string destinationTokenAddress, int? maxSteps, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/bridge/routes"
+                    urlBuilder_.Append("v1/bridge/routes");
+                    urlBuilder_.Append('?');
+                    if (limit != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("limit")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(limit, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (page != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("page")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(page, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (originChainId != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("originChainId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(originChainId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (destinationChainId != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("destinationChainId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(destinationChainId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (originTokenAddress != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("originTokenAddress")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(originTokenAddress, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (destinationTokenAddress != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("destinationTokenAddress")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(destinationTokenAddress, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (maxSteps != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("maxSteps")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(maxSteps, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response45>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Invalid request parameters.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. For backend usage, include `x-secret-key` header. For frontend usage, include `x-client-id` header.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error occurred while fetching bridge routes.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
         /// Convert Fiat to Crypto
         /// </summary>
         /// <remarks>
@@ -5120,7 +5848,7 @@ namespace Thirdweb.Api
         /// <param name="to">The token address on the specified chain to convert to</param>
         /// <returns>Conversion completed successfully. Returns the amount of crypto tokens equivalent to the specified fiat amount.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response41> ConvertFiatToCryptoAsync(From from, string fromAmount, int chainId, string to)
+        public virtual System.Threading.Tasks.Task<Response46> ConvertFiatToCryptoAsync(From from, string fromAmount, int chainId, string to)
         {
             return ConvertFiatToCryptoAsync(from, fromAmount, chainId, to, System.Threading.CancellationToken.None);
         }
@@ -5142,7 +5870,7 @@ namespace Thirdweb.Api
         /// <param name="to">The token address on the specified chain to convert to</param>
         /// <returns>Conversion completed successfully. Returns the amount of crypto tokens equivalent to the specified fiat amount.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response41> ConvertFiatToCryptoAsync(From from, string fromAmount, int chainId, string to, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response46> ConvertFiatToCryptoAsync(From from, string fromAmount, int chainId, string to, System.Threading.CancellationToken cancellationToken)
         {
             if (from == null)
                 throw new System.ArgumentNullException("from");
@@ -5201,7 +5929,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response41>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response46>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -5268,7 +5996,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Swap completed successfully. Returns the transaction used for the swap.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response42> BridgeSwapAsync(Body17 body)
+        public virtual System.Threading.Tasks.Task<Response47> BridgeSwapAsync(Body19 body)
         {
             return BridgeSwapAsync(body, System.Threading.CancellationToken.None);
         }
@@ -5284,7 +6012,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>Swap completed successfully. Returns the transaction used for the swap.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response42> BridgeSwapAsync(Body17 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response47> BridgeSwapAsync(Body19 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -5329,7 +6057,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response42>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response47>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -5351,18 +6079,725 @@ namespace Thirdweb.Api
                         else
                         if (status_ == 402)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response43>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response48>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Response43>("Payment required. Insufficient wallet balance to complete the purchase.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Response48>("Payment required. Insufficient wallet balance to complete the purchase.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 500)
                         {
                             string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
                             throw new ApiException("Internal server error. This may occur due to network connectivity issues, wallet creation failures, or transaction execution failures.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// List Solana Wallets
+        /// </summary>
+        /// <remarks>
+        /// List all Solana wallets created for your project. Supports pagination with page and limit parameters.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <param name="page">Page number for paginated results. Starts at 1.</param>
+        /// <param name="limit">Maximum number of wallets to return per page.</param>
+        /// <returns>Successfully retrieved Solana wallets with pagination metadata.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response49> ListSolanaWalletsAsync(int? page, int? limit)
+        {
+            return ListSolanaWalletsAsync(page, limit, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// List Solana Wallets
+        /// </summary>
+        /// <remarks>
+        /// List all Solana wallets created for your project. Supports pagination with page and limit parameters.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <param name="page">Page number for paginated results. Starts at 1.</param>
+        /// <param name="limit">Maximum number of wallets to return per page.</param>
+        /// <returns>Successfully retrieved Solana wallets with pagination metadata.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response49> ListSolanaWalletsAsync(int? page, int? limit, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/solana/wallets"
+                    urlBuilder_.Append("v1/solana/wallets");
+                    urlBuilder_.Append('?');
+                    if (page != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("page")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(page, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (limit != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("limit")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(limit, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response49>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. Include x-secret-key or Authorization headers.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error occurred while listing wallets.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Create Solana Wallet
+        /// </summary>
+        /// <remarks>
+        /// Create a new Solana wallet or return the existing wallet for a given label. Labels must be unique within your project.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <returns>Solana wallet retrieved for the provided label.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response50> CreateSolanaWalletAsync(Body20 body)
+        {
+            return CreateSolanaWalletAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Create Solana Wallet
+        /// </summary>
+        /// <remarks>
+        /// Create a new Solana wallet or return the existing wallet for a given label. Labels must be unique within your project.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <returns>Solana wallet retrieved for the provided label.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response50> CreateSolanaWalletAsync(Body20 body, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/solana/wallets"
+                    urlBuilder_.Append("v1/solana/wallets");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response50>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 201)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response51>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<Response51>("Solana wallet created for the provided label.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. Include x-secret-key or Authorization headers.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error occurred while creating wallet.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Sign Solana Message
+        /// </summary>
+        /// <remarks>
+        /// Sign an arbitrary message with a Solana wallet. Supports both text and hexadecimal message formats with automatic format detection.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <returns>Message signed successfully. Returns the base58 signature.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response52> SignSolanaMessageAsync(Body21 body)
+        {
+            return SignSolanaMessageAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Sign Solana Message
+        /// </summary>
+        /// <remarks>
+        /// Sign an arbitrary message with a Solana wallet. Supports both text and hexadecimal message formats with automatic format detection.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <returns>Message signed successfully. Returns the base58 signature.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response52> SignSolanaMessageAsync(Body21 body, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/solana/sign-message"
+                    urlBuilder_.Append("v1/solana/sign-message");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response52>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. Include x-secret-key or Authorization headers.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error occurred while signing the message.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Send Solana Tokens
+        /// </summary>
+        /// <remarks>
+        /// Transfer native SOL or SPL tokens on Solana. Automatically handles token account creation for SPL tokens if needed.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <returns>Transfer queued successfully. Returns the transaction identifier for status polling.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response53> SendSolanaTokensAsync(Body22 body)
+        {
+            return SendSolanaTokensAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Send Solana Tokens
+        /// </summary>
+        /// <remarks>
+        /// Transfer native SOL or SPL tokens on Solana. Automatically handles token account creation for SPL tokens if needed.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <returns>Transfer queued successfully. Returns the transaction identifier for status polling.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response53> SendSolanaTokensAsync(Body22 body, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/solana/send"
+                    urlBuilder_.Append("v1/solana/send");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response53>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response54>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<Response54>("Transfer accepted for asynchronous processing. Returns the transaction identifier for status polling.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. Include x-secret-key or Authorization headers.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error occurred while processing the transfer.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Send Solana Transaction
+        /// </summary>
+        /// <remarks>
+        /// Submit a Solana transaction composed of one or more instructions. Transactions are queued and processed asynchronously.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <returns>Transaction queued successfully. Returns the transaction identifier for status polling.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response55> SendSolanaTransactionAsync(Body23 body)
+        {
+            return SendSolanaTransactionAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Send Solana Transaction
+        /// </summary>
+        /// <remarks>
+        /// Submit a Solana transaction composed of one or more instructions. Transactions are queued and processed asynchronously.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <returns>Transaction queued successfully. Returns the transaction identifier for status polling.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response55> SendSolanaTransactionAsync(Body23 body, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/solana/transactions"
+                    urlBuilder_.Append("v1/solana/transactions");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response55>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response56>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<Response56>("Transaction accepted for asynchronous processing. Returns the transaction identifier for status polling.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. Include x-secret-key or Authorization headers.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error occurred while processing the transaction.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Get Solana Transaction
+        /// </summary>
+        /// <remarks>
+        /// Retrieve the status and details of a queued Solana transaction using the identifier returned when the transaction was submitted.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <param name="transactionId">Identifier returned when the transaction was queued.</param>
+        /// <returns>Transaction status retrieved successfully.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response57> GetSolanaTransactionAsync(string transactionId)
+        {
+            return GetSolanaTransactionAsync(transactionId, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get Solana Transaction
+        /// </summary>
+        /// <remarks>
+        /// Retrieve the status and details of a queued Solana transaction using the identifier returned when the transaction was submitted.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header. The secret key should never be exposed publicly.
+        /// </remarks>
+        /// <param name="transactionId">Identifier returned when the transaction was queued.</param>
+        /// <returns>Transaction status retrieved successfully.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response57> GetSolanaTransactionAsync(string transactionId, System.Threading.CancellationToken cancellationToken)
+        {
+            if (transactionId == null)
+                throw new System.ArgumentNullException("transactionId");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/solana/transactions/:transactionId"
+                    urlBuilder_.Append("v1/solana/transactions/:transactionId");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response57>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. Include x-secret-key or Authorization headers.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Transaction not found. The identifier may be invalid or expired.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error occurred while fetching transaction status.", status_, responseText_, headers_, null);
                         }
                         else
                         {
@@ -5398,7 +6833,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>AI assistant response or SSE stream when stream=true</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response44> ChatAsync(Body18 body)
+        public virtual System.Threading.Tasks.Task<Response58> ChatAsync(Body24 body)
         {
             return ChatAsync(body, System.Threading.CancellationToken.None);
         }
@@ -5418,7 +6853,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>AI assistant response or SSE stream when stream=true</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response44> ChatAsync(Body18 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response58> ChatAsync(Body24 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -5463,7 +6898,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response44>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response58>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -5508,11 +6943,12 @@ namespace Thirdweb.Api
         /// <br/>}
         /// <br/>```
         /// </remarks>
+        /// <param name="tools">Comma-separated list of tools to request. Maps to the operationId of the OpenAPI endpoint. Example: ?tools=getWalletBalance,fetchWithPayment. If not provided, all tools will be returned.</param>
         /// <returns>MCP response</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<object> McpServerAsync(object body)
+        public virtual System.Threading.Tasks.Task<object> McpServerAsync(string tools, object body)
         {
-            return McpServerAsync(body, System.Threading.CancellationToken.None);
+            return McpServerAsync(tools, body, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -5534,9 +6970,10 @@ namespace Thirdweb.Api
         /// <br/>}
         /// <br/>```
         /// </remarks>
+        /// <param name="tools">Comma-separated list of tools to request. Maps to the operationId of the OpenAPI endpoint. Example: ?tools=getWalletBalance,fetchWithPayment. If not provided, all tools will be returned.</param>
         /// <returns>MCP response</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<object> McpServerAsync(object body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<object> McpServerAsync(string tools, object body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -5555,6 +6992,12 @@ namespace Thirdweb.Api
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
                     // Operation Path: "mcp"
                     urlBuilder_.Append("mcp");
+                    urlBuilder_.Append('?');
+                    if (tools != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("tools")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(tools, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -5869,6 +7312,50 @@ namespace Thirdweb.Api
     }
 
     /// <summary>
+    /// Request body for linking an additional authentication method or external wallet to the currently authenticated user.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Body3
+    {
+        /// <summary>
+        /// Authentication token for the account that should be linked to the currently authenticated wallet.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("accountAuthTokenToConnect", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public string AccountAuthTokenToConnect { get; set; }
+
+    }
+
+    /// <summary>
+    /// Request body for unlinking an authentication provider or wallet from the currently authenticated user.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Body4
+    {
+        /// <summary>
+        /// Authentication provider type to disconnect
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Body4Type Type { get; set; }
+
+        /// <summary>
+        /// Identifiers for the provider profile that should be disconnected
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("details", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Details Details { get; set; } = new Details();
+
+        /// <summary>
+        /// If true, allows the account to be deleted when unlinking removes the last authentication method. Defaults to false when omitted.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("allowAccountDeletion", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool AllowAccountDeletion { get; set; } = false;
+
+    }
+
+    /// <summary>
     /// The OAuth provider to use
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -5920,12 +7407,12 @@ namespace Thirdweb.Api
     /// Request body for pre-generating a wallet
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body3
+    public partial class Body5
     {
         [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public Body3Type Type { get; set; }
+        public Body5Type Type { get; set; }
 
         /// <summary>
         /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
@@ -5957,7 +7444,7 @@ namespace Thirdweb.Api
     /// Request body for creating a wallet
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body4
+    public partial class Body6
     {
         /// <summary>
         /// Unique identifier for wallet creation or retrieval. Can be user ID, email, or any unique string. The same identifier will always return the same wallet.
@@ -6107,7 +7594,7 @@ namespace Thirdweb.Api
     /// Request body for signing a message
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body5
+    public partial class Body7
     {
         /// <summary>
         /// The wallet address or ENS name that will sign the message.
@@ -6145,7 +7632,7 @@ namespace Thirdweb.Api
     /// Request body for signing typed data
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body6
+    public partial class Body8
     {
         /// <summary>
         /// The wallet address or ENS name that will sign the typed data.
@@ -6204,13 +7691,12 @@ namespace Thirdweb.Api
     /// Request body for sending tokens to multiple recipients. Supports native tokens, ERC20, ERC721, and ERC1155 transfers based on the provided parameters.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body7
+    public partial class Body9
     {
         /// <summary>
-        /// The wallet address or ENS name that will send the tokens.
+        /// The wallet address or ENS name that will send the tokens. If omitted, the project wallet will be used if available.
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string From { get; set; }
 
         /// <summary>
@@ -6256,7 +7742,7 @@ namespace Thirdweb.Api
     /// Contract deployment specification for raw bytecode deployment.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body8
+    public partial class Body10
     {
         /// <summary>
         /// The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).
@@ -6266,10 +7752,9 @@ namespace Thirdweb.Api
         public int ChainId { get; set; }
 
         /// <summary>
-        /// The wallet address or ENS name that will deploy the contract.
+        /// The wallet address or ENS name that will deploy the contract. If omitted, the project wallet will be used if available.
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string From { get; set; }
 
         /// <summary>
@@ -6310,7 +7795,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body9
+    public partial class Body11
     {
         /// <summary>
         /// Array of contract method calls to execute. Each call specifies a contract address, method signature, and optional parameters.
@@ -6339,7 +7824,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body10
+    public partial class Body12
     {
         /// <summary>
         /// Array of contract method calls to execute. Each call specifies a contract address, method signature, and optional parameters.
@@ -6357,10 +7842,9 @@ namespace Thirdweb.Api
         public int ChainId { get; set; }
 
         /// <summary>
-        /// The wallet address or ENS name that will send the transaction.
+        /// The wallet address or ENS name that will send the transaction. If omitted, the project wallet will be used if available.
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string From { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
@@ -6408,7 +7892,7 @@ namespace Thirdweb.Api
     /// Request object containing an array of encoded blockchain transactions to execute. All transactions must use the same from address and chainId. For contract calls, use /v1/contracts/write. For native token transfers, use /v1/wallets/send.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body11
+    public partial class Body13
     {
         /// <summary>
         /// The blockchain network identifier where all transactions will be executed.
@@ -6418,10 +7902,9 @@ namespace Thirdweb.Api
         public int ChainId { get; set; }
 
         /// <summary>
-        /// The wallet address or ENS name that will send the transaction.
+        /// The wallet address or ENS name that will send the transaction. If omitted, the project wallet will be used if available.
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string From { get; set; }
 
         /// <summary>
@@ -6447,7 +7930,7 @@ namespace Thirdweb.Api
     /// Request to create a product to be purchased. Users can purchase the product via hosted UI (link is returned), a transaction execution referencing the product ID, or embedded widgets with the product ID.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body12
+    public partial class Body14
     {
         /// <summary>
         /// The name of the product
@@ -6504,13 +7987,12 @@ namespace Thirdweb.Api
     /// Request to purchase a product. The system will automatically use your wallet balance to purchase the specified product.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body13
+    public partial class Body15
     {
         /// <summary>
-        /// The wallet address or ENS name that will purchase the product.
+        /// The wallet address or ENS name that will purchase the product. If omitted, the project wallet will be used if available.
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string From { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
@@ -6528,7 +8010,7 @@ namespace Thirdweb.Api
     /// Request body for x402 facilitator 'verify'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body14
+    public partial class Body16
     {
         [Newtonsoft.Json.JsonProperty("paymentPayload", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -6553,7 +8035,7 @@ namespace Thirdweb.Api
     /// Request body for x402 facilitator 'settle'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body15
+    public partial class Body17
     {
         [Newtonsoft.Json.JsonProperty("paymentPayload", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -6562,6 +8044,13 @@ namespace Thirdweb.Api
         [Newtonsoft.Json.JsonProperty("paymentRequirements", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
         public PaymentRequirements2 PaymentRequirements { get; set; } = new PaymentRequirements2();
+
+        /// <summary>
+        /// The event to wait for to determina a transaction confirmation. 'simulated' will only simulate the transaction (fastest), 'submitted' will wait till the transaction is submitted, and 'confirmed' will wait for the transaction to be fully confirmed on chain (slowest). Defaults to 'confirmed'.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("waitUntil", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Body17WaitUntil WaitUntil { get; set; } = Thirdweb.Api.Body17WaitUntil.Confirmed;
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -6575,10 +8064,61 @@ namespace Thirdweb.Api
     }
 
     /// <summary>
+    /// The method to use, defaults to GET
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Method
+    {
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum SortBy2
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"createdAt")]
+        CreatedAt = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"totalRequests")]
+        TotalRequests = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"totalVolume")]
+        TotalVolume = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"price")]
+        Price = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"uniqueBuyers")]
+        UniqueBuyers = 4,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum SortOrder5
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"asc")]
+        Asc = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"desc")]
+        Desc = 1,
+
+    }
+
+    /// <summary>
     /// Request schema for creating a new ERC20 token
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body16
+    public partial class Body18
     {
         /// <summary>
         /// The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).
@@ -6619,10 +8159,9 @@ namespace Thirdweb.Api
         public System.Uri ImageUrl { get; set; }
 
         /// <summary>
-        /// Wallet address or ENS that will deploy the token.
+        /// Wallet address or ENS that will deploy the token. If omitted, the project wallet will be used if available.
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string From { get; set; }
 
         /// <summary>
@@ -6742,14 +8281,14 @@ namespace Thirdweb.Api
     /// Request to swap tokens using the optimal route available. You can specify a tokenIn amount (if exact='input') or tokenOut amount (if exact='output'), but not both. The corresponding output or input amount will be returned as the quote.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body17
+    public partial class Body19
     {
         /// <summary>
         /// Whether to swap the exact input or output amount
         /// </summary>
         [Newtonsoft.Json.JsonProperty("exact", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public Body17Exact Exact { get; set; } = Thirdweb.Api.Body17Exact.Input;
+        public Body19Exact Exact { get; set; } = Thirdweb.Api.Body19Exact.Input;
 
         [Newtonsoft.Json.JsonProperty("tokenIn", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -6760,10 +8299,9 @@ namespace Thirdweb.Api
         public TokenOut TokenOut { get; set; } = new TokenOut();
 
         /// <summary>
-        /// The wallet address or ENS name that will execute the swap.
+        /// The wallet address or ENS name that will execute the swap. If omitted, the project wallet will be used if available.
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string From { get; set; }
 
         /// <summary>
@@ -6784,10 +8322,162 @@ namespace Thirdweb.Api
     }
 
     /// <summary>
+    /// Request payload for creating or fetching a Solana wallet by label.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Body20
+    {
+        /// <summary>
+        /// Unique label to identify the wallet. Used for retrieval and management.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("label", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Label { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Request payload for signing an arbitrary Solana message.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Body21
+    {
+        /// <summary>
+        /// The Solana wallet address used for signing.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string From { get; set; }
+
+        /// <summary>
+        /// Message to sign. Can be plain text or hexadecimal format (starting with 0x). The format is automatically detected.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Message { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Request payload for transferring SOL or SPL tokens on Solana.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Body22
+    {
+        /// <summary>
+        /// Solana wallet address that will sign and submit the transfer.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string From { get; set; }
+
+        /// <summary>
+        /// Destination Solana address.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("to", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string To { get; set; }
+
+        /// <summary>
+        /// Amount to transfer expressed in base units (lamports for SOL or token decimals).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Amount { get; set; }
+
+        /// <summary>
+        /// Solana network identifier. Use solana:devnet for testing and solana:mainnet for production.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Body22ChainId ChainId { get; set; }
+
+        /// <summary>
+        /// Optional SPL token mint address. When omitted a native SOL transfer is performed.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("tokenAddress", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string TokenAddress { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Submit a Solana transaction made up of one or more instructions.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Body23
+    {
+        /// <summary>
+        /// Solana wallet address that will sign and submit the transaction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string From { get; set; }
+
+        /// <summary>
+        /// Solana network identifier. Use solana:devnet for testing and solana:mainnet for production.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Body23ChainId ChainId { get; set; }
+
+        /// <summary>
+        /// Set of instructions executed sequentially in a single transaction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.MinLength(1)]
+        public System.Collections.Generic.ICollection<transactions> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<transactions>();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
     /// Chat request
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Body18
+    public partial class Body24
     {
         /// <summary>
         /// Natural language query for the AI assistant
@@ -6892,8 +8582,38 @@ namespace Thirdweb.Api
 
     }
 
+    /// <summary>
+    /// Response returned after successfully linking an additional authentication provider. The response includes all linked profiles for the user.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Response3
+    {
+        /// <summary>
+        /// Updated list of authentication profiles linked to the wallet after the new account has been connected.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("linkedAccounts", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<LinkedAccounts> LinkedAccounts { get; set; } = new System.Collections.ObjectModel.Collection<LinkedAccounts>();
+
+    }
+
+    /// <summary>
+    /// Response returned after successfully linking an additional authentication provider. The response includes all linked profiles for the user.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response4
+    {
+        /// <summary>
+        /// Updated list of authentication profiles linked to the wallet after the new account has been connected.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("linkedAccounts", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<linkedAccounts> LinkedAccounts { get; set; } = new System.Collections.ObjectModel.Collection<linkedAccounts>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response5
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -6911,7 +8631,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response4
+    public partial class Response6
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -6929,7 +8649,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response5
+    public partial class Response7
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -6947,7 +8667,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response6
+    public partial class Response8
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -6965,7 +8685,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response7
+    public partial class Response9
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -6983,7 +8703,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response8
+    public partial class Response10
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7001,7 +8721,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response9
+    public partial class Response11
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7019,7 +8739,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response10
+    public partial class Response12
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7037,7 +8757,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response11
+    public partial class Response13
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7055,7 +8775,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response12
+    public partial class Response14
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7073,7 +8793,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response13
+    public partial class Response15
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7091,7 +8811,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response14
+    public partial class Response16
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7109,7 +8829,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response15
+    public partial class Response17
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7127,7 +8847,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response16
+    public partial class Response18
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7145,7 +8865,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response17
+    public partial class Response19
     {
         /// <summary>
         /// Array of results corresponding to each contract read call. Results are returned in the same order as the input calls.
@@ -7166,7 +8886,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response18
+    public partial class Response20
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7187,7 +8907,7 @@ namespace Thirdweb.Api
     /// Payment required response when user has insufficient funds. Contains a quote for completing the purchase.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response19
+    public partial class Response21
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7205,7 +8925,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response20
+    public partial class Response22
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7223,7 +8943,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response21
+    public partial class Response23
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7244,7 +8964,7 @@ namespace Thirdweb.Api
     /// Contract metadata from the thirdweb contract metadata service.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response22
+    public partial class Response24
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7265,7 +8985,7 @@ namespace Thirdweb.Api
     /// Contract ABI signatures in human-readable format. These signatures can be used directly with contract interaction methods.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response23
+    public partial class Response25
     {
         /// <summary>
         /// Array of human-readable ABI signatures including functions and events. Each signature is formatted as a string that can be used directly in contract read/write operations or event filtering.
@@ -7286,7 +9006,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response24
+    public partial class Response26
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7304,7 +9024,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response25
+    public partial class Response27
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7322,7 +9042,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response26
+    public partial class Response28
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7343,7 +9063,7 @@ namespace Thirdweb.Api
     /// Payment required response when user has insufficient funds. Contains a quote for completing the purchase.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response27
+    public partial class Response29
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7364,7 +9084,7 @@ namespace Thirdweb.Api
     /// Successful payment creation response containing the payment ID and link to purchase the product
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response28
+    public partial class Response30
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7382,7 +9102,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response29
+    public partial class Response31
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7403,7 +9123,7 @@ namespace Thirdweb.Api
     /// Payment required response when user has insufficient funds. Contains a quote for completing the purchase.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response30
+    public partial class Response32
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7421,7 +9141,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response31
+    public partial class Response33
     {
         /// <summary>
         /// List of payments for the client
@@ -7446,7 +9166,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response32
+    public partial class Response34
     {
         [Newtonsoft.Json.JsonProperty("error", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -7464,7 +9184,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response33
+    public partial class Response35
     {
         [Newtonsoft.Json.JsonProperty("error", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -7485,17 +9205,20 @@ namespace Thirdweb.Api
     /// Response returned by x402 facilitator 'verify'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response34
+    public partial class Response36
     {
         [Newtonsoft.Json.JsonProperty("isValid", Required = Newtonsoft.Json.Required.Always)]
         public bool IsValid { get; set; }
 
         [Newtonsoft.Json.JsonProperty("invalidReason", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public Response34InvalidReason InvalidReason { get; set; }
+        public Response36InvalidReason InvalidReason { get; set; }
 
         [Newtonsoft.Json.JsonProperty("payer", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public Payer Payer { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("errorMessage", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string ErrorMessage { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -7512,14 +9235,14 @@ namespace Thirdweb.Api
     /// Response returned by x402 facilitator 'settle'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response35
+    public partial class Response37
     {
         [Newtonsoft.Json.JsonProperty("success", Required = Newtonsoft.Json.Required.Always)]
         public bool Success { get; set; }
 
         [Newtonsoft.Json.JsonProperty("errorReason", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public Response35ErrorReason ErrorReason { get; set; }
+        public Response37ErrorReason ErrorReason { get; set; }
 
         [Newtonsoft.Json.JsonProperty("payer", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public Payer2 Payer { get; set; }
@@ -7532,7 +9255,10 @@ namespace Thirdweb.Api
         [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public Response35Network Network { get; set; }
+        public Response37Network Network { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("errorMessage", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string ErrorMessage { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -7549,7 +9275,7 @@ namespace Thirdweb.Api
     /// Supported payment kinds for this facilitator
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response36
+    public partial class Response38
     {
         [Newtonsoft.Json.JsonProperty("kinds", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7566,8 +9292,54 @@ namespace Thirdweb.Api
 
     }
 
+    /// <summary>
+    /// Payment required response when user has insufficient funds. Contains a quote for completing the purchase.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response37
+    public partial class Response39
+    {
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result27 Result { get; set; } = new Result27();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response40
+    {
+        [Newtonsoft.Json.JsonProperty("x402Version", Required = Newtonsoft.Json.Required.Always)]
+        public double X402Version { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("items", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<Items> Items { get; set; } = new System.Collections.ObjectModel.Collection<Items>();
+
+        [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Pagination Pagination { get; set; } = new Pagination();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response41
     {
         /// <summary>
         /// The in-progress deployment transaction ID.
@@ -7595,11 +9367,11 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response38
+    public partial class Response42
     {
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination Pagination { get; set; } = new Pagination();
+        public Pagination2 Pagination { get; set; } = new Pagination2();
 
         [Newtonsoft.Json.JsonProperty("tokens", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -7617,11 +9389,11 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response39
+    public partial class Response43
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Result27 Result { get; set; } = new Result27();
+        public Result28 Result { get; set; } = new Result28();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -7635,14 +9407,14 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response40
+    public partial class Response44
     {
         /// <summary>
         /// Blockchain networks that support cross-chain bridging
         /// </summary>
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<Result28> Result { get; set; } = new System.Collections.ObjectModel.Collection<Result28>();
+        public System.Collections.Generic.ICollection<Result29> Result { get; set; } = new System.Collections.ObjectModel.Collection<Result29>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -7656,7 +9428,25 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response41
+    public partial class Response45
+    {
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result30 Result { get; set; } = new Result30();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response46
     {
         /// <summary>
         /// The conversion result - amount of crypto tokens for the fiat amount
@@ -7679,11 +9469,11 @@ namespace Thirdweb.Api
     /// Successful token swap response containing executed transaction ID
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response42
+    public partial class Response47
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Result29 Result { get; set; } = new Result29();
+        public Result31 Result { get; set; } = new Result31();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -7700,11 +9490,182 @@ namespace Thirdweb.Api
     /// Payment required response when user has insufficient funds. Contains a quote for completing the purchase.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response43
+    public partial class Response48
     {
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Result30 Result { get; set; } = new Result30();
+        public Result32 Result { get; set; } = new Result32();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response49
+    {
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result33 Result { get; set; } = new Result33();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response50
+    {
+        /// <summary>
+        /// Details for a Solana wallet in your project.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result34 Result { get; set; } = new Result34();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response51
+    {
+        /// <summary>
+        /// Details for a Solana wallet in your project.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result35 Result { get; set; } = new Result35();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response52
+    {
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result36 Result { get; set; } = new Result36();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response53
+    {
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result37 Result { get; set; } = new Result37();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response54
+    {
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result38 Result { get; set; } = new Result38();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response55
+    {
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result39 Result { get; set; } = new Result39();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response56
+    {
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result40 Result { get; set; } = new Result40();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response57
+    {
+        /// <summary>
+        /// Transaction metadata and status information.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result41 Result { get; set; } = new Result41();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -7721,7 +9682,7 @@ namespace Thirdweb.Api
     /// Chat response
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response44
+    public partial class Response58
     {
         /// <summary>
         /// The AI assistant's response
@@ -7772,7 +9733,102 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum Body3Type
+    public enum Body4Type
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"apple")]
+        Apple = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"coinbase")]
+        Coinbase = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"discord")]
+        Discord = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"email")]
+        Email = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"facebook")]
+        Facebook = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"farcaster")]
+        Farcaster = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"github")]
+        Github = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"google")]
+        Google = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"guest")]
+        Guest = 8,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"line")]
+        Line = 9,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"passkey")]
+        Passkey = 10,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"phone")]
+        Phone = 11,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"siwe")]
+        Siwe = 12,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"steam")]
+        Steam = 13,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"telegram")]
+        Telegram = 14,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"twitch")]
+        Twitch = 15,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"x")]
+        X = 16,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"tiktok")]
+        Tiktok = 17,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"backend")]
+        Backend = 18,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"wallet")]
+        Wallet = 19,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"custom_auth_endpoint")]
+        Custom_auth_endpoint = 20,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"custom_jwt")]
+        Custom_jwt = 21,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Details
+    {
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("walletAddress", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string WalletAddress { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("email", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Email { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("phone", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Phone { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Id { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Body5Type
     {
 
         [System.Runtime.Serialization.EnumMember(Value = @"google")]
@@ -8221,6 +10277,21 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Body17WaitUntil
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"simulated")]
+        Simulated = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"submitted")]
+        Submitted = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"confirmed")]
+        Confirmed = 2,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Sale
     {
         [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
@@ -8270,7 +10341,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum Body17Exact
+    public enum Body19Exact
     {
 
         [System.Runtime.Serialization.EnumMember(Value = @"input")]
@@ -8362,6 +10433,77 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Body22ChainId
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"solana:mainnet")]
+        SolanaMainnet = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"solana:devnet")]
+        SolanaDevnet = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Body23ChainId
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"solana:mainnet")]
+        SolanaMainnet = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"solana:devnet")]
+        SolanaDevnet = 1,
+
+    }
+
+    /// <summary>
+    /// Single Solana instruction that will be included in a transaction.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class transactions
+    {
+        /// <summary>
+        /// Program address to invoke for this instruction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("programId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string ProgramId { get; set; }
+
+        /// <summary>
+        /// Ordered list of accounts consumed by the instruction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("accounts", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.MinLength(1)]
+        public System.Collections.Generic.ICollection<Accounts> Accounts { get; set; } = new System.Collections.ObjectModel.Collection<Accounts>();
+
+        /// <summary>
+        /// Instruction data encoded using the provided encoding.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Data { get; set; }
+
+        /// <summary>
+        /// Encoding used for the instruction data payload.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("encoding", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public TransactionsEncoding Encoding { get; set; } = Thirdweb.Api.TransactionsEncoding.Base64;
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Messages
     {
         [Newtonsoft.Json.JsonProperty("role", Required = Newtonsoft.Json.Required.Always)]
@@ -8430,6 +10572,42 @@ namespace Thirdweb.Api
 
     }
 
+    /// <summary>
+    /// Authentication provider details with type-based discrimination
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class LinkedAccounts
+    {
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Authentication provider details with type-based discrimination
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class linkedAccounts
+    {
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Result
     {
@@ -8483,7 +10661,7 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination2 Pagination { get; set; } = new Pagination2();
+        public Pagination3 Pagination { get; set; } = new Pagination3();
 
         /// <summary>
         /// Array of user wallets
@@ -8556,7 +10734,7 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination3 Pagination { get; set; } = new Pagination3();
+        public Pagination4 Pagination { get; set; } = new Pagination4();
 
         /// <summary>
         /// Array of server wallets
@@ -8687,14 +10865,14 @@ namespace Thirdweb.Api
     {
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination4 Pagination { get; set; } = new Pagination4();
+        public Pagination5 Pagination { get; set; } = new Pagination5();
 
         /// <summary>
         /// Array of wallet transactions.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<transactions> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<transactions>();
+        public System.Collections.Generic.ICollection<Transactions2> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions2>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -8712,7 +10890,7 @@ namespace Thirdweb.Api
     {
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination5 Pagination { get; set; } = new Pagination5();
+        public Pagination6 Pagination { get; set; } = new Pagination6();
 
         /// <summary>
         /// Array of wallet tokens.
@@ -8744,7 +10922,7 @@ namespace Thirdweb.Api
 
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination6 Pagination { get; set; } = new Pagination6();
+        public Pagination7 Pagination { get; set; } = new Pagination7();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -8832,7 +11010,7 @@ namespace Thirdweb.Api
 
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination7 Pagination { get; set; } = new Pagination7();
+        public Pagination8 Pagination { get; set; } = new Pagination8();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -8935,6 +11113,13 @@ namespace Thirdweb.Api
     public partial class Result16
     {
         /// <summary>
+        /// Message to display to the user
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Message { get; set; }
+
+        /// <summary>
         /// Link to purchase the product
         /// </summary>
         [Newtonsoft.Json.JsonProperty("link", Required = Newtonsoft.Json.Required.Always)]
@@ -8978,7 +11163,7 @@ namespace Thirdweb.Api
 
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination8 Pagination { get; set; } = new Pagination8();
+        public Pagination9 Pagination { get; set; } = new Pagination9();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -9003,7 +11188,7 @@ namespace Thirdweb.Api
 
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination9 Pagination { get; set; } = new Pagination9();
+        public Pagination10 Pagination { get; set; } = new Pagination10();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -9180,11 +11365,11 @@ namespace Thirdweb.Api
     {
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination10 Pagination { get; set; } = new Pagination10();
+        public Pagination11 Pagination { get; set; } = new Pagination11();
 
         [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<Transactions2> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions2>();
+        public System.Collections.Generic.ICollection<Transactions3> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions3>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -9221,6 +11406,13 @@ namespace Thirdweb.Api
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Result23
     {
+        /// <summary>
+        /// Message to display to the user
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Message { get; set; }
+
         /// <summary>
         /// Link to purchase the product
         /// </summary>
@@ -9306,6 +11498,13 @@ namespace Thirdweb.Api
     public partial class Result26
     {
         /// <summary>
+        /// Message to display to the user
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Message { get; set; }
+
+        /// <summary>
         /// Link to purchase the product
         /// </summary>
         [Newtonsoft.Json.JsonProperty("link", Required = Newtonsoft.Json.Required.Always)]
@@ -9382,7 +11581,7 @@ namespace Thirdweb.Api
 
         [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<Transactions3> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions3>();
+        public System.Collections.Generic.ICollection<Transactions4> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions4>();
 
         [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -9452,7 +11651,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum Response34InvalidReason
+    public enum Response36InvalidReason
     {
 
         [System.Runtime.Serialization.EnumMember(Value = @"insufficient_funds")]
@@ -9584,7 +11783,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum Response35ErrorReason
+    public enum Response37ErrorReason
     {
 
         [System.Runtime.Serialization.EnumMember(Value = @"insufficient_funds")]
@@ -9716,7 +11915,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum Response35Network
+    public enum Response37Network
     {
 
         [System.Runtime.Serialization.EnumMember(Value = @"base-sepolia")]
@@ -9777,7 +11976,109 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result27
+    {
+        /// <summary>
+        /// Message to display to the user
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Message { get; set; }
+
+        /// <summary>
+        /// Link to purchase the product
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("link", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Link { get; set; }
+
+        /// <summary>
+        /// Payment ID
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Id { get; set; }
+
+        /// <summary>
+        /// Bridge quote for completing the payment
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("quote", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Quote4 Quote { get; set; } = new Quote4();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Items
+    {
+        [Newtonsoft.Json.JsonProperty("resource", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Resource { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ItemsType Type { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("x402Version", Required = Newtonsoft.Json.Required.Always)]
+        public double X402Version { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("accepts", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<Accepts> Accepts { get; set; } = new System.Collections.ObjectModel.Collection<Accepts>();
+
+        [Newtonsoft.Json.JsonProperty("lastUpdated", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string LastUpdated { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("metadata", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.IDictionary<string, object> Metadata { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Pagination
+    {
+        [Newtonsoft.Json.JsonProperty("limit", Required = Newtonsoft.Json.Required.Always)]
+        public double Limit { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("offset", Required = Newtonsoft.Json.Required.Always)]
+        public double Offset { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("total", Required = Newtonsoft.Json.Required.Always)]
+        public double Total { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Pagination2
     {
         /// <summary>
         /// Whether there are more items available
@@ -9860,7 +12161,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Result27
+    public partial class Result28
     {
         /// <summary>
         /// Array of token owners with amounts.
@@ -9871,7 +12172,7 @@ namespace Thirdweb.Api
 
         [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Pagination11 Pagination { get; set; } = new Pagination11();
+        public Pagination12 Pagination { get; set; } = new Pagination12();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -9885,7 +12186,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Result28
+    public partial class Result29
     {
         /// <summary>
         /// The chain ID of the chain
@@ -9926,7 +12227,35 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Result29
+    public partial class Result30
+    {
+        /// <summary>
+        /// Supported bridge routes that match the provided filters.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("routes", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<Routes> Routes { get; set; } = new System.Collections.ObjectModel.Collection<Routes>();
+
+        /// <summary>
+        /// Pagination details for the returned routes.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Pagination13 Pagination { get; set; } = new Pagination13();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result31
     {
         /// <summary>
         /// Payment transaction ID that was executed
@@ -9947,8 +12276,15 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Result30
+    public partial class Result32
     {
+        /// <summary>
+        /// Message to display to the user
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Message { get; set; }
+
         /// <summary>
         /// Link to purchase the product
         /// </summary>
@@ -9968,7 +12304,336 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("quote", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Quote4 Quote { get; set; } = new Quote4();
+        public Quote5 Quote { get; set; } = new Quote5();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result33
+    {
+        /// <summary>
+        /// Array of Solana wallets created for your project.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("wallets", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<Wallets2> Wallets { get; set; } = new System.Collections.ObjectModel.Collection<Wallets2>();
+
+        /// <summary>
+        /// Pagination details for the wallet list.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("pagination", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Pagination14 Pagination { get; set; } = new Pagination14();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result34
+    {
+        /// <summary>
+        /// Base58 encoded Solana address.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// Optional label associated with the wallet.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("label", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Label { get; set; }
+
+        /// <summary>
+        /// ISO 8601 timestamp indicating when the wallet was created.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CreatedAt { get; set; }
+
+        /// <summary>
+        /// ISO 8601 timestamp indicating when the wallet was last updated.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("updatedAt", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string UpdatedAt { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result35
+    {
+        /// <summary>
+        /// Base58 encoded Solana address.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// Optional label associated with the wallet.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("label", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Label { get; set; }
+
+        /// <summary>
+        /// ISO 8601 timestamp indicating when the wallet was created.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CreatedAt { get; set; }
+
+        /// <summary>
+        /// ISO 8601 timestamp indicating when the wallet was last updated.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("updatedAt", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string UpdatedAt { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result36
+    {
+        /// <summary>
+        /// Base58 encoded signature returned from the signer.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("signature", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Signature { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result37
+    {
+        /// <summary>
+        /// Idempotency key assigned to the queued transaction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("transactionId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string TransactionId { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result38
+    {
+        /// <summary>
+        /// Idempotency key assigned to the queued transaction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("transactionId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string TransactionId { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result39
+    {
+        /// <summary>
+        /// Idempotency key assigned to the queued transaction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("transactionId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string TransactionId { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result40
+    {
+        /// <summary>
+        /// Idempotency key assigned to the queued transaction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("transactionId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string TransactionId { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result41
+    {
+        /// <summary>
+        /// Unique identifier for the transaction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Id { get; set; }
+
+        /// <summary>
+        /// Solana network identifier. Use solana:devnet for testing and solana:mainnet for production.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Result41ChainId ChainId { get; set; }
+
+        /// <summary>
+        /// Signer address used on submission.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string From { get; set; }
+
+        /// <summary>
+        /// Signature recorded on-chain once available.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("signature", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Signature { get; set; }
+
+        /// <summary>
+        /// Current status of the transaction in the processing pipeline.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Result41Status? Status { get; set; }
+
+        /// <summary>
+        /// Timestamp when the transaction reached the reported status.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("confirmedAt", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string ConfirmedAt { get; set; }
+
+        /// <summary>
+        /// Slot where the transaction was confirmed, if available.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("confirmedAtSlot", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string ConfirmedAtSlot { get; set; }
+
+        /// <summary>
+        /// Unix timestamp of the processed block.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("blockTime", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? BlockTime { get; set; }
+
+        /// <summary>
+        /// ISO 8601 timestamp when the transaction was queued.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CreatedAt { get; set; }
+
+        /// <summary>
+        /// Error message if the transaction failed.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("errorMessage", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string ErrorMessage { get; set; }
+
+        /// <summary>
+        /// Resolved execution parameters used for the transaction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("executionParams", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public object ExecutionParams { get; set; }
+
+        /// <summary>
+        /// Raw execution result payload, if present.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("executionResult", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public object ExecutionResult { get; set; }
+
+        /// <summary>
+        /// Original instruction payload submitted.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("transactionParams", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public object TransactionParams { get; set; }
+
+        /// <summary>
+        /// Project client identifier.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("clientId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ClientId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("enrichedData", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public object EnrichedData { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("cancelledAt", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string CancelledAt { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -10213,6 +12878,55 @@ namespace Thirdweb.Api
 
     }
 
+    /// <summary>
+    /// Account metadata required for executing an instruction.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Accounts
+    {
+        /// <summary>
+        /// Public key for the account.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// Whether this account must sign the transaction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("isSigner", Required = Newtonsoft.Json.Required.Always)]
+        public bool IsSigner { get; set; }
+
+        /// <summary>
+        /// Whether this account can be modified by the instruction.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("isWritable", Required = Newtonsoft.Json.Required.Always)]
+        public bool IsWritable { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum TransactionsEncoding
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"hex")]
+        Hex = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"base64")]
+        Base64 = 1,
+
+    }
+
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum MessagesRole
     {
@@ -10265,7 +12979,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination2
+    public partial class Pagination3
     {
         /// <summary>
         /// Whether there are more items available
@@ -10366,7 +13080,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination3
+    public partial class Pagination4
     {
         /// <summary>
         /// Whether there are more items available
@@ -10467,7 +13181,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination4
+    public partial class Pagination5
     {
         /// <summary>
         /// Whether there are more items available
@@ -10505,7 +13219,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class transactions
+    public partial class Transactions2
     {
         /// <summary>
         /// The hash of the block containing this transaction.
@@ -10666,7 +13380,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination5
+    public partial class Pagination6
     {
         /// <summary>
         /// Whether there are more items available
@@ -10856,7 +13570,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination6
+    public partial class Pagination7
     {
         /// <summary>
         /// Whether there are more items available
@@ -10962,7 +13676,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination7
+    public partial class Pagination8
     {
         /// <summary>
         /// Whether there are more items available
@@ -11221,7 +13935,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination8
+    public partial class Pagination9
     {
         /// <summary>
         /// Whether there are more items available
@@ -11345,7 +14059,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination9
+    public partial class Pagination10
     {
         /// <summary>
         /// Whether there are more items available
@@ -11504,7 +14218,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination10
+    public partial class Pagination11
     {
         /// <summary>
         /// Whether there are more items available
@@ -11542,7 +14256,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Transactions2
+    public partial class Transactions3
     {
         /// <summary>
         /// Index within transaction batch
@@ -11643,7 +14357,7 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.AllowNull)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public Transactions2Status? Status { get; set; }
+        public Transactions3Status? Status { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -11777,7 +14491,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Transactions3
+    public partial class Transactions4
     {
         [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
@@ -11944,6 +14658,131 @@ namespace Thirdweb.Api
         [Newtonsoft.Json.JsonProperty("defaultAsset", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public DefaultAsset DefaultAsset { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("supportedAssets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<SupportedAssets> SupportedAssets { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Quote4
+    {
+        /// <summary>
+        /// Block number when quote was generated
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("blockNumber", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string BlockNumber { get; set; }
+
+        /// <summary>
+        /// Destination amount in wei
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("destinationAmount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string DestinationAmount { get; set; }
+
+        /// <summary>
+        /// Estimated execution time in milliseconds
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("estimatedExecutionTimeMs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double EstimatedExecutionTimeMs { get; set; }
+
+        /// <summary>
+        /// Quote intent details
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("intent", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Intent4 Intent { get; set; } = new Intent4();
+
+        /// <summary>
+        /// Origin amount in wei
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("originAmount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OriginAmount { get; set; }
+
+        /// <summary>
+        /// Array of steps to complete the bridge operation
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("steps", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<Steps3> Steps { get; set; } = new System.Collections.ObjectModel.Collection<Steps3>();
+
+        /// <summary>
+        /// Quote timestamp
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("timestamp", Required = Newtonsoft.Json.Required.Always)]
+        public double Timestamp { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum ItemsType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"http")]
+        Http = 0,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Accepts
+    {
+        [Newtonsoft.Json.JsonProperty("scheme", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public AcceptsScheme Scheme { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
+        public Network6 Network { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("maxAmountRequired", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string MaxAmountRequired { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("resource", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Uri Resource { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Description { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("mimeType", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string MimeType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("outputSchema", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.IDictionary<string, object> OutputSchema { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("payTo", Required = Newtonsoft.Json.Required.Always)]
+        public PayTo3 PayTo { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("maxTimeoutSeconds", Required = Newtonsoft.Json.Required.Always)]
+        public int MaxTimeoutSeconds { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("asset", Required = Newtonsoft.Json.Required.Always)]
+        public Asset3 Asset { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("extra", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.IDictionary<string, object> Extra { get; set; }
+
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
         [Newtonsoft.Json.JsonExtensionData]
@@ -11990,7 +14829,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Pagination11
+    public partial class Pagination12
     {
         /// <summary>
         /// Whether there are more items available
@@ -12061,8 +14900,71 @@ namespace Thirdweb.Api
 
     }
 
+    /// <summary>
+    /// Represents a supported bridge route between an origin and destination token.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Quote4
+    public partial class Routes
+    {
+        [Newtonsoft.Json.JsonProperty("originToken", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public OriginToken2 OriginToken { get; set; } = new OriginToken2();
+
+        [Newtonsoft.Json.JsonProperty("destinationToken", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public DestinationToken2 DestinationToken { get; set; } = new DestinationToken2();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Pagination13
+    {
+        /// <summary>
+        /// Whether there are more items available
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("hasMore", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool HasMore { get; set; }
+
+        /// <summary>
+        /// Number of items per page
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("limit", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double? Limit { get; set; } = 20D;
+
+        /// <summary>
+        /// Current page number
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("page", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double? Page { get; set; } = 1D;
+
+        /// <summary>
+        /// Total number of items available
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("totalCount", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double? TotalCount { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Quote5
     {
         /// <summary>
         /// Block number when quote was generated
@@ -12088,7 +14990,7 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("intent", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public Intent4 Intent { get; set; } = new Intent4();
+        public Intent5 Intent { get; set; } = new Intent5();
 
         /// <summary>
         /// Origin amount in wei
@@ -12102,7 +15004,7 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("steps", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<Steps3> Steps { get; set; } = new System.Collections.ObjectModel.Collection<Steps3>();
+        public System.Collections.Generic.ICollection<Steps4> Steps { get; set; } = new System.Collections.ObjectModel.Collection<Steps4>();
 
         /// <summary>
         /// Quote timestamp
@@ -12118,6 +15020,116 @@ namespace Thirdweb.Api
             get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
             set { _additionalProperties = value; }
         }
+
+    }
+
+    /// <summary>
+    /// Details for a Solana wallet in your project.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Wallets2
+    {
+        /// <summary>
+        /// Base58 encoded Solana address.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// Optional label associated with the wallet.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("label", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Label { get; set; }
+
+        /// <summary>
+        /// ISO 8601 timestamp indicating when the wallet was created.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CreatedAt { get; set; }
+
+        /// <summary>
+        /// ISO 8601 timestamp indicating when the wallet was last updated.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("updatedAt", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string UpdatedAt { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Pagination14
+    {
+        /// <summary>
+        /// Total number of wallets available.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("totalCount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
+        public double TotalCount { get; set; }
+
+        /// <summary>
+        /// Current page number.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("page", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(0, int.MaxValue)]
+        public int Page { get; set; }
+
+        /// <summary>
+        /// Number of wallets returned per page.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("limit", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int Limit { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Result41ChainId
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"solana:mainnet")]
+        SolanaMainnet = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"solana:devnet")]
+        SolanaDevnet = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Result41Status
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"QUEUED")]
+        QUEUED = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SUBMITTED")]
+        SUBMITTED = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"CONFIRMED")]
+        CONFIRMED = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"FAILED")]
+        FAILED = 3,
 
     }
 
@@ -12436,21 +15448,21 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("originToken", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public OriginToken2 OriginToken { get; set; } = new OriginToken2();
+        public OriginToken3 OriginToken { get; set; } = new OriginToken3();
 
         /// <summary>
         /// Destination token information
         /// </summary>
         [Newtonsoft.Json.JsonProperty("destinationToken", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public DestinationToken2 DestinationToken { get; set; } = new DestinationToken2();
+        public DestinationToken3 DestinationToken { get; set; } = new DestinationToken3();
 
         /// <summary>
         /// Array of transactions for this step
         /// </summary>
         [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<Transactions4> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions4>();
+        public System.Collections.Generic.ICollection<Transactions5> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions5>();
 
         /// <summary>
         /// Origin amount in wei
@@ -12600,7 +15612,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum Transactions2Status
+    public enum Transactions3Status
     {
 
         [System.Runtime.Serialization.EnumMember(Value = @"QUEUED")]
@@ -12688,21 +15700,21 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("originToken", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public OriginToken3 OriginToken { get; set; } = new OriginToken3();
+        public OriginToken4 OriginToken { get; set; } = new OriginToken4();
 
         /// <summary>
         /// Destination token information
         /// </summary>
         [Newtonsoft.Json.JsonProperty("destinationToken", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public DestinationToken3 DestinationToken { get; set; } = new DestinationToken3();
+        public DestinationToken4 DestinationToken { get; set; } = new DestinationToken4();
 
         /// <summary>
         /// Array of transactions for this step
         /// </summary>
         [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<Transactions5> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions5>();
+        public System.Collections.Generic.ICollection<Transactions6> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions6>();
 
         /// <summary>
         /// Origin amount in wei
@@ -12806,21 +15818,21 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("originToken", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public OriginToken4 OriginToken { get; set; } = new OriginToken4();
+        public OriginToken5 OriginToken { get; set; } = new OriginToken5();
 
         /// <summary>
         /// Destination token information
         /// </summary>
         [Newtonsoft.Json.JsonProperty("destinationToken", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public DestinationToken4 DestinationToken { get; set; } = new DestinationToken4();
+        public DestinationToken5 DestinationToken { get; set; } = new DestinationToken5();
 
         /// <summary>
         /// Array of transactions for this step
         /// </summary>
         [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<Transactions6> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions6>();
+        public System.Collections.Generic.ICollection<Transactions7> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions7>();
 
         /// <summary>
         /// Origin amount in wei
@@ -12856,6 +15868,9 @@ namespace Thirdweb.Api
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DefaultAsset
     {
+        /// <summary>
+        /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Address { get; set; }
@@ -12866,6 +15881,34 @@ namespace Thirdweb.Api
         [Newtonsoft.Json.JsonProperty("eip712", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
         public Eip712 Eip712 { get; set; } = new Eip712();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class SupportedAssets
+    {
+        /// <summary>
+        /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Address { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("decimals", Required = Newtonsoft.Json.Required.Always)]
+        public double Decimals { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("eip712", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Eip7122 Eip712 { get; set; } = new Eip7122();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -12949,21 +15992,343 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("originToken", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public OriginToken5 OriginToken { get; set; } = new OriginToken5();
+        public OriginToken6 OriginToken { get; set; } = new OriginToken6();
 
         /// <summary>
         /// Destination token information
         /// </summary>
         [Newtonsoft.Json.JsonProperty("destinationToken", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public DestinationToken5 DestinationToken { get; set; } = new DestinationToken5();
+        public DestinationToken6 DestinationToken { get; set; } = new DestinationToken6();
 
         /// <summary>
         /// Array of transactions for this step
         /// </summary>
         [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<Transactions7> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions7>();
+        public System.Collections.Generic.ICollection<Transactions8> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions8>();
+
+        /// <summary>
+        /// Origin amount in wei
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("originAmount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OriginAmount { get; set; }
+
+        /// <summary>
+        /// Destination amount in wei
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("destinationAmount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string DestinationAmount { get; set; }
+
+        /// <summary>
+        /// Estimated execution time in milliseconds
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("estimatedExecutionTimeMs", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double EstimatedExecutionTimeMs { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum AcceptsScheme
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"exact")]
+        Exact = 0,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Network6
+    {
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PayTo3
+    {
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Asset3
+    {
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class OriginToken2
+    {
+        /// <summary>
+        /// Chain identifier for the token
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int ChainId { get; set; }
+
+        /// <summary>
+        /// Token contract address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// Token symbol
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("symbol", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Symbol { get; set; }
+
+        /// <summary>
+        /// Token name
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Number of decimals the token uses
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("decimals", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(0, int.MaxValue)]
+        public int Decimals { get; set; }
+
+        /// <summary>
+        /// Optional icon URL for the token
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("iconUri", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Uri IconUri { get; set; }
+
+        /// <summary>
+        /// 24h market capitalization in USD when available
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("marketCapUsd", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
+        public double MarketCapUsd { get; set; }
+
+        /// <summary>
+        /// 24h trading volume in USD when available
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("volume24hUsd", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
+        public double Volume24hUsd { get; set; }
+
+        /// <summary>
+        /// Token price quotes keyed by fiat currency code
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("prices", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.IDictionary<string, double> Prices { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class DestinationToken2
+    {
+        /// <summary>
+        /// Chain identifier for the token
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int ChainId { get; set; }
+
+        /// <summary>
+        /// Token contract address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// Token symbol
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("symbol", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Symbol { get; set; }
+
+        /// <summary>
+        /// Token name
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Number of decimals the token uses
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("decimals", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(0, int.MaxValue)]
+        public int Decimals { get; set; }
+
+        /// <summary>
+        /// Optional icon URL for the token
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("iconUri", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Uri IconUri { get; set; }
+
+        /// <summary>
+        /// 24h market capitalization in USD when available
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("marketCapUsd", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
+        public double MarketCapUsd { get; set; }
+
+        /// <summary>
+        /// 24h trading volume in USD when available
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("volume24hUsd", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
+        public double Volume24hUsd { get; set; }
+
+        /// <summary>
+        /// Token price quotes keyed by fiat currency code
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("prices", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.IDictionary<string, double> Prices { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Intent5
+    {
+        /// <summary>
+        /// The amount in wei
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Amount { get; set; }
+
+        /// <summary>
+        /// Destination chain ID
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("destinationChainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int DestinationChainId { get; set; }
+
+        /// <summary>
+        /// Destination token address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("destinationTokenAddress", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string DestinationTokenAddress { get; set; }
+
+        /// <summary>
+        /// Origin chain ID
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("originChainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int OriginChainId { get; set; }
+
+        /// <summary>
+        /// Origin token address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("originTokenAddress", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OriginTokenAddress { get; set; }
+
+        /// <summary>
+        /// Receiver address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("receiver", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Receiver { get; set; }
+
+        /// <summary>
+        /// Sender address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("sender", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Sender { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Steps4
+    {
+        /// <summary>
+        /// Origin token information
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("originToken", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public OriginToken7 OriginToken { get; set; } = new OriginToken7();
+
+        /// <summary>
+        /// Destination token information
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("destinationToken", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public DestinationToken7 DestinationToken { get; set; } = new DestinationToken7();
+
+        /// <summary>
+        /// Array of transactions for this step
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<Transactions9> Transactions { get; set; } = new System.Collections.ObjectModel.Collection<Transactions9>();
 
         /// <summary>
         /// Origin amount in wei
@@ -12999,157 +16364,6 @@ namespace Thirdweb.Api
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Value
     {
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class OriginToken2
-    {
-        /// <summary>
-        /// The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
-        public int ChainId { get; set; }
-
-        /// <summary>
-        /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Address { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("decimals", Required = Newtonsoft.Json.Required.Always)]
-        public double Decimals { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("symbol", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Symbol { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("iconUri", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string IconUri { get; set; }
-
-        /// <summary>
-        /// Token price in different FIAT currencies.
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("prices", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.IDictionary<string, double> Prices { get; set; } = new System.Collections.Generic.Dictionary<string, double>();
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class DestinationToken2
-    {
-        /// <summary>
-        /// The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
-        public int ChainId { get; set; }
-
-        /// <summary>
-        /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Address { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("decimals", Required = Newtonsoft.Json.Required.Always)]
-        public double Decimals { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("symbol", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Symbol { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("iconUri", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string IconUri { get; set; }
-
-        /// <summary>
-        /// Token price in different FIAT currencies.
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("prices", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.IDictionary<string, double> Prices { get; set; } = new System.Collections.Generic.Dictionary<string, double>();
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Transactions4
-    {
-        /// <summary>
-        /// Blockchain network identifier
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
-        public int ChainId { get; set; }
-
-        /// <summary>
-        /// Transaction recipient address
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("to", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string To { get; set; }
-
-        /// <summary>
-        /// Transaction data payload
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Data { get; set; }
-
-        /// <summary>
-        /// Type of action this transaction performs
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("action", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public Transactions4Action Action { get; set; }
-
-        /// <summary>
-        /// Transaction sender address
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string From { get; set; }
-
-        /// <summary>
-        /// Spender address for approval transactions
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("spender", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Spender { get; set; }
-
-        /// <summary>
-        /// Transaction value in wei
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Value { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -13465,28 +16679,6 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Eip712
-    {
-        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Name { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("version", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Version { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class OriginToken5
     {
         /// <summary>
@@ -13638,23 +16830,358 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum Transactions4Action
+    public partial class Eip712
     {
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Name { get; set; }
 
-        [System.Runtime.Serialization.EnumMember(Value = @"approval")]
-        Approval = 0,
+        [Newtonsoft.Json.JsonProperty("version", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Version { get; set; }
 
-        [System.Runtime.Serialization.EnumMember(Value = @"transfer")]
-        Transfer = 1,
+        [Newtonsoft.Json.JsonProperty("primaryType", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Eip712PrimaryType PrimaryType { get; set; }
 
-        [System.Runtime.Serialization.EnumMember(Value = @"buy")]
-        Buy = 2,
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
-        [System.Runtime.Serialization.EnumMember(Value = @"sell")]
-        Sell = 3,
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
 
-        [System.Runtime.Serialization.EnumMember(Value = @"fee")]
-        Fee = 4,
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Eip7122
+    {
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("version", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Version { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("primaryType", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Eip7122PrimaryType PrimaryType { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class OriginToken6
+    {
+        /// <summary>
+        /// The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int ChainId { get; set; }
+
+        /// <summary>
+        /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Address { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("decimals", Required = Newtonsoft.Json.Required.Always)]
+        public double Decimals { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("symbol", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Symbol { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("iconUri", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string IconUri { get; set; }
+
+        /// <summary>
+        /// Token price in different FIAT currencies.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("prices", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.IDictionary<string, double> Prices { get; set; } = new System.Collections.Generic.Dictionary<string, double>();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class DestinationToken6
+    {
+        /// <summary>
+        /// The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int ChainId { get; set; }
+
+        /// <summary>
+        /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Address { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("decimals", Required = Newtonsoft.Json.Required.Always)]
+        public double Decimals { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("symbol", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Symbol { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("iconUri", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string IconUri { get; set; }
+
+        /// <summary>
+        /// Token price in different FIAT currencies.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("prices", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.IDictionary<string, double> Prices { get; set; } = new System.Collections.Generic.Dictionary<string, double>();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Transactions8
+    {
+        /// <summary>
+        /// Blockchain network identifier
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int ChainId { get; set; }
+
+        /// <summary>
+        /// Transaction recipient address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("to", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string To { get; set; }
+
+        /// <summary>
+        /// Transaction data payload
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Data { get; set; }
+
+        /// <summary>
+        /// Type of action this transaction performs
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("action", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Transactions8Action Action { get; set; }
+
+        /// <summary>
+        /// Transaction sender address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string From { get; set; }
+
+        /// <summary>
+        /// Spender address for approval transactions
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("spender", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Spender { get; set; }
+
+        /// <summary>
+        /// Transaction value in wei
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Value { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class OriginToken7
+    {
+        /// <summary>
+        /// The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int ChainId { get; set; }
+
+        /// <summary>
+        /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Address { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("decimals", Required = Newtonsoft.Json.Required.Always)]
+        public double Decimals { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("symbol", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Symbol { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("iconUri", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string IconUri { get; set; }
+
+        /// <summary>
+        /// Token price in different FIAT currencies.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("prices", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.IDictionary<string, double> Prices { get; set; } = new System.Collections.Generic.Dictionary<string, double>();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class DestinationToken7
+    {
+        /// <summary>
+        /// The blockchain network identifier. Common values include: 1 (Ethereum), 8453 (Base), 137 (Polygon), 56 (BSC), 43114 (Avalanche), 42161 (Arbitrum), 10 (Optimism).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int ChainId { get; set; }
+
+        /// <summary>
+        /// A valid Ethereum address (0x-prefixed hex string) or ENS name (e.g., vitalik.eth).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Address { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("decimals", Required = Newtonsoft.Json.Required.Always)]
+        public double Decimals { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("symbol", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Symbol { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("iconUri", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string IconUri { get; set; }
+
+        /// <summary>
+        /// Token price in different FIAT currencies.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("prices", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.IDictionary<string, double> Prices { get; set; } = new System.Collections.Generic.Dictionary<string, double>();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Transactions9
+    {
+        /// <summary>
+        /// Blockchain network identifier
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int ChainId { get; set; }
+
+        /// <summary>
+        /// Transaction recipient address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("to", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string To { get; set; }
+
+        /// <summary>
+        /// Transaction data payload
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Data { get; set; }
+
+        /// <summary>
+        /// Type of action this transaction performs
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("action", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public Transactions9Action Action { get; set; }
+
+        /// <summary>
+        /// Transaction sender address
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string From { get; set; }
+
+        /// <summary>
+        /// Spender address for approval transactions
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("spender", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Spender { get; set; }
+
+        /// <summary>
+        /// Transaction value in wei
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Value { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
 
     }
 
@@ -13702,6 +17229,72 @@ namespace Thirdweb.Api
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum Transactions7Action
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"approval")]
+        Approval = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"transfer")]
+        Transfer = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"buy")]
+        Buy = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"sell")]
+        Sell = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"fee")]
+        Fee = 4,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Eip712PrimaryType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"TransferWithAuthorization")]
+        TransferWithAuthorization = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Permit")]
+        Permit = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Eip7122PrimaryType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"TransferWithAuthorization")]
+        TransferWithAuthorization = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Permit")]
+        Permit = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Transactions8Action
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"approval")]
+        Approval = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"transfer")]
+        Transfer = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"buy")]
+        Buy = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"sell")]
+        Sell = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"fee")]
+        Fee = 4,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum Transactions9Action
     {
 
         [System.Runtime.Serialization.EnumMember(Value = @"approval")]
