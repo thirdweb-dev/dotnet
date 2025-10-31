@@ -135,6 +135,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             Thirdweb.AuthProvider.Guest => "Guest",
             Thirdweb.AuthProvider.X => "X",
             Thirdweb.AuthProvider.TikTok => "TikTok",
+            Thirdweb.AuthProvider.Epic => "Epic",
             Thirdweb.AuthProvider.Coinbase => "Coinbase",
             Thirdweb.AuthProvider.Github => "Github",
             Thirdweb.AuthProvider.Twitch => "Twitch",
@@ -715,6 +716,7 @@ public partial class EcosystemWallet : IThirdwebWallet
             case "Line":
             case "X":
             case "TikTok":
+            case "Epic":
             case "Coinbase":
             case "Github":
             case "Twitch":
