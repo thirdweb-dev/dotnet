@@ -65,6 +65,7 @@ help:
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'publish' 'Publish the Thirdweb project (dotnet publish)'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'run' 'Run the console application'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'generate' 'Generate API client from OpenAPI spec'
+	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'generate-llms' 'Generate llms.txt from XML documentation'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'lint' 'Check code formatting (dry run)'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'fix' 'Fix code formatting issues'
 	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'help' 'Show this help message'
@@ -105,6 +106,19 @@ generate:
 	)
 	@$(call msg,$(C_GRN),$(IC_OK),API client generation complete)
 
+.PHONY: generate-llms
+# Generate llms.txt from XML documentation
+generate-llms:
+	@$(call msg,$(C_BLU),$(IC_INFO),$(IC_BUILD) Building Thirdweb in Release mode)
+	@$(DOTNET) build '$(LIB_PROJ)' -c Release >/dev/null 2>&1 || { \
+		$(call msg,$(C_MAG),>> ,Building Thirdweb project) ; \
+		$(DOTNET) build '$(LIB_PROJ)' -c Release ; \
+	}
+	@$(call msg,$(C_BLU),$(IC_INFO),$(IC_GEN) Generating llms.txt from XML documentation)
+	@$(DOTNET) run --project '$(GENERATOR_PROJ)' -- --llms && \
+	$(call msg,$(C_GRN),$(IC_OK),llms.txt generation complete) || \
+	$(call msg,$(C_RED),$(IC_ERR),llms.txt generation failed)
+
 .PHONY: build
 build:
 	@$(MAKE) --no-print-directory generate
@@ -112,6 +126,7 @@ build:
 	@$(DOTNET) build && \
 	$(call msg,$(C_GRN),$(IC_OK),Build succeeded) || \
 	$(call msg,$(C_RED),$(IC_ERR),Build failed)
+	@$(MAKE) --no-print-directory generate-llms
 
 .PHONY: clean
 clean:
