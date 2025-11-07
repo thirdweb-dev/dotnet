@@ -21,6 +21,7 @@ public enum AuthProvider
     Guest,
     X,
     TikTok,
+    Epic,
     Coinbase,
     Github,
     Twitch,
