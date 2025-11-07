@@ -402,12 +402,12 @@ public class SmartWallet : IThirdwebWallet
     /// <param name="reqValidityEndTimestamp">The timestamp when the request validity ends. Make use of our Utils to get UNIX timestamps.</param>
     public async Task<ThirdwebTransactionReceipt> CreateSessionKey(
         string signerAddress,
-        List<string> approvedTargets,
-        string nativeTokenLimitPerTransactionInWei,
-        string permissionStartTimestamp,
-        string permissionEndTimestamp,
-        string reqValidityStartTimestamp,
-        string reqValidityEndTimestamp
+        List<string> approvedTargets = null,
+        string nativeTokenLimitPerTransactionInWei = null,
+        string permissionStartTimestamp = null,
+        string permissionEndTimestamp = null,
+        string reqValidityStartTimestamp = null,
+        string reqValidityEndTimestamp = null
     )
     {
         if (await Utils.IsZkSync(this.Client, this.ActiveChainId).ConfigureAwait(false))
@@ -419,12 +419,12 @@ public class SmartWallet : IThirdwebWallet
         {
             Signer = signerAddress,
             IsAdmin = 0,
-            ApprovedTargets = approvedTargets,
-            NativeTokenLimitPerTransaction = BigInteger.Parse(nativeTokenLimitPerTransactionInWei),
-            PermissionStartTimestamp = BigInteger.Parse(permissionStartTimestamp),
-            PermissionEndTimestamp = BigInteger.Parse(permissionEndTimestamp),
-            ReqValidityStartTimestamp = BigInteger.Parse(reqValidityStartTimestamp),
-            ReqValidityEndTimestamp = BigInteger.Parse(reqValidityEndTimestamp),
+            ApprovedTargets = approvedTargets ?? new List<string> { Constants.ADDRESS_ZERO },
+            NativeTokenLimitPerTransaction = BigInteger.Parse(nativeTokenLimitPerTransactionInWei ?? "0"),
+            PermissionStartTimestamp = BigInteger.Parse(permissionStartTimestamp ?? "0"),
+            PermissionEndTimestamp = BigInteger.Parse(permissionEndTimestamp ?? Utils.GetUnixTimeStampIn10Years().ToString()),
+            ReqValidityStartTimestamp = BigInteger.Parse(reqValidityStartTimestamp ?? "0"),
+            ReqValidityEndTimestamp = BigInteger.Parse(reqValidityEndTimestamp ?? Utils.GetUnixTimeStampIn10Years().ToString()),
             Uid = Guid.NewGuid().ToByteArray(),
         };
 
