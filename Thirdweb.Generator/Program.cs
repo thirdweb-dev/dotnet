@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text;
+using System.Xml.Linq;
 using NJsonSchema;
 using NSwag;
 using NSwag.CodeGeneration.CSharp;
@@ -16,6 +18,270 @@ static string FindRepoRoot()
     }
     // Fallback to current directory
     return Directory.GetCurrentDirectory();
+}
+
+static void GenerateLlmsTxt(string repoRoot)
+{
+    var xmlPath = Path.Combine(repoRoot, "Thirdweb", "bin", "Release", "netstandard2.1", "Thirdweb.xml");
+    var outputPath = Path.Combine(repoRoot, "llms.txt");
+
+    if (!File.Exists(xmlPath))
+    {
+        Console.WriteLine($"XML documentation not found at {xmlPath}");
+        Console.WriteLine("Please build the project in Release mode first.");
+        Environment.Exit(1);
+    }
+
+    Console.WriteLine($"Reading XML documentation from {xmlPath}...");
+    var doc = XDocument.Load(xmlPath);
+    var sb = new StringBuilder();
+
+    _ = sb.AppendLine("THIRDWEB .NET SDK - API DOCUMENTATION");
+    _ = sb.AppendLine("=====================================");
+    _ = sb.AppendLine();
+
+    var assembly = doc.Root?.Element("assembly")?.Element("name")?.Value;
+    if (assembly != null)
+    {
+        _ = sb.AppendLine($"Assembly: {assembly}");
+        _ = sb.AppendLine();
+    }
+
+    var members = doc.Root?.Element("members")?.Elements("member");
+    if (members != null)
+    {
+        foreach (var member in members)
+        {
+            var name = member.Attribute("name")?.Value;
+            if (string.IsNullOrEmpty(name))
+            {
+                continue;
+            }
+
+            _ = sb.AppendLine(new string('-', 80));
+            _ = sb.AppendLine(name);
+            _ = sb.AppendLine(new string('-', 80));
+
+            // Parse signature for better display
+            var signature = ParseMemberSignature(name);
+            if (signature != null)
+            {
+                _ = sb.AppendLine();
+                _ = sb.AppendLine($"KIND: {signature.Kind}");
+                if (!string.IsNullOrEmpty(signature.ReturnType))
+                {
+                    _ = sb.AppendLine($"RETURN TYPE: {signature.ReturnType}");
+                }
+            }
+
+            // Group param elements by name attribute
+            var paramDocs = member.Elements("param").Select(p => new { Name = p.Attribute("name")?.Value, Description = p.Value.Trim() }).Where(p => !string.IsNullOrEmpty(p.Name)).ToList();
+
+            // Display parameters with their names and types
+            if (signature?.Parameters != null && signature.Parameters.Count > 0)
+            {
+                _ = sb.AppendLine();
+                _ = sb.AppendLine("PARAMETERS:");
+                for (var i = 0; i < signature.Parameters.Count; i++)
+                {
+                    var param = signature.Parameters[i];
+                    // Try to get the actual parameter name from documentation
+                    var paramDoc = i < paramDocs.Count ? paramDocs[i] : null;
+                    var paramName = paramDoc?.Name ?? param.Name;
+
+                    _ = sb.AppendLine($"  - {paramName} ({param.Type})");
+                    if (paramDoc != null && !string.IsNullOrEmpty(paramDoc.Description))
+                    {
+                        _ = sb.AppendLine($"    {NormalizeXmlText(paramDoc.Description).Replace("\n", "\n    ")}");
+                    }
+                }
+            }
+
+            // Display other elements (summary, remarks, returns, exception, etc.)
+            foreach (var element in member.Elements())
+            {
+                if (element.Name.LocalName == "param")
+                {
+                    continue; // Already handled above
+                }
+
+                var content = element.Value.Trim();
+                if (string.IsNullOrEmpty(content))
+                {
+                    continue;
+                }
+
+                _ = sb.AppendLine();
+                var elementName = element.Name.LocalName.ToUpper();
+
+                // Add attribute info for exceptions and type params
+                var nameAttr = element.Attribute("name")?.Value;
+                var crefAttr = element.Attribute("cref")?.Value;
+                if (!string.IsNullOrEmpty(nameAttr))
+                {
+                    elementName += $" ({nameAttr})";
+                }
+                else if (!string.IsNullOrEmpty(crefAttr))
+                {
+                    elementName += $" ({crefAttr})";
+                }
+
+                _ = sb.AppendLine($"{elementName}:");
+                _ = sb.AppendLine(NormalizeXmlText(content));
+            }
+
+            _ = sb.AppendLine();
+        }
+    }
+
+    File.WriteAllText(outputPath, sb.ToString());
+    Console.WriteLine($"Generated llms.txt at {outputPath}");
+}
+
+static MemberSignature? ParseMemberSignature(string memberName)
+{
+    if (string.IsNullOrEmpty(memberName) || memberName.Length < 2)
+    {
+        return null;
+    }
+
+    var kind = memberName[0] switch
+    {
+        'M' => "Method",
+        'P' => "Property",
+        'T' => "Type",
+        'F' => "Field",
+        'E' => "Event",
+        _ => "Unknown",
+    };
+
+    var fullSignature = memberName[2..]; // Remove "M:", "P:", etc.
+
+    // For methods, parse parameters and return type
+    if (memberName[0] == 'M')
+    {
+        var parameters = new List<ParameterInfo>();
+        var methodName = fullSignature;
+        var returnType = "System.Threading.Tasks.Task"; // Default for async methods
+
+        // Extract parameters from signature
+        var paramStart = fullSignature.IndexOf('(');
+        if (paramStart >= 0)
+        {
+            methodName = fullSignature[..paramStart];
+            var paramEnd = fullSignature.LastIndexOf(')');
+            if (paramEnd > paramStart)
+            {
+                var paramString = fullSignature[(paramStart + 1)..paramEnd];
+                if (!string.IsNullOrEmpty(paramString))
+                {
+                    var paramParts = SplitParameters(paramString);
+                    for (var i = 0; i < paramParts.Count; i++)
+                    {
+                        var paramType = SimplifyTypeName(paramParts[i]);
+                        parameters.Add(new ParameterInfo { Name = $"param{i + 1}", Type = paramType });
+                    }
+                }
+            }
+
+            // Check if there's a return type after the parameters
+            if (paramEnd + 1 < fullSignature.Length && fullSignature[paramEnd + 1] == '~')
+            {
+                returnType = SimplifyTypeName(fullSignature[(paramEnd + 2)..]);
+            }
+        }
+
+        return new MemberSignature
+        {
+            Kind = kind,
+            Parameters = parameters,
+            ReturnType = parameters.Count > 0 || fullSignature.Contains("Async") ? returnType : null,
+        };
+    }
+
+    return new MemberSignature { Kind = kind };
+}
+
+static List<string> SplitParameters(string paramString)
+{
+    var parameters = new List<string>();
+    var current = new StringBuilder();
+    var depth = 0;
+
+    foreach (var c in paramString)
+    {
+        if (c is '{' or '<')
+        {
+            depth++;
+        }
+        else if (c is '}' or '>')
+        {
+            depth--;
+        }
+        else if (c == ',' && depth == 0)
+        {
+            parameters.Add(current.ToString());
+            _ = current.Clear();
+            continue;
+        }
+
+        _ = current.Append(c);
+    }
+
+    if (current.Length > 0)
+    {
+        parameters.Add(current.ToString());
+    }
+
+    return parameters;
+}
+
+static string SimplifyTypeName(string fullTypeName)
+{
+    // Remove assembly information
+    var typeName = fullTypeName.Split(',')[0];
+
+    // Simplify common generic types
+    typeName = typeName
+        .Replace("System.Threading.Tasks.Task{", "Task<")
+        .Replace("System.Collections.Generic.List{", "List<")
+        .Replace("System.Collections.Generic.Dictionary{", "Dictionary<")
+        .Replace("System.Nullable{", "Nullable<")
+        .Replace("System.String", "string")
+        .Replace("System.Int32", "int")
+        .Replace("System.Int64", "long")
+        .Replace("System.Boolean", "bool")
+        .Replace("System.Byte", "byte")
+        .Replace("System.Object", "object")
+        .Replace('{', '<')
+        .Replace('}', '>');
+
+    return typeName;
+}
+
+static string NormalizeXmlText(string text)
+{
+    var lines = text.Split('\n');
+    var normalized = new StringBuilder();
+
+    foreach (var line in lines)
+    {
+        var trimmed = line.Trim();
+        if (!string.IsNullOrEmpty(trimmed))
+        {
+            _ = normalized.AppendLine(trimmed);
+        }
+    }
+
+    return normalized.ToString().TrimEnd();
+}
+
+var cmdArgs = Environment.GetCommandLineArgs();
+if (cmdArgs.Length > 1 && cmdArgs[1] == "--llms")
+{
+    var root = FindRepoRoot();
+    GenerateLlmsTxt(root);
+    return;
 }
 
 var specUrl = "https://api.thirdweb.com/openapi.json";
@@ -177,3 +443,16 @@ var code = generator.GenerateFile();
 Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 await File.WriteAllTextAsync(outputPath, code);
 Console.WriteLine($"Wrote generated client to {outputPath}");
+
+internal class MemberSignature
+{
+    public string Kind { get; set; } = "";
+    public List<ParameterInfo>? Parameters { get; set; }
+    public string? ReturnType { get; set; }
+}
+
+internal class ParameterInfo
+{
+    public string Name { get; set; } = "";
+    public string Type { get; set; } = "";
+}
