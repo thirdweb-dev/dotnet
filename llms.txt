@@ -2133,9 +2133,12 @@ KIND: Method
 RETURN TYPE: System.Threading.Tasks.Task
 
 PARAMETERS:
-  - param1 (string)
-  - param2 (System.Uri)
-  - param3 (Thirdweb.Api.Method)
+  - from (string)
+    A valid blockchain address. Accepts Ethereum (0x...) and Solana (base58) addresses, as well as ENS names for Ethereum.
+  - asset (System.Uri)
+    A valid blockchain address. Accepts Ethereum (0x...) and Solana (base58) addresses, as well as ENS names for Ethereum.
+  - chainId (Thirdweb.Api.Method)
+    Chain ID to use for the payment. Supports CAIP-2 strings (e.g., 'eip155:1', 'solana:mainnet') or legacy numeric EVM IDs.
   - param4 (string)
   - param5 (string)
   - param6 (Thirdweb.Api.ChainId2)
@@ -2172,9 +2175,12 @@ RETURN TYPE: System.Threading.Tasks.Task
 PARAMETERS:
   - cancellationToken (string)
     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-  - param2 (System.Uri)
-  - param3 (Thirdweb.Api.Method)
-  - param4 (string)
+  - from (System.Uri)
+    A valid blockchain address. Accepts Ethereum (0x...) and Solana (base58) addresses, as well as ENS names for Ethereum.
+  - asset (Thirdweb.Api.Method)
+    A valid blockchain address. Accepts Ethereum (0x...) and Solana (base58) addresses, as well as ENS names for Ethereum.
+  - chainId (string)
+    Chain ID to use for the payment. Supports CAIP-2 strings (e.g., 'eip155:1', 'solana:mainnet') or legacy numeric EVM IDs.
   - param5 (string)
   - param6 (Thirdweb.Api.ChainId2)
   - param7 (object)
@@ -2826,7 +2832,7 @@ EXCEPTION (T:Thirdweb.Api.ApiException):
 A server side error occurred.
 
 --------------------------------------------------------------------------------
-M:Thirdweb.Api.ThirdwebApiClient.GetSolanaWalletBalanceAsync(System.String,Thirdweb.Api.ChainId3,System.String)
+M:Thirdweb.Api.ThirdwebApiClient.GetSolanaWalletBalanceAsync(System.String,System.String,System.String)
 --------------------------------------------------------------------------------
 
 KIND: Method
@@ -2835,7 +2841,7 @@ RETURN TYPE: System.Threading.Tasks.Task
 PARAMETERS:
   - address (string)
     Public key of the Solana wallet.
-  - chainId (Thirdweb.Api.ChainId3)
+  - chainId (string)
     Solana network to query. Choose either solana:mainnet or solana:devnet.
   - tokenAddress (string)
     SPL token mint address. Omit to retrieve native SOL balance.
@@ -2854,7 +2860,7 @@ EXCEPTION (T:Thirdweb.Api.ApiException):
 A server side error occurred.
 
 --------------------------------------------------------------------------------
-M:Thirdweb.Api.ThirdwebApiClient.GetSolanaWalletBalanceAsync(System.String,Thirdweb.Api.ChainId3,System.String,System.Threading.CancellationToken)
+M:Thirdweb.Api.ThirdwebApiClient.GetSolanaWalletBalanceAsync(System.String,System.String,System.String,System.Threading.CancellationToken)
 --------------------------------------------------------------------------------
 
 KIND: Method
@@ -2863,7 +2869,7 @@ RETURN TYPE: System.Threading.Tasks.Task
 PARAMETERS:
   - cancellationToken (string)
     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-  - address (Thirdweb.Api.ChainId3)
+  - address (string)
     Public key of the Solana wallet.
   - chainId (string)
     Solana network to query. Choose either solana:mainnet or solana:devnet.
@@ -3126,6 +3132,124 @@ EXCEPTION (T:Thirdweb.Api.ApiException):
 A server side error occurred.
 
 --------------------------------------------------------------------------------
+M:Thirdweb.Api.ThirdwebApiClient.GetSwapQuoteAsync(System.String,System.String,System.String,System.String,System.String)
+--------------------------------------------------------------------------------
+
+KIND: Method
+RETURN TYPE: System.Threading.Tasks.Task
+
+PARAMETERS:
+  - address (string)
+    Solana wallet address that will execute the swap.
+  - tokenIn (string)
+    Input token mint address (the token being sold).
+  - tokenOut (string)
+    Output token mint address (the token being purchased).
+  - amount (string)
+    Amount of input token to swap, expressed in the smallest unit (e.g., lamports for SOL).
+  - param5 (string)
+
+SUMMARY:
+Get Solana Swap Quote
+
+REMARKS:
+Get a quote for swapping tokens on Solana. This endpoint returns the expected output amount and swap details without executing the transaction.
+**Important**: Swaps are only available on Solana mainnet.
+**Authentication**: This endpoint requires backend authentication using the x-secret-key header.
+
+RETURNS:
+Quote fetched successfully. Returns expected output amount and swap details.
+
+EXCEPTION (T:Thirdweb.Api.ApiException):
+A server side error occurred.
+
+--------------------------------------------------------------------------------
+M:Thirdweb.Api.ThirdwebApiClient.GetSwapQuoteAsync(System.String,System.String,System.String,System.String,System.String,System.Threading.CancellationToken)
+--------------------------------------------------------------------------------
+
+KIND: Method
+RETURN TYPE: System.Threading.Tasks.Task
+
+PARAMETERS:
+  - cancellationToken (string)
+    A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+  - address (string)
+    Solana wallet address that will execute the swap.
+  - tokenIn (string)
+    Input token mint address (the token being sold).
+  - tokenOut (string)
+    Output token mint address (the token being purchased).
+  - amount (string)
+    Amount of input token to swap, expressed in the smallest unit (e.g., lamports for SOL).
+  - param6 (System.Threading.CancellationToken)
+
+SUMMARY:
+Get Solana Swap Quote
+
+REMARKS:
+Get a quote for swapping tokens on Solana. This endpoint returns the expected output amount and swap details without executing the transaction.
+**Important**: Swaps are only available on Solana mainnet.
+**Authentication**: This endpoint requires backend authentication using the x-secret-key header.
+
+RETURNS:
+Quote fetched successfully. Returns expected output amount and swap details.
+
+EXCEPTION (T:Thirdweb.Api.ApiException):
+A server side error occurred.
+
+--------------------------------------------------------------------------------
+M:Thirdweb.Api.ThirdwebApiClient.SwapSolanaTokensAsync(Thirdweb.Api.Body27)
+--------------------------------------------------------------------------------
+
+KIND: Method
+RETURN TYPE: System.Threading.Tasks.Task
+
+PARAMETERS:
+  - param1 (Thirdweb.Api.Body27)
+
+SUMMARY:
+Swap Solana Tokens
+
+REMARKS:
+Execute a token swap on Solana. This endpoint handles the full swap flow: fetching the optimal swap route, signing the transaction with your server wallet, executing the swap, and polling until confirmation.
+The swap uses aggregated liquidity across Solana DEXs to provide optimal routing. The endpoint waits for the transaction to reach 'confirmed' or 'finalized' status before returning (up to 30 seconds).
+**Important**: Swaps are only available on Solana mainnet.
+**Authentication**: This endpoint requires backend authentication using the x-secret-key header.
+
+RETURNS:
+Swap executed and confirmed successfully. Returns the transaction signature and swap details including input/output amounts.
+
+EXCEPTION (T:Thirdweb.Api.ApiException):
+A server side error occurred.
+
+--------------------------------------------------------------------------------
+M:Thirdweb.Api.ThirdwebApiClient.SwapSolanaTokensAsync(Thirdweb.Api.Body27,System.Threading.CancellationToken)
+--------------------------------------------------------------------------------
+
+KIND: Method
+RETURN TYPE: System.Threading.Tasks.Task
+
+PARAMETERS:
+  - cancellationToken (Thirdweb.Api.Body27)
+    A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+  - param2 (System.Threading.CancellationToken)
+
+SUMMARY:
+Swap Solana Tokens
+
+REMARKS:
+Execute a token swap on Solana. This endpoint handles the full swap flow: fetching the optimal swap route, signing the transaction with your server wallet, executing the swap, and polling until confirmation.
+The swap uses aggregated liquidity across Solana DEXs to provide optimal routing. The endpoint waits for the transaction to reach 'confirmed' or 'finalized' status before returning (up to 30 seconds).
+**Important**: Swaps are only available on Solana mainnet.
+**Authentication**: This endpoint requires backend authentication using the x-secret-key header.
+
+RETURNS:
+Swap executed and confirmed successfully. Returns the transaction signature and swap details including input/output amounts.
+
+EXCEPTION (T:Thirdweb.Api.ApiException):
+A server side error occurred.
+
+--------------------------------------------------------------------------------
 M:Thirdweb.Api.ThirdwebApiClient.GetSolanaTransactionAsync(System.String)
 --------------------------------------------------------------------------------
 
@@ -3176,14 +3300,14 @@ EXCEPTION (T:Thirdweb.Api.ApiException):
 A server side error occurred.
 
 --------------------------------------------------------------------------------
-M:Thirdweb.Api.ThirdwebApiClient.ChatAsync(Thirdweb.Api.Body27)
+M:Thirdweb.Api.ThirdwebApiClient.ChatAsync(Thirdweb.Api.Body28)
 --------------------------------------------------------------------------------
 
 KIND: Method
 RETURN TYPE: System.Threading.Tasks.Task
 
 PARAMETERS:
-  - param1 (Thirdweb.Api.Body27)
+  - param1 (Thirdweb.Api.Body28)
 
 SUMMARY:
 Chat
@@ -3201,14 +3325,14 @@ EXCEPTION (T:Thirdweb.Api.ApiException):
 A server side error occurred.
 
 --------------------------------------------------------------------------------
-M:Thirdweb.Api.ThirdwebApiClient.ChatAsync(Thirdweb.Api.Body27,System.Threading.CancellationToken)
+M:Thirdweb.Api.ThirdwebApiClient.ChatAsync(Thirdweb.Api.Body28,System.Threading.CancellationToken)
 --------------------------------------------------------------------------------
 
 KIND: Method
 RETURN TYPE: System.Threading.Tasks.Task
 
 PARAMETERS:
-  - cancellationToken (Thirdweb.Api.Body27)
+  - cancellationToken (Thirdweb.Api.Body28)
     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
   - param2 (System.Threading.CancellationToken)
 
@@ -3858,6 +3982,15 @@ SUMMARY:
 Request body for x402 facilitator 'settle'
 
 --------------------------------------------------------------------------------
+P:Thirdweb.Api.Body17.PaymentPayload
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Exact x402 payment payload to settle
+
+--------------------------------------------------------------------------------
 P:Thirdweb.Api.Body17.WaitUntil
 --------------------------------------------------------------------------------
 
@@ -3891,7 +4024,7 @@ T:Thirdweb.Api.ChainId2
 KIND: Type
 
 SUMMARY:
-The chain ID to use for the payment in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1', 1) and Solana chains (e.g., 'solana:mainnet'). If not provided, the chain ID from the url's payment requirements will be used.
+Chain ID to use for the payment. Supports CAIP-2 strings (e.g., 'eip155:1', 'solana:mainnet') or legacy numeric EVM IDs.
 
 --------------------------------------------------------------------------------
 P:Thirdweb.Api.Body18.ResourceUrl
@@ -4128,15 +4261,6 @@ SUMMARY:
 Unique label to identify the wallet. Used for retrieval and management.
 
 --------------------------------------------------------------------------------
-T:Thirdweb.Api.ChainId3
---------------------------------------------------------------------------------
-
-KIND: Type
-
-SUMMARY:
-Solana network to query. Choose either solana:mainnet or solana:devnet.
-
---------------------------------------------------------------------------------
 T:Thirdweb.Api.Body22
 --------------------------------------------------------------------------------
 
@@ -4368,10 +4492,55 @@ T:Thirdweb.Api.Body27
 KIND: Type
 
 SUMMARY:
+Request payload for executing a token swap on Solana. The endpoint handles swap routing, transaction signing, execution, and confirmation polling.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Body27.Address
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Solana wallet address that will execute the swap.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Body27.TokenIn
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Input token mint address (the token being sold).
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Body27.TokenOut
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Output token mint address (the token being purchased).
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Body27.Amount
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Amount of input token to swap, expressed in the smallest unit (e.g., lamports for SOL).
+
+--------------------------------------------------------------------------------
+T:Thirdweb.Api.Body28
+--------------------------------------------------------------------------------
+
+KIND: Type
+
+SUMMARY:
 Chat request
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Body27.Messages
+P:Thirdweb.Api.Body28.Messages
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -4380,7 +4549,7 @@ SUMMARY:
 Natural language query for the AI assistant
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Body27.Context
+P:Thirdweb.Api.Body28.Context
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -4389,7 +4558,7 @@ SUMMARY:
 Context for the AI assistant
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Body27.Stream
+P:Thirdweb.Api.Body28.Stream
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -4704,13 +4873,13 @@ SUMMARY:
 Balance data for the requested Solana network.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Response62.Result
+T:Thirdweb.Api.Response62
 --------------------------------------------------------------------------------
 
-KIND: Property
+KIND: Type
 
 SUMMARY:
-Transaction metadata and status information.
+Response containing the swap quote details.
 
 --------------------------------------------------------------------------------
 T:Thirdweb.Api.Response63
@@ -4719,10 +4888,28 @@ T:Thirdweb.Api.Response63
 KIND: Type
 
 SUMMARY:
+Response containing the confirmed swap transaction signature and swap details.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Response64.Result
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Transaction metadata and status information.
+
+--------------------------------------------------------------------------------
+T:Thirdweb.Api.Response65
+--------------------------------------------------------------------------------
+
+KIND: Type
+
+SUMMARY:
 Chat response
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Response63.Message
+P:Thirdweb.Api.Response65.Message
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -4962,7 +5149,7 @@ P:Thirdweb.Api.PaymentPayload.Network
 KIND: Property
 
 SUMMARY:
-Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
 
 --------------------------------------------------------------------------------
 P:Thirdweb.Api.PaymentRequirements.Network
@@ -4971,16 +5158,7 @@ P:Thirdweb.Api.PaymentRequirements.Network
 KIND: Property
 
 SUMMARY:
-Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
-
---------------------------------------------------------------------------------
-P:Thirdweb.Api.PaymentPayload2.Network
---------------------------------------------------------------------------------
-
-KIND: Property
-
-SUMMARY:
-Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
 
 --------------------------------------------------------------------------------
 P:Thirdweb.Api.PaymentRequirements2.Network
@@ -4989,7 +5167,7 @@ P:Thirdweb.Api.PaymentRequirements2.Network
 KIND: Property
 
 SUMMARY:
-Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
 
 --------------------------------------------------------------------------------
 P:Thirdweb.Api.Sale.StartingPrice
@@ -6033,7 +6211,7 @@ P:Thirdweb.Api.Kinds.Network
 KIND: Property
 
 SUMMARY:
-Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
 
 --------------------------------------------------------------------------------
 P:Thirdweb.Api.Result27.Message
@@ -6078,7 +6256,7 @@ P:Thirdweb.Api.Accepts.Network
 KIND: Property
 
 SUMMARY:
-Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
 
 --------------------------------------------------------------------------------
 P:Thirdweb.Api.accepts.Network
@@ -6087,7 +6265,7 @@ P:Thirdweb.Api.accepts.Network
 KIND: Property
 
 SUMMARY:
-Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
 
 --------------------------------------------------------------------------------
 P:Thirdweb.Api.Pagination2.HasMore
@@ -6459,7 +6637,151 @@ SUMMARY:
 Idempotency key assigned to the queued transaction.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.Id
+P:Thirdweb.Api.Result44.InputMint
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Input token mint address.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result44.OutputMint
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Output token mint address.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result44.InputAmount
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Amount of input token to swap.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result44.OutputAmount
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Expected amount of output token to receive.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result44.InputUsdValue
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+USD value of the input amount.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result44.OutputUsdValue
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+USD value of the output amount.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result44.SlippageBps
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Slippage tolerance in basis points (1 bps = 0.01%).
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result44.RequestId
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Quote request ID for executing the swap.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result45.Signature
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Transaction signature for the confirmed swap on the Solana network.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result45.InputMint
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Input token mint address.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result45.OutputMint
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Output token mint address.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result45.InputAmount
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Amount of input token swapped.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result45.OutputAmount
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Amount of output token received.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result45.InputUsdValue
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+USD value of the input amount.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result45.OutputUsdValue
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+USD value of the output amount.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result45.RequestId
+--------------------------------------------------------------------------------
+
+KIND: Property
+
+SUMMARY:
+Request ID for this swap.
+
+--------------------------------------------------------------------------------
+P:Thirdweb.Api.Result46.Id
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6468,7 +6790,7 @@ SUMMARY:
 Unique identifier for the transaction.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.ChainId
+P:Thirdweb.Api.Result46.ChainId
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6477,7 +6799,7 @@ SUMMARY:
 Solana network identifier in CAIP-2 format. Use "solana:mainnet" or "solana:devnet" for convenience, or full CAIP-2 format.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.From
+P:Thirdweb.Api.Result46.From
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6486,7 +6808,7 @@ SUMMARY:
 Signer address used on submission.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.Signature
+P:Thirdweb.Api.Result46.Signature
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6495,7 +6817,7 @@ SUMMARY:
 Signature recorded on-chain once available.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.Status
+P:Thirdweb.Api.Result46.Status
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6504,7 +6826,7 @@ SUMMARY:
 Current status of the transaction in the processing pipeline.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.ConfirmedAt
+P:Thirdweb.Api.Result46.ConfirmedAt
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6513,7 +6835,7 @@ SUMMARY:
 Timestamp when the transaction reached the reported status.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.ConfirmedAtSlot
+P:Thirdweb.Api.Result46.ConfirmedAtSlot
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6522,7 +6844,7 @@ SUMMARY:
 Slot where the transaction was confirmed, if available.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.BlockTime
+P:Thirdweb.Api.Result46.BlockTime
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6531,7 +6853,7 @@ SUMMARY:
 Unix timestamp of the processed block.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.CreatedAt
+P:Thirdweb.Api.Result46.CreatedAt
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6540,7 +6862,7 @@ SUMMARY:
 ISO 8601 timestamp when the transaction was queued.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.ErrorMessage
+P:Thirdweb.Api.Result46.ErrorMessage
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6549,7 +6871,7 @@ SUMMARY:
 Error message if the transaction failed.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.ExecutionParams
+P:Thirdweb.Api.Result46.ExecutionParams
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6558,7 +6880,7 @@ SUMMARY:
 Resolved execution parameters used for the transaction.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.ExecutionResult
+P:Thirdweb.Api.Result46.ExecutionResult
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6567,7 +6889,7 @@ SUMMARY:
 Raw execution result payload, if present.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.TransactionParams
+P:Thirdweb.Api.Result46.TransactionParams
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6576,7 +6898,7 @@ SUMMARY:
 Original instruction payload submitted.
 
 --------------------------------------------------------------------------------
-P:Thirdweb.Api.Result44.ClientId
+P:Thirdweb.Api.Result46.ClientId
 --------------------------------------------------------------------------------
 
 KIND: Property
@@ -6592,15 +6914,6 @@ KIND: Type
 
 SUMMARY:
 Sign a transaction
-
---------------------------------------------------------------------------------
-P:Thirdweb.Api.Payload2.Signature
---------------------------------------------------------------------------------
-
-KIND: Property
-
-SUMMARY:
-The signature of the payment
 
 --------------------------------------------------------------------------------
 T:Thirdweb.Api.Accounts
@@ -8418,7 +8731,7 @@ P:Thirdweb.Api.Accepts2.Network
 KIND: Property
 
 SUMMARY:
-Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
 
 --------------------------------------------------------------------------------
 P:Thirdweb.Api.Owners.Address
@@ -8689,60 +9002,6 @@ KIND: Property
 
 SUMMARY:
 Number of wallets returned per page.
-
---------------------------------------------------------------------------------
-P:Thirdweb.Api.Authorization.From
---------------------------------------------------------------------------------
-
-KIND: Property
-
-SUMMARY:
-The from address of the payment
-
---------------------------------------------------------------------------------
-P:Thirdweb.Api.Authorization.To
---------------------------------------------------------------------------------
-
-KIND: Property
-
-SUMMARY:
-The to address of the payment
-
---------------------------------------------------------------------------------
-P:Thirdweb.Api.Authorization.Value
---------------------------------------------------------------------------------
-
-KIND: Property
-
-SUMMARY:
-The value of the payment
-
---------------------------------------------------------------------------------
-P:Thirdweb.Api.Authorization.ValidAfter
---------------------------------------------------------------------------------
-
-KIND: Property
-
-SUMMARY:
-The valid after timestamp of the payment
-
---------------------------------------------------------------------------------
-P:Thirdweb.Api.Authorization.ValidBefore
---------------------------------------------------------------------------------
-
-KIND: Property
-
-SUMMARY:
-The valid before timestamp of the payment
-
---------------------------------------------------------------------------------
-P:Thirdweb.Api.Authorization.Nonce
---------------------------------------------------------------------------------
-
-KIND: Property
-
-SUMMARY:
-The nonce of the payment
 
 --------------------------------------------------------------------------------
 T:Thirdweb.Api.Profiles3

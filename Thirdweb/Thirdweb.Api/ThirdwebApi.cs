@@ -4866,6 +4866,9 @@ namespace Thirdweb.Api
         /// <br/>
         /// <br/>**Authentication**: This endpoint requires wallet authentication for the payment. For frontend usage, include `x-client-id` and `Authorization: Bearer &lt;jwt&gt;` headers. For backend usage, include `x-secret-key` header.
         /// </remarks>
+        /// <param name="from">A valid blockchain address. Accepts Ethereum (0x...) and Solana (base58) addresses, as well as ENS names for Ethereum.</param>
+        /// <param name="asset">A valid blockchain address. Accepts Ethereum (0x...) and Solana (base58) addresses, as well as ENS names for Ethereum.</param>
+        /// <param name="chainId">Chain ID to use for the payment. Supports CAIP-2 strings (e.g., 'eip155:1', 'solana:mainnet') or legacy numeric EVM IDs.</param>
         /// <returns>Returns the final result from the API call</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task FetchWithPaymentAsync(string from, System.Uri url, Method method, string maxValue, string asset, ChainId2 chainId, object body)
@@ -4894,6 +4897,9 @@ namespace Thirdweb.Api
         /// <br/>
         /// <br/>**Authentication**: This endpoint requires wallet authentication for the payment. For frontend usage, include `x-client-id` and `Authorization: Bearer &lt;jwt&gt;` headers. For backend usage, include `x-secret-key` header.
         /// </remarks>
+        /// <param name="from">A valid blockchain address. Accepts Ethereum (0x...) and Solana (base58) addresses, as well as ENS names for Ethereum.</param>
+        /// <param name="asset">A valid blockchain address. Accepts Ethereum (0x...) and Solana (base58) addresses, as well as ENS names for Ethereum.</param>
+        /// <param name="chainId">Chain ID to use for the payment. Supports CAIP-2 strings (e.g., 'eip155:1', 'solana:mainnet') or legacy numeric EVM IDs.</param>
         /// <returns>Returns the final result from the API call</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual async System.Threading.Tasks.Task FetchWithPaymentAsync(string from, System.Uri url, Method method, string maxValue, string asset, ChainId2 chainId, object body, System.Threading.CancellationToken cancellationToken)
@@ -6497,7 +6503,7 @@ namespace Thirdweb.Api
         /// <param name="tokenAddress">SPL token mint address. Omit to retrieve native SOL balance.</param>
         /// <returns>Wallet balance retrieved successfully for the requested Solana network.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response54> GetSolanaWalletBalanceAsync(string address, ChainId3 chainId, string tokenAddress)
+        public virtual System.Threading.Tasks.Task<Response54> GetSolanaWalletBalanceAsync(string address, string chainId, string tokenAddress)
         {
             return GetSolanaWalletBalanceAsync(address, chainId, tokenAddress, System.Threading.CancellationToken.None);
         }
@@ -6516,7 +6522,7 @@ namespace Thirdweb.Api
         /// <param name="tokenAddress">SPL token mint address. Omit to retrieve native SOL balance.</param>
         /// <returns>Wallet balance retrieved successfully for the requested Solana network.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response54> GetSolanaWalletBalanceAsync(string address, ChainId3 chainId, string tokenAddress, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response54> GetSolanaWalletBalanceAsync(string address, string chainId, string tokenAddress, System.Threading.CancellationToken cancellationToken)
         {
             if (address == null)
                 throw new System.ArgumentNullException("address");
@@ -7204,6 +7210,282 @@ namespace Thirdweb.Api
         }
 
         /// <summary>
+        /// Get Solana Swap Quote
+        /// </summary>
+        /// <remarks>
+        /// Get a quote for swapping tokens on Solana. This endpoint returns the expected output amount and swap details without executing the transaction.
+        /// <br/>
+        /// <br/>**Important**: Swaps are only available on Solana mainnet.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header.
+        /// </remarks>
+        /// <param name="address">Solana wallet address that will execute the swap.</param>
+        /// <param name="tokenIn">Input token mint address (the token being sold).</param>
+        /// <param name="tokenOut">Output token mint address (the token being purchased).</param>
+        /// <param name="amount">Amount of input token to swap, expressed in the smallest unit (e.g., lamports for SOL).</param>
+        /// <returns>Quote fetched successfully. Returns expected output amount and swap details.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response62> GetSwapQuoteAsync(string address, string tokenIn, string tokenOut, string amount, string chainId)
+        {
+            return GetSwapQuoteAsync(address, tokenIn, tokenOut, amount, chainId, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get Solana Swap Quote
+        /// </summary>
+        /// <remarks>
+        /// Get a quote for swapping tokens on Solana. This endpoint returns the expected output amount and swap details without executing the transaction.
+        /// <br/>
+        /// <br/>**Important**: Swaps are only available on Solana mainnet.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header.
+        /// </remarks>
+        /// <param name="address">Solana wallet address that will execute the swap.</param>
+        /// <param name="tokenIn">Input token mint address (the token being sold).</param>
+        /// <param name="tokenOut">Output token mint address (the token being purchased).</param>
+        /// <param name="amount">Amount of input token to swap, expressed in the smallest unit (e.g., lamports for SOL).</param>
+        /// <returns>Quote fetched successfully. Returns expected output amount and swap details.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response62> GetSwapQuoteAsync(string address, string tokenIn, string tokenOut, string amount, string chainId, System.Threading.CancellationToken cancellationToken)
+        {
+            if (address == null)
+                throw new System.ArgumentNullException("address");
+
+            if (tokenIn == null)
+                throw new System.ArgumentNullException("tokenIn");
+
+            if (tokenOut == null)
+                throw new System.ArgumentNullException("tokenOut");
+
+            if (amount == null)
+                throw new System.ArgumentNullException("amount");
+
+            if (chainId == null)
+                throw new System.ArgumentNullException("chainId");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/solana/swap"
+                    urlBuilder_.Append("v1/solana/swap");
+                    urlBuilder_.Append('?');
+                    urlBuilder_.Append(System.Uri.EscapeDataString("address")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(address, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    urlBuilder_.Append(System.Uri.EscapeDataString("tokenIn")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(tokenIn, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    urlBuilder_.Append(System.Uri.EscapeDataString("tokenOut")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(tokenOut, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    urlBuilder_.Append(System.Uri.EscapeDataString("amount")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(amount, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    urlBuilder_.Append(System.Uri.EscapeDataString("chainId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(chainId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response62>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Invalid request parameters or quote API error. Check the error message for details.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. Include x-secret-key or Authorization headers.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error occurred while fetching the quote.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Swap Solana Tokens
+        /// </summary>
+        /// <remarks>
+        /// Execute a token swap on Solana. This endpoint handles the full swap flow: fetching the optimal swap route, signing the transaction with your server wallet, executing the swap, and polling until confirmation.
+        /// <br/>
+        /// <br/>The swap uses aggregated liquidity across Solana DEXs to provide optimal routing. The endpoint waits for the transaction to reach 'confirmed' or 'finalized' status before returning (up to 30 seconds).
+        /// <br/>
+        /// <br/>**Important**: Swaps are only available on Solana mainnet.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header.
+        /// </remarks>
+        /// <returns>Swap executed and confirmed successfully. Returns the transaction signature and swap details including input/output amounts.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<Response63> SwapSolanaTokensAsync(Body27 body)
+        {
+            return SwapSolanaTokensAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Swap Solana Tokens
+        /// </summary>
+        /// <remarks>
+        /// Execute a token swap on Solana. This endpoint handles the full swap flow: fetching the optimal swap route, signing the transaction with your server wallet, executing the swap, and polling until confirmation.
+        /// <br/>
+        /// <br/>The swap uses aggregated liquidity across Solana DEXs to provide optimal routing. The endpoint waits for the transaction to reach 'confirmed' or 'finalized' status before returning (up to 30 seconds).
+        /// <br/>
+        /// <br/>**Important**: Swaps are only available on Solana mainnet.
+        /// <br/>
+        /// <br/>**Authentication**: This endpoint requires backend authentication using the x-secret-key header.
+        /// </remarks>
+        /// <returns>Swap executed and confirmed successfully. Returns the transaction signature and swap details including input/output amounts.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Response63> SwapSolanaTokensAsync(Body27 body, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "v1/solana/swap"
+                    urlBuilder_.Append("v1/solana/swap");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Response63>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Invalid request parameters, swap API error, or transaction failed on-chain. Check the error message for details.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Authentication required. Include x-secret-key or Authorization headers.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Internal server error occurred during swap execution or confirmation.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 504)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Transaction was not confirmed within the 30 second timeout period. The swap may still be pending or dropped.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
         /// Get Solana Transaction
         /// </summary>
         /// <remarks>
@@ -7214,7 +7496,7 @@ namespace Thirdweb.Api
         /// <param name="transactionId">Identifier returned when the transaction was queued.</param>
         /// <returns>Transaction status retrieved successfully.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response62> GetSolanaTransactionAsync(string transactionId)
+        public virtual System.Threading.Tasks.Task<Response64> GetSolanaTransactionAsync(string transactionId)
         {
             return GetSolanaTransactionAsync(transactionId, System.Threading.CancellationToken.None);
         }
@@ -7231,7 +7513,7 @@ namespace Thirdweb.Api
         /// <param name="transactionId">Identifier returned when the transaction was queued.</param>
         /// <returns>Transaction status retrieved successfully.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response62> GetSolanaTransactionAsync(string transactionId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response64> GetSolanaTransactionAsync(string transactionId, System.Threading.CancellationToken cancellationToken)
         {
             if (transactionId == null)
                 throw new System.ArgumentNullException("transactionId");
@@ -7275,7 +7557,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response62>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response64>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -7334,7 +7616,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>AI assistant response or SSE stream when stream=true</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Response63> ChatAsync(Body27 body)
+        public virtual System.Threading.Tasks.Task<Response65> ChatAsync(Body28 body)
         {
             return ChatAsync(body, System.Threading.CancellationToken.None);
         }
@@ -7354,7 +7636,7 @@ namespace Thirdweb.Api
         /// </remarks>
         /// <returns>AI assistant response or SSE stream when stream=true</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Response63> ChatAsync(Body27 body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Response65> ChatAsync(Body28 body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -7399,7 +7681,7 @@ namespace Thirdweb.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Response63>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<Response65>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -7692,6 +7974,9 @@ namespace Thirdweb.Api
 
         [System.Runtime.Serialization.EnumMember(Value = @"tiktok")]
         Tiktok = 12,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"epic")]
+        Epic = 13,
 
     }
 
@@ -8322,9 +8607,11 @@ namespace Thirdweb.Api
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Body17
     {
+        /// <summary>
+        /// Exact x402 payment payload to settle
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("paymentPayload", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
-        public PaymentPayload2 PaymentPayload { get; set; } = new PaymentPayload2();
+        public PaymentPayload2 PaymentPayload { get; set; }
 
         [Newtonsoft.Json.JsonProperty("paymentRequirements", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
@@ -8385,7 +8672,7 @@ namespace Thirdweb.Api
     }
 
     /// <summary>
-    /// The chain ID to use for the payment in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1', 1) and Solana chains (e.g., 'solana:mainnet'). If not provided, the chain ID from the url's payment requirements will be used.
+    /// Chain ID to use for the payment. Supports CAIP-2 strings (e.g., 'eip155:1', 'solana:mainnet') or legacy numeric EVM IDs.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ChainId2
@@ -8729,24 +9016,6 @@ namespace Thirdweb.Api
     }
 
     /// <summary>
-    /// Solana network to query. Choose either solana:mainnet or solana:devnet.
-    /// </summary>
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ChainId3
-    {
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    /// <summary>
     /// Request payload for signing an arbitrary Solana message.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -8796,7 +9065,8 @@ namespace Thirdweb.Api
         /// Solana network the transaction targets. Use solana:mainnet or solana:devnet.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
-        public ChainId4 ChainId { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ChainId { get; set; }
 
         /// <summary>
         /// Base64 encoded Solana transaction to sign.
@@ -8846,7 +9116,8 @@ namespace Thirdweb.Api
         /// Solana network the signed transaction targets. Use solana:mainnet or solana:devnet.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
-        public ChainId5 ChainId { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ChainId { get; set; }
 
         /// <summary>
         /// Base64 encoded signed transaction to broadcast to the Solana network.
@@ -8899,7 +9170,8 @@ namespace Thirdweb.Api
         /// Solana network identifier in CAIP-2 format. Use "solana:mainnet" or "solana:devnet" for convenience, or full CAIP-2 format.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
-        public ChainId6 ChainId { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ChainId { get; set; }
 
         /// <summary>
         /// Optional SPL token mint address. When omitted a native SOL transfer is performed.
@@ -8937,7 +9209,8 @@ namespace Thirdweb.Api
         /// Solana network identifier in CAIP-2 format. Use "solana:mainnet" or "solana:devnet" for convenience, or full CAIP-2 format.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
-        public ChainId7 ChainId { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ChainId { get; set; }
 
         /// <summary>
         /// Set of instructions executed sequentially in a single transaction.
@@ -8972,10 +9245,62 @@ namespace Thirdweb.Api
     }
 
     /// <summary>
-    /// Chat request
+    /// Request payload for executing a token swap on Solana. The endpoint handles swap routing, transaction signing, execution, and confirmation polling.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Body27
+    {
+        /// <summary>
+        /// Solana wallet address that will execute the swap.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("address", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// Input token mint address (the token being sold).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("tokenIn", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string TokenIn { get; set; }
+
+        /// <summary>
+        /// Output token mint address (the token being purchased).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("tokenOut", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[1-9A-HJ-NP-Za-km-z]{32,44}$")]
+        public string TokenOut { get; set; }
+
+        /// <summary>
+        /// Amount of input token to swap, expressed in the smallest unit (e.g., lamports for SOL).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Amount { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ChainId { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Chat request
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Body28
     {
         /// <summary>
         /// Natural language query for the AI assistant
@@ -9722,6 +10047,9 @@ namespace Thirdweb.Api
         [Newtonsoft.Json.JsonProperty("payer", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public Payer Payer { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("fundWalletLink", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string FundWalletLink { get; set; }
+
         [Newtonsoft.Json.JsonProperty("errorMessage", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string ErrorMessage { get; set; }
 
@@ -9764,6 +10092,9 @@ namespace Thirdweb.Api
 
         [Newtonsoft.Json.JsonProperty("errorMessage", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string ErrorMessage { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("fundWalletLink", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string FundWalletLink { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -10267,12 +10598,12 @@ namespace Thirdweb.Api
 
     }
 
+    /// <summary>
+    /// Response containing the swap quote details.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Response62
     {
-        /// <summary>
-        /// Transaction metadata and status information.
-        /// </summary>
         [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required]
         public Result44 Result { get; set; } = new Result44();
@@ -10289,10 +10620,52 @@ namespace Thirdweb.Api
     }
 
     /// <summary>
-    /// Chat response
+    /// Response containing the confirmed swap transaction signature and swap details.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Response63
+    {
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result45 Result { get; set; } = new Result45();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response64
+    {
+        /// <summary>
+        /// Transaction metadata and status information.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("result", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Result46 Result { get; set; } = new Result46();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Chat response
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Response65
     {
         /// <summary>
         /// The AI assistant's response
@@ -10400,17 +10773,20 @@ namespace Thirdweb.Api
         [System.Runtime.Serialization.EnumMember(Value = @"tiktok")]
         Tiktok = 17,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"epic")]
+        Epic = 18,
+
         [System.Runtime.Serialization.EnumMember(Value = @"backend")]
-        Backend = 18,
+        Backend = 19,
 
         [System.Runtime.Serialization.EnumMember(Value = @"wallet")]
-        Wallet = 19,
+        Wallet = 20,
 
         [System.Runtime.Serialization.EnumMember(Value = @"custom_auth_endpoint")]
-        Custom_auth_endpoint = 20,
+        Custom_auth_endpoint = 21,
 
         [System.Runtime.Serialization.EnumMember(Value = @"custom_jwt")]
-        Custom_jwt = 21,
+        Custom_jwt = 22,
 
     }
 
@@ -10735,7 +11111,7 @@ namespace Thirdweb.Api
         public PaymentPayloadScheme Scheme { get; set; }
 
         /// <summary>
-        /// Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+        /// CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
         public Network2 Network { get; set; }
@@ -10763,7 +11139,7 @@ namespace Thirdweb.Api
         public PaymentRequirementsScheme Scheme { get; set; }
 
         /// <summary>
-        /// Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+        /// CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
         public Network3 Network { get; set; }
@@ -10813,23 +11189,6 @@ namespace Thirdweb.Api
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PaymentPayload2
     {
-        [Newtonsoft.Json.JsonProperty("x402Version", Required = Newtonsoft.Json.Required.Always)]
-        public double X402Version { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("scheme", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public PaymentPayload2Scheme Scheme { get; set; }
-
-        /// <summary>
-        /// Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
-        public Network4 Network { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("payload", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
-        public Payload2 Payload { get; set; } = new Payload2();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -10851,10 +11210,10 @@ namespace Thirdweb.Api
         public PaymentRequirements2Scheme Scheme { get; set; }
 
         /// <summary>
-        /// Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+        /// CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
-        public Network5 Network { get; set; }
+        public Network4 Network { get; set; }
 
         [Newtonsoft.Json.JsonProperty("maxAmountRequired", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -11135,21 +11494,6 @@ namespace Thirdweb.Api
 
     }
 
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ChainId4
-    {
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
     /// <summary>
     /// Single Solana instruction that will be included in a transaction.
     /// </summary>
@@ -11204,51 +11548,6 @@ namespace Thirdweb.Api
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public PriorityFeeType Type { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ChainId5
-    {
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ChainId6
-    {
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ChainId7
-    {
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -12798,10 +13097,10 @@ namespace Thirdweb.Api
         public KindsScheme Scheme { get; set; }
 
         /// <summary>
-        /// Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+        /// CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
-        public Network6 Network { get; set; }
+        public Network5 Network { get; set; }
 
         [Newtonsoft.Json.JsonProperty("extra", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public Extra Extra { get; set; }
@@ -12926,10 +13225,10 @@ namespace Thirdweb.Api
         public AcceptsScheme Scheme { get; set; }
 
         /// <summary>
-        /// Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+        /// CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
-        public Network7 Network { get; set; }
+        public Network6 Network { get; set; }
 
         [Newtonsoft.Json.JsonProperty("maxAmountRequired", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -12982,10 +13281,10 @@ namespace Thirdweb.Api
         public acceptsScheme Scheme { get; set; }
 
         /// <summary>
-        /// Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+        /// CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
-        public Network8 Network { get; set; }
+        public Network7 Network { get; set; }
 
         [Newtonsoft.Json.JsonProperty("maxAmountRequired", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -13385,7 +13684,8 @@ namespace Thirdweb.Api
         /// Requested Solana network.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
-        public ChainId8 ChainId { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ChainId { get; set; }
 
         /// <summary>
         /// Number of decimals used by the token.
@@ -13577,6 +13877,141 @@ namespace Thirdweb.Api
     public partial class Result44
     {
         /// <summary>
+        /// Input token mint address.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("inputMint", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string InputMint { get; set; }
+
+        /// <summary>
+        /// Output token mint address.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("outputMint", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OutputMint { get; set; }
+
+        /// <summary>
+        /// Amount of input token to swap.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("inputAmount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string InputAmount { get; set; }
+
+        /// <summary>
+        /// Expected amount of output token to receive.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("outputAmount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OutputAmount { get; set; }
+
+        /// <summary>
+        /// USD value of the input amount.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("inputUsdValue", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double InputUsdValue { get; set; }
+
+        /// <summary>
+        /// USD value of the output amount.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("outputUsdValue", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double OutputUsdValue { get; set; }
+
+        /// <summary>
+        /// Slippage tolerance in basis points (1 bps = 0.01%).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("slippageBps", Required = Newtonsoft.Json.Required.Always)]
+        public double SlippageBps { get; set; }
+
+        /// <summary>
+        /// Quote request ID for executing the swap.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("requestId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string RequestId { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result45
+    {
+        /// <summary>
+        /// Transaction signature for the confirmed swap on the Solana network.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("signature", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Signature { get; set; }
+
+        /// <summary>
+        /// Input token mint address.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("inputMint", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string InputMint { get; set; }
+
+        /// <summary>
+        /// Output token mint address.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("outputMint", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OutputMint { get; set; }
+
+        /// <summary>
+        /// Amount of input token swapped.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("inputAmount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string InputAmount { get; set; }
+
+        /// <summary>
+        /// Amount of output token received.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("outputAmount", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OutputAmount { get; set; }
+
+        /// <summary>
+        /// USD value of the input amount.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("inputUsdValue", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double InputUsdValue { get; set; }
+
+        /// <summary>
+        /// USD value of the output amount.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("outputUsdValue", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double OutputUsdValue { get; set; }
+
+        /// <summary>
+        /// Request ID for this swap.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("requestId", Required = Newtonsoft.Json.Required.Always)]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string RequestId { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class Result46
+    {
+        /// <summary>
         /// Unique identifier for the transaction.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
@@ -13587,7 +14022,8 @@ namespace Thirdweb.Api
         /// Solana network identifier in CAIP-2 format. Use "solana:mainnet" or "solana:devnet" for convenience, or full CAIP-2 format.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("chainId", Required = Newtonsoft.Json.Required.Always)]
-        public ChainId9 ChainId { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ChainId { get; set; }
 
         /// <summary>
         /// Signer address used on submission.
@@ -13608,7 +14044,7 @@ namespace Thirdweb.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public Result44Status? Status { get; set; }
+        public Result46Status? Status { get; set; }
 
         /// <summary>
         /// Timestamp when the transaction reached the reported status.
@@ -13814,55 +14250,6 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum PaymentPayload2Scheme
-    {
-
-        [System.Runtime.Serialization.EnumMember(Value = @"exact")]
-        Exact = 0,
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Network4
-    {
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Payload2
-    {
-        /// <summary>
-        /// The signature of the payment
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("signature", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Signature { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("authorization", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
-        public Authorization Authorization { get; set; } = new Authorization();
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum PaymentRequirements2Scheme
     {
 
@@ -13872,7 +14259,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Network5
+    public partial class Network4
     {
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
@@ -15786,7 +16173,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Network6
+    public partial class Network5
     {
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
@@ -15898,10 +16285,10 @@ namespace Thirdweb.Api
         public Accepts2Scheme Scheme { get; set; }
 
         /// <summary>
-        /// Network identifier in CAIP-2 format. Supports EVM chains (e.g., 'eip155:1') and Solana chains (e.g., 'solana:mainnet'). Also accepts legacy numeric chain IDs for EVM (e.g., 1 for Ethereum).
+        /// CAIP-2 blockchain identifier (e.g., 'eip155:1' for Ethereum, 'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ' for Solana mainnet). Also accepts numeric EVM chain IDs (e.g., 1, 137) or aliases ('solana:mainnet', 'solana:devnet') for backward compatibility.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("network", Required = Newtonsoft.Json.Required.Always)]
-        public Network9 Network { get; set; }
+        public Network8 Network { get; set; }
 
         [Newtonsoft.Json.JsonProperty("maxAmountRequired", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -15955,7 +16342,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Network7
+    public partial class Network6
     {
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
@@ -16009,7 +16396,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Network8
+    public partial class Network7
     {
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
@@ -16362,37 +16749,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ChainId8
-    {
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ChainId9
-    {
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum Result44Status
+    public enum Result46Status
     {
 
         [System.Runtime.Serialization.EnumMember(Value = @"QUEUED")]
@@ -16438,62 +16795,6 @@ namespace Thirdweb.Api
         [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Data { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [Newtonsoft.Json.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Authorization
-    {
-        /// <summary>
-        /// The from address of the payment
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("from", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string From { get; set; }
-
-        /// <summary>
-        /// The to address of the payment
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("to", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string To { get; set; }
-
-        /// <summary>
-        /// The value of the payment
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Value { get; set; }
-
-        /// <summary>
-        /// The valid after timestamp of the payment
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("validAfter", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ValidAfter { get; set; }
-
-        /// <summary>
-        /// The valid before timestamp of the payment
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("validBefore", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ValidBefore { get; set; }
-
-        /// <summary>
-        /// The nonce of the payment
-        /// </summary>
-        [Newtonsoft.Json.JsonProperty("nonce", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Nonce { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -17394,7 +17695,7 @@ namespace Thirdweb.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Network9
+    public partial class Network8
     {
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
