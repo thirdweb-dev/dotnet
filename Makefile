@@ -57,18 +57,19 @@ help:
 	@$(hr)
 	@printf 'Usage: $(C_BOLD)make$(C_RST) $(C_CYN)[target]$(C_RST)\n\n'
 	@printf '$(C_BOLD)Targets:$(C_RST)\n'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'build' 'Generate API and build the solution'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'clean' 'Clean build artifacts'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'restore' 'Restore NuGet packages'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'test' 'Run tests'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'pack' 'Generate API (if needed) and create NuGet package'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'publish' 'Publish the Thirdweb project (dotnet publish)'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'run' 'Run the console application'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'generate' 'Generate API client from OpenAPI spec'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'generate-llms' 'Generate llms.txt from XML documentation'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'lint' 'Check code formatting (dry run)'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'fix' 'Fix code formatting issues'
-	@printf '  $(C_CYN)%-12s$(C_RST) - %s\n' 'help' 'Show this help message'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'build' 'Generate API and build the solution'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'clean' 'Clean build artifacts'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'restore' 'Restore NuGet packages'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'test' 'Run tests'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'pack' 'Generate API (if needed) and create NuGet package'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'publish' 'Publish the Thirdweb project (dotnet publish)'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'run' 'Run the console application'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'generate' 'Generate API client from OpenAPI spec'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'generate-llms' 'Generate llms.txt from XML documentation'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'bump' 'Bump version (BUMP=major|minor|patch, default: patch)'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'lint' 'Check code formatting (dry run)'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'fix' 'Fix code formatting issues'
+	@printf '  $(C_CYN)%-16s$(C_RST) - %s\n' 'help' 'Show this help message'
 	@$(hr)
 
 .PHONY: publish
@@ -197,3 +198,44 @@ fix:
 		exit 1 ; \
 	}
 	@$(call msg,$(C_GRN),$(IC_OK),Code formatting completed)
+
+.PHONY: bump
+# Bump version in .csproj and Constants.cs
+# Usage: make bump [BUMP=major|minor|patch] (defaults to patch)
+bump:
+	@BUMP_TYPE="$(BUMP)"; \
+	if [ -z "$$BUMP_TYPE" ]; then \
+		BUMP_TYPE="patch"; \
+		printf '%s[%s]%s %s\n' '$(C_BLU)' '$(IC_INFO)' '$(C_RST)' "No BUMP specified, defaulting to patch"; \
+	fi; \
+	if [ "$$BUMP_TYPE" != "major" ] && [ "$$BUMP_TYPE" != "minor" ] && [ "$$BUMP_TYPE" != "patch" ]; then \
+		printf '%s[%s]%s %s\n' '$(C_RED)' '$(IC_ERR)' '$(C_RST)' "Invalid BUMP value: $$BUMP_TYPE"; \
+		printf '    Valid values: major, minor, patch\n'; \
+		exit 1; \
+	fi; \
+	printf '%s[%s]%s %s\n' '$(C_BLU)' '$(IC_INFO)' '$(C_RST)' "Reading current version"; \
+	CURRENT=$$(grep -oP '<PackageVersion>\K[^<]+' '$(LIB_PROJ)' | head -1); \
+	if [ -z "$$CURRENT" ]; then \
+		printf '%s[%s]%s %s\n' '$(C_RED)' '$(IC_ERR)' '$(C_RST)' "Could not read current version"; \
+		exit 1; \
+	fi; \
+	MAJOR=$$(echo $$CURRENT | cut -d. -f1); \
+	MINOR=$$(echo $$CURRENT | cut -d. -f2); \
+	PATCH=$$(echo $$CURRENT | cut -d. -f3); \
+	if [ "$$BUMP_TYPE" = "major" ]; then \
+		MAJOR=$$((MAJOR + 1)); MINOR=0; PATCH=0; \
+	elif [ "$$BUMP_TYPE" = "minor" ]; then \
+		MINOR=$$((MINOR + 1)); PATCH=0; \
+	elif [ "$$BUMP_TYPE" = "patch" ]; then \
+		PATCH=$$((PATCH + 1)); \
+	fi; \
+	NEW_VERSION="$$MAJOR.$$MINOR.$$PATCH"; \
+	printf '%s[%s]%s %s\n' '$(C_MAG)' '$(IC_INFO)' '$(C_RST)' "Bumping version: $$CURRENT -> $$NEW_VERSION"; \
+	sed -i "s|<PackageVersion>$$CURRENT</PackageVersion>|<PackageVersion>$$NEW_VERSION</PackageVersion>|" '$(LIB_PROJ)'; \
+	sed -i "s|<AssemblyVersion>$$CURRENT</AssemblyVersion>|<AssemblyVersion>$$NEW_VERSION</AssemblyVersion>|" '$(LIB_PROJ)'; \
+	sed -i "s|<FileVersion>$$CURRENT</FileVersion>|<FileVersion>$$NEW_VERSION</FileVersion>|" '$(LIB_PROJ)'; \
+	sed -i 's|public const string VERSION = "'"$$CURRENT"'";|public const string VERSION = "'"$$NEW_VERSION"'";|' 'Thirdweb/Thirdweb.Utils/Constants.cs'; \
+	printf '%s[%s]%s %s\n' '$(C_GRN)' '$(IC_OK)' '$(C_RST)' "Version bumped to $$NEW_VERSION"; \
+	printf '    Updated files:\n'; \
+	printf '      - $(LIB_PROJ)\n'; \
+	printf '      - Thirdweb/Thirdweb.Utils/Constants.cs\n'

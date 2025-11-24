@@ -2,7 +2,7 @@
 
 public static class Constants
 {
-    public const string VERSION = "3.1.0";
+    public const string VERSION = "3.1.1";
 
     internal const string SOCIAL_API_URL = "https://social.thirdweb.com";
     internal const string PIN_URI = "https://storage.thirdweb.com/ipfs/upload";
