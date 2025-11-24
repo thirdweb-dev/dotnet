@@ -619,10 +619,7 @@ public class UtilsTests : BaseTests
     [Fact(Timeout = 120000)]
     public async Task IsDeployed_ReturnsFalse_WhenContractIsNotDeployed()
     {
-        var chainId = new BigInteger(1);
-        var address = await Utils.GetAddressFromENS(this.Client, "vitalik.eth");
-        var isDeployed = await Utils.IsDeployed(this.Client, chainId, address);
-
+        var isDeployed = await Utils.IsDeployed(this.Client, 1, "0x519D4173E79214D0e7857CcbF1DAb20ceADe85eE");
         Assert.False(isDeployed);
     }
 
