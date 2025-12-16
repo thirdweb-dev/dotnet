@@ -76,6 +76,132 @@ public class ContractMetadata
     /// </summary>
     [JsonProperty("image")]
     public string Image { get; set; }
+
+    /// <summary>
+    /// Gets or sets the merkle tree mappings for claim conditions.
+    /// Key: Merkle root hash, Value: IPFS URI to tree info
+    /// </summary>
+    [JsonProperty("merkle")]
+    public Dictionary<string, string> Merkle { get; set; }
+}
+
+#endregion
+
+#region Merkle
+
+/// <summary>
+/// Represents information about a sharded Merkle tree stored on IPFS.
+/// </summary>
+public class MerkleTreeInfo
+{
+    /// <summary>
+    /// Gets or sets the Merkle root hash.
+    /// </summary>
+    [JsonProperty("merkleRoot")]
+    public string MerkleRoot { get; set; }
+
+    /// <summary>
+    /// Gets or sets the base IPFS URI for shard files.
+    /// </summary>
+    [JsonProperty("baseUri")]
+    public string BaseUri { get; set; }
+
+    /// <summary>
+    /// Gets or sets the original entries IPFS URI.
+    /// </summary>
+    [JsonProperty("originalEntriesUri")]
+    public string OriginalEntriesUri { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of hex characters used for shard keys.
+    /// </summary>
+    [JsonProperty("shardNybbles")]
+    public int ShardNybbles { get; set; } = 2;
+
+    /// <summary>
+    /// Gets or sets the token decimals for price calculations.
+    /// </summary>
+    [JsonProperty("tokenDecimals")]
+    public int TokenDecimals { get; set; } = 0;
+}
+
+/// <summary>
+/// Represents a shard file containing whitelist entries and proofs.
+/// </summary>
+public class ShardData
+{
+    /// <summary>
+    /// Gets or sets the shard proofs (path from shard root to main root).
+    /// </summary>
+    [JsonProperty("proofs")]
+    public List<string> Proofs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the whitelist entries in this shard.
+    /// </summary>
+    [JsonProperty("entries")]
+    public List<WhitelistEntry> Entries { get; set; }
+}
+
+/// <summary>
+/// Represents a whitelist entry for a claim condition.
+/// </summary>
+public class WhitelistEntry
+{
+    /// <summary>
+    /// Gets or sets the wallet address.
+    /// </summary>
+    [JsonProperty("address")]
+    public string Address { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum claimable amount ("unlimited" or a number).
+    /// </summary>
+    [JsonProperty("maxClaimable")]
+    public string MaxClaimable { get; set; }
+
+    /// <summary>
+    /// Gets or sets the price override ("unlimited" or a number in wei).
+    /// </summary>
+    [JsonProperty("price")]
+    public string Price { get; set; }
+
+    /// <summary>
+    /// Gets or sets the currency address for price override.
+    /// </summary>
+    [JsonProperty("currencyAddress")]
+    public string CurrencyAddress { get; set; }
+}
+
+/// <summary>
+/// Represents an allowlist proof for claiming tokens.
+/// </summary>
+[FunctionOutput]
+public class AllowlistProof
+{
+    /// <summary>
+    /// Gets or sets the Merkle proof (array of bytes32 hashes).
+    /// </summary>
+    [Parameter("bytes32[]", "proof", 1)]
+    public List<byte[]> Proof { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum quantity this address can claim.
+    /// </summary>
+    [Parameter("uint256", "quantityLimitPerWallet", 2)]
+    public BigInteger QuantityLimitPerWallet { get; set; }
+
+    /// <summary>
+    /// Gets or sets the price per token override.
+    /// </summary>
+    [Parameter("uint256", "pricePerToken", 3)]
+    public BigInteger PricePerToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the currency address for the price override.
+    /// </summary>
+    [Parameter("address", "currency", 4)]
+    public string Currency { get; set; }
 }
 
 #endregion
