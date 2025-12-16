@@ -1597,7 +1597,7 @@ public static class ThirdwebExtensions
                 {
                     Proof = new List<byte[]>(),
                     QuantityLimitPerWallet = BigInteger.Zero,
-                    PricePerToken = BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639935"), // MAX_UINT256
+                    PricePerToken = BigInteger.Parse(Constants.MAX_UINT256_STR), // MAX_UINT256
                     Currency = Constants.ADDRESS_ZERO
                 };
             }
@@ -1639,7 +1639,7 @@ public static class ThirdwebExtensions
                 {
                     Proof = new List<byte[]>(),
                     QuantityLimitPerWallet = BigInteger.Zero,
-                    PricePerToken = BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639935"),
+                    PricePerToken = BigInteger.Parse(Constants.MAX_UINT256_STR),
                     Currency = Constants.ADDRESS_ZERO
                 };
             }
@@ -1698,8 +1698,9 @@ public static class ThirdwebExtensions
             // Calculate proof
             return MerkleTreeUtils.CalculateMerkleProof(shardData, walletAddress);
         }
-        catch
+        catch (Exception)
         {
+            // TODO: Log exception for debugging without crashing
             return null;
         }
     }
@@ -1766,7 +1767,7 @@ public static class ThirdwebExtensions
             };
 
             // Recalculate payable amount if allowlist has price override
-            var maxUint256 = BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+            var maxUint256 = BigInteger.Parse(Constants.MAX_UINT256_STR);
             if (allowlistProofData.PricePerToken < maxUint256)
             {
                 var allowlistCurrency = allowlistProofData.Currency;
@@ -1928,7 +1929,7 @@ public static class ThirdwebExtensions
             };
 
             // Recalculate payable amount if allowlist has price override
-            var maxUint256 = BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+            var maxUint256 = BigInteger.Parse(Constants.MAX_UINT256_STR);
             if (allowlistProofData.PricePerToken < maxUint256)
             {
                 var allowlistCurrency = allowlistProofData.Currency;
@@ -2115,7 +2116,7 @@ public static class ThirdwebExtensions
             };
 
             // Recalculate payable amount if allowlist has price override
-            var maxUint256 = BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+            var maxUint256 = BigInteger.Parse(Constants.MAX_UINT256_STR);
             if (allowlistProofData.PricePerToken < maxUint256)
             {
                 var allowlistCurrency = allowlistProofData.Currency;

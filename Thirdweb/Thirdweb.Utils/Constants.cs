@@ -13,6 +13,7 @@ public static class Constants
     public const string ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
     public const string NATIVE_TOKEN_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     public const double DECIMALS_18 = 1000000000000000000;
+    public const string MAX_UINT256_STR = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
 
     public const string IERC20_INTERFACE_ID = "0x36372b07";
     public const string IERC721_INTERFACE_ID = "0x80ac58cd";
