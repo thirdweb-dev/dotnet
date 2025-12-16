@@ -1584,125 +1584,117 @@ public static class ThirdwebExtensions
             throw new ArgumentException("Wallet address must be provided", nameof(walletAddress));
         }
 
-        try
+        // Get contract metadata
+        var contractUri = await ThirdwebContract.Read<string>(contract, "contractURI").ConfigureAwait(false);
+        var metadata = await ThirdwebStorage.Download<ContractMetadata>(contract.Client, contractUri).ConfigureAwait(false);
+
+        if (metadata?.Merkle == null || metadata.Merkle.Count == 0)
         {
-            // Get contract metadata
-            var contractUri = await ThirdwebContract.Read<string>(contract, "contractURI").ConfigureAwait(false);
-            var metadata = await ThirdwebStorage.Download<ContractMetadata>(contract.Client, contractUri).ConfigureAwait(false);
-
-            if (metadata?.Merkle == null || metadata.Merkle.Count == 0)
+            // No merkle data, return empty proof (public mint)
+            return new AllowlistProof
             {
-                // No merkle data, return empty proof (public mint)
-                return new AllowlistProof
-                {
-                    Proof = new List<byte[]>(),
-                    QuantityLimitPerWallet = BigInteger.Zero,
-                    PricePerToken = BigInteger.Parse(Constants.MAX_UINT256_STR), // MAX_UINT256
-                    Currency = Constants.ADDRESS_ZERO
-                };
-            }
+                Proof = new List<byte[]>(),
+                QuantityLimitPerWallet = BigInteger.Zero,
+                PricePerToken = BigInteger.Parse(Constants.MAX_UINT256_STR), // MAX_UINT256
+                Currency = Constants.ADDRESS_ZERO
+            };
+        }
 
-            // Get claim condition
-            Drop_ClaimCondition claimCondition;
-            if (claimConditionId.HasValue)
+        // Get claim condition
+        Drop_ClaimCondition claimCondition;
+        if (claimConditionId.HasValue)
+        {
+            if (tokenId.HasValue)
             {
-                if (tokenId.HasValue)
-                {
-                    claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", tokenId.Value, claimConditionId.Value).ConfigureAwait(false);
-                }
-                else
-                {
-                    claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", claimConditionId.Value).ConfigureAwait(false);
-                }
+                claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", tokenId.Value, claimConditionId.Value).ConfigureAwait(false);
             }
             else
             {
-                BigInteger activeId;
-                if (tokenId.HasValue)
-                {
-                    activeId = await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId", tokenId.Value).ConfigureAwait(false);
-                    claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", tokenId.Value, activeId).ConfigureAwait(false);
-                }
-                else
-                {
-                    activeId = await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId").ConfigureAwait(false);
-                    claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", activeId).ConfigureAwait(false);
-                }
+                claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", claimConditionId.Value).ConfigureAwait(false);
             }
-
-            // Check if it's a public mint (zero merkle root)
-            var merkleRootHex = claimCondition.MerkleRoot.BytesToHex();
-            if (merkleRootHex == "0x0000000000000000000000000000000000000000000000000000000000000000")
+        }
+        else
+        {
+            BigInteger activeId;
+            if (tokenId.HasValue)
             {
-                // Public mint, no proof needed
-                return new AllowlistProof
-                {
-                    Proof = new List<byte[]>(),
-                    QuantityLimitPerWallet = BigInteger.Zero,
-                    PricePerToken = BigInteger.Parse(Constants.MAX_UINT256_STR),
-                    Currency = Constants.ADDRESS_ZERO
-                };
+                activeId = await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId", tokenId.Value).ConfigureAwait(false);
+                claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", tokenId.Value, activeId).ConfigureAwait(false);
             }
-
-            // Find the tree info URI for this merkle root
-            if (!metadata.Merkle.TryGetValue(merkleRootHex, out var treeInfoUri))
+            else
             {
-                // Try without 0x prefix or with different case
-                var found = false;
-                foreach (var kvp in metadata.Merkle)
-                {
-                    if (kvp.Key.Equals(merkleRootHex, StringComparison.OrdinalIgnoreCase))
-                    {
-                        treeInfoUri = kvp.Value;
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    return null; // Merkle root not found in metadata
-                }
+                activeId = await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId").ConfigureAwait(false);
+                claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", activeId).ConfigureAwait(false);
             }
+        }
 
-            // Download tree info
-            var treeInfo = await ThirdwebStorage.Download<MerkleTreeInfo>(contract.Client, treeInfoUri).ConfigureAwait(false);
-            if (treeInfo?.BaseUri == null)
+        // Check if it's a public mint (zero merkle root)
+        var merkleRootHex = claimCondition.MerkleRoot.BytesToHex();
+        if (merkleRootHex == "0x0000000000000000000000000000000000000000000000000000000000000000")
+        {
+            // Public mint, no proof needed
+            return new AllowlistProof
             {
-                return null;
+                Proof = new List<byte[]>(),
+                QuantityLimitPerWallet = BigInteger.Zero,
+                PricePerToken = BigInteger.Parse(Constants.MAX_UINT256_STR),
+                Currency = Constants.ADDRESS_ZERO
+            };
+        }
+
+        // Find the tree info URI for this merkle root
+        if (!metadata.Merkle.TryGetValue(merkleRootHex, out var treeInfoUri))
+        {
+            // Try without 0x prefix or with different case
+            var found = false;
+            foreach (var kvp in metadata.Merkle)
+            {
+                if (kvp.Key.Equals(merkleRootHex, StringComparison.OrdinalIgnoreCase))
+                {
+                    treeInfoUri = kvp.Value;
+                    found = true;
+                    break;
+                }
             }
 
-            // Calculate shard key and download shard
-            var shardKey = MerkleTreeUtils.GetShardKey(walletAddress, treeInfo.ShardNybbles);
-            var shardUri = $"{treeInfo.BaseUri}/{shardKey}.json";
+            if (!found)
+            {
+                return null; // Merkle root not found in metadata
+            }
+        }
 
-            ShardData shardData;
+        // Download tree info
+        var treeInfo = await ThirdwebStorage.Download<MerkleTreeInfo>(contract.Client, treeInfoUri).ConfigureAwait(false);
+        if (treeInfo?.BaseUri == null)
+        {
+            return null;
+        }
+
+        // Calculate shard key and download shard
+        var shardKey = MerkleTreeUtils.GetShardKey(walletAddress, treeInfo.ShardNybbles);
+        var shardUri = $"{treeInfo.BaseUri}/{shardKey}.json";
+
+        ShardData shardData;
+        try
+        {
+            shardData = await ThirdwebStorage.Download<ShardData>(contract.Client, shardUri).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Try without .json extension
             try
             {
+                shardUri = $"{treeInfo.BaseUri}/{shardKey}";
                 shardData = await ThirdwebStorage.Download<ShardData>(contract.Client, shardUri).ConfigureAwait(false);
             }
             catch
             {
-                // Try without .json extension
-                try
-                {
-                    shardUri = $"{treeInfo.BaseUri}/{shardKey}";
-                    shardData = await ThirdwebStorage.Download<ShardData>(contract.Client, shardUri).ConfigureAwait(false);
-                }
-                catch
-                {
-                    return null; // Shard not found, wallet not in allowlist
-                }
+                return null; // Shard not found, wallet not in allowlist
             }
+        }
 
-            // Calculate proof
-            return MerkleTreeUtils.CalculateMerkleProof(shardData, walletAddress);
-        }
-        catch (Exception)
-        {
-            // TODO: Log exception for debugging without crashing
-            return null;
-        }
+        // Calculate proof
+        return MerkleTreeUtils.CalculateMerkleProof(shardData, walletAddress);
     }
 
     #endregion
