@@ -6,6 +6,8 @@ namespace Thirdweb;
 
 public static class ThirdwebExtensions
 {
+    private static readonly BigInteger MaxUint256 = BigInteger.Parse(Constants.MAX_UINT256_STR);
+
     #region Common
 
     /// <summary>
@@ -1565,7 +1567,10 @@ public static class ThirdwebExtensions
     /// <param name="walletAddress">The wallet address to get the proof for.</param>
     /// <param name="claimConditionId">Optional claim condition ID. If not provided, uses the active condition.</param>
     /// <param name="tokenId">Optional token ID for ERC1155 drops.</param>
-    /// <returns>The allowlist proof, or null if the wallet is not in the allowlist or it's a public mint.</returns>
+    /// <returns>
+    /// An <see cref="AllowlistProof"/> with an empty proof array for public mints (no allowlist restriction),
+    /// or null if the wallet is not in the allowlist or the merkle root is not found in contract metadata.
+    /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the wallet address is null or empty.</exception>
     public static async Task<AllowlistProof> GetAllowlistProof(
@@ -1767,8 +1772,7 @@ public static class ThirdwebExtensions
             };
 
             // Recalculate payable amount if allowlist has price override
-            var maxUint256 = BigInteger.Parse(Constants.MAX_UINT256_STR);
-            if (allowlistProofData.PricePerToken < maxUint256)
+            if (allowlistProofData.PricePerToken < MaxUint256)
             {
                 var allowlistCurrency = allowlistProofData.Currency;
                 isNativeToken = allowlistCurrency == Constants.NATIVE_TOKEN_ADDRESS || allowlistCurrency == Constants.ADDRESS_ZERO;
@@ -1929,8 +1933,7 @@ public static class ThirdwebExtensions
             };
 
             // Recalculate payable amount if allowlist has price override
-            var maxUint256 = BigInteger.Parse(Constants.MAX_UINT256_STR);
-            if (allowlistProofData.PricePerToken < maxUint256)
+            if (allowlistProofData.PricePerToken < MaxUint256)
             {
                 var allowlistCurrency = allowlistProofData.Currency;
                 isNativeToken = allowlistCurrency == Constants.NATIVE_TOKEN_ADDRESS || allowlistCurrency == Constants.ADDRESS_ZERO;
@@ -2116,8 +2119,7 @@ public static class ThirdwebExtensions
             };
 
             // Recalculate payable amount if allowlist has price override
-            var maxUint256 = BigInteger.Parse(Constants.MAX_UINT256_STR);
-            if (allowlistProofData.PricePerToken < maxUint256)
+            if (allowlistProofData.PricePerToken < MaxUint256)
             {
                 var allowlistCurrency = allowlistProofData.Currency;
                 isNativeToken = allowlistCurrency == Constants.NATIVE_TOKEN_ADDRESS || allowlistCurrency == Constants.ADDRESS_ZERO;
