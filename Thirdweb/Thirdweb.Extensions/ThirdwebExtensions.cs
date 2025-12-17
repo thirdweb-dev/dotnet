@@ -1674,24 +1674,32 @@ public static class ThirdwebExtensions
         var shardKey = MerkleTreeUtils.GetShardKey(walletAddress, treeInfo.ShardNybbles);
         var shardUri = $"{treeInfo.BaseUri}/{shardKey}.json";
 
+        // Helper to check if exception indicates "not found" (expected when wallet not in allowlist)
+        static bool IsNotFoundError(Exception ex) =>
+            ex.Message.Contains("NotFound", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("404", StringComparison.Ordinal);
+
         ShardData shardData;
         try
         {
             shardData = await ThirdwebStorage.Download<ShardData>(contract.Client, shardUri).ConfigureAwait(false);
         }
-        catch
+        catch (Exception ex) when (IsNotFoundError(ex))
         {
-            // Try without .json extension
+            // Try without .json extension (some IPFS gateways don't need it)
             try
             {
                 shardUri = $"{treeInfo.BaseUri}/{shardKey}";
                 shardData = await ThirdwebStorage.Download<ShardData>(contract.Client, shardUri).ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex2) when (IsNotFoundError(ex2))
             {
-                return null; // Shard not found, wallet not in allowlist
+                // Shard not found - wallet is not in the allowlist (expected case)
+                return null;
             }
+            // Other errors (network, auth, etc.) propagate up as unexpected
         }
+        // Other errors from first attempt propagate up as unexpected
 
         // Calculate proof
         return MerkleTreeUtils.CalculateMerkleProof(shardData, walletAddress);
