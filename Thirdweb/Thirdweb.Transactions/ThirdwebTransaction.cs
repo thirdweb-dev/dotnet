@@ -272,8 +272,19 @@ public class ThirdwebTransaction
         }
         else
         {
-            var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input).ConfigureAwait(false);
-            baseGas = hex.HexToNumber();
+            try
+            {
+                // With balance override
+                var stateOverride = new Dictionary<string, object> { [transaction.Input.From] = new Dictionary<string, string> { ["balance"] = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" } };
+                var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input, "latest", stateOverride).ConfigureAwait(false);
+                baseGas = hex.HexToNumber();
+            }
+            catch
+            {
+                // Without balance override - fallback for nodes that don't support state overrides
+                var hex = await rpc.SendRequestAsync<string>("eth_estimateGas", transaction.Input).ConfigureAwait(false);
+                baseGas = hex.HexToNumber();
+            }
         }
         return baseGas * 10 / divider;
     }
