@@ -6,6 +6,8 @@ namespace Thirdweb;
 
 public static class ThirdwebExtensions
 {
+    private static readonly BigInteger MaxUint256 = BigInteger.Parse(Constants.MAX_UINT256_STR);
+
     #region Common
 
     /// <summary>
@@ -1555,6 +1557,161 @@ public static class ThirdwebExtensions
 
     #endregion
 
+    #region Merkle
+
+    /// <summary>
+    /// Gets the allowlist proof for a wallet address to claim from a drop contract.
+    /// This fetches the Merkle tree data from IPFS and calculates the proof locally.
+    /// </summary>
+    /// <param name="contract">The drop contract to interact with.</param>
+    /// <param name="walletAddress">The wallet address to get the proof for.</param>
+    /// <param name="claimConditionId">Optional claim condition ID. If not provided, uses the active condition.</param>
+    /// <param name="tokenId">Optional token ID for ERC1155 drops.</param>
+    /// <returns>
+    /// An <see cref="AllowlistProof"/> with an empty proof array for public mints (no allowlist restriction),
+    /// or null if the wallet is not in the allowlist or the merkle root is not found in contract metadata.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when the contract is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when the wallet address is null or empty.</exception>
+    public static async Task<AllowlistProof> GetAllowlistProof(
+        this ThirdwebContract contract,
+        string walletAddress,
+        BigInteger? claimConditionId = null,
+        BigInteger? tokenId = null)
+    {
+        if (contract == null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        if (string.IsNullOrEmpty(walletAddress))
+        {
+            throw new ArgumentException("Wallet address must be provided", nameof(walletAddress));
+        }
+
+        // Get contract metadata
+        var contractUri = await ThirdwebContract.Read<string>(contract, "contractURI").ConfigureAwait(false);
+        var metadata = await ThirdwebStorage.Download<ContractMetadata>(contract.Client, contractUri).ConfigureAwait(false);
+
+        if (metadata?.Merkle == null || metadata.Merkle.Count == 0)
+        {
+            // No merkle data, return empty proof (public mint)
+            return new AllowlistProof
+            {
+                Proof = new List<byte[]>(),
+                QuantityLimitPerWallet = BigInteger.Zero,
+                PricePerToken = BigInteger.Parse(Constants.MAX_UINT256_STR), // MAX_UINT256
+                Currency = Constants.ADDRESS_ZERO
+            };
+        }
+
+        // Get claim condition
+        Drop_ClaimCondition claimCondition;
+        if (claimConditionId.HasValue)
+        {
+            if (tokenId.HasValue)
+            {
+                claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", tokenId.Value, claimConditionId.Value).ConfigureAwait(false);
+            }
+            else
+            {
+                claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", claimConditionId.Value).ConfigureAwait(false);
+            }
+        }
+        else
+        {
+            BigInteger activeId;
+            if (tokenId.HasValue)
+            {
+                activeId = await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId", tokenId.Value).ConfigureAwait(false);
+                claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", tokenId.Value, activeId).ConfigureAwait(false);
+            }
+            else
+            {
+                activeId = await ThirdwebContract.Read<BigInteger>(contract, "getActiveClaimConditionId").ConfigureAwait(false);
+                claimCondition = await ThirdwebContract.Read<Drop_ClaimCondition>(contract, "getClaimConditionById", activeId).ConfigureAwait(false);
+            }
+        }
+
+        // Check if it's a public mint (zero merkle root)
+        var merkleRootHex = claimCondition.MerkleRoot.BytesToHex();
+        if (merkleRootHex == "0x0000000000000000000000000000000000000000000000000000000000000000")
+        {
+            // Public mint, no proof needed
+            return new AllowlistProof
+            {
+                Proof = new List<byte[]>(),
+                QuantityLimitPerWallet = BigInteger.Zero,
+                PricePerToken = BigInteger.Parse(Constants.MAX_UINT256_STR),
+                Currency = Constants.ADDRESS_ZERO
+            };
+        }
+
+        // Find the tree info URI for this merkle root
+        if (!metadata.Merkle.TryGetValue(merkleRootHex, out var treeInfoUri))
+        {
+            // Try without 0x prefix or with different case
+            var found = false;
+            foreach (var kvp in metadata.Merkle)
+            {
+                if (kvp.Key.Equals(merkleRootHex, StringComparison.OrdinalIgnoreCase))
+                {
+                    treeInfoUri = kvp.Value;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                return null; // Merkle root not found in metadata
+            }
+        }
+
+        // Download tree info
+        var treeInfo = await ThirdwebStorage.Download<MerkleTreeInfo>(contract.Client, treeInfoUri).ConfigureAwait(false);
+        if (treeInfo?.BaseUri == null)
+        {
+            return null;
+        }
+
+        // Calculate shard key and download shard
+        var shardKey = MerkleTreeUtils.GetShardKey(walletAddress, treeInfo.ShardNybbles);
+        var shardUri = $"{treeInfo.BaseUri}/{shardKey}.json";
+
+        // Helper to check if exception indicates "not found" (expected when wallet not in allowlist)
+        static bool IsNotFoundError(Exception ex) =>
+            ex.Message.Contains("NotFound", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("404", StringComparison.Ordinal);
+
+        ShardData shardData;
+        try
+        {
+            shardData = await ThirdwebStorage.Download<ShardData>(contract.Client, shardUri).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (IsNotFoundError(ex))
+        {
+            // Try without .json extension (some IPFS gateways don't need it)
+            try
+            {
+                shardUri = $"{treeInfo.BaseUri}/{shardKey}";
+                shardData = await ThirdwebStorage.Download<ShardData>(contract.Client, shardUri).ConfigureAwait(false);
+            }
+            catch (Exception ex2) when (IsNotFoundError(ex2))
+            {
+                // Shard not found - wallet is not in the allowlist (expected case)
+                return null;
+            }
+            // Other errors (network, auth, etc.) propagate up as unexpected
+        }
+        // Other errors from first attempt propagate up as unexpected
+
+        // Calculate proof
+        return MerkleTreeUtils.CalculateMerkleProof(shardData, walletAddress);
+    }
+
+    #endregion
+
     #region DropERC20
 
     /// <summary>
@@ -1601,8 +1758,31 @@ public static class ThirdwebExtensions
 
         var payableAmount = isNativeToken ? rawAmountToClaim * activeClaimCondition.PricePerToken / BigInteger.Pow(10, 18) : BigInteger.Zero;
 
-        // TODO: Merkle
-        var allowlistProof = new object[] { Array.Empty<byte>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        // Get merkle proof for allowlist
+        var allowlistProofData = await contract.GetAllowlistProof(receiverAddress).ConfigureAwait(false);
+        object[] allowlistProof;
+        if (allowlistProofData != null && allowlistProofData.Proof != null && allowlistProofData.Proof.Count > 0)
+        {
+            allowlistProof = new object[]
+            {
+                allowlistProofData.Proof.ToArray(),
+                allowlistProofData.QuantityLimitPerWallet,
+                allowlistProofData.PricePerToken,
+                allowlistProofData.Currency
+            };
+
+            // Recalculate payable amount if allowlist has price override
+            if (allowlistProofData.PricePerToken < MaxUint256)
+            {
+                var allowlistCurrency = allowlistProofData.Currency;
+                isNativeToken = allowlistCurrency == Constants.NATIVE_TOKEN_ADDRESS || allowlistCurrency == Constants.ADDRESS_ZERO;
+                payableAmount = isNativeToken ? rawAmountToClaim * allowlistProofData.PricePerToken / BigInteger.Pow(10, 18) : BigInteger.Zero;
+            }
+        }
+        else
+        {
+            allowlistProof = new object[] { Array.Empty<byte[]>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        }
 
         var fnArgs = new object[]
         {
@@ -1739,8 +1919,31 @@ public static class ThirdwebExtensions
 
         var payableAmount = isNativeToken ? quantity * activeClaimCondition.PricePerToken : BigInteger.Zero;
 
-        // TODO: Merkle
-        var allowlistProof = new object[] { Array.Empty<byte>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        // Get merkle proof for allowlist
+        var allowlistProofData = await contract.GetAllowlistProof(receiverAddress).ConfigureAwait(false);
+        object[] allowlistProof;
+        if (allowlistProofData != null && allowlistProofData.Proof != null && allowlistProofData.Proof.Count > 0)
+        {
+            allowlistProof = new object[]
+            {
+                allowlistProofData.Proof.ToArray(),
+                allowlistProofData.QuantityLimitPerWallet,
+                allowlistProofData.PricePerToken,
+                allowlistProofData.Currency
+            };
+
+            // Recalculate payable amount if allowlist has price override
+            if (allowlistProofData.PricePerToken < MaxUint256)
+            {
+                var allowlistCurrency = allowlistProofData.Currency;
+                isNativeToken = allowlistCurrency == Constants.NATIVE_TOKEN_ADDRESS || allowlistCurrency == Constants.ADDRESS_ZERO;
+                payableAmount = isNativeToken ? quantity * allowlistProofData.PricePerToken : BigInteger.Zero;
+            }
+        }
+        else
+        {
+            allowlistProof = new object[] { Array.Empty<byte[]>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        }
 
         var fnArgs = new object[]
         {
@@ -1902,8 +2105,31 @@ public static class ThirdwebExtensions
 
         var payableAmount = isNativeToken ? quantity * activeClaimCondition.PricePerToken : BigInteger.Zero;
 
-        // TODO: Merkle
-        var allowlistProof = new object[] { Array.Empty<byte>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        // Get merkle proof for allowlist (passing tokenId for ERC1155)
+        var allowlistProofData = await contract.GetAllowlistProof(receiverAddress, null, tokenId).ConfigureAwait(false);
+        object[] allowlistProof;
+        if (allowlistProofData != null && allowlistProofData.Proof != null && allowlistProofData.Proof.Count > 0)
+        {
+            allowlistProof = new object[]
+            {
+                allowlistProofData.Proof.ToArray(),
+                allowlistProofData.QuantityLimitPerWallet,
+                allowlistProofData.PricePerToken,
+                allowlistProofData.Currency
+            };
+
+            // Recalculate payable amount if allowlist has price override
+            if (allowlistProofData.PricePerToken < MaxUint256)
+            {
+                var allowlistCurrency = allowlistProofData.Currency;
+                isNativeToken = allowlistCurrency == Constants.NATIVE_TOKEN_ADDRESS || allowlistCurrency == Constants.ADDRESS_ZERO;
+                payableAmount = isNativeToken ? quantity * allowlistProofData.PricePerToken : BigInteger.Zero;
+            }
+        }
+        else
+        {
+            allowlistProof = new object[] { Array.Empty<byte[]>(), BigInteger.Zero, BigInteger.Zero, Constants.ADDRESS_ZERO };
+        }
 
         var fnArgs = new object[]
         {
